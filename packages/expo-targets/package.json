@@ -1,0 +1,59 @@
+{
+  "name": "expo-targets",
+  "version": "0.1.0",
+  "description": "Expo config plugin for Apple targets and Android app extensions",
+  "main": "build/src/index.js",
+  "types": "build/src/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./build/src/index.js",
+      "require": "./build/src/index.js"
+    },
+    "./metro": {
+      "import": "./metro/build/index.js",
+      "require": "./metro/build/index.js"
+    }
+  },
+  "scripts": {
+    "build": "bun run build:main && bun run build:plugin && bun run build:metro",
+    "build:main": "tsc",
+    "build:plugin": "tsc --project plugin/tsconfig.build.json",
+    "build:metro": "tsc --project metro/tsconfig.build.json",
+    "clean": "rm -rf build plugin/build metro/build",
+    "prepare": "bun run build",
+    "lint": "eslint src --ext .ts,.tsx"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.25.0",
+    "@babel/traverse": "^7.25.0",
+    "@babel/types": "^7.25.0",
+    "@expo/config-plugins": "^8.0.0",
+    "@expo/config-types": "^52.0.0",
+    "@expo/plist": "^0.1.0",
+    "@react-native/normalize-colors": "^0.79.2",
+    "debug": "^4.3.4",
+    "glob": "^10.4.2",
+    "xcode": "3.0.1"
+  },
+  "devDependencies": {
+    "expo-module-scripts": "^4.1.7",
+    "typescript": "~5.3.3"
+  },
+  "peerDependencies": {
+    "expo": "*"
+  },
+  "keywords": [
+    "expo",
+    "expo-plugin",
+    "ios",
+    "widget",
+    "app-clip",
+    "imessage",
+    "apple-targets"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/expo-targets"
+  },
+  "license": "MIT"
+}

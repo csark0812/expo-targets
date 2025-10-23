@@ -1,37 +1,58 @@
-# dependencies (bun install)
-node_modules
+# Dependencies
+node_modules/
+bun.lockb
 
-# output
-out
-dist
-*.tgz
-
-# code coverage
-coverage
-*.lcov
-
-# logs
-logs
-_.log
-report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
-
-# dotenv environment variable files
-.env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
-
-# caches
-.eslintcache
-.cache
+# Build outputs
+build/
+dist/
 *.tsbuildinfo
 
-# IntelliJ based IDEs
-.idea
+# Compiled files in src directories (should only be in build/)
+src/**/*.js
+src/**/*.d.ts
+src/**/*.d.ts.map
+src/**/*.js.map
 
-# Finder (MacOS) folder config
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
 .DS_Store
+Thumbs.db
 
-# cursor
-.cursor
+# Expo
+.expo/
+.expo-shared/
+
+# iOS - auto-generated app code (but keep package native code and target templates)
+apps/*/ios/
+*.xcworkspace
+*.xcuserdata
+Pods/
+Podfile.lock
+
+# Android - auto-generated app code (but keep package native code and target templates)
+apps/*/android/
+*.apk
+*.aab
+.gradle/
+local.properties
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test coverage
+coverage/
+
+# Env files
+.env
+.env.local
+
+
+.cursor/

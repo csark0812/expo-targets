@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./build"
+  },
+  "include": ["src/**/*", "plugin/src/**/*", "metro/src/**/*"],
+  "exclude": ["node_modules", "build", "plugin/build", "metro/build"]
+}

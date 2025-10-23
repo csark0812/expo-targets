@@ -1,0 +1,30 @@
+{
+  "name": "create-target",
+  "version": "0.1.0",
+  "description": "CLI tool for scaffolding expo-targets extensions",
+  "main": "build/index.js",
+  "bin": {
+    "create-target": "./build/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "prompts": "^2.4.2",
+    "fs-extra": "^11.2.0"
+  },
+  "devDependencies": {
+    "@types/prompts": "^2.4.9",
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^20.0.0",
+    "typescript": "~5.3.3"
+  },
+  "keywords": [
+    "expo",
+    "cli",
+    "widget",
+    "app-clip"
+  ],
+  "license": "MIT"
+}

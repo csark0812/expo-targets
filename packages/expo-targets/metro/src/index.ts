@@ -1,0 +1,1 @@
+export { withTargetsMetro } from './withTargetsMetro';

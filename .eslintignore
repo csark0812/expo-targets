@@ -1,0 +1,18 @@
+# Build outputs
+**/build/
+**/dist/
+
+# Generated files
+**/*.d.ts
+**/*.js
+**/*.js.map
+**/*.d.ts.map
+
+# Dependencies
+node_modules/
+
+# Lockfiles
+bun.lockb
+
+# Config files
+.eslintrc.js

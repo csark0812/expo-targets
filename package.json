@@ -1,12 +1,28 @@
 {
-  "name": "expo-targets",
-  "module": "index.ts",
-  "type": "module",
+  "name": "expo-targets-monorepo",
   "private": true,
-  "devDependencies": {
-    "@types/bun": "latest"
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "bun run --filter './packages/*' build",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
   },
-  "peerDependencies": {
-    "typescript": "^5"
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "~5.3.3"
+  },
+  "version": "1.0.0",
+  "dependencies": {
+    "expo": "~54.0.19",
+    "react": "19.1.0",
+    "react-native": "0.81.5"
   }
 }
