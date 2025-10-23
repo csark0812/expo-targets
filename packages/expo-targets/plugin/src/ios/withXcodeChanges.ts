@@ -7,14 +7,14 @@ import fs from 'fs';
 import { globSync } from 'glob';
 import path from 'path';
 
-import type { ExtensionType, IOSTargetConfig } from '../config';
+import type { ExtensionType, IOSTargetConfigWithReactNative } from '../config';
 import {
   productTypeForType,
   getFrameworksForType,
   getTargetInfoPlistForType,
 } from './target';
 
-interface IOSTargetProps extends IOSTargetConfig {
+interface IOSTargetProps extends IOSTargetConfigWithReactNative {
   type: ExtensionType;
   name: string;
   directory: string;
@@ -115,46 +115,55 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       SKIP_INSTALL: 'YES',
     };
 
-    // Settings that should inherit from main app if not explicitly set
-    const inheritableSettings = [
-      'SWIFT_VERSION',
-      'TARGETED_DEVICE_FAMILY',
-      'CLANG_ENABLE_MODULES',
-      'SWIFT_EMIT_LOC_STRINGS',
-    ];
-
     // Build final settings: target-specific + inherited + deployment target + custom overrides
     const buildSettings: Record<string, string> = {
       ...targetSpecificSettings,
     };
 
-    // Inherit settings from main app
-    inheritableSettings.forEach((key) => {
-      if (mainBuildSettings[key]) {
-        buildSettings[key] = mainBuildSettings[key];
+    // Map camelCase properties to Xcode build settings
+    const buildSettingsMap: Record<
+      string,
+      { prop: keyof IOSTargetProps; xcodeKey: string }
+    > = {
+      swiftVersion: { prop: 'swiftVersion', xcodeKey: 'SWIFT_VERSION' },
+      targetedDeviceFamily: {
+        prop: 'targetedDeviceFamily',
+        xcodeKey: 'TARGETED_DEVICE_FAMILY',
+      },
+      clangEnableModules: {
+        prop: 'clangEnableModules',
+        xcodeKey: 'CLANG_ENABLE_MODULES',
+      },
+      swiftEmitLocStrings: {
+        prop: 'swiftEmitLocStrings',
+        xcodeKey: 'SWIFT_EMIT_LOC_STRINGS',
+      },
+    };
+
+    // Inherit or set build settings
+    Object.entries(buildSettingsMap).forEach(([key, { prop, xcodeKey }]) => {
+      if (props[prop] !== undefined) {
+        // User explicitly set it
+        buildSettings[xcodeKey] = String(props[prop]);
+        console.log(`[expo-targets] Using custom ${xcodeKey}: ${props[prop]}`);
+      } else if (mainBuildSettings[xcodeKey]) {
+        // Inherit from main app
+        buildSettings[xcodeKey] = mainBuildSettings[xcodeKey];
+        console.log(
+          `[expo-targets] Inherited ${xcodeKey}: ${mainBuildSettings[xcodeKey]}`
+        );
       }
     });
 
-    // Ensure SWIFT_VERSION is always set (fallback to 5.0)
+    // Fallback for SWIFT_VERSION
     if (!buildSettings.SWIFT_VERSION) {
       buildSettings.SWIFT_VERSION = '5.0';
-      console.log(
-        `[expo-targets] SWIFT_VERSION not inherited, using fallback: 5.0`
-      );
-    } else {
-      console.log(
-        `[expo-targets] SWIFT_VERSION inherited: ${buildSettings.SWIFT_VERSION}`
-      );
+      console.log(`[expo-targets] Using fallback SWIFT_VERSION: 5.0`);
     }
 
     // Apply deployment target if specified
     if (deploymentTarget) {
       buildSettings.IPHONEOS_DEPLOYMENT_TARGET = deploymentTarget;
-    }
-
-    // Apply custom build settings from config (highest priority)
-    if (props.buildSettings) {
-      Object.assign(buildSettings, props.buildSettings);
     }
 
     console.log(
@@ -193,7 +202,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     }
 
     console.log(
-      `[expo-targets] Configured build settings for ${targetProductName} (inherited ${inheritableSettings.length} from main app)`
+      `[expo-targets] Configured build settings for ${targetProductName}`
     );
 
     // Ensure the target has a Sources build phase

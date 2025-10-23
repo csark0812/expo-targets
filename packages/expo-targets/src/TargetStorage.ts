@@ -64,18 +64,24 @@ export interface Target {
   refresh(): void;
 }
 
-export interface DefineTargetOptions {
-  name: string;
-  appGroup: string;
-  type: ExtensionType;
-  displayName?: string;
-  platforms: {
-    ios?: IOSTargetConfig;
-    android?: AndroidTargetConfig;
-  };
-}
+export type DefineTargetOptions = TargetConfig;
 
 export function defineTarget(options: DefineTargetOptions): Target {
+  // Validate required fields at runtime
+  if (!options.appGroup) {
+    throw new Error(
+      `defineTarget() requires 'appGroup' to be specified. ` +
+        `Either set it explicitly or ensure your main app has App Groups configured in app.json`
+    );
+  }
+
+  if (!options.name) {
+    throw new Error(
+      `defineTarget() requires 'name' to be specified or auto-derived from directory. ` +
+        `This should not happen if using the plugin correctly.`
+    );
+  }
+
   const storage = new AppGroupStorage(options.appGroup);
   const dataKey = `${options.name}:data`;
 
@@ -110,7 +116,7 @@ export function defineTarget(options: DefineTargetOptions): Target {
     },
 
     refresh() {
-      ExpoTargetsModule.refreshTarget(options.name);
+      ExpoTargetsModule.refreshTarget(options.name!);
     },
   };
 }

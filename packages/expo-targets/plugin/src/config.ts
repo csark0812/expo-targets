@@ -29,7 +29,31 @@ export interface Color {
   darkColor?: string;
 }
 
-export interface IOSTargetConfig {
+export const TYPE_MINIMUM_DEPLOYMENT_TARGETS: Record<ExtensionType, string> = {
+  widget: '14.0',
+  clip: '14.0',
+  imessage: '10.0',
+  share: '8.0',
+  action: '8.0',
+  'notification-content': '10.0',
+  'notification-service': '10.0',
+  intent: '12.0',
+  'intent-ui': '12.0',
+  safari: '15.0',
+  spotlight: '9.0',
+  'bg-download': '7.0',
+  'quicklook-thumbnail': '11.0',
+  'location-push': '15.0',
+  'credentials-provider': '12.0',
+  'account-auth': '12.2',
+  'app-intent': '16.0',
+  'device-activity-monitor': '15.0',
+  matter: '16.1',
+  watch: '2.0',
+};
+
+// Base configuration shared by all iOS targets
+interface BaseIOSTargetConfig {
   icon?: string;
   deploymentTarget?: string;
   bundleIdentifier?: string;
@@ -38,25 +62,66 @@ export interface IOSTargetConfig {
   images?: Record<string, string>;
   frameworks?: string[];
   entitlements?: Record<string, any>;
-  buildSettings?: Record<string, string>;
+
+  // CamelCase build settings
+  swiftVersion?: string;
+  targetedDeviceFamily?: string;
+  clangEnableModules?: boolean | string;
+  swiftEmitLocStrings?: boolean | string;
+}
+
+// Types that support React Native rendering
+export type ReactNativeCompatibleType = 'share' | 'action' | 'clip';
+
+// Types that do NOT support React Native (use native rendering)
+export type NativeOnlyType = Exclude<ExtensionType, ReactNativeCompatibleType>;
+
+// Config for React Native compatible types
+export interface IOSTargetConfigWithReactNative extends BaseIOSTargetConfig {
   useReactNative?: boolean;
   excludedPackages?: string[];
 }
+
+// Config for native-only types (no React Native options)
+export interface IOSTargetConfigNativeOnly extends BaseIOSTargetConfig {
+  useReactNative?: never;
+  excludedPackages?: never;
+}
+
+// Union type based on target type
+export type IOSTargetConfig =
+  | IOSTargetConfigWithReactNative
+  | IOSTargetConfigNativeOnly;
 
 export interface AndroidTargetConfig {
   resourceName?: string;
 }
 
-export interface TargetConfig {
-  type: ExtensionType;
+// Base config shared by all targets
+type BaseTargetConfig = {
   name?: string;
   displayName?: string;
   appGroup?: string;
-  platforms: {
-    ios?: IOSTargetConfig;
-    android?: AndroidTargetConfig;
-  };
-}
+  platforms: string[];
+  android?: AndroidTargetConfig;
+};
+
+// Target config for React Native compatible types
+type TargetConfigReactNativeCompatible = BaseTargetConfig & {
+  type: ReactNativeCompatibleType;
+  ios?: IOSTargetConfigWithReactNative;
+};
+
+// Target config for native-only types
+type TargetConfigNativeOnly = BaseTargetConfig & {
+  type: NativeOnlyType;
+  ios?: IOSTargetConfigNativeOnly;
+};
+
+// Main discriminated union
+export type TargetConfig =
+  | TargetConfigReactNativeCompatible
+  | TargetConfigNativeOnly;
 
 export type TargetConfigFunction = (config: ExpoConfig) => TargetConfig;
 

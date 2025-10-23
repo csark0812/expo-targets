@@ -38,18 +38,31 @@ export const withTargetsDir: ConfigPlugin<{
       `[expo-targets] ${targetDirName}: iOS=${hasIOS}, Android=${hasAndroid}`
     );
 
-    if (hasIOS && evaluatedConfig.platforms.ios) {
+    // Validate platforms array matches actual directories
+    if (hasIOS && !evaluatedConfig.platforms.includes('ios')) {
+      console.warn(
+        `[expo-targets] iOS directory exists but 'ios' not in platforms array for ${targetDirName}`
+      );
+    }
+    if (hasAndroid && !evaluatedConfig.platforms.includes('android')) {
+      console.warn(
+        `[expo-targets] Android directory exists but 'android' not in platforms array for ${targetDirName}`
+      );
+    }
+
+    if (hasIOS && evaluatedConfig.ios) {
       config = withIOSTarget(config, {
-        ...evaluatedConfig.platforms.ios,
+        ...evaluatedConfig.ios,
         type: evaluatedConfig.type,
         name: evaluatedConfig.name || targetDirName,
         displayName: evaluatedConfig.displayName,
+        appGroup: evaluatedConfig.appGroup,
         directory: targetDirectory,
         configPath: indexPath,
       });
     }
 
-    if (hasAndroid && evaluatedConfig.platforms.android) {
+    if (hasAndroid && evaluatedConfig.android) {
       console.warn(
         `[expo-targets] Android support not yet implemented for ${targetDirName}`
       );

@@ -5,6 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -15,6 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.test.widgetbasic",
+      "deploymentTarget": "17.0",
       "entitlements": {
         "com.apple.security.application-groups": ["group.com.test.widgetbasic"]
       }

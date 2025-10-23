@@ -2,11 +2,13 @@ import * as parser from '@babel/parser';
 import traverse from '@babel/traverse';
 import * as t from '@babel/types';
 import fs from 'fs';
+import path from 'path';
 
 import type { TargetConfig } from './config';
 
 export function parseTargetConfigFromFile(filePath: string): TargetConfig {
   const code = fs.readFileSync(filePath, 'utf-8');
+  const directoryName = path.basename(path.dirname(filePath));
 
   const ast = parser.parse(code, {
     sourceType: 'module',
@@ -39,7 +41,34 @@ export function parseTargetConfigFromFile(filePath: string): TargetConfig {
     );
   }
 
-  return targetConfig;
+  // Cast to any to work with discriminated union
+  const config = targetConfig as any;
+
+  // Auto-derive name if not specified
+  if (!config.name) {
+    config.name = directoryName;
+    console.log(`[expo-targets] Auto-derived name: ${directoryName}`);
+  }
+
+  // Validate name matches directory
+  if (config.name !== directoryName) {
+    throw new Error(
+      `Target name '${config.name}' doesn't match directory '${directoryName}'`
+    );
+  }
+
+  // Validate platforms array
+  if (
+    !config.platforms ||
+    !Array.isArray(config.platforms) ||
+    config.platforms.length === 0
+  ) {
+    throw new Error(
+      `Target '${config.name}' must specify platforms array (e.g., platforms: ['ios'])`
+    );
+  }
+
+  return config as TargetConfig;
 }
 
 function evaluateObjectExpression(node: t.ObjectExpression): any {
