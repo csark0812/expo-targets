@@ -1,0 +1,25 @@
+import { defineTarget } from 'expo-targets';
+
+export const quickTaskClip = defineTarget({
+  type: 'clip',
+  name: 'QuickTaskClip',
+  displayName: 'Quick Task',
+  platforms: ['ios'],
+  appGroup: 'group.com.test.multitarget',
+  ios: {
+    deploymentTarget: '17.0',
+    bundleIdentifier: 'com.test.multitarget.clip',
+    displayName: 'Quick Task',
+    colors: {
+      AccentColor: { light: '#34C759', dark: '#30D158' },
+      BackgroundColor: { light: '#FFFFFF', dark: '#1C1C1E' },
+      TextPrimary: { light: '#000000', dark: '#FFFFFF' },
+    },
+    entitlements: {
+      'com.apple.developer.associated-domains': [
+        'appclips:multitarget.example.com',
+      ],
+      'com.apple.developer.on-demand-install-capable': true,
+    },
+  },
+});

@@ -111,13 +111,20 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
     colors: Object.keys(colors).length > 0 ? colors : undefined,
   });
 
-  // TODO: Podfile integration needs work - CocoaPods requirements for extensions
-  // config = withTargetPodfile(config, {
-  //   targetName: targetProductName, // Use sanitized name to match Xcode target
-  //   deploymentTarget,
-  //   useReactNative: props.useReactNative,
-  //   excludedPackages: props.excludedPackages,
-  // });
+  // Add Podfile target only for targets that use React Native
+  // App Clips and other extensions without RN should be standalone (no Pods)
+  if (props.useReactNative) {
+    config = withTargetPodfile(config, {
+      targetName: targetProductName, // Use sanitized name to match Xcode target
+      deploymentTarget: deploymentTarget!, // Guaranteed to be set by resolution logic above
+      useReactNative: props.useReactNative,
+      excludedPackages: props.excludedPackages,
+    });
+  } else {
+    console.log(
+      `[expo-targets] Skipping Podfile target for ${targetProductName} - standalone target without React Native`
+    );
+  }
 
   config = withTargetEntitlements(config, {
     targetName,

@@ -84,6 +84,8 @@ export function getFrameworksForType(type: ExtensionType): string[] {
   }
 
   if (type === 'clip') {
+    // Don't explicitly link SwiftUI for App Clips - let Swift auto-link it
+    // Explicit linking causes UIUtilities and SwiftUICore auto-link errors
     return [];
   }
 
