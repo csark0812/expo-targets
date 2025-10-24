@@ -1,5 +1,6 @@
 import {
   ConfigPlugin,
+  IOSConfig,
   withXcodeProject,
   XcodeProject,
 } from '@expo/config-plugins';
@@ -64,10 +65,11 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     const xcodeProject = pbxProject as any;
 
     // Get main app target
-    const mainTarget = xcodeProject.getFirstTarget();
-    if (!mainTarget) {
-      throw new Error('Could not find main app target');
-    }
+    const projectName = IOSConfig.XcodeUtils.getProjectName(projectRoot);
+    const mainTarget = IOSConfig.XcodeUtils.getApplicationNativeTarget({
+      project: xcodeProject,
+      projectName,
+    });
 
     // Create the extension target
     const targetProductName = targetName.replace(/[^a-zA-Z0-9]/g, '');
@@ -122,9 +124,9 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     // Build settings that should be target-specific
     const targetSpecificSettings: Record<string, string> = {
       PRODUCT_NAME: `"${targetProductName}"`,
-      PRODUCT_BUNDLE_IDENTIFIER: bundleIdentifier,
-      INFOPLIST_FILE: `${targetProductName}/Info.plist`,
-      CODE_SIGN_ENTITLEMENTS: `${targetProductName}/generated.entitlements`,
+      PRODUCT_BUNDLE_IDENTIFIER: `"${bundleIdentifier}"`,
+      INFOPLIST_FILE: `"${targetProductName}/Info.plist"`,
+      CODE_SIGN_ENTITLEMENTS: `"${targetProductName}/generated.entitlements"`,
     };
 
     // App Clips are standalone apps - don't skip install
@@ -201,51 +203,35 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       buildSettings.IPHONEOS_DEPLOYMENT_TARGET = deploymentTarget;
     }
 
-    // Add linker flags for App Clips
+    // App Clips are standalone - override search paths to prevent Pods contamination
     if (props.type === 'clip') {
-      // App Clips are standalone - completely isolate from parent app's Pods
-      // CRITICAL: Use separate build directory to avoid finding main app's Pods
-      buildSettings.CONFIGURATION_BUILD_DIR =
-        '"$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)-$(TARGET_NAME)"';
-      buildSettings.OBJROOT = '"$(PROJECT_TEMP_DIR)/$(TARGET_NAME).build"';
-
-      // Do NOT use $(inherited) to avoid pulling in any Pods references
-      buildSettings.LD_RUNPATH_SEARCH_PATHS =
-        '"@executable_path/Frameworks /usr/lib/swift"';
-      // Clear Swift flags - no inherited module paths from main app
-      // Disable automatic framework linking in Swift to prevent UIUtilities/SwiftUICore
-      // Use array format - combine flag and argument to prevent Swift treating them as separate inputs
-      buildSettings.OTHER_SWIFT_FLAGS = [
-        '"-D"',
-        '"EXPO_CONFIGURATION_$(CONFIGURATION)"',
-        '"-disable-autolink-framework UIUtilities"',
-        '"-disable-autolink-framework SwiftUICore"',
-      ] as any;
-      // App Clips must embed Swift libraries since they're standalone
       buildSettings.ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = 'YES';
 
-      // CRITICAL: Override ALL search paths - Xcode auto-adds build dirs otherwise
-      // Only search system frameworks, never the shared build directory
+      // Set explicit clean paths (not blank, as blank gets overridden with defaults)
+      // These paths avoid Pods while still allowing Swift/system frameworks
+      // For multi-value settings, pass as arrays (xcode package formats correctly)
+      (buildSettings as any).LIBRARY_SEARCH_PATHS = [
+        '"$(SDKROOT)/usr/lib/swift"',
+        '"$(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)"',
+      ];
+
       buildSettings.FRAMEWORK_SEARCH_PATHS =
-        '"$(SDKROOT)/System/Library/Frameworks"';
-      buildSettings.SYSTEM_FRAMEWORK_SEARCH_PATHS =
-        '"$(SDKROOT)/System/Library/Frameworks"';
+        '"$(PLATFORM_DIR)/Developer/Library/Frameworks"';
 
-      // Prevent Swift auto-linking problematic frameworks by clearing linker flags
-      // Swift auto-linker is finding UIUtilities/SwiftUICore references somewhere
-      buildSettings.OTHER_LDFLAGS = '""';
+      (buildSettings as any).LD_RUNPATH_SEARCH_PATHS = [
+        '"@executable_path/Frameworks"',
+        '"@loader_path/Frameworks"',
+      ];
 
-      // Keep Clang modules enabled (needed for Swift) but control auto-linking via Swift flags
+      // Don't set OTHER_SWIFT_FLAGS - let it use defaults to avoid duplication
 
-      // Explicitly disable automatic framework search path additions
-      buildSettings.ENABLE_DEFAULT_SEARCH_PATHS = 'NO';
-
-      // Only allow Swift stdlib, nothing else
-      buildSettings.LIBRARY_SEARCH_PATHS =
-        '"$(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)"';
-      buildSettings.HEADER_SEARCH_PATHS = '""';
-      buildSettings.SWIFT_INCLUDE_PATHS = '""';
-      buildSettings.USER_HEADER_SEARCH_PATHS = '""';
+      // SwiftUI-specific settings (required for proper SwiftUI framework linking)
+      buildSettings.GENERATE_INFOPLIST_FILE = 'YES';
+      buildSettings.INFOPLIST_KEY_UIApplicationSceneManifest_Generation = 'YES';
+      buildSettings.INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents =
+        'YES';
+      buildSettings.INFOPLIST_KEY_UILaunchScreen_Generation = 'YES';
+      buildSettings.ENABLE_PREVIEWS = 'YES';
     }
 
     console.log(
@@ -318,6 +304,17 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       `[expo-targets] Created Frameworks build phase for ${targetProductName}`
     );
 
+    // Ensure the target has a Resources build phase
+    const resourcesBuildPhase = xcodeProject.addBuildPhase(
+      [],
+      'PBXResourcesBuildPhase',
+      'Resources',
+      target.uuid
+    );
+    console.log(
+      `[expo-targets] Created Resources build phase for ${targetProductName}`
+    );
+
     // Copy Swift files and Info.plist into ios/ directory
     // Note: Files copied to ios/{target}/ for Xcode accessibility
     const targetGroupPath = path.join(
@@ -325,14 +322,6 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       targetProductName
     );
     fs.mkdirSync(targetGroupPath, { recursive: true });
-
-    // Copy Info.plist from build folder
-    const infoPlistSource = path.join(buildDirectory, 'Info.plist');
-    const infoPlistDest = path.join(targetGroupPath, 'Info.plist');
-    if (fs.existsSync(infoPlistSource)) {
-      fs.copyFileSync(infoPlistSource, infoPlistDest);
-      console.log(`[expo-targets] Copied Info.plist to ${targetProductName}/`);
-    }
 
     // Copy generated.entitlements from build folder
     const entitlementsSource = path.join(
@@ -359,18 +348,23 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       `[expo-targets] Found ${swiftFiles.length} Swift file(s) in ${props.directory}/ios`
     );
 
-    // Create an empty PBXGroup for the target
-    let groupKey = targetProductName;
-    if (swiftFiles.length > 0) {
-      const groupResult = xcodeProject.addPbxGroup(
-        [],
-        targetProductName,
-        targetProductName
-      );
-      groupKey = groupResult.uuid;
-      console.log(
-        `[expo-targets] Created group: ${targetProductName} (${groupKey})`
-      );
+    // Ensure group exists for the target
+    IOSConfig.XcodeUtils.ensureGroupRecursively(
+      xcodeProject,
+      targetProductName
+    );
+    console.log(`[expo-targets] Ensured group exists: ${targetProductName}`);
+
+    // Copy and add Info.plist from build folder
+    const infoPlistSource = path.join(buildDirectory, 'Info.plist');
+    const infoPlistDest = path.join(targetGroupPath, 'Info.plist');
+    if (fs.existsSync(infoPlistSource)) {
+      fs.copyFileSync(infoPlistSource, infoPlistDest);
+      console.log(`[expo-targets] Copied Info.plist to ${targetProductName}/`);
+
+      // Manually add Info.plist to avoid addResourceFile's "Resources" group requirement
+      // We use the build settings INFOPLIST_FILE instead of adding to Resources phase
+      console.log(`[expo-targets] Info.plist configured via build settings`);
     }
 
     swiftFiles.forEach((file) => {
@@ -385,11 +379,13 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
         config.modRequest.platformProjectRoot,
         destFile
       );
-      xcodeProject.addSourceFile(
-        relativePath,
-        { target: target.uuid },
-        groupKey
-      );
+      IOSConfig.XcodeUtils.addBuildSourceFileToGroup({
+        filepath: relativePath,
+        groupName: targetProductName,
+        project: xcodeProject,
+        verbose: true,
+        targetUuid: target.uuid,
+      });
       console.log(
         `[expo-targets]   Added to build phase: ${path.basename(file)}`
       );
@@ -409,6 +405,18 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
 
     // Add target dependency for app extensions and clips
     console.log(`[expo-targets] Adding target dependency to main app`);
+
+    // Ensure PBXTargetDependency and PBXContainerItemProxy sections exist
+    // The xcode library's addTargetDependency method fails silently if these don't exist
+    if (!xcodeProject.hash.project.objects['PBXTargetDependency']) {
+      xcodeProject.hash.project.objects['PBXTargetDependency'] = {};
+      console.log(`[expo-targets] Created PBXTargetDependency section`);
+    }
+    if (!xcodeProject.hash.project.objects['PBXContainerItemProxy']) {
+      xcodeProject.hash.project.objects['PBXContainerItemProxy'] = {};
+      console.log(`[expo-targets] Created PBXContainerItemProxy section`);
+    }
+
     xcodeProject.addTargetDependency(mainTarget.uuid, [target.uuid]);
 
     // App Clips and Extensions need different embed settings
@@ -525,8 +533,10 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
             console.log(`[expo-targets] Found phase object, configuring...`);
 
             // Configure phase for App Clips
-            phase.dstSubfolderSpec = '16'; // App Clips folder
-            phase.dstPath = '""';
+            // dstSubfolderSpec = 1 means "wrapper" (inside the app bundle)
+            // dstPath = "AppClips" specifies the AppClips subfolder
+            phase.dstPath = '"$(CONTENTS_FOLDER_PATH)/AppClips"';
+            phase.dstSubfolderSpec = 16;
             phase.name = '"Embed App Clips"';
 
             // Create a PBXBuildFile for the App Clip manually

@@ -17,13 +17,7 @@
       "bundleIdentifier": "com.test.clipadvanced",
       "deploymentTarget": "17.0",
       "entitlements": {
-        "com.apple.security.application-groups": [
-          "group.com.test.clipadvanced"
-        ],
-        "com.apple.developer.on-demand-install-capable": true,
-        "com.apple.developer.parent-application-identifiers": [
-          "$(AppIdentifierPrefix)com.test.clipadvanced"
-        ]
+        "com.apple.security.application-groups": ["group.com.test.clipadvanced"]
       },
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "App Clip needs location to show nearby content",
