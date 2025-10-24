@@ -50,11 +50,12 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       ...(props.frameworks || []),
     ];
 
-    // Generate Info.plist if it doesn't exist
-    const infoPlistPath = path.join(targetDirectory, 'Info.plist');
+    // Generate Info.plist in build folder if it doesn't exist
+    const buildDirectory = path.join(targetDirectory, 'build');
+    const infoPlistPath = path.join(buildDirectory, 'Info.plist');
     if (!fs.existsSync(infoPlistPath)) {
       const infoPlistContent = getTargetInfoPlistForType(props.type);
-      fs.mkdirSync(targetDirectory, { recursive: true });
+      fs.mkdirSync(buildDirectory, { recursive: true });
       fs.writeFileSync(infoPlistPath, infoPlistContent);
       console.log(`[expo-targets] Generated Info.plist for ${targetName}`);
     }
@@ -224,17 +225,17 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     );
     fs.mkdirSync(targetGroupPath, { recursive: true });
 
-    // Copy Info.plist
-    const infoPlistSource = path.join(targetDirectory, 'Info.plist');
+    // Copy Info.plist from build folder
+    const infoPlistSource = path.join(buildDirectory, 'Info.plist');
     const infoPlistDest = path.join(targetGroupPath, 'Info.plist');
     if (fs.existsSync(infoPlistSource)) {
       fs.copyFileSync(infoPlistSource, infoPlistDest);
       console.log(`[expo-targets] Copied Info.plist to ${targetProductName}/`);
     }
 
-    // Copy generated.entitlements
+    // Copy generated.entitlements from build folder
     const entitlementsSource = path.join(
-      targetDirectory,
+      buildDirectory,
       'generated.entitlements'
     );
     const entitlementsDest = path.join(

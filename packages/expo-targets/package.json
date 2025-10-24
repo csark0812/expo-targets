@@ -40,7 +40,8 @@
     "typescript": "~5.3.3"
   },
   "peerDependencies": {
-    "expo": "*"
+    "expo": "*",
+    "expo-constants": "*"
   },
   "keywords": [
     "expo",

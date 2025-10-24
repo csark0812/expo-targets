@@ -41,6 +41,7 @@ export const withTargetEntitlements: ConfigPlugin<{
         config.modRequest.projectRoot,
         props.targetDirectory,
         'ios',
+        'build',
         'generated.entitlements'
       );
 

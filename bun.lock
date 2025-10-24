@@ -69,6 +69,7 @@
       },
       "peerDependencies": {
         "expo": "*",
+        "expo-constants": "*",
       },
     },
   },

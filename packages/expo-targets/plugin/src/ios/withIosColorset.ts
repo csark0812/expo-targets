@@ -16,6 +16,7 @@ export const withIosColorset: ConfigPlugin<{
         config.modRequest.projectRoot,
         props.targetDirectory,
         'ios',
+        'build',
         'Assets.xcassets',
         `${props.name}.colorset`
       );

@@ -1,3 +1,5 @@
+import Constants from 'expo-constants';
+
 import ExpoTargetsModule from './TargetStorageModule';
 import type {
   TargetConfig,
@@ -68,13 +70,6 @@ export type DefineTargetOptions = TargetConfig;
 
 export function defineTarget(options: DefineTargetOptions): Target {
   // Validate required fields at runtime
-  if (!options.appGroup) {
-    throw new Error(
-      `defineTarget() requires 'appGroup' to be specified. ` +
-        `Either set it explicitly or ensure your main app has App Groups configured in app.json`
-    );
-  }
-
   if (!options.name) {
     throw new Error(
       `defineTarget() requires 'name' to be specified or auto-derived from directory. ` +
@@ -82,7 +77,31 @@ export function defineTarget(options: DefineTargetOptions): Target {
     );
   }
 
-  const storage = new AppGroupStorage(options.appGroup);
+  // Try to inherit appGroup from expo config if not provided
+  let appGroup = options.appGroup;
+  if (!appGroup) {
+    const appGroups =
+      Constants.expoConfig?.ios?.entitlements?.[
+        'com.apple.security.application-groups'
+      ];
+    if (Array.isArray(appGroups) && appGroups.length > 0) {
+      appGroup = appGroups[0];
+      console.log(
+        `[expo-targets] Inherited App Group from config: ${appGroup}`
+      );
+    }
+  }
+
+  const validateAppGroup = () => {
+    if (!appGroup) {
+      throw new Error(
+        `Cannot use storage: appGroup not configured. ` +
+          `Add 'appGroup' to defineTarget() or ensure App Groups are configured in app.json`
+      );
+    }
+  };
+
+  const storage = new AppGroupStorage(appGroup || '');
   const dataKey = `${options.name}:data`;
 
   return {
@@ -90,22 +109,27 @@ export function defineTarget(options: DefineTargetOptions): Target {
     storage,
 
     set(key: string, value: any) {
+      validateAppGroup();
       storage.set(key, value);
     },
 
     get(key: string) {
+      validateAppGroup();
       return storage.get(key);
     },
 
     remove(key: string) {
+      validateAppGroup();
       storage.remove(key);
     },
 
     setData<T>(data: T) {
+      validateAppGroup();
       storage.set(dataKey, data as any);
     },
 
     getData<T>(): T | null {
+      validateAppGroup();
       const raw = storage.get(dataKey);
       if (!raw) return null;
       try {
