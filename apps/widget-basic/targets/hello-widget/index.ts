@@ -1,6 +1,7 @@
 import { defineTarget } from 'expo-targets';
 
 export const HelloWidget = defineTarget({
+  name: 'hello-widget',
   type: 'widget',
   displayName: 'Hello Widget',
   platforms: ['ios'],

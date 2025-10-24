@@ -44,16 +44,10 @@ export function parseTargetConfigFromFile(filePath: string): TargetConfig {
   // Cast to any to work with discriminated union
   const config = targetConfig as any;
 
-  // Auto-derive name if not specified
+  // Validate name is specified
   if (!config.name) {
-    config.name = directoryName;
-    console.log(`[expo-targets] Auto-derived name: ${directoryName}`);
-  }
-
-  // Validate name matches directory
-  if (config.name !== directoryName) {
     throw new Error(
-      `Target name '${config.name}' doesn't match directory '${directoryName}'`
+      `Target in ${filePath} must specify 'name' property in defineTarget() configuration.`
     );
   }
 

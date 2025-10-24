@@ -99,7 +99,7 @@ export interface AndroidTargetConfig {
 
 // Base config shared by all targets
 type BaseTargetConfig = {
-  name?: string;
+  name: string;
   displayName?: string;
   appGroup?: string;
   platforms: string[];

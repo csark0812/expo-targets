@@ -72,10 +72,11 @@ export function defineTarget(options: DefineTargetOptions): Target {
   // Validate required fields at runtime
   if (!options.name) {
     throw new Error(
-      `defineTarget() requires 'name' to be specified or auto-derived from directory. ` +
-        `This should not happen if using the plugin correctly.`
+      `defineTarget() requires 'name' to be specified. Please add 'name' property to your defineTarget() configuration.`
     );
   }
+
+  const name = options.name;
 
   // Try to inherit appGroup from expo config if not provided
   let appGroup = options.appGroup;
@@ -102,10 +103,10 @@ export function defineTarget(options: DefineTargetOptions): Target {
   };
 
   const storage = new AppGroupStorage(appGroup || '');
-  const dataKey = `${options.name}:data`;
+  const dataKey = `${name}:data`;
 
   return {
-    name: options.name,
+    name,
     storage,
 
     set(key: string, value: any) {
@@ -140,7 +141,7 @@ export function defineTarget(options: DefineTargetOptions): Target {
     },
 
     refresh() {
-      ExpoTargetsModule.refreshTarget(options.name!);
+      ExpoTargetsModule.refreshTarget(name);
     },
   };
 }
