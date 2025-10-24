@@ -214,14 +214,14 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
         '"@executable_path/Frameworks /usr/lib/swift"';
       // Clear Swift flags - no inherited module paths from main app
       // Disable automatic framework linking in Swift to prevent UIUtilities/SwiftUICore
-      // Use array format so xcode library serializes to proper pbxproj array syntax
+      // Use array format with quoted strings for proper pbxproj serialization
       buildSettings.OTHER_SWIFT_FLAGS = [
-        '-D',
-        'EXPO_CONFIGURATION_$(CONFIGURATION)',
-        '-disable-autolink-framework',
-        'UIUtilities',
-        '-disable-autolink-framework',
-        'SwiftUICore',
+        '"-D"',
+        '"EXPO_CONFIGURATION_$(CONFIGURATION)"',
+        '"-disable-autolink-framework"',
+        '"UIUtilities"',
+        '"-disable-autolink-framework"',
+        '"SwiftUICore"',
       ] as any;
       // App Clips must embed Swift libraries since they're standalone
       buildSettings.ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = 'YES';
