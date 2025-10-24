@@ -10,7 +10,7 @@ import {
   type ExtensionType,
   type IOSTargetConfigWithReactNative,
   type Color,
-} from '../config';
+} from '../../config';
 
 interface IOSTargetProps extends IOSTargetConfigWithReactNative {
   type: ExtensionType;

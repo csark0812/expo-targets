@@ -1,10 +1,7 @@
-import {
-  ConfigPlugin,
-  IOSConfig,
-  withXcodeProject,
-} from '@expo/config-plugins';
-import fs from 'fs';
+import { ConfigPlugin, withXcodeProject } from '@expo/config-plugins';
 import path from 'path';
+
+import { Xcode, Paths, File } from '../utils';
 
 export const withTargetAssets: ConfigPlugin<{
   targetName: string;
@@ -12,61 +9,45 @@ export const withTargetAssets: ConfigPlugin<{
 }> = (config, props) => {
   return withXcodeProject(config, async (config) => {
     const projectRoot = config.modRequest.projectRoot;
-    const targetDirectory = path.join(
-      projectRoot,
-      props.targetDirectory,
-      'ios'
-    );
-    const buildDirectory = path.join(targetDirectory, 'build');
+    const platformProjectRoot = config.modRequest.platformProjectRoot;
 
     // Sanitize target name to match Xcode target name
-    const targetProductName = props.targetName.replace(/[^a-zA-Z0-9]/g, '');
-    const targetGroupPath = path.join(
-      config.modRequest.platformProjectRoot,
-      targetProductName
-    );
+    const targetProductName = Paths.sanitizeTargetName(props.targetName);
+    const targetGroupPath = Paths.getTargetGroupPath({
+      platformProjectRoot,
+      targetName: props.targetName,
+    });
 
     // Copy Assets.xcassets if it exists
-    const assetsSource = path.join(buildDirectory, 'Assets.xcassets');
+    const assetsSource = Paths.getAssetsXcassetsPath({
+      projectRoot,
+      targetDirectory: props.targetDirectory,
+    });
     const assetsDest = path.join(targetGroupPath, 'Assets.xcassets');
 
-    if (fs.existsSync(assetsSource)) {
+    if (File.isDirectory(assetsSource)) {
       // Copy the entire Assets.xcassets folder
-      fs.cpSync(assetsSource, assetsDest, { recursive: true });
+      File.copyDirectorySafe(assetsSource, assetsDest);
       console.log(
         `[expo-targets] Copied Assets.xcassets to ${targetProductName}/`
       );
 
       // Find the target UUID
       const xcodeProject = config.modResults as any;
-      const pbxNativeTargetSection =
-        xcodeProject.hash.project.objects.PBXNativeTarget || {};
-
-      let targetUuid: string | undefined;
-      for (const key in pbxNativeTargetSection) {
-        if (key.endsWith('_comment')) continue;
-        const target = pbxNativeTargetSection[key];
-        if (target && target.name === targetProductName) {
-          targetUuid = key;
-          break;
-        }
-      }
+      const targetUuid = Xcode.findTargetByProductName({
+        project: xcodeProject,
+        productName: targetProductName,
+      });
 
       if (targetUuid) {
         // Add Assets.xcassets as a resource file using the proper API
-        const relativePath = path.relative(
-          config.modRequest.platformProjectRoot,
-          assetsDest
-        );
+        const relativePath = path.relative(platformProjectRoot, assetsDest);
 
         // Ensure the target's group exists
-        IOSConfig.XcodeUtils.ensureGroupRecursively(
-          xcodeProject,
-          targetProductName
-        );
+        Xcode.ensureGroupRecursively(xcodeProject, targetProductName);
 
         // Add the resource file to the target
-        IOSConfig.XcodeUtils.addResourceFileToGroup({
+        Xcode.addResourceFileToGroup({
           filepath: relativePath,
           groupName: targetProductName,
           project: xcodeProject,

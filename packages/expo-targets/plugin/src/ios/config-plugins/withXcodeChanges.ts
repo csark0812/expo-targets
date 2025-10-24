@@ -1,19 +1,17 @@
-import {
-  ConfigPlugin,
-  IOSConfig,
-  withXcodeProject,
-  XcodeProject,
-} from '@expo/config-plugins';
-import fs from 'fs';
+import { ConfigPlugin, withXcodeProject } from '@expo/config-plugins';
 import { globSync } from 'glob';
 import path from 'path';
 
-import type { ExtensionType, IOSTargetConfigWithReactNative } from '../config';
+import type {
+  ExtensionType,
+  IOSTargetConfigWithReactNative,
+} from '../../config';
 import {
   productTypeForType,
   getFrameworksForType,
   getTargetInfoPlistForType,
-} from './target';
+} from '../target';
+import { Xcode, Paths, File } from '../utils';
 
 interface IOSTargetProps extends IOSTargetConfigWithReactNative {
   type: ExtensionType;
@@ -28,7 +26,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
 ) => {
   return withXcodeProject(config, async (config) => {
     const projectRoot = config.modRequest.projectRoot;
-    const targetDirectory = path.join(projectRoot, props.directory, 'ios');
+    const platformProjectRoot = config.modRequest.platformProjectRoot;
     const targetName = props.displayName || props.name;
 
     console.log(
@@ -41,7 +39,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     }
 
     // Sanitize target name for bundle identifier (no hyphens or special chars)
-    const bundleIdentifierSuffix = props.name.replace(/[^a-zA-Z0-9]/g, '');
+    const bundleIdentifierSuffix = Paths.sanitizeTargetName(props.name);
     const bundleIdentifier =
       props.bundleIdentifier || `${mainBundleId}.${bundleIdentifierSuffix}`;
     const deploymentTarget = props.deploymentTarget || '18.0';
@@ -52,12 +50,13 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     ];
 
     // Generate Info.plist in build folder if it doesn't exist
-    const buildDirectory = path.join(targetDirectory, 'build');
-    const infoPlistPath = path.join(buildDirectory, 'Info.plist');
-    if (!fs.existsSync(infoPlistPath)) {
+    const infoPlistPath = Paths.getInfoPlistPath({
+      projectRoot,
+      targetDirectory: props.directory,
+    });
+    if (!File.isFile(infoPlistPath)) {
       const infoPlistContent = getTargetInfoPlistForType(props.type);
-      fs.mkdirSync(buildDirectory, { recursive: true });
-      fs.writeFileSync(infoPlistPath, infoPlistContent);
+      File.writeFileSafe(infoPlistPath, infoPlistContent);
       console.log(`[expo-targets] Generated Info.plist for ${targetName}`);
     }
 
@@ -65,14 +64,14 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     const xcodeProject = pbxProject as any;
 
     // Get main app target
-    const projectName = IOSConfig.XcodeUtils.getProjectName(projectRoot);
-    const mainTarget = IOSConfig.XcodeUtils.getApplicationNativeTarget({
+    const projectName = Xcode.getProjectName(projectRoot);
+    const mainTarget = Xcode.getApplicationNativeTarget({
       project: xcodeProject,
       projectName,
     });
 
     // Create the extension target
-    const targetProductName = targetName.replace(/[^a-zA-Z0-9]/g, '');
+    const targetProductName = Paths.sanitizeTargetName(targetName);
 
     console.log(`[expo-targets] Creating native target: ${targetProductName}`);
 
@@ -96,26 +95,17 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     // Fix product type for App Clips
     // addTarget creates a regular application, but App Clips need special product type
     if (props.type === 'clip') {
-      const nativeTarget = target.pbxNativeTarget || target.target;
-      if (nativeTarget) {
-        nativeTarget.productType = productType;
-        console.log(
-          `[expo-targets] Set product type to ${productType} for App Clip`
-        );
-      }
+      Xcode.setProductType({ target, productType });
+      console.log(
+        `[expo-targets] Set product type to ${productType} for App Clip`
+      );
     }
 
     // Get main app's build settings to inherit from
-    // getFirstTarget() returns { uuid, target } where target is the pbxNativeTarget
-    const mainTargetBuildConfigId = mainTarget.target?.buildConfigurationList;
-    const mainBuildConfigList =
-      xcodeProject.pbxXCConfigurationList()[mainTargetBuildConfigId];
-    const mainBuildConfig =
-      mainBuildConfigList?.buildConfigurations?.[0]?.value;
-    const mainBuildSettings = mainBuildConfig
-      ? xcodeProject.pbxXCBuildConfigurationSection()[mainBuildConfig]
-          ?.buildSettings || {}
-      : {};
+    const mainBuildSettings = Xcode.getMainAppBuildSettings({
+      project: xcodeProject,
+      mainTarget,
+    });
 
     console.log(
       `[expo-targets] Main app SWIFT_VERSION: ${mainBuildSettings.SWIFT_VERSION || 'NOT SET'}`
@@ -238,43 +228,21 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       `[expo-targets] Final SWIFT_VERSION for ${targetProductName}: ${buildSettings.SWIFT_VERSION}`
     );
 
-    // Get build configuration list for the target
-    // addTarget() returns { uuid, pbxNativeTarget }
-    const targetBuildConfigId =
-      target.pbxNativeTarget?.buildConfigurationList ||
-      target.target?.buildConfigurationList;
-    const buildConfigList =
-      xcodeProject.pbxXCConfigurationList()[targetBuildConfigId];
+    // Apply build settings to target
+    Xcode.applyBuildSettings({
+      project: xcodeProject,
+      target,
+      buildSettings,
+      verbose: true,
+    });
 
-    if (buildConfigList && buildConfigList.buildConfigurations) {
-      buildConfigList.buildConfigurations.forEach((config: any) => {
-        const configSection =
-          xcodeProject.pbxXCBuildConfigurationSection()[config.value];
-        const configName = configSection?.name;
-        console.log(
-          `[expo-targets]   Configuring ${configName} build settings`
-        );
-
-        if (configSection && configSection.buildSettings) {
-          // Directly modify the buildSettings object
-          Object.entries(buildSettings).forEach(([key, value]) => {
-            configSection.buildSettings[key] = value;
-            if (key === 'SWIFT_VERSION') {
-              console.log(
-                `[expo-targets]     Set ${key}=${value} to ${configName}`
-              );
-            }
-          });
-
-          // App Clips should not have SKIP_INSTALL - they're standalone apps
-          if (
-            props.type === 'clip' &&
-            configSection.buildSettings.SKIP_INSTALL
-          ) {
-            delete configSection.buildSettings.SKIP_INSTALL;
-            console.log(`[expo-targets]     Removed SKIP_INSTALL for App Clip`);
-          }
-        }
+    // App Clips should not have SKIP_INSTALL - they're standalone apps
+    if (props.type === 'clip') {
+      Xcode.removeBuildSetting({
+        project: xcodeProject,
+        target,
+        settingKey: 'SKIP_INSTALL',
+        verbose: true,
       });
     }
 
@@ -317,28 +285,32 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
 
     // Copy Swift files and Info.plist into ios/ directory
     // Note: Files copied to ios/{target}/ for Xcode accessibility
-    const targetGroupPath = path.join(
-      config.modRequest.platformProjectRoot,
-      targetProductName
-    );
-    fs.mkdirSync(targetGroupPath, { recursive: true });
+    const targetGroupPath = Paths.getTargetGroupPath({
+      platformProjectRoot,
+      targetName,
+    });
+    File.ensureDirectoryExists(targetGroupPath);
 
     // Copy generated.entitlements from build folder
-    const entitlementsSource = path.join(
-      buildDirectory,
-      'generated.entitlements'
-    );
+    const entitlementsSource = Paths.getGeneratedEntitlementsPath({
+      projectRoot,
+      targetDirectory: props.directory,
+    });
     const entitlementsDest = path.join(
       targetGroupPath,
       'generated.entitlements'
     );
-    if (fs.existsSync(entitlementsSource)) {
-      fs.copyFileSync(entitlementsSource, entitlementsDest);
+    if (File.isFile(entitlementsSource)) {
+      File.copyFileSafe(entitlementsSource, entitlementsDest);
       console.log(
         `[expo-targets] Copied generated.entitlements to ${targetProductName}/`
       );
     }
 
+    const targetDirectory = Paths.getTargetDirectory({
+      projectRoot,
+      targetDirectory: props.directory,
+    });
     const swiftFiles = globSync('**/*.swift', {
       cwd: targetDirectory,
       absolute: false,
@@ -349,17 +321,13 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     );
 
     // Ensure group exists for the target
-    IOSConfig.XcodeUtils.ensureGroupRecursively(
-      xcodeProject,
-      targetProductName
-    );
+    Xcode.ensureGroupRecursively(xcodeProject, targetProductName);
     console.log(`[expo-targets] Ensured group exists: ${targetProductName}`);
 
     // Copy and add Info.plist from build folder
-    const infoPlistSource = path.join(buildDirectory, 'Info.plist');
     const infoPlistDest = path.join(targetGroupPath, 'Info.plist');
-    if (fs.existsSync(infoPlistSource)) {
-      fs.copyFileSync(infoPlistSource, infoPlistDest);
+    if (File.isFile(infoPlistPath)) {
+      File.copyFileSafe(infoPlistPath, infoPlistDest);
       console.log(`[expo-targets] Copied Info.plist to ${targetProductName}/`);
 
       // Manually add Info.plist to avoid addResourceFile's "Resources" group requirement
@@ -371,15 +339,12 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       const sourceFile = path.join(targetDirectory, file);
       const destFile = path.join(targetGroupPath, path.basename(file));
 
-      fs.copyFileSync(sourceFile, destFile);
+      File.copyFileSafe(sourceFile, destFile);
       console.log(`[expo-targets]   Copied: ${file} -> ${targetProductName}/`);
 
       // Add the file to the target's Sources build phase
-      const relativePath = path.relative(
-        config.modRequest.platformProjectRoot,
-        destFile
-      );
-      IOSConfig.XcodeUtils.addBuildSourceFileToGroup({
+      const relativePath = path.relative(platformProjectRoot, destFile);
+      Xcode.addBuildSourceFileToGroup({
         filepath: relativePath,
         groupName: targetProductName,
         project: xcodeProject,
@@ -406,179 +371,29 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     // Add target dependency for app extensions and clips
     console.log(`[expo-targets] Adding target dependency to main app`);
 
-    // Ensure PBXTargetDependency and PBXContainerItemProxy sections exist
-    // The xcode library's addTargetDependency method fails silently if these don't exist
-    if (!xcodeProject.hash.project.objects['PBXTargetDependency']) {
-      xcodeProject.hash.project.objects['PBXTargetDependency'] = {};
-      console.log(`[expo-targets] Created PBXTargetDependency section`);
-    }
-    if (!xcodeProject.hash.project.objects['PBXContainerItemProxy']) {
-      xcodeProject.hash.project.objects['PBXContainerItemProxy'] = {};
-      console.log(`[expo-targets] Created PBXContainerItemProxy section`);
-    }
-
-    xcodeProject.addTargetDependency(mainTarget.uuid, [target.uuid]);
+    Xcode.addTargetDependency({
+      project: xcodeProject,
+      mainTargetUuid: mainTarget.uuid,
+      dependentTargetUuid: target.uuid,
+    });
 
     // App Clips and Extensions need different embed settings
     if (props.type !== 'clip') {
-      // The addTarget function creates a "Copy Files" phase but doesn't add proper settings
-      // We need to add RemoveHeadersOnCopy attribute to the PBXBuildFile
       console.log(
         `[expo-targets] Configuring "Embed App Extensions" build phase`
       );
-
-      const buildFileSection = xcodeProject.hash.project.objects.PBXBuildFile;
-      const fileRefSection = xcodeProject.hash.project.objects.PBXFileReference;
-
-      // Find the PBXBuildFile that references our extension and add settings
-      let foundBuildFile = false;
-      for (const buildFileKey in buildFileSection) {
-        if (buildFileKey.endsWith('_comment')) continue;
-
-        const buildFile = buildFileSection[buildFileKey];
-        if (buildFile && buildFile.fileRef) {
-          const fileRef = fileRefSection[buildFile.fileRef];
-          // Check both path and name properties, and handle quoted values
-          const refPath = fileRef?.path?.replace(/"/g, '');
-          const refName = fileRef?.name?.replace(/"/g, '');
-          const targetFileName = `${targetProductName}.appex`;
-
-          if (refPath === targetFileName || refName === targetFileName) {
-            // Add the required settings for app extension embedding
-            buildFile.settings = {
-              ATTRIBUTES: ['RemoveHeadersOnCopy'],
-            };
-            console.log(
-              `[expo-targets] Added RemoveHeadersOnCopy attribute to ${targetProductName}.appex`
-            );
-            foundBuildFile = true;
-            break;
-          }
-        }
-      }
-
-      if (!foundBuildFile) {
-        console.log(
-          `[expo-targets] Warning: Could not find PBXBuildFile for ${targetProductName}.appex`
-        );
-      }
-
-      // Rename the Copy Files phase to "Embed App Extensions"
-      const copyFilesPhases =
-        xcodeProject.hash.project.objects.PBXCopyFilesBuildPhase;
-
-      for (const phaseKey in copyFilesPhases) {
-        if (phaseKey.endsWith('_comment')) continue;
-
-        const phase = copyFilesPhases[phaseKey];
-        if (phase && phase.dstSubfolderSpec === 13 && phase.files) {
-          // Check if this phase contains our extension
-          const hasOurExtension = phase.files.some((file: any) => {
-            const buildFileKey = file.value;
-            const buildFile = buildFileSection?.[buildFileKey];
-            if (buildFile) {
-              const fileRef = fileRefSection?.[buildFile.fileRef];
-              if (fileRef && fileRef.path === `${targetProductName}.appex`) {
-                return true;
-              }
-            }
-            return false;
-          });
-
-          if (hasOurExtension) {
-            const commentKey = `${phaseKey}_comment`;
-            copyFilesPhases[commentKey] = 'Embed App Extensions';
-            phase.name = '"Embed App Extensions"';
-            console.log(
-              `[expo-targets] Renamed Copy Files phase to "Embed App Extensions"`
-            );
-            break;
-          }
-        }
-      }
+      Xcode.configureAppExtensionEmbed({
+        project: xcodeProject,
+        targetProductName,
+      });
     } else {
-      // App Clips embedding - manually create Copy Files phase
       console.log(`[expo-targets] Creating "Embed App Clips" build phase`);
-
-      // Get the App Clip product reference from the target
-      const appClipFileRef =
-        target.pbxNativeTarget?.productReference ||
-        target.target?.productReference;
-
-      if (!appClipFileRef) {
-        console.log(
-          `[expo-targets] Error: Could not find product reference for ${targetProductName}.app`
-        );
-      } else {
-        // Create Copy Files build phase manually
-        const embedPhaseResult = xcodeProject.addBuildPhase(
-          [],
-          'PBXCopyFilesBuildPhase',
-          'Embed App Clips',
-          mainTarget.uuid
-        );
-
-        const embedPhaseUuid = embedPhaseResult?.uuid || embedPhaseResult;
-
-        console.log(
-          `[expo-targets] addBuildPhase returned UUID: ${embedPhaseUuid}`
-        );
-
-        if (embedPhaseUuid) {
-          const copyFilesPhases =
-            xcodeProject.hash.project.objects.PBXCopyFilesBuildPhase;
-          const phase = copyFilesPhases[embedPhaseUuid];
-
-          if (phase) {
-            console.log(`[expo-targets] Found phase object, configuring...`);
-
-            // Configure phase for App Clips
-            // dstSubfolderSpec = 1 means "wrapper" (inside the app bundle)
-            // dstPath = "AppClips" specifies the AppClips subfolder
-            phase.dstPath = '"$(CONTENTS_FOLDER_PATH)/AppClips"';
-            phase.dstSubfolderSpec = 16;
-            phase.name = '"Embed App Clips"';
-
-            // Create a PBXBuildFile for the App Clip manually
-            const buildFileUuid = xcodeProject.generateUuid();
-
-            const buildFileSection =
-              xcodeProject.hash.project.objects.PBXBuildFile;
-            buildFileSection[buildFileUuid] = {
-              isa: 'PBXBuildFile',
-              fileRef: appClipFileRef,
-              settings: {
-                ATTRIBUTES: ['RemoveHeadersOnCopy'],
-              },
-            };
-            buildFileSection[`${buildFileUuid}_comment`] =
-              `${targetProductName}.app in Embed App Clips`;
-
-            console.log(
-              `[expo-targets] Created build file UUID: ${buildFileUuid}`
-            );
-
-            // Add the build file to the phase
-            if (!phase.files) {
-              phase.files = [];
-            }
-            phase.files.push({
-              value: buildFileUuid,
-              comment: `${targetProductName}.app in Embed App Clips`,
-            });
-
-            console.log(
-              `[expo-targets] Created "Embed App Clips" build phase with ${targetProductName}.app`
-            );
-          } else {
-            console.log(
-              `[expo-targets] Could not find phase object for UUID: ${embedPhaseUuid}`
-            );
-          }
-        } else {
-          console.log(`[expo-targets] addBuildPhase returned no UUID`);
-        }
-      }
+      Xcode.configureAppClipEmbed({
+        project: xcodeProject,
+        mainTargetUuid: mainTarget.uuid,
+        target,
+        targetProductName,
+      });
     }
 
     console.log(`[expo-targets] Successfully configured ${targetName} target`);

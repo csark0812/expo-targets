@@ -3,7 +3,7 @@ import fs from 'fs';
 import { globSync } from 'glob';
 import path from 'path';
 
-import { withIOSTarget } from './ios/withIOSTarget';
+import { withIOSTarget } from './ios/config-plugins/withIOSTarget';
 import { parseTargetConfigFromFile } from './parseTargetConfig';
 
 export const withTargetsDir: ConfigPlugin<{
