@@ -13,12 +13,13 @@ export interface WeatherData {
 
 // Update weather data
 export const updateWeather = async (data: WeatherData) => {
-  await weatherWidget.setData('weather', data);
+  await weatherWidget.set('weather', data);
 };
 
 // Get current weather data
 export const getWeatherData = async (): Promise<WeatherData | null> => {
-  return await weatherWidget.getData('weather');
+  const data = weatherWidget.get('weather');
+  return data ? JSON.parse(data) : null;
 };
 
 // Clear weather data
