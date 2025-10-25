@@ -1,13 +1,13 @@
 export {
   AppGroupStorage,
   TargetStorage,
-  defineTarget,
+  createTarget,
   refreshAllTargets,
   close,
   openHostApp,
   clearSharedData,
 } from './TargetStorage';
-export type { Target, DefineTargetOptions } from './TargetStorage';
+export type { Target } from './TargetStorage';
 export type {
   TargetConfig,
   IOSTargetConfig,

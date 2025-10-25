@@ -1,5 +1,9 @@
 import { IOSConfig } from '@expo/config-plugins';
 import type { XcodeProject } from '@expo/config-plugins';
+import path from 'path';
+
+import * as File from './file';
+import * as Paths from './paths';
 
 /**
  * High-level utilities for Xcode project manipulation in expo-targets.
@@ -360,4 +364,62 @@ export function findTargetByProductName({
   }
 
   return undefined;
+}
+
+/**
+ * Add Assets.xcassets to a target's Resources build phase.
+ * Copies Assets.xcassets from build directory and adds it to the Xcode project.
+ */
+export function addTargetAssets({
+  projectRoot,
+  platformProjectRoot,
+  targetName,
+  targetDirectory,
+  targetUuid,
+  xcodeProject,
+}: {
+  projectRoot: string;
+  platformProjectRoot: string;
+  targetName: string;
+  targetDirectory: string;
+  targetUuid: string;
+  xcodeProject: any;
+}): void {
+  const targetProductName = Paths.sanitizeTargetName(targetName);
+  const targetGroupPath = Paths.getTargetGroupPath({
+    platformProjectRoot,
+    targetName,
+  });
+
+  // Copy Assets.xcassets if it exists
+  const assetsSource = Paths.getAssetsXcassetsPath({
+    projectRoot,
+    targetDirectory,
+  });
+  const assetsDest = path.join(targetGroupPath, 'Assets.xcassets');
+
+  if (File.isDirectory(assetsSource)) {
+    console.log(
+      `[expo-targets] Found Assets.xcassets, copying and adding to ${targetProductName}...`
+    );
+
+    // Copy the entire Assets.xcassets folder
+    File.copyDirectorySafe(assetsSource, assetsDest);
+
+    // Add Assets.xcassets as a resource file
+    const relativePath = path.relative(platformProjectRoot, assetsDest);
+
+    addResourceFileToGroup({
+      filepath: relativePath,
+      groupName: targetProductName,
+      project: xcodeProject,
+      isBuildFile: true,
+      verbose: true,
+      targetUuid,
+    });
+
+    console.log(
+      `[expo-targets] ✓ Added Assets.xcassets to ${targetProductName} Resources build phase`
+    );
+  }
 }

@@ -52,6 +52,29 @@ export const TYPE_MINIMUM_DEPLOYMENT_TARGETS: Record<ExtensionType, string> = {
   watch: '2.0',
 };
 
+export const TYPE_BUNDLE_IDENTIFIER_SUFFIXES: Record<ExtensionType, string> = {
+  widget: 'widget',
+  clip: 'clip',
+  imessage: 'imessage',
+  share: 'share',
+  action: 'action',
+  safari: 'safari',
+  'notification-content': 'notification-content',
+  'notification-service': 'notification-service',
+  intent: 'intent',
+  'intent-ui': 'intent-ui',
+  spotlight: 'spotlight',
+  'bg-download': 'bg-download',
+  'quicklook-thumbnail': 'quicklook-thumbnail',
+  'location-push': 'location-push',
+  'credentials-provider': 'credentials-provider',
+  'account-auth': 'account-auth',
+  'app-intent': 'app-intent',
+  'device-activity-monitor': 'device-activity-monitor',
+  matter: 'matter',
+  watch: 'watch',
+};
+
 // Base configuration shared by all iOS targets
 interface BaseIOSTargetConfig {
   icon?: string;

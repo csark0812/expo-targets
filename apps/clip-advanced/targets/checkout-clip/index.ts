@@ -1,28 +1,7 @@
-import { defineTarget } from 'expo-targets';
+import { createTarget } from 'expo-targets';
 
-export const checkoutClip = defineTarget({
-  type: 'clip',
-  name: 'CheckoutClip',
-  displayName: 'Quick Checkout',
-  platforms: ['ios'],
-  appGroup: 'group.com.test.clipadvanced',
-  ios: {
-    deploymentTarget: '17.0',
-    bundleIdentifier: 'com.test.clipadvanced.clip',
-    displayName: 'Quick Checkout',
-    colors: {
-      AccentColor: { light: '#007AFF', dark: '#0A84FF' },
-      BackgroundColor: { light: '#FFFFFF', dark: '#000000' },
-      PrimaryText: { light: '#000000', dark: '#FFFFFF' },
-    },
-    entitlements: {
-      'com.apple.developer.associated-domains': [
-        'appclips:clipadvanced.example.com',
-      ],
-      'com.apple.developer.on-demand-install-capable': true,
-    },
-  },
-});
+// Name from expo-target.config.ts
+export const checkoutClip = createTarget('CheckoutClip');
 
 // Store data that can be accessed from the clip
 export const storeCheckoutData = async (itemId: string, price: number) => {

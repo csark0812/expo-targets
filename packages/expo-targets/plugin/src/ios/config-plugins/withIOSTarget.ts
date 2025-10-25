@@ -3,7 +3,6 @@ import { ConfigPlugin } from '@expo/config-plugins';
 import { withTargetEntitlements } from './withEntitlements';
 import { withIosColorset } from './withIosColorset';
 import { withTargetPodfile } from './withPodfile';
-import { withTargetAssets } from './withTargetAssets';
 import { withXcodeChanges } from './withXcodeChanges';
 import {
   TYPE_MINIMUM_DEPLOYMENT_TARGETS,
@@ -158,11 +157,8 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
       }
     });
 
-    // Copy Assets.xcassets to Xcode project after all colorsets are created
-    config = withTargetAssets(config, {
-      targetName,
-      targetDirectory: props.directory,
-    });
+    // Note: Assets.xcassets is copied and added in withXcodeChanges where we have direct access to target.uuid
+    // This avoids plugin execution order issues
   }
 
   return config;

@@ -6,6 +6,7 @@ import type {
   ExtensionType,
   IOSTargetConfigWithReactNative,
 } from '../../config';
+import { TYPE_BUNDLE_IDENTIFIER_SUFFIXES } from '../../config';
 import {
   productTypeForType,
   getFrameworksForType,
@@ -38,8 +39,10 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       throw new Error('iOS bundle identifier not found in app.json');
     }
 
-    // Sanitize target name for bundle identifier (no hyphens or special chars)
-    const bundleIdentifierSuffix = Paths.sanitizeTargetName(props.name);
+    // Use type-specific suffix, falling back to sanitized target name if not in map
+    const bundleIdentifierSuffix =
+      TYPE_BUNDLE_IDENTIFIER_SUFFIXES[props.type] ||
+      Paths.sanitizeTargetName(props.name);
     const bundleIdentifier =
       props.bundleIdentifier || `${mainBundleId}.${bundleIdentifierSuffix}`;
     const deploymentTarget = props.deploymentTarget || '18.0';
@@ -354,6 +357,16 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       console.log(
         `[expo-targets]   Added to build phase: ${path.basename(file)}`
       );
+    });
+
+    // Add Assets.xcassets if it exists
+    Xcode.addTargetAssets({
+      projectRoot,
+      platformProjectRoot,
+      targetName,
+      targetDirectory: props.directory,
+      targetUuid: target.uuid,
+      xcodeProject,
     });
 
     // Add Info.plist reference via build settings

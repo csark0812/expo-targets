@@ -39,6 +39,7 @@ export function mergeAppClipEntitlements(
     'com.apple.developer.parent-application-identifiers': [
       `$(AppIdentifierPrefix)${mainBundleIdentifier}`,
     ],
+    'com.apple.developer.on-demand-install-capable': true,
   };
 }
 

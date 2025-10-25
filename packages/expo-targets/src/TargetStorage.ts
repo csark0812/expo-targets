@@ -66,21 +66,38 @@ export interface Target {
   refresh(): void;
 }
 
-export type DefineTargetOptions = TargetConfig;
+/**
+ * Creates a target by name. Config is handled at build time by expo-target.config file.
+ * This follows the Expo Modules pattern: just like requireNativeModule('Name').
+ *
+ * The expo-target.config file is used at BUILD TIME by the config plugin.
+ * At runtime, just pass the target name - appGroup is auto-detected.
+ *
+ * @param name - The target name (must match the 'name' in expo-target.config)
+ *
+ * @example
+ * // targets/my-widget/index.ts
+ * import { createTarget } from 'expo-targets';
+ *
+ * // Just the name - exactly like requireNativeModule('Name')
+ * export const myWidget = createTarget('MyWidget');
+ */
+export function createTarget(name: string): Target {
+  // Auto-detect appGroup from multiple sources
+  let appGroup: string | undefined;
 
-export function defineTarget(options: DefineTargetOptions): Target {
-  // Validate required fields at runtime
-  if (!options.name) {
-    throw new Error(
-      `defineTarget() requires 'name' to be specified. Please add 'name' property to your defineTarget() configuration.`
+  // 1. Try to get from target-specific config (injected by config plugin)
+  const targetMetadata = (Constants.expoConfig?.extra as any)?.expoTargets?.[
+    name
+  ];
+  if (targetMetadata?.appGroup) {
+    appGroup = targetMetadata.appGroup;
+    console.log(
+      `[expo-targets] Using App Group from ${name} config: ${appGroup}`
     );
   }
-
-  const name = options.name;
-
-  // Try to inherit appGroup from expo config if not provided
-  let appGroup = options.appGroup;
-  if (!appGroup) {
+  // 2. Fallback to main app entitlements
+  else {
     const appGroups =
       Constants.expoConfig?.ios?.entitlements?.[
         'com.apple.security.application-groups'
@@ -88,7 +105,7 @@ export function defineTarget(options: DefineTargetOptions): Target {
     if (Array.isArray(appGroups) && appGroups.length > 0) {
       appGroup = appGroups[0];
       console.log(
-        `[expo-targets] Inherited App Group from config: ${appGroup}`
+        `[expo-targets] Using App Group from main app entitlements: ${appGroup}`
       );
     }
   }
@@ -97,7 +114,7 @@ export function defineTarget(options: DefineTargetOptions): Target {
     if (!appGroup) {
       throw new Error(
         `Cannot use storage: appGroup not configured. ` +
-          `Add 'appGroup' to defineTarget() or ensure App Groups are configured in app.json`
+          `Ensure App Groups are configured in app.json under ios.entitlements`
       );
     }
   };
