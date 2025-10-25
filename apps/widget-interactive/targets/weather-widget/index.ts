@@ -1,26 +1,6 @@
-import { defineTarget } from 'expo-targets';
+import { createTarget } from 'expo-targets';
 
-export const weatherWidget = defineTarget({
-  type: 'widget',
-  name: 'WeatherWidget',
-  displayName: 'Weather',
-  platforms: ['ios'],
-  appGroup: 'group.com.test.widgetinteractive',
-  ios: {
-    deploymentTarget: '17.0',
-    bundleIdentifier: 'com.test.widgetinteractive.weather',
-    displayName: 'Weather Widget',
-    colors: {
-      AccentColor: { light: '#007AFF', dark: '#0A84FF' },
-      SunnyColor: { light: '#FFB800', dark: '#FFD60A' },
-      CloudyColor: { light: '#8E8E93', dark: '#98989D' },
-      RainyColor: { light: '#5AC8FA', dark: '#64D2FF' },
-      BackgroundColor: { light: '#FFFFFF', dark: '#1C1C1E' },
-      TextPrimary: { light: '#000000', dark: '#FFFFFF' },
-      TextSecondary: { light: '#666666', dark: '#98989D' },
-    },
-  },
-});
+export const weatherWidget = createTarget('WeatherWidget');
 
 export interface WeatherData {
   temperature: number;

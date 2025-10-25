@@ -1,25 +1,7 @@
-import { defineTarget } from 'expo-targets';
+import { createTarget } from 'expo-targets';
 import type { Task, TasksData } from '../utils';
 
-export const taskWidget = defineTarget({
-  type: 'widget',
-  name: 'TaskWidget',
-  displayName: 'Tasks',
-  platforms: ['ios'],
-  appGroup: 'group.com.test.multitarget',
-  ios: {
-    deploymentTarget: '17.0',
-    bundleIdentifier: 'com.test.multitarget.widget',
-    displayName: 'Task Widget',
-    colors: {
-      AccentColor: { light: '#007AFF', dark: '#0A84FF' },
-      SuccessColor: { light: '#34C759', dark: '#30D158' },
-      BackgroundColor: { light: '#FFFFFF', dark: '#1C1C1E' },
-      TextPrimary: { light: '#000000', dark: '#FFFFFF' },
-      TextSecondary: { light: '#666666', dark: '#98989D' },
-    },
-  },
-});
+export const taskWidget = createTarget('TaskWidget');
 
 // Add task
 export const addTask = async (text: string): Promise<Task> => {

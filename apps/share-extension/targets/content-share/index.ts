@@ -1,26 +1,6 @@
-import { defineTarget } from 'expo-targets';
+import { createTarget } from 'expo-targets';
 
-export const contentShare = defineTarget({
-  type: 'share',
-  name: 'ContentShare',
-  displayName: 'Share to App',
-  platforms: ['ios'],
-  appGroup: 'group.com.test.shareextension',
-  ios: {
-    deploymentTarget: '17.0',
-    bundleIdentifier: 'com.test.shareextension.share',
-    displayName: 'Share Extension',
-    colors: {
-      AccentColor: { light: '#007AFF', dark: '#0A84FF' },
-      BackgroundColor: { light: '#FFFFFF', dark: '#1C1C1E' },
-    },
-    entitlements: {
-      'com.apple.security.application-groups': [
-        'group.com.test.shareextension',
-      ],
-    },
-  },
-});
+export const contentShare = createTarget('ContentShare');
 
 interface SharedItemsData {
   items: Array<{

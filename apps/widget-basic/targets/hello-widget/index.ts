@@ -1,16 +1,6 @@
-import { defineTarget } from 'expo-targets';
+import { createTarget } from 'expo-targets';
 
-export const HelloWidget = defineTarget({
-  name: 'hello-widget',
-  type: 'widget',
-  displayName: 'Hello Widget',
-  platforms: ['ios'],
-  ios: {
-    colors: {
-      $widgetBackground: { light: '#F2F2F7', dark: '#1C1C1E' },
-    },
-  },
-});
+export const HelloWidget = createTarget('hello-widget');
 
 export type HelloWidgetData = {
   message: string;

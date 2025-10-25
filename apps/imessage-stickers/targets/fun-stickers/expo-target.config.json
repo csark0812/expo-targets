@@ -1,0 +1,12 @@
+{
+  "type": "imessage",
+  "name": "FunStickers",
+  "displayName": "Fun Stickers",
+  "platforms": ["ios"],
+  "ios": {
+    "deploymentTarget": "17.0",
+    "bundleIdentifier": "com.test.imessagestickers.stickers",
+    "displayName": "Fun Stickers"
+  }
+}
+

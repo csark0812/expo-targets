@@ -1,0 +1,13 @@
+{
+  "name": "hello-widget",
+  "type": "widget",
+  "displayName": "Hello Widget",
+  "platforms": ["ios"],
+  "appGroup": "group.com.test.widgetbasic",
+  "ios": {
+    "colors": {
+      "$widgetBackground": { "light": "#F2F2F7", "dark": "#1C1C1E" }
+    }
+  }
+}
+

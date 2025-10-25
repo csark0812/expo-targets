@@ -1,16 +1,6 @@
-import { defineTarget } from 'expo-targets';
+import { createTarget } from 'expo-targets';
 
-export const funStickers = defineTarget({
-  type: 'imessage',
-  name: 'FunStickers',
-  displayName: 'Fun Stickers',
-  platforms: ['ios'],
-  ios: {
-    deploymentTarget: '17.0',
-    bundleIdentifier: 'com.test.imessagestickers.stickers',
-    displayName: 'Fun Stickers',
-  },
-});
+export const funStickers = createTarget('FunStickers');
 
 // Track sticker usage
 export const trackStickerUsage = async (stickerName: string) => {
