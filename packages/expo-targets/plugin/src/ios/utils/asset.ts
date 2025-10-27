@@ -138,3 +138,35 @@ export function createAssetsXcassetsRoot(assetsPath: string): void {
     JSON.stringify(contentsJson, null, 2)
   );
 }
+
+/**
+ * Create a sticker pack in Assets.xcassets.
+ */
+export function createStickerPack({
+  stickerPackPath,
+  name,
+  assets,
+}: {
+  stickerPackPath: string;
+  name: string;
+  assets: string[];
+}): void {
+  FileUtils.ensureDirectoryExists(stickerPackPath);
+
+  const stickers = assets.map((asset) => ({
+    filename: path.basename(asset),
+  }));
+
+  const contentsJson = {
+    properties: {
+      'grid-size': 'regular',
+    },
+    stickers,
+    info: { author: 'xcode', version: 1 },
+  };
+
+  FileUtils.writeFileSafe(
+    path.join(stickerPackPath, 'Contents.json'),
+    JSON.stringify(contentsJson, null, 2)
+  );
+}

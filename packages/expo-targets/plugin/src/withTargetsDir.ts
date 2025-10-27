@@ -57,28 +57,14 @@ export const withTargetsDir: ConfigPlugin<{
       appGroup: evaluatedConfig.appGroup,
     };
 
-    const hasIOS = fs.existsSync(path.join(path.dirname(targetPath), 'ios'));
-    const hasAndroid = fs.existsSync(
-      path.join(path.dirname(targetPath), 'android')
-    );
+    const supportsIOS = evaluatedConfig.platforms.includes('ios');
+    const supportsAndroid = evaluatedConfig.platforms.includes('android');
 
     console.log(
-      `[expo-targets] ${targetDirName}: iOS=${hasIOS}, Android=${hasAndroid}`
+      `[expo-targets] ${targetDirName}: iOS=${supportsIOS}, Android=${supportsAndroid}`
     );
 
-    // Validate platforms array matches actual directories
-    if (hasIOS && !evaluatedConfig.platforms.includes('ios')) {
-      console.warn(
-        `[expo-targets] iOS directory exists but 'ios' not in platforms array for ${targetDirName}`
-      );
-    }
-    if (hasAndroid && !evaluatedConfig.platforms.includes('android')) {
-      console.warn(
-        `[expo-targets] Android directory exists but 'android' not in platforms array for ${targetDirName}`
-      );
-    }
-
-    if (hasIOS && evaluatedConfig.ios) {
+    if (supportsIOS && evaluatedConfig.ios) {
       config = withIOSTarget(config, {
         ...evaluatedConfig.ios,
         type: evaluatedConfig.type,
@@ -90,7 +76,7 @@ export const withTargetsDir: ConfigPlugin<{
       });
     }
 
-    if (hasAndroid && evaluatedConfig.android) {
+    if (supportsAndroid && evaluatedConfig.android) {
       console.warn(
         `[expo-targets] Android support not yet implemented for ${targetDirName}`
       );

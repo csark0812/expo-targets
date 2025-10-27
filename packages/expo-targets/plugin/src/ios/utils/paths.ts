@@ -104,3 +104,21 @@ export function getColorsetPath({
     `${colorName}.colorset`
   );
 }
+
+/**
+ * Get path to a specific sticker pack in Xcode project.
+ */
+export function getStickerPackPath({
+  platformProjectRoot,
+  targetName,
+  stickerPackName,
+}: {
+  platformProjectRoot: string;
+  targetName: string;
+  stickerPackName: string;
+}): string {
+  return path.join(
+    getAssetsXcassetsPath({ platformProjectRoot, targetName }),
+    `${stickerPackName}.stickerpack`
+  );
+}

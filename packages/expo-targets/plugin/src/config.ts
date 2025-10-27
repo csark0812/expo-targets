@@ -3,7 +3,7 @@ import type { ExpoConfig } from '@expo/config-types';
 export type ExtensionType =
   | 'widget'
   | 'clip'
-  | 'imessage'
+  | 'stickers'
   | 'share'
   | 'action'
   | 'safari'
@@ -29,10 +29,15 @@ export interface Color {
   darkColor?: string;
 }
 
+export interface StickerPack {
+  name: string;
+  assets: string[];
+}
+
 export const TYPE_MINIMUM_DEPLOYMENT_TARGETS: Record<ExtensionType, string> = {
   widget: '14.0',
   clip: '14.0',
-  imessage: '10.0',
+  stickers: '10.0',
   share: '8.0',
   action: '8.0',
   'notification-content': '10.0',
@@ -55,7 +60,7 @@ export const TYPE_MINIMUM_DEPLOYMENT_TARGETS: Record<ExtensionType, string> = {
 export const TYPE_BUNDLE_IDENTIFIER_SUFFIXES: Record<ExtensionType, string> = {
   widget: 'widget',
   clip: 'clip',
-  imessage: 'imessage',
+  stickers: 'stickers',
   share: 'share',
   action: 'action',
   safari: 'safari',
@@ -83,6 +88,7 @@ interface BaseIOSTargetConfig {
   displayName?: string;
   colors?: Record<string, string | Color>;
   images?: Record<string, string>;
+  stickerPacks?: StickerPack[];
   frameworks?: string[];
   entitlements?: Record<string, any>;
   infoPlist?: Record<string, any>;

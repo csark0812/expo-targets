@@ -2,6 +2,7 @@ import { ConfigPlugin } from '@expo/config-plugins';
 
 import { withTargetEntitlements } from './withEntitlements';
 import { withIosColorset } from './withIosColorset';
+import { withIosStickerPack } from './withIosStickerPack';
 import { withTargetPodfile } from './withPodfile';
 import { withXcodeChanges } from './withXcodeChanges';
 import {
@@ -9,6 +10,7 @@ import {
   type ExtensionType,
   type IOSTargetConfigWithReactNative,
   type Color,
+  type StickerPack,
 } from '../../config';
 
 interface IOSTargetProps extends IOSTargetConfigWithReactNative {
@@ -158,6 +160,17 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
 
     // Note: Assets.xcassets is added in withXcodeChanges where we have direct access to target.uuid
     // This avoids plugin execution order issues
+  }
+
+  if (props.stickerPacks && props.stickerPacks.length > 0) {
+    props.stickerPacks.forEach((stickerPack: StickerPack) => {
+      config = withIosStickerPack(config, {
+        name: stickerPack.name,
+        assets: stickerPack.assets,
+        targetName,
+        targetDirectory: props.directory,
+      });
+    });
   }
 
   return config;

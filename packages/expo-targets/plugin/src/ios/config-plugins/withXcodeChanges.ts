@@ -103,12 +103,12 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       throw new Error(`Target created but has no UUID: ${targetName}`);
     }
 
-    // Fix product type for App Clips
-    // addTarget creates a regular application, but App Clips need special product type
-    if (props.type === 'clip') {
+    // Fix product type for App Clips and iMessage Sticker Packs
+    // addTarget creates a regular application/extension, but some types need special product types
+    if (props.type === 'clip' || props.type === 'stickers') {
       Xcode.setProductType({ target, productType });
       console.log(
-        `[expo-targets] Set product type to ${productType} for App Clip`
+        `[expo-targets] Set product type to ${productType} for ${props.type}`
       );
     }
 

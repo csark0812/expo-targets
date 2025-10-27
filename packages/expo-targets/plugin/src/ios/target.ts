@@ -59,12 +59,16 @@ export function getTargetInfoPlistForType(
       UILaunchStoryboardName: 'SplashScreen',
       UIUserInterfaceStyle: 'Automatic',
     };
-  } else if (type === 'imessage') {
+  } else if (type === 'stickers') {
+    // iMessage Sticker Pack - minimal Info.plist
+    // No executable - sticker packs are asset-only
+    // Assets and sticker metadata are in Assets.xcassets
     basePlist = {
-      NSExtension: {
-        NSExtensionPointIdentifier: 'com.apple.message-payload-provider',
-        NSExtensionPrincipalClass: 'StickerBrowserViewController',
-      },
+      CFBundleName: '$(PRODUCT_NAME)',
+      CFBundleIdentifier: '$(PRODUCT_BUNDLE_IDENTIFIER)',
+      CFBundlePackageType: '$(PRODUCT_BUNDLE_PACKAGE_TYPE)',
+      CFBundleShortVersionString: '1.0',
+      CFBundleVersion: '1',
     };
   } else if (type === 'share') {
     basePlist = {
@@ -98,7 +102,7 @@ export function getFrameworksForType(type: ExtensionType): string[] {
     return ['WidgetKit', 'SwiftUI', 'ActivityKit', 'AppIntents'];
   }
 
-  if (type === 'imessage') {
+  if (type === 'stickers') {
     return ['Messages'];
   }
 
@@ -129,13 +133,16 @@ export function productTypeForType(type: ExtensionType): string {
   if (type === 'app-intent') {
     return 'com.apple.product-type.extensionkit-extension';
   }
+  if (type === 'stickers') {
+    return 'com.apple.product-type.app-extension.messages-sticker-pack';
+  }
   return 'com.apple.product-type.app-extension';
 }
 
 export const EXTENSION_POINT_IDENTIFIERS: Record<ExtensionType, string> = {
   widget: 'com.apple.widgetkit-extension',
-  clip: '',
-  imessage: 'com.apple.message-payload-provider',
+  clip: '', // App Clips are standalone apps, not extensions
+  stickers: '', // Sticker packs are asset-only, no extension point
   share: 'com.apple.share-services',
   action: 'com.apple.services',
   safari: 'com.apple.Safari.web-extension',
@@ -154,7 +161,7 @@ export const EXTENSION_POINT_IDENTIFIERS: Record<ExtensionType, string> = {
   'app-intent': 'com.apple.appintents-extension',
   'device-activity-monitor': 'com.apple.deviceactivity.monitor-extension',
   matter: 'com.apple.matter.support.extension.device-setup',
-  watch: '',
+  watch: '', // Watch apps are standalone apps, not extensions
 };
 
 export const SHOULD_USE_APP_GROUPS_BY_DEFAULT: Record<ExtensionType, boolean> =
@@ -162,7 +169,7 @@ export const SHOULD_USE_APP_GROUPS_BY_DEFAULT: Record<ExtensionType, boolean> =
     widget: true,
     clip: true,
     share: true,
-    imessage: false,
+    stickers: false,
     action: false,
     safari: false,
     'notification-content': false,
