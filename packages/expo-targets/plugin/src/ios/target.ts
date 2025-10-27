@@ -26,69 +26,281 @@ function isObject(item: any): boolean {
   return item && typeof item === 'object' && !Array.isArray(item);
 }
 
+/**
+ * Centralized type characteristics for all extension types.
+ * Use this map to avoid scattered type checks throughout the codebase.
+ */
+interface TypeCharacteristics {
+  requiresCode: boolean; // Needs Swift files, code signing, build settings
+  isStandalone: boolean; // Standalone app (vs extension embedded in main app)
+  frameworks: string[]; // Frameworks to link
+  productType: string; // Xcode product type
+  extensionPointIdentifier: string; // Extension point (empty for standalone)
+  defaultUsesAppGroups: boolean; // Should use app groups by default
+  requiresEntitlements: boolean; // Needs entitlements file
+  basePlist: Record<string, any>; // Base Info.plist structure for this type
+}
+
+export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
+  {
+    widget: {
+      requiresCode: true,
+      isStandalone: false,
+      frameworks: ['WidgetKit', 'SwiftUI', 'ActivityKit', 'AppIntents'],
+      productType: 'com.apple.product-type.app-extension',
+      extensionPointIdentifier: 'com.apple.widgetkit-extension',
+      defaultUsesAppGroups: true,
+      requiresEntitlements: true,
+      basePlist: {
+        CFBundleName: '$(PRODUCT_NAME)',
+        CFBundleIdentifier: '$(PRODUCT_BUNDLE_IDENTIFIER)',
+        CFBundleExecutable: '$(EXECUTABLE_NAME)',
+        CFBundlePackageType: '$(PRODUCT_BUNDLE_PACKAGE_TYPE)',
+        CFBundleShortVersionString: '1.0',
+        CFBundleVersion: '1',
+        NSExtension: {
+          NSExtensionPointIdentifier: 'com.apple.widgetkit-extension',
+        },
+      },
+    },
+    clip: {
+      requiresCode: true,
+      isStandalone: true,
+      frameworks: [], // SwiftUI auto-linked
+      productType:
+        'com.apple.product-type.application.on-demand-install-capable',
+      extensionPointIdentifier: '',
+      defaultUsesAppGroups: true,
+      requiresEntitlements: true,
+      basePlist: {
+        CFBundleName: '$(PRODUCT_NAME)',
+        CFBundleIdentifier: '$(PRODUCT_BUNDLE_IDENTIFIER)',
+        CFBundleExecutable: '$(EXECUTABLE_NAME)',
+        CFBundlePackageType: '$(PRODUCT_BUNDLE_PACKAGE_TYPE)',
+        CFBundleShortVersionString: '$(MARKETING_VERSION)',
+        UIApplicationSupportsIndirectInputEvents: true,
+        NSAppClip: {
+          NSAppClipRequestEphemeralUserNotification: false,
+          NSAppClipRequestLocationConfirmation: false,
+        },
+        UILaunchStoryboardName: 'SplashScreen',
+        UIUserInterfaceStyle: 'Automatic',
+      },
+    },
+    stickers: {
+      requiresCode: false, // Asset-only
+      isStandalone: false,
+      frameworks: [],
+      productType: 'com.apple.product-type.app-extension.messages-sticker-pack',
+      extensionPointIdentifier: '',
+      defaultUsesAppGroups: false,
+      requiresEntitlements: false,
+      basePlist: {
+        CFBundleName: '$(PRODUCT_NAME)',
+        CFBundleIdentifier: '$(PRODUCT_BUNDLE_IDENTIFIER)',
+        CFBundlePackageType: '$(PRODUCT_BUNDLE_PACKAGE_TYPE)',
+        CFBundleShortVersionString: '1.0',
+        CFBundleVersion: '1',
+      },
+    },
+    share: {
+      requiresCode: true,
+      isStandalone: false,
+      frameworks: ['Social', 'MobileCoreServices'],
+      productType: 'com.apple.product-type.app-extension',
+      extensionPointIdentifier: 'com.apple.share-services',
+      defaultUsesAppGroups: true,
+      requiresEntitlements: true,
+      basePlist: {
+        NSExtension: {
+          NSExtensionPointIdentifier: 'com.apple.share-services',
+          NSExtensionMainStoryboard: 'MainInterface',
+          NSExtensionActivationRule: 'TRUEPREDICATE',
+        },
+      },
+    },
+    action: {
+      requiresCode: true,
+      isStandalone: false,
+      frameworks: [],
+      productType: 'com.apple.product-type.app-extension',
+      extensionPointIdentifier: 'com.apple.services',
+      defaultUsesAppGroups: false,
+      requiresEntitlements: true,
+      basePlist: {
+        NSExtension: {
+          NSExtensionPointIdentifier: 'com.apple.services',
+          NSExtensionMainStoryboard: 'MainInterface',
+          NSExtensionActivationRule: 'TRUEPREDICATE',
+        },
+      },
+    },
+    safari: {
+      requiresCode: true,
+      isStandalone: false,
+      frameworks: [],
+      productType: 'com.apple.product-type.app-extension',
+      extensionPointIdentifier: 'com.apple.Safari.web-extension',
+      defaultUsesAppGroups: false,
+      requiresEntitlements: true,
+      basePlist: {},
+    },
+    'notification-content': {
+      requiresCode: true,
+      isStandalone: false,
+      frameworks: [],
+      productType: 'com.apple.product-type.app-extension',
+      extensionPointIdentifier: 'com.apple.usernotifications.content-extension',
+      defaultUsesAppGroups: false,
+      requiresEntitlements: true,
+      basePlist: {},
+    },
+    'notification-service': {
+      requiresCode: true,
+      isStandalone: false,
+      frameworks: [],
+      productType: 'com.apple.product-type.app-extension',
+      extensionPointIdentifier: 'com.apple.usernotifications.service',
+      defaultUsesAppGroups: false,
+      requiresEntitlements: true,
+      basePlist: {},
+    },
+    intent: {
+      requiresCode: true,
+      isStandalone: false,
+      frameworks: [],
+      productType: 'com.apple.product-type.app-extension',
+      extensionPointIdentifier: 'com.apple.intents-service',
+      defaultUsesAppGroups: false,
+      requiresEntitlements: true,
+      basePlist: {},
+    },
+    'intent-ui': {
+      requiresCode: true,
+      isStandalone: false,
+      frameworks: [],
+      productType: 'com.apple.product-type.app-extension',
+      extensionPointIdentifier: 'com.apple.intents-ui-service',
+      defaultUsesAppGroups: false,
+      requiresEntitlements: true,
+      basePlist: {},
+    },
+    spotlight: {
+      requiresCode: true,
+      isStandalone: false,
+      frameworks: [],
+      productType: 'com.apple.product-type.app-extension',
+      extensionPointIdentifier: 'com.apple.spotlight.import',
+      defaultUsesAppGroups: false,
+      requiresEntitlements: true,
+      basePlist: {},
+    },
+    'bg-download': {
+      requiresCode: true,
+      isStandalone: false,
+      frameworks: [],
+      productType: 'com.apple.product-type.app-extension',
+      extensionPointIdentifier:
+        'com.apple.background-asset-downloader-extension',
+      defaultUsesAppGroups: true,
+      requiresEntitlements: true,
+      basePlist: {},
+    },
+    'quicklook-thumbnail': {
+      requiresCode: true,
+      isStandalone: false,
+      frameworks: [],
+      productType: 'com.apple.product-type.app-extension',
+      extensionPointIdentifier: 'com.apple.quicklook.thumbnail',
+      defaultUsesAppGroups: false,
+      requiresEntitlements: true,
+      basePlist: {},
+    },
+    'location-push': {
+      requiresCode: true,
+      isStandalone: false,
+      frameworks: [],
+      productType: 'com.apple.product-type.app-extension',
+      extensionPointIdentifier: 'com.apple.location.push.service',
+      defaultUsesAppGroups: false,
+      requiresEntitlements: true,
+      basePlist: {},
+    },
+    'credentials-provider': {
+      requiresCode: true,
+      isStandalone: false,
+      frameworks: [],
+      productType: 'com.apple.product-type.app-extension',
+      extensionPointIdentifier:
+        'com.apple.authentication-services-credential-provider-ui',
+      defaultUsesAppGroups: false,
+      requiresEntitlements: true,
+      basePlist: {},
+    },
+    'account-auth': {
+      requiresCode: true,
+      isStandalone: false,
+      frameworks: [],
+      productType: 'com.apple.product-type.app-extension',
+      extensionPointIdentifier:
+        'com.apple.authentication-services-account-authentication-modification-ui',
+      defaultUsesAppGroups: false,
+      requiresEntitlements: true,
+      basePlist: {},
+    },
+    'app-intent': {
+      requiresCode: true,
+      isStandalone: false,
+      frameworks: [],
+      productType: 'com.apple.product-type.extensionkit-extension',
+      extensionPointIdentifier: 'com.apple.appintents-extension',
+      defaultUsesAppGroups: false,
+      requiresEntitlements: true,
+      basePlist: {},
+    },
+    'device-activity-monitor': {
+      requiresCode: true,
+      isStandalone: false,
+      frameworks: [],
+      productType: 'com.apple.product-type.app-extension',
+      extensionPointIdentifier: 'com.apple.deviceactivity.monitor-extension',
+      defaultUsesAppGroups: false,
+      requiresEntitlements: true,
+      basePlist: {},
+    },
+    matter: {
+      requiresCode: true,
+      isStandalone: false,
+      frameworks: [],
+      productType: 'com.apple.product-type.app-extension',
+      extensionPointIdentifier:
+        'com.apple.matter.support.extension.device-setup',
+      defaultUsesAppGroups: false,
+      requiresEntitlements: true,
+      basePlist: {},
+    },
+    watch: {
+      requiresCode: true,
+      isStandalone: true,
+      frameworks: [],
+      productType: 'com.apple.product-type.application',
+      extensionPointIdentifier: '',
+      defaultUsesAppGroups: false,
+      requiresEntitlements: true,
+      basePlist: {},
+    },
+  };
+
 export function getTargetInfoPlistForType(
   type: ExtensionType,
   customProperties?: Record<string, any>
 ): string {
-  let basePlist: Record<string, any>;
-
-  if (type === 'widget') {
-    basePlist = {
-      CFBundleName: '$(PRODUCT_NAME)',
-      CFBundleIdentifier: '$(PRODUCT_BUNDLE_IDENTIFIER)',
-      CFBundleExecutable: '$(EXECUTABLE_NAME)',
-      CFBundlePackageType: '$(PRODUCT_BUNDLE_PACKAGE_TYPE)',
-      CFBundleShortVersionString: '1.0',
-      CFBundleVersion: '1',
-      NSExtension: {
-        NSExtensionPointIdentifier: 'com.apple.widgetkit-extension',
-      },
-    };
-  } else if (type === 'clip') {
-    basePlist = {
-      CFBundleName: '$(PRODUCT_NAME)',
-      CFBundleIdentifier: '$(PRODUCT_BUNDLE_IDENTIFIER)',
-      CFBundleExecutable: '$(EXECUTABLE_NAME)',
-      CFBundlePackageType: '$(PRODUCT_BUNDLE_PACKAGE_TYPE)',
-      CFBundleShortVersionString: '$(MARKETING_VERSION)',
-      UIApplicationSupportsIndirectInputEvents: true,
-      NSAppClip: {
-        NSAppClipRequestEphemeralUserNotification: false,
-        NSAppClipRequestLocationConfirmation: false,
-      },
-      UILaunchStoryboardName: 'SplashScreen',
-      UIUserInterfaceStyle: 'Automatic',
-    };
-  } else if (type === 'stickers') {
-    // iMessage Sticker Pack - minimal Info.plist
-    // No executable - sticker packs are asset-only
-    // Assets and sticker metadata are in Assets.xcassets
-    basePlist = {
-      CFBundleName: '$(PRODUCT_NAME)',
-      CFBundleIdentifier: '$(PRODUCT_BUNDLE_IDENTIFIER)',
-      CFBundlePackageType: '$(PRODUCT_BUNDLE_PACKAGE_TYPE)',
-      CFBundleShortVersionString: '1.0',
-      CFBundleVersion: '1',
-    };
-  } else if (type === 'share') {
-    basePlist = {
-      NSExtension: {
-        NSExtensionPointIdentifier: 'com.apple.share-services',
-        NSExtensionMainStoryboard: 'MainInterface',
-        NSExtensionActivationRule: 'TRUEPREDICATE',
-      },
-    };
-  } else if (type === 'action') {
-    basePlist = {
-      NSExtension: {
-        NSExtensionPointIdentifier: 'com.apple.services',
-        NSExtensionMainStoryboard: 'MainInterface',
-        NSExtensionActivationRule: 'TRUEPREDICATE',
-      },
-    };
-  } else {
-    throw new Error(`Info.plist not implemented for type: ${type}`);
+  const typeCharacteristics = TYPE_CHARACTERISTICS[type];
+  if (!typeCharacteristics) {
+    throw new Error(`Unknown extension type: ${type}`);
   }
+
+  let basePlist = { ...typeCharacteristics.basePlist };
 
   if (customProperties) {
     basePlist = deepMerge(basePlist, customProperties);
@@ -98,92 +310,25 @@ export function getTargetInfoPlistForType(
 }
 
 export function getFrameworksForType(type: ExtensionType): string[] {
-  if (type === 'widget') {
-    return ['WidgetKit', 'SwiftUI', 'ActivityKit', 'AppIntents'];
-  }
-
-  if (type === 'stickers') {
-    return ['Messages'];
-  }
-
-  if (type === 'share') {
-    return ['Social', 'MobileCoreServices'];
-  }
-
-  if (type === 'action') {
-    return [];
-  }
-
-  if (type === 'clip') {
-    // Don't explicitly link SwiftUI for App Clips - let Swift auto-link it
-    // Explicit linking causes UIUtilities and SwiftUICore auto-link errors
-    return [];
-  }
-
-  return [];
+  return TYPE_CHARACTERISTICS[type].frameworks;
 }
 
 export function productTypeForType(type: ExtensionType): string {
-  if (type === 'clip') {
-    return 'com.apple.product-type.application.on-demand-install-capable';
-  }
-  if (type === 'watch') {
-    return 'com.apple.product-type.application';
-  }
-  if (type === 'app-intent') {
-    return 'com.apple.product-type.extensionkit-extension';
-  }
-  if (type === 'stickers') {
-    return 'com.apple.product-type.app-extension.messages-sticker-pack';
-  }
-  return 'com.apple.product-type.app-extension';
+  return TYPE_CHARACTERISTICS[type].productType;
 }
 
-export const EXTENSION_POINT_IDENTIFIERS: Record<ExtensionType, string> = {
-  widget: 'com.apple.widgetkit-extension',
-  clip: '', // App Clips are standalone apps, not extensions
-  stickers: '', // Sticker packs are asset-only, no extension point
-  share: 'com.apple.share-services',
-  action: 'com.apple.services',
-  safari: 'com.apple.Safari.web-extension',
-  'notification-content': 'com.apple.usernotifications.content-extension',
-  'notification-service': 'com.apple.usernotifications.service',
-  intent: 'com.apple.intents-service',
-  'intent-ui': 'com.apple.intents-ui-service',
-  spotlight: 'com.apple.spotlight.import',
-  'bg-download': 'com.apple.background-asset-downloader-extension',
-  'quicklook-thumbnail': 'com.apple.quicklook.thumbnail',
-  'location-push': 'com.apple.location.push.service',
-  'credentials-provider':
-    'com.apple.authentication-services-credential-provider-ui',
-  'account-auth':
-    'com.apple.authentication-services-account-authentication-modification-ui',
-  'app-intent': 'com.apple.appintents-extension',
-  'device-activity-monitor': 'com.apple.deviceactivity.monitor-extension',
-  matter: 'com.apple.matter.support.extension.device-setup',
-  watch: '', // Watch apps are standalone apps, not extensions
-};
+export const EXTENSION_POINT_IDENTIFIERS: Record<ExtensionType, string> =
+  Object.fromEntries(
+    Object.entries(TYPE_CHARACTERISTICS).map(([type, config]) => [
+      type,
+      config.extensionPointIdentifier,
+    ])
+  ) as Record<ExtensionType, string>;
 
 export const SHOULD_USE_APP_GROUPS_BY_DEFAULT: Record<ExtensionType, boolean> =
-  {
-    widget: true,
-    clip: true,
-    share: true,
-    stickers: false,
-    action: false,
-    safari: false,
-    'notification-content': false,
-    'notification-service': false,
-    intent: false,
-    'intent-ui': false,
-    spotlight: false,
-    'bg-download': true,
-    'quicklook-thumbnail': false,
-    'location-push': false,
-    'credentials-provider': false,
-    'account-auth': false,
-    'app-intent': false,
-    'device-activity-monitor': false,
-    matter: false,
-    watch: false,
-  };
+  Object.fromEntries(
+    Object.entries(TYPE_CHARACTERISTICS).map(([type, config]) => [
+      type,
+      config.defaultUsesAppGroups,
+    ])
+  ) as Record<ExtensionType, boolean>;

@@ -11,6 +11,7 @@ import {
   productTypeForType,
   getFrameworksForType,
   getTargetInfoPlistForType,
+  TYPE_CHARACTERISTICS,
 } from '../target';
 import { Xcode, Paths, File } from '../utils';
 
@@ -30,6 +31,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     const platformProjectRoot = config.modRequest.platformProjectRoot;
     const targetName = props.displayName || props.name;
     const targetProductName = Paths.sanitizeTargetName(targetName);
+    const typeConfig = TYPE_CHARACTERISTICS[props.type];
 
     console.log(
       `[expo-targets] Adding Xcode target: ${targetName} (${props.type})`
@@ -66,9 +68,12 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       targetName,
     });
     if (!File.isFile(infoPlistPath)) {
+      // Asset-only targets get pure Info.plist (no custom properties)
+      // Custom properties like RCTNewArchEnabled would break asset-only extensions
+      const customPlist = typeConfig.requiresCode ? props.infoPlist : undefined;
       const infoPlistContent = getTargetInfoPlistForType(
         props.type,
-        props.infoPlist
+        customPlist
       );
       File.writeFileSafe(infoPlistPath, infoPlistContent);
       console.log(`[expo-targets] Generated Info.plist for ${targetName}`);
@@ -84,28 +89,50 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       projectName,
     });
 
-    console.log(`[expo-targets] Creating native target: ${targetProductName}`);
+    // Check if target already exists
+    const existingTargetUuid = Xcode.findTargetByProductName({
+      project: xcodeProject,
+      productName: targetProductName,
+    });
 
-    const targetType = props.type === 'clip' ? 'application' : 'app_extension';
+    let target: any;
+    if (existingTargetUuid) {
+      console.log(
+        `[expo-targets] Target ${targetProductName} already exists, reusing`
+      );
+      target = {
+        uuid: existingTargetUuid,
+        target:
+          xcodeProject.hash.project.objects.PBXNativeTarget[existingTargetUuid],
+      };
+    } else {
+      console.log(
+        `[expo-targets] Creating native target: ${targetProductName}`
+      );
 
-    const target = xcodeProject.addTarget(
-      targetProductName,
-      targetType,
-      targetProductName,
-      bundleIdentifier
-    );
+      const targetType = typeConfig.isStandalone
+        ? 'application'
+        : 'app_extension';
 
-    if (!target) {
-      throw new Error(`Failed to create target for ${targetName}`);
+      target = xcodeProject.addTarget(
+        targetProductName,
+        targetType,
+        targetProductName,
+        bundleIdentifier
+      );
+
+      if (!target) {
+        throw new Error(`Failed to create target for ${targetName}`);
+      }
+
+      if (!target.uuid) {
+        throw new Error(`Target created but has no UUID: ${targetName}`);
+      }
     }
 
-    if (!target.uuid) {
-      throw new Error(`Target created but has no UUID: ${targetName}`);
-    }
-
-    // Fix product type for App Clips and iMessage Sticker Packs
+    // Fix product type for standalone apps and special extension types
     // addTarget creates a regular application/extension, but some types need special product types
-    if (props.type === 'clip' || props.type === 'stickers') {
+    if (typeConfig.isStandalone || !typeConfig.requiresCode) {
       Xcode.setProductType({ target, productType });
       console.log(
         `[expo-targets] Set product type to ${productType} for ${props.type}`
@@ -127,12 +154,16 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       PRODUCT_NAME: `"${targetProductName}"`,
       PRODUCT_BUNDLE_IDENTIFIER: `"${bundleIdentifier}"`,
       INFOPLIST_FILE: `"${targetProductName}/Info.plist"`,
-      CODE_SIGN_ENTITLEMENTS: `"${targetProductName}/generated.entitlements"`,
     };
 
-    // App Clips are standalone apps - don't skip install
+    // Only code-based targets need entitlements
+    if (typeConfig.requiresEntitlements) {
+      targetSpecificSettings.CODE_SIGN_ENTITLEMENTS = `"${targetProductName}/generated.entitlements"`;
+    }
+
+    // Standalone apps don't skip install
     // Extensions get embedded in main app - skip install
-    if (props.type !== 'clip') {
+    if (!typeConfig.isStandalone) {
       targetSpecificSettings.SKIP_INSTALL = 'YES';
     }
 
@@ -158,45 +189,54 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       ...targetSpecificSettings,
     };
 
-    // Map camelCase properties to Xcode build settings
-    const buildSettingsMap: Record<
-      string,
-      { prop: keyof IOSTargetProps; xcodeKey: string }
-    > = {
-      swiftVersion: { prop: 'swiftVersion', xcodeKey: 'SWIFT_VERSION' },
-      targetedDeviceFamily: {
-        prop: 'targetedDeviceFamily',
-        xcodeKey: 'TARGETED_DEVICE_FAMILY',
-      },
-      clangEnableModules: {
-        prop: 'clangEnableModules',
-        xcodeKey: 'CLANG_ENABLE_MODULES',
-      },
-      swiftEmitLocStrings: {
-        prop: 'swiftEmitLocStrings',
-        xcodeKey: 'SWIFT_EMIT_LOC_STRINGS',
-      },
-    };
+    // Asset-only targets skip code-related build settings
+    if (typeConfig.requiresCode) {
+      // Map camelCase properties to Xcode build settings
+      const buildSettingsMap: Record<
+        string,
+        { prop: keyof IOSTargetProps; xcodeKey: string }
+      > = {
+        swiftVersion: { prop: 'swiftVersion', xcodeKey: 'SWIFT_VERSION' },
+        targetedDeviceFamily: {
+          prop: 'targetedDeviceFamily',
+          xcodeKey: 'TARGETED_DEVICE_FAMILY',
+        },
+        clangEnableModules: {
+          prop: 'clangEnableModules',
+          xcodeKey: 'CLANG_ENABLE_MODULES',
+        },
+        swiftEmitLocStrings: {
+          prop: 'swiftEmitLocStrings',
+          xcodeKey: 'SWIFT_EMIT_LOC_STRINGS',
+        },
+      };
 
-    // Inherit or set build settings
-    Object.entries(buildSettingsMap).forEach(([key, { prop, xcodeKey }]) => {
-      if (props[prop] !== undefined) {
-        // User explicitly set it
-        buildSettings[xcodeKey] = String(props[prop]);
-        console.log(`[expo-targets] Using custom ${xcodeKey}: ${props[prop]}`);
-      } else if (mainBuildSettings[xcodeKey]) {
-        // Inherit from main app
-        buildSettings[xcodeKey] = mainBuildSettings[xcodeKey];
-        console.log(
-          `[expo-targets] Inherited ${xcodeKey}: ${mainBuildSettings[xcodeKey]}`
-        );
+      // Inherit or set build settings
+      Object.entries(buildSettingsMap).forEach(([key, { prop, xcodeKey }]) => {
+        if (props[prop] !== undefined) {
+          // User explicitly set it
+          buildSettings[xcodeKey] = String(props[prop]);
+          console.log(
+            `[expo-targets] Using custom ${xcodeKey}: ${props[prop]}`
+          );
+        } else if (mainBuildSettings[xcodeKey]) {
+          // Inherit from main app
+          buildSettings[xcodeKey] = mainBuildSettings[xcodeKey];
+          console.log(
+            `[expo-targets] Inherited ${xcodeKey}: ${mainBuildSettings[xcodeKey]}`
+          );
+        }
+      });
+
+      // Fallback for SWIFT_VERSION
+      if (!buildSettings.SWIFT_VERSION) {
+        buildSettings.SWIFT_VERSION = '5.0';
+        console.log(`[expo-targets] Using fallback SWIFT_VERSION: 5.0`);
       }
-    });
-
-    // Fallback for SWIFT_VERSION
-    if (!buildSettings.SWIFT_VERSION) {
-      buildSettings.SWIFT_VERSION = '5.0';
-      console.log(`[expo-targets] Using fallback SWIFT_VERSION: 5.0`);
+    } else {
+      console.log(
+        `[expo-targets] Skipping code-related build settings for asset-only target`
+      );
     }
 
     // Apply deployment target if specified
@@ -247,8 +287,8 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       verbose: true,
     });
 
-    // App Clips should not have SKIP_INSTALL - they're standalone apps
-    if (props.type === 'clip') {
+    // Standalone apps should not have SKIP_INSTALL
+    if (typeConfig.isStandalone) {
       Xcode.removeBuildSetting({
         project: xcodeProject,
         target,
@@ -294,15 +334,17 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       `[expo-targets] Created Resources build phase for ${targetProductName}`
     );
 
-    // Copy Swift files from user's target directory
+    // Copy Swift files from user's target directory (skip for asset-only targets)
     const targetDirectory = Paths.getTargetDirectory({
       projectRoot,
       targetDirectory: props.directory,
     });
-    const swiftFiles = globSync('**/*.swift', {
-      cwd: targetDirectory,
-      absolute: false,
-    });
+    const swiftFiles = typeConfig.requiresCode
+      ? globSync('**/*.swift', {
+          cwd: targetDirectory,
+          absolute: false,
+        })
+      : [];
 
     console.log(
       `[expo-targets] Found ${swiftFiles.length} Swift file(s) in ${props.directory}/ios`
@@ -355,14 +397,20 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     // Add Info.plist reference via build settings
     console.log(`[expo-targets] Info.plist configured via build settings`);
 
-    // Link frameworks
-    frameworks.forEach((framework) => {
-      console.log(`[expo-targets]   Linking framework: ${framework}`);
-      xcodeProject.addFramework(`${framework}.framework`, {
-        target: target.uuid,
-        link: true,
+    // Link frameworks (skip for asset-only targets)
+    if (typeConfig.requiresCode && frameworks.length > 0) {
+      frameworks.forEach((framework) => {
+        console.log(`[expo-targets]   Linking framework: ${framework}`);
+        xcodeProject.addFramework(`${framework}.framework`, {
+          target: target.uuid,
+          link: true,
+        });
       });
-    });
+    } else if (!typeConfig.requiresCode) {
+      console.log(
+        `[expo-targets] Skipping framework linking for asset-only target`
+      );
+    }
 
     // Add target dependency for app extensions and clips
     console.log(`[expo-targets] Adding target dependency to main app`);
@@ -373,8 +421,8 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       dependentTargetUuid: target.uuid,
     });
 
-    // App Clips and Extensions need different embed settings
-    if (props.type !== 'clip') {
+    // Standalone apps and Extensions need different embed settings
+    if (!typeConfig.isStandalone) {
       console.log(
         `[expo-targets] Configuring "Embed App Extensions" build phase`
       );
