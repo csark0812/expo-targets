@@ -85,6 +85,7 @@ interface BaseIOSTargetConfig {
   images?: Record<string, string>;
   frameworks?: string[];
   entitlements?: Record<string, any>;
+  infoPlist?: Record<string, any>;
 
   // CamelCase build settings
   swiftVersion?: string;

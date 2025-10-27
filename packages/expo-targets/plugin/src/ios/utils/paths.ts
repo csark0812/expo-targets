@@ -26,20 +26,7 @@ export function getTargetDirectory({
 }
 
 /**
- * Get the target build directory path (where generated files go).
- */
-export function getTargetBuildDirectory({
-  projectRoot,
-  targetDirectory,
-}: {
-  projectRoot: string;
-  targetDirectory: string;
-}): string {
-  return path.join(projectRoot, targetDirectory, 'ios', 'build');
-}
-
-/**
- * Get the target group path in Xcode project (where files are copied to).
+ * Get the target group path in Xcode project (where target files live).
  */
 export function getTargetGroupPath({
   platformProjectRoot,
@@ -53,67 +40,67 @@ export function getTargetGroupPath({
 }
 
 /**
- * Get path to generated entitlements file.
+ * Get path to generated entitlements file in Xcode project.
  */
 export function getGeneratedEntitlementsPath({
-  projectRoot,
-  targetDirectory,
+  platformProjectRoot,
+  targetName,
 }: {
-  projectRoot: string;
-  targetDirectory: string;
+  platformProjectRoot: string;
+  targetName: string;
 }): string {
   return path.join(
-    getTargetBuildDirectory({ projectRoot, targetDirectory }),
+    getTargetGroupPath({ platformProjectRoot, targetName }),
     'generated.entitlements'
   );
 }
 
 /**
- * Get path to Info.plist in build directory.
+ * Get path to Info.plist in Xcode project.
  */
 export function getInfoPlistPath({
-  projectRoot,
-  targetDirectory,
+  platformProjectRoot,
+  targetName,
 }: {
-  projectRoot: string;
-  targetDirectory: string;
+  platformProjectRoot: string;
+  targetName: string;
 }): string {
   return path.join(
-    getTargetBuildDirectory({ projectRoot, targetDirectory }),
+    getTargetGroupPath({ platformProjectRoot, targetName }),
     'Info.plist'
   );
 }
 
 /**
- * Get path to Assets.xcassets in build directory.
+ * Get path to Assets.xcassets in Xcode project.
  */
 export function getAssetsXcassetsPath({
-  projectRoot,
-  targetDirectory,
+  platformProjectRoot,
+  targetName,
 }: {
-  projectRoot: string;
-  targetDirectory: string;
+  platformProjectRoot: string;
+  targetName: string;
 }): string {
   return path.join(
-    getTargetBuildDirectory({ projectRoot, targetDirectory }),
+    getTargetGroupPath({ platformProjectRoot, targetName }),
     'Assets.xcassets'
   );
 }
 
 /**
- * Get path to a specific colorset.
+ * Get path to a specific colorset in Xcode project.
  */
 export function getColorsetPath({
-  projectRoot,
-  targetDirectory,
+  platformProjectRoot,
+  targetName,
   colorName,
 }: {
-  projectRoot: string;
-  targetDirectory: string;
+  platformProjectRoot: string;
+  targetName: string;
   colorName: string;
 }): string {
   return path.join(
-    getAssetsXcassetsPath({ projectRoot, targetDirectory }),
+    getAssetsXcassetsPath({ platformProjectRoot, targetName }),
     `${colorName}.colorset`
   );
 }

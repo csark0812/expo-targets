@@ -128,7 +128,6 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
 
   config = withTargetEntitlements(config, {
     targetName,
-    targetDirectory: props.directory,
     type: props.type,
     entitlements: props.entitlements,
   });
@@ -139,7 +138,7 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
         config = withIosColorset(config, {
           name: colorName,
           color: colorValue,
-          targetDirectory: props.directory,
+          targetName,
         });
       } else {
         const colorObj = colorValue as Color;
@@ -151,13 +150,13 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
             name: colorName,
             color: lightColor,
             darkColor,
-            targetDirectory: props.directory,
+            targetName,
           });
         }
       }
     });
 
-    // Note: Assets.xcassets is copied and added in withXcodeChanges where we have direct access to target.uuid
+    // Note: Assets.xcassets is added in withXcodeChanges where we have direct access to target.uuid
     // This avoids plugin execution order issues
   }
 

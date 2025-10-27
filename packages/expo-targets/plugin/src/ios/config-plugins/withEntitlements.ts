@@ -5,7 +5,6 @@ import { Plist, Paths } from '../utils';
 
 export const withTargetEntitlements: ConfigPlugin<{
   targetName: string;
-  targetDirectory: string;
   type: ExtensionType;
   entitlements?: Record<string, any>;
 }> = (config, props) => {
@@ -41,8 +40,8 @@ export const withTargetEntitlements: ConfigPlugin<{
       }
 
       const entitlementsPath = Paths.getGeneratedEntitlementsPath({
-        projectRoot: config.modRequest.projectRoot,
-        targetDirectory: props.targetDirectory,
+        platformProjectRoot: config.modRequest.platformProjectRoot,
+        targetName: props.targetName,
       });
 
       Plist.writePlist(entitlementsPath, entitlements);

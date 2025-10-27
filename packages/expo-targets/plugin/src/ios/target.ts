@@ -2,9 +2,38 @@ import plist from '@expo/plist';
 
 import type { ExtensionType } from '../config';
 
-export function getTargetInfoPlistForType(type: ExtensionType): string {
+function deepMerge(target: any, source: any): any {
+  const output = { ...target };
+
+  if (isObject(target) && isObject(source)) {
+    Object.keys(source).forEach((key) => {
+      if (isObject(source[key])) {
+        if (!(key in target)) {
+          output[key] = source[key];
+        } else {
+          output[key] = deepMerge(target[key], source[key]);
+        }
+      } else {
+        output[key] = source[key];
+      }
+    });
+  }
+
+  return output;
+}
+
+function isObject(item: any): boolean {
+  return item && typeof item === 'object' && !Array.isArray(item);
+}
+
+export function getTargetInfoPlistForType(
+  type: ExtensionType,
+  customProperties?: Record<string, any>
+): string {
+  let basePlist: Record<string, any>;
+
   if (type === 'widget') {
-    return plist.build({
+    basePlist = {
       CFBundleName: '$(PRODUCT_NAME)',
       CFBundleIdentifier: '$(PRODUCT_BUNDLE_IDENTIFIER)',
       CFBundleExecutable: '$(EXECUTABLE_NAME)',
@@ -14,11 +43,9 @@ export function getTargetInfoPlistForType(type: ExtensionType): string {
       NSExtension: {
         NSExtensionPointIdentifier: 'com.apple.widgetkit-extension',
       },
-    });
-  }
-
-  if (type === 'clip') {
-    return plist.build({
+    };
+  } else if (type === 'clip') {
+    basePlist = {
       CFBundleName: '$(PRODUCT_NAME)',
       CFBundleIdentifier: '$(PRODUCT_BUNDLE_IDENTIFIER)',
       CFBundleExecutable: '$(EXECUTABLE_NAME)',
@@ -31,39 +58,39 @@ export function getTargetInfoPlistForType(type: ExtensionType): string {
       },
       UILaunchStoryboardName: 'SplashScreen',
       UIUserInterfaceStyle: 'Automatic',
-    });
-  }
-
-  if (type === 'imessage') {
-    return plist.build({
+    };
+  } else if (type === 'imessage') {
+    basePlist = {
       NSExtension: {
         NSExtensionPointIdentifier: 'com.apple.message-payload-provider',
         NSExtensionPrincipalClass: 'StickerBrowserViewController',
       },
-    });
-  }
-
-  if (type === 'share') {
-    return plist.build({
+    };
+  } else if (type === 'share') {
+    basePlist = {
       NSExtension: {
         NSExtensionPointIdentifier: 'com.apple.share-services',
         NSExtensionMainStoryboard: 'MainInterface',
         NSExtensionActivationRule: 'TRUEPREDICATE',
       },
-    });
-  }
-
-  if (type === 'action') {
-    return plist.build({
+    };
+  } else if (type === 'action') {
+    basePlist = {
       NSExtension: {
         NSExtensionPointIdentifier: 'com.apple.services',
         NSExtensionMainStoryboard: 'MainInterface',
         NSExtensionActivationRule: 'TRUEPREDICATE',
       },
-    });
+    };
+  } else {
+    throw new Error(`Info.plist not implemented for type: ${type}`);
   }
 
-  throw new Error(`Info.plist not implemented for type: ${type}`);
+  if (customProperties) {
+    basePlist = deepMerge(basePlist, customProperties);
+  }
+
+  return plist.build(basePlist);
 }
 
 export function getFrameworksForType(type: ExtensionType): string[] {

@@ -389,6 +389,88 @@ ios: {
 - Custom entitlements merged with auto-detected ones
 - Must be enabled in Apple Developer Portal for physical devices
 
+### `infoPlist` (optional)
+
+**Type:** `Record<string, any>`
+
+Custom Info.plist entries for the extension. Merged with type-specific defaults using deep merge.
+
+```typescript
+ios: {
+  infoPlist: {
+    CFBundleURLTypes: [
+      {
+        CFBundleURLSchemes: ['myapp']
+      }
+    ],
+    NSAppClip: {
+      NSAppClipRequestEphemeralUserNotification: true,
+      NSContactsUsageDescription: 'Access contacts to save cards'
+    },
+    NSAppTransportSecurity: {
+      NSAllowsLocalNetworking: true,
+      NSExceptionDomains: {
+        'localhost': {
+          NSExceptionAllowsInsecureHTTPLoads: true
+        }
+      }
+    }
+  }
+}
+```
+
+**How merging works:**
+
+- Top-level keys are merged (custom values override defaults)
+- Nested objects are deep merged (preserves unspecified defaults)
+- Arrays replace entirely (no merging of array elements)
+
+**Default Info.plist by type:**
+
+| Type       | Defaults                                                                                                                               |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `clip`     | `NSAppClip` (notifications/location off), `UILaunchStoryboardName`, `UIUserInterfaceStyle`, `UIApplicationSupportsIndirectInputEvents` |
+| `widget`   | `NSExtension` (WidgetKit), bundle metadata                                                                                             |
+| `imessage` | `NSExtension` (Messages), `NSExtensionPrincipalClass`                                                                                  |
+| `share`    | `NSExtension` (Share services), activation rules                                                                                       |
+| `action`   | `NSExtension` (Services), activation rules                                                                                             |
+
+**Examples:**
+
+```typescript
+// App Clip with URL schemes and custom permissions
+ios: {
+  infoPlist: {
+    CFBundleURLTypes: [
+      { CFBundleURLSchemes: ['com.nfc.popl'] }
+    ],
+    NSContactsUsageDescription: 'Create contact cards',
+    NSAppTransportSecurity: {
+      NSAllowsLocalNetworking: true
+    }
+  }
+}
+
+// Widget with custom extension attributes
+ios: {
+  infoPlist: {
+    NSExtension: {
+      NSExtensionPointIdentifier: 'com.apple.widgetkit-extension',
+      'com.apple.widgetkit-extension-custom-data': {
+        'supports-live-activities': true
+      }
+    }
+  }
+}
+```
+
+**Notes:**
+
+- Custom properties deep merge with type defaults
+- Use to add properties not available via other config options
+- Bundle metadata (CFBundleName, CFBundleIdentifier) auto-generated
+- Required extension point identifiers auto-included per type
+
 ### `buildSettings` (optional)
 
 **Type:** `Record<string, string>`

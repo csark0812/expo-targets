@@ -367,47 +367,32 @@ export function findTargetByProductName({
 }
 
 /**
- * Add Assets.xcassets to a target's Resources build phase.
- * Copies Assets.xcassets from build directory and adds it to the Xcode project.
+ * Add Assets.xcassets to a target's Resources build phase if it exists.
  */
 export function addTargetAssets({
-  projectRoot,
   platformProjectRoot,
   targetName,
-  targetDirectory,
   targetUuid,
   xcodeProject,
 }: {
-  projectRoot: string;
   platformProjectRoot: string;
   targetName: string;
-  targetDirectory: string;
   targetUuid: string;
   xcodeProject: any;
 }): void {
   const targetProductName = Paths.sanitizeTargetName(targetName);
-  const targetGroupPath = Paths.getTargetGroupPath({
+  const assetsPath = Paths.getAssetsXcassetsPath({
     platformProjectRoot,
     targetName,
   });
 
-  // Copy Assets.xcassets if it exists
-  const assetsSource = Paths.getAssetsXcassetsPath({
-    projectRoot,
-    targetDirectory,
-  });
-  const assetsDest = path.join(targetGroupPath, 'Assets.xcassets');
-
-  if (File.isDirectory(assetsSource)) {
+  if (File.isDirectory(assetsPath)) {
     console.log(
-      `[expo-targets] Found Assets.xcassets, copying and adding to ${targetProductName}...`
+      `[expo-targets] Found Assets.xcassets, adding to ${targetProductName}...`
     );
 
-    // Copy the entire Assets.xcassets folder
-    File.copyDirectorySafe(assetsSource, assetsDest);
-
     // Add Assets.xcassets as a resource file
-    const relativePath = path.relative(platformProjectRoot, assetsDest);
+    const relativePath = path.relative(platformProjectRoot, assetsPath);
 
     addResourceFileToGroup({
       filepath: relativePath,

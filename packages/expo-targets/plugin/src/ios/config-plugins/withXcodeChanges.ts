@@ -29,6 +29,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     const projectRoot = config.modRequest.projectRoot;
     const platformProjectRoot = config.modRequest.platformProjectRoot;
     const targetName = props.displayName || props.name;
+    const targetProductName = Paths.sanitizeTargetName(targetName);
 
     console.log(
       `[expo-targets] Adding Xcode target: ${targetName} (${props.type})`
@@ -52,13 +53,23 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       ...(props.frameworks || []),
     ];
 
-    // Generate Info.plist in build folder if it doesn't exist
+    // Create target directory in Xcode project
+    const targetGroupPath = Paths.getTargetGroupPath({
+      platformProjectRoot,
+      targetName,
+    });
+    File.ensureDirectoryExists(targetGroupPath);
+
+    // Generate Info.plist directly in target directory
     const infoPlistPath = Paths.getInfoPlistPath({
-      projectRoot,
-      targetDirectory: props.directory,
+      platformProjectRoot,
+      targetName,
     });
     if (!File.isFile(infoPlistPath)) {
-      const infoPlistContent = getTargetInfoPlistForType(props.type);
+      const infoPlistContent = getTargetInfoPlistForType(
+        props.type,
+        props.infoPlist
+      );
       File.writeFileSafe(infoPlistPath, infoPlistContent);
       console.log(`[expo-targets] Generated Info.plist for ${targetName}`);
     }
@@ -72,9 +83,6 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       project: xcodeProject,
       projectName,
     });
-
-    // Create the extension target
-    const targetProductName = Paths.sanitizeTargetName(targetName);
 
     console.log(`[expo-targets] Creating native target: ${targetProductName}`);
 
@@ -286,30 +294,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       `[expo-targets] Created Resources build phase for ${targetProductName}`
     );
 
-    // Copy Swift files and Info.plist into ios/ directory
-    // Note: Files copied to ios/{target}/ for Xcode accessibility
-    const targetGroupPath = Paths.getTargetGroupPath({
-      platformProjectRoot,
-      targetName,
-    });
-    File.ensureDirectoryExists(targetGroupPath);
-
-    // Copy generated.entitlements from build folder
-    const entitlementsSource = Paths.getGeneratedEntitlementsPath({
-      projectRoot,
-      targetDirectory: props.directory,
-    });
-    const entitlementsDest = path.join(
-      targetGroupPath,
-      'generated.entitlements'
-    );
-    if (File.isFile(entitlementsSource)) {
-      File.copyFileSafe(entitlementsSource, entitlementsDest);
-      console.log(
-        `[expo-targets] Copied generated.entitlements to ${targetProductName}/`
-      );
-    }
-
+    // Copy Swift files from user's target directory
     const targetDirectory = Paths.getTargetDirectory({
       projectRoot,
       targetDirectory: props.directory,
@@ -361,10 +346,8 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
 
     // Add Assets.xcassets if it exists
     Xcode.addTargetAssets({
-      projectRoot,
       platformProjectRoot,
       targetName,
-      targetDirectory: props.directory,
       targetUuid: target.uuid,
       xcodeProject,
     });
