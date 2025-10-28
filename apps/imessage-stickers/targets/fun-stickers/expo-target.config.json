@@ -4,6 +4,7 @@
   "displayName": "Fun Stickers",
   "platforms": ["ios"],
   "ios": {
+    "imessageAppIcon": "./assets/icon.png",
     "stickerPacks": [
       {
         "name": "Happy",

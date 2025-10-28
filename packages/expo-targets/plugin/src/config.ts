@@ -89,6 +89,7 @@ interface BaseIOSTargetConfig {
   colors?: Record<string, string | Color>;
   images?: Record<string, string>;
   stickerPacks?: StickerPack[];
+  imessageAppIcon?: string; // Path to source icon for iMessage App Icon (sticker packs)
   frameworks?: string[];
   entitlements?: Record<string, any>;
   infoPlist?: Record<string, any>;

@@ -51,17 +51,7 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       extensionPointIdentifier: 'com.apple.widgetkit-extension',
       defaultUsesAppGroups: true,
       requiresEntitlements: true,
-      basePlist: {
-        CFBundleName: '$(PRODUCT_NAME)',
-        CFBundleIdentifier: '$(PRODUCT_BUNDLE_IDENTIFIER)',
-        CFBundleExecutable: '$(EXECUTABLE_NAME)',
-        CFBundlePackageType: '$(PRODUCT_BUNDLE_PACKAGE_TYPE)',
-        CFBundleShortVersionString: '1.0',
-        CFBundleVersion: '1',
-        NSExtension: {
-          NSExtensionPointIdentifier: 'com.apple.widgetkit-extension',
-        },
-      },
+      basePlist: {},
     },
     clip: {
       requiresCode: true,
@@ -73,10 +63,6 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       defaultUsesAppGroups: true,
       requiresEntitlements: true,
       basePlist: {
-        CFBundleName: '$(PRODUCT_NAME)',
-        CFBundleIdentifier: '$(PRODUCT_BUNDLE_IDENTIFIER)',
-        CFBundleExecutable: '$(EXECUTABLE_NAME)',
-        CFBundlePackageType: '$(PRODUCT_BUNDLE_PACKAGE_TYPE)',
         CFBundleShortVersionString: '$(MARKETING_VERSION)',
         UIApplicationSupportsIndirectInputEvents: true,
         NSAppClip: {
@@ -92,17 +78,14 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       isStandalone: false,
       frameworks: [],
       productType: 'com.apple.product-type.app-extension.messages-sticker-pack',
-      extensionPointIdentifier: '',
+      extensionPointIdentifier: 'com.apple.message-sticker-pack',
       defaultUsesAppGroups: false,
       requiresEntitlements: false,
       basePlist: {
-        CFBundleName: '$(PRODUCT_NAME)',
-        CFBundleIdentifier: '$(PRODUCT_BUNDLE_IDENTIFIER)',
-        CFBundlePackageType: '$(PRODUCT_BUNDLE_PACKAGE_TYPE)',
-        CFBundleShortVersionString: '1.0',
-        CFBundleVersion: '1',
+        LSApplicationIsStickerProvider: true,
       },
     },
+
     share: {
       requiresCode: true,
       isStandalone: false,
@@ -113,7 +96,6 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       requiresEntitlements: true,
       basePlist: {
         NSExtension: {
-          NSExtensionPointIdentifier: 'com.apple.share-services',
           NSExtensionMainStoryboard: 'MainInterface',
           NSExtensionActivationRule: 'TRUEPREDICATE',
         },
@@ -129,7 +111,6 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       requiresEntitlements: true,
       basePlist: {
         NSExtension: {
-          NSExtensionPointIdentifier: 'com.apple.services',
           NSExtensionMainStoryboard: 'MainInterface',
           NSExtensionActivationRule: 'TRUEPREDICATE',
         },
@@ -300,7 +281,26 @@ export function getTargetInfoPlistForType(
     throw new Error(`Unknown extension type: ${type}`);
   }
 
-  let basePlist = { ...typeCharacteristics.basePlist };
+  // Start with standard CFBundle keys that all targets need
+  let basePlist: Record<string, any> = {
+    CFBundleName: '$(PRODUCT_NAME)',
+    CFBundleIdentifier: '$(PRODUCT_BUNDLE_IDENTIFIER)',
+    CFBundlePackageType: '$(PRODUCT_BUNDLE_PACKAGE_TYPE)',
+    CFBundleShortVersionString: '1.0',
+    CFBundleVersion: '1',
+    CFBundleExecutable: '$(EXECUTABLE_NAME)',
+  };
+
+  // Merge type-specific basePlist properties
+  basePlist = deepMerge(basePlist, typeCharacteristics.basePlist);
+
+  // Automatically add NSExtensionPointIdentifier if specified
+  if (typeCharacteristics.extensionPointIdentifier) {
+    basePlist.NSExtension = {
+      NSExtensionPointIdentifier: typeCharacteristics.extensionPointIdentifier,
+      ...(basePlist.NSExtension || {}),
+    };
+  }
 
   if (customProperties) {
     basePlist = deepMerge(basePlist, customProperties);

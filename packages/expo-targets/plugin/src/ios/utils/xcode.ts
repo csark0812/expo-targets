@@ -83,7 +83,7 @@ export function configureAppExtensionEmbed({
 
       if (refPath === targetFileName || refName === targetFileName) {
         buildFile.settings = {
-          ATTRIBUTES: ['RemoveHeadersOnCopy'],
+          ATTRIBUTES: ['RemoveHeadersOnCopy', 'CodeSignOnCopy'],
         };
         foundBuildFile = true;
         break;
@@ -111,7 +111,10 @@ export function configureAppExtensionEmbed({
         const buildFile = buildFileSection?.[buildFileKey];
         if (buildFile) {
           const fileRef = fileRefSection?.[buildFile.fileRef];
-          if (fileRef?.path === `${targetProductName}.appex`) {
+          const refPath = fileRef?.path?.replace(/"/g, '');
+          const refName = fileRef?.name?.replace(/"/g, '');
+          const targetFileName = `${targetProductName}.appex`;
+          if (refPath === targetFileName || refName === targetFileName) {
             return true;
           }
         }

@@ -13,7 +13,7 @@ import {
   getTargetInfoPlistForType,
   TYPE_CHARACTERISTICS,
 } from '../target';
-import { Xcode, Paths, File } from '../utils';
+import { Xcode, Paths, File, Asset } from '../utils';
 
 interface IOSTargetProps extends IOSTargetConfigWithReactNative {
   type: ExtensionType;
@@ -77,6 +77,33 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       );
       File.writeFileSafe(infoPlistPath, infoPlistContent);
       console.log(`[expo-targets] Generated Info.plist for ${targetName}`);
+    }
+
+    // Create iMessage App Icon for sticker pack targets
+    if (props.type === 'stickers') {
+      const assetsPath = Paths.getAssetsXcassetsPath({
+        platformProjectRoot,
+        targetName,
+      });
+      const iconsetPath = path.join(
+        assetsPath,
+        'iMessage App Icon.stickersiconset'
+      );
+
+      // Resolve source icon path if provided
+      const sourceIconPath = props.imessageAppIcon
+        ? path.isAbsolute(props.imessageAppIcon)
+          ? props.imessageAppIcon
+          : path.join(projectRoot, props.imessageAppIcon)
+        : undefined;
+
+      Asset.createIMessageAppIcon({
+        iconsetPath,
+        sourceIconPath,
+      });
+      console.log(
+        `[expo-targets] Created iMessage App Icon set for ${targetName}`
+      );
     }
 
     const pbxProject = config.modResults;
@@ -159,12 +186,6 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     // Only code-based targets need entitlements
     if (typeConfig.requiresEntitlements) {
       targetSpecificSettings.CODE_SIGN_ENTITLEMENTS = `"${targetProductName}/generated.entitlements"`;
-    }
-
-    // Standalone apps don't skip install
-    // Extensions get embedded in main app - skip install
-    if (!typeConfig.isStandalone) {
-      targetSpecificSettings.SKIP_INSTALL = 'YES';
     }
 
     // Inherit essential build settings from main app if not already set
@@ -288,14 +309,12 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     });
 
     // Standalone apps should not have SKIP_INSTALL
-    if (typeConfig.isStandalone) {
-      Xcode.removeBuildSetting({
-        project: xcodeProject,
-        target,
-        settingKey: 'SKIP_INSTALL',
-        verbose: true,
-      });
-    }
+    Xcode.removeBuildSetting({
+      project: xcodeProject,
+      target,
+      settingKey: 'SKIP_INSTALL',
+      verbose: true,
+    });
 
     console.log(
       `[expo-targets] Configured build settings for ${targetProductName}`
