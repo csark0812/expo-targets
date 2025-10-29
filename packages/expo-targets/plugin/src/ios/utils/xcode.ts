@@ -68,8 +68,21 @@ export function configureAppExtensionEmbed({
   const xcodeProject = project as any;
   const buildFileSection = xcodeProject.hash.project.objects.PBXBuildFile;
   const fileRefSection = xcodeProject.hash.project.objects.PBXFileReference;
+  const targetFileName = `${targetProductName}.appex`;
 
-  // Find and configure the PBXBuildFile for the extension
+  const ensureAttributes = (buildFile: any) => {
+    const desired = ['RemoveHeadersOnCopy', 'CodeSignOnCopy'];
+    if (!buildFile.settings || !Array.isArray(buildFile.settings.ATTRIBUTES)) {
+      buildFile.settings = { ATTRIBUTES: desired };
+      return;
+    }
+    const attrs: string[] = buildFile.settings.ATTRIBUTES;
+    desired.forEach((attr) => {
+      if (!attrs.includes(attr)) attrs.push(attr);
+    });
+  };
+
+  // Find and configure the PBXBuildFile for the extension (global scan)
   let foundBuildFile = false;
   for (const buildFileKey in buildFileSection) {
     if (buildFileKey.endsWith('_comment')) continue;
@@ -79,12 +92,9 @@ export function configureAppExtensionEmbed({
       const fileRef = fileRefSection[buildFile.fileRef];
       const refPath = fileRef?.path?.replace(/"/g, '');
       const refName = fileRef?.name?.replace(/"/g, '');
-      const targetFileName = `${targetProductName}.appex`;
 
       if (refPath === targetFileName || refName === targetFileName) {
-        buildFile.settings = {
-          ATTRIBUTES: ['RemoveHeadersOnCopy', 'CodeSignOnCopy'],
-        };
+        ensureAttributes(buildFile);
         foundBuildFile = true;
         break;
       }
@@ -97,7 +107,7 @@ export function configureAppExtensionEmbed({
     );
   }
 
-  // Rename Copy Files phase to "Embed App Extensions"
+  // Rename Copy Files phase to "Embed App Extensions" and ensure attributes inside the phase
   const copyFilesPhases =
     xcodeProject.hash.project.objects.PBXCopyFilesBuildPhase;
 
@@ -106,19 +116,19 @@ export function configureAppExtensionEmbed({
 
     const phase = copyFilesPhases[phaseKey];
     if (phase?.dstSubfolderSpec === 13 && phase.files) {
-      const hasOurExtension = phase.files.some((file: any) => {
+      let hasOurExtension = false;
+      // Ensure each matching build file has desired attributes
+      phase.files.forEach((file: any) => {
         const buildFileKey = file.value;
         const buildFile = buildFileSection?.[buildFileKey];
-        if (buildFile) {
-          const fileRef = fileRefSection?.[buildFile.fileRef];
-          const refPath = fileRef?.path?.replace(/"/g, '');
-          const refName = fileRef?.name?.replace(/"/g, '');
-          const targetFileName = `${targetProductName}.appex`;
-          if (refPath === targetFileName || refName === targetFileName) {
-            return true;
-          }
+        if (!buildFile) return;
+        const fileRef = fileRefSection?.[buildFile.fileRef];
+        const refPath = fileRef?.path?.replace(/"/g, '');
+        const refName = fileRef?.name?.replace(/"/g, '');
+        if (refPath === targetFileName || refName === targetFileName) {
+          hasOurExtension = true;
+          ensureAttributes(buildFile);
         }
-        return false;
       });
 
       if (hasOurExtension) {
@@ -377,21 +387,27 @@ export function addTargetAssets({
   targetName,
   targetUuid,
   xcodeProject,
+  isStickers,
 }: {
   platformProjectRoot: string;
   targetName: string;
   targetUuid: string;
   xcodeProject: any;
+  isStickers?: boolean;
 }): void {
   const targetProductName = Paths.sanitizeTargetName(targetName);
   const assetsPath = Paths.getAssetsXcassetsPath({
     platformProjectRoot,
     targetName,
+    isStickers,
   });
 
   if (File.isDirectory(assetsPath)) {
+    const assetsFolderName = isStickers
+      ? 'Stickers.xcassets'
+      : 'Assets.xcassets';
     console.log(
-      `[expo-targets] Found Assets.xcassets, adding to ${targetProductName}...`
+      `[expo-targets] Found ${assetsFolderName}, adding to ${targetProductName}...`
     );
 
     // Add Assets.xcassets as a resource file
@@ -407,7 +423,14 @@ export function addTargetAssets({
     });
 
     console.log(
-      `[expo-targets] ✓ Added Assets.xcassets to ${targetProductName} Resources build phase`
+      `[expo-targets] ✓ Added ${assetsFolderName} to ${targetProductName} Resources build phase`
+    );
+  } else {
+    const assetsFolderName = isStickers
+      ? 'Stickers.xcassets'
+      : 'Assets.xcassets';
+    console.log(
+      `[expo-targets] ${assetsFolderName} directory not found at: ${assetsPath}`
     );
   }
 }

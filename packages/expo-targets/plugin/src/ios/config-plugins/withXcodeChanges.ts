@@ -1,4 +1,5 @@
 import { ConfigPlugin, withXcodeProject } from '@expo/config-plugins';
+import fs from 'fs';
 import { globSync } from 'glob';
 import path from 'path';
 
@@ -68,12 +69,9 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       targetName,
     });
     if (!File.isFile(infoPlistPath)) {
-      // Asset-only targets get pure Info.plist (no custom properties)
-      // Custom properties like RCTNewArchEnabled would break asset-only extensions
-      const customPlist = typeConfig.requiresCode ? props.infoPlist : undefined;
       const infoPlistContent = getTargetInfoPlistForType(
         props.type,
-        customPlist
+        props.infoPlist
       );
       File.writeFileSafe(infoPlistPath, infoPlistContent);
       console.log(`[expo-targets] Generated Info.plist for ${targetName}`);
@@ -84,7 +82,12 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       const assetsPath = Paths.getAssetsXcassetsPath({
         platformProjectRoot,
         targetName,
+        isStickers: true,
       });
+
+      // Create root Contents.json for Stickers.xcassets
+      Asset.createAssetsXcassetsRoot(assetsPath);
+
       const iconsetPath = path.join(
         assetsPath,
         'iMessage App Icon.stickersiconset'
@@ -104,6 +107,60 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       console.log(
         `[expo-targets] Created iMessage App Icon set for ${targetName}`
       );
+
+      // Create sticker packs
+      if (props.stickerPacks && props.stickerPacks.length > 0) {
+        props.stickerPacks.forEach((stickerPack) => {
+          const stickerPackPath = Paths.getStickerPackPath({
+            platformProjectRoot,
+            targetName,
+            stickerPackName: stickerPack.name,
+          });
+
+          Asset.createStickerPack({
+            stickerPackPath,
+            name: stickerPack.name,
+            assets: stickerPack.assets,
+          });
+
+          // Copy sticker assets to the pack
+          stickerPack.assets.forEach((assetPath: string) => {
+            const absoluteAssetPath = path.isAbsolute(assetPath)
+              ? assetPath
+              : path.join(projectRoot, props.directory, assetPath);
+
+            if (fs.existsSync(absoluteAssetPath)) {
+              const filename = path.basename(assetPath);
+              const baseName = path.basename(
+                assetPath,
+                path.extname(assetPath)
+              );
+              const stickerDirPath = path.join(
+                stickerPackPath,
+                `${baseName}.sticker`
+              );
+
+              // Create .sticker directory with Contents.json
+              Asset.createSticker({
+                stickerPath: stickerDirPath,
+                filename,
+              });
+
+              // Copy image into .sticker directory
+              const destPath = path.join(stickerDirPath, filename);
+              fs.copyFileSync(absoluteAssetPath, destPath);
+            } else {
+              console.warn(
+                `[expo-targets] Sticker asset not found: ${absoluteAssetPath}`
+              );
+            }
+          });
+
+          console.log(
+            `[expo-targets] Created sticker pack "${stickerPack.name}" with ${stickerPack.assets.length} sticker(s)`
+          );
+        });
+      }
     }
 
     const pbxProject = config.modResults;
@@ -137,9 +194,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
         `[expo-targets] Creating native target: ${targetProductName}`
       );
 
-      const targetType = typeConfig.isStandalone
-        ? 'application'
-        : 'app_extension';
+      const targetType = typeConfig.targetType;
 
       target = xcodeProject.addTarget(
         targetProductName,
@@ -157,14 +212,11 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       }
     }
 
-    // Fix product type for standalone apps and special extension types
-    // addTarget creates a regular application/extension, but some types need special product types
-    if (typeConfig.isStandalone || !typeConfig.requiresCode) {
-      Xcode.setProductType({ target, productType });
-      console.log(
-        `[expo-targets] Set product type to ${productType} for ${props.type}`
-      );
-    }
+    // Always set product type for precision (all types have specific product types)
+    Xcode.setProductType({ target, productType });
+    console.log(
+      `[expo-targets] Set product type to ${productType} for ${props.type}`
+    );
 
     // Get main app's build settings to inherit from
     const mainBuildSettings = Xcode.getMainAppBuildSettings({
@@ -258,6 +310,15 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       console.log(
         `[expo-targets] Skipping code-related build settings for asset-only target`
       );
+
+      // Sticker packs need asset catalog compiler settings
+      if (props.type === 'stickers') {
+        buildSettings.ASSETCATALOG_COMPILER_APPICON_NAME =
+          '"iMessage App Icon"';
+        console.log(
+          `[expo-targets] Set ASSETCATALOG_COMPILER_APPICON_NAME for sticker pack`
+        );
+      }
     }
 
     // Apply deployment target if specified
@@ -411,6 +472,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       targetName,
       targetUuid: target.uuid,
       xcodeProject,
+      isStickers: props.type === 'stickers',
     });
 
     // Add Info.plist reference via build settings
@@ -440,16 +502,16 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       dependentTargetUuid: target.uuid,
     });
 
-    // Standalone apps and Extensions need different embed settings
-    if (!typeConfig.isStandalone) {
+    // Configure embedding based on extension embed type
+    if (typeConfig.embedType === 'foundation-extension') {
       console.log(
-        `[expo-targets] Configuring "Embed App Extensions" build phase`
+        `[expo-targets] Configuring "Embed Foundation Extensions" build phase`
       );
       Xcode.configureAppExtensionEmbed({
         project: xcodeProject,
         targetProductName,
       });
-    } else {
+    } else if (typeConfig.embedType === 'app-clip') {
       console.log(`[expo-targets] Creating "Embed App Clips" build phase`);
       Xcode.configureAppClipEmbed({
         project: xcodeProject,
@@ -458,6 +520,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
         targetProductName,
       });
     }
+    // 'none' embedType = no embedding configuration needed (e.g., watch apps)
 
     console.log(`[expo-targets] Successfully configured ${targetName} target`);
 

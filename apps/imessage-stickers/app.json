@@ -17,12 +17,15 @@
       "bundleIdentifier": "com.test.imessagestickers",
       "deploymentTarget": "17.0"
     },
-    "plugins": ["../../packages/expo-targets/app.plugin.js"],
+    "plugins": [
+      "../../packages/expo-targets/app.plugin.js"
+    ],
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.test.imessagestickers"
     }
   }
 }

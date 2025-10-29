@@ -73,17 +73,21 @@ export function getInfoPlistPath({
 
 /**
  * Get path to Assets.xcassets in Xcode project.
+ * For sticker targets, returns Stickers.xcassets instead.
  */
 export function getAssetsXcassetsPath({
   platformProjectRoot,
   targetName,
+  isStickers,
 }: {
   platformProjectRoot: string;
   targetName: string;
+  isStickers?: boolean;
 }): string {
+  const assetsFolderName = isStickers ? 'Stickers.xcassets' : 'Assets.xcassets';
   return path.join(
     getTargetGroupPath({ platformProjectRoot, targetName }),
-    'Assets.xcassets'
+    assetsFolderName
   );
 }
 
@@ -118,7 +122,11 @@ export function getStickerPackPath({
   stickerPackName: string;
 }): string {
   return path.join(
-    getAssetsXcassetsPath({ platformProjectRoot, targetName }),
+    getAssetsXcassetsPath({
+      platformProjectRoot,
+      targetName,
+      isStickers: true,
+    }),
     `${stickerPackName}.stickerpack`
   );
 }

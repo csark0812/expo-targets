@@ -32,7 +32,8 @@ function isObject(item: any): boolean {
  */
 interface TypeCharacteristics {
   requiresCode: boolean; // Needs Swift files, code signing, build settings
-  isStandalone: boolean; // Standalone app (vs extension embedded in main app)
+  targetType: 'application' | 'app_extension'; // Xcode target creation type
+  embedType: 'foundation-extension' | 'app-clip' | 'none'; // How to embed in parent app
   frameworks: string[]; // Frameworks to link
   productType: string; // Xcode product type
   extensionPointIdentifier: string; // Extension point (empty for standalone)
@@ -45,7 +46,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
   {
     widget: {
       requiresCode: true,
-      isStandalone: false,
+      targetType: 'app_extension',
+      embedType: 'foundation-extension',
       frameworks: ['WidgetKit', 'SwiftUI', 'ActivityKit', 'AppIntents'],
       productType: 'com.apple.product-type.app-extension',
       extensionPointIdentifier: 'com.apple.widgetkit-extension',
@@ -55,7 +57,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
     },
     clip: {
       requiresCode: true,
-      isStandalone: true,
+      targetType: 'application',
+      embedType: 'app-clip',
       frameworks: [], // SwiftUI auto-linked
       productType:
         'com.apple.product-type.application.on-demand-install-capable',
@@ -75,20 +78,25 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
     },
     stickers: {
       requiresCode: false, // Asset-only
-      isStandalone: false,
+      targetType: 'app_extension',
+      embedType: 'foundation-extension',
       frameworks: [],
       productType: 'com.apple.product-type.app-extension.messages-sticker-pack',
-      extensionPointIdentifier: 'com.apple.message-sticker-pack',
+      extensionPointIdentifier: 'com.apple.message-payload-provider',
       defaultUsesAppGroups: false,
       requiresEntitlements: false,
       basePlist: {
-        LSApplicationIsStickerProvider: true,
+        NSStickerSharingLevel: 'OS',
+        NSExtension: {
+          NSExtensionPrincipalClass: 'StickerBrowserViewController',
+        },
       },
     },
 
     share: {
       requiresCode: true,
-      isStandalone: false,
+      targetType: 'app_extension',
+      embedType: 'foundation-extension',
       frameworks: ['Social', 'MobileCoreServices'],
       productType: 'com.apple.product-type.app-extension',
       extensionPointIdentifier: 'com.apple.share-services',
@@ -103,7 +111,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
     },
     action: {
       requiresCode: true,
-      isStandalone: false,
+      targetType: 'app_extension',
+      embedType: 'foundation-extension',
       frameworks: [],
       productType: 'com.apple.product-type.app-extension',
       extensionPointIdentifier: 'com.apple.services',
@@ -118,7 +127,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
     },
     safari: {
       requiresCode: true,
-      isStandalone: false,
+      targetType: 'app_extension',
+      embedType: 'foundation-extension',
       frameworks: [],
       productType: 'com.apple.product-type.app-extension',
       extensionPointIdentifier: 'com.apple.Safari.web-extension',
@@ -128,7 +138,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
     },
     'notification-content': {
       requiresCode: true,
-      isStandalone: false,
+      targetType: 'app_extension',
+      embedType: 'foundation-extension',
       frameworks: [],
       productType: 'com.apple.product-type.app-extension',
       extensionPointIdentifier: 'com.apple.usernotifications.content-extension',
@@ -138,7 +149,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
     },
     'notification-service': {
       requiresCode: true,
-      isStandalone: false,
+      targetType: 'app_extension',
+      embedType: 'foundation-extension',
       frameworks: [],
       productType: 'com.apple.product-type.app-extension',
       extensionPointIdentifier: 'com.apple.usernotifications.service',
@@ -148,7 +160,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
     },
     intent: {
       requiresCode: true,
-      isStandalone: false,
+      targetType: 'app_extension',
+      embedType: 'foundation-extension',
       frameworks: [],
       productType: 'com.apple.product-type.app-extension',
       extensionPointIdentifier: 'com.apple.intents-service',
@@ -158,7 +171,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
     },
     'intent-ui': {
       requiresCode: true,
-      isStandalone: false,
+      targetType: 'app_extension',
+      embedType: 'foundation-extension',
       frameworks: [],
       productType: 'com.apple.product-type.app-extension',
       extensionPointIdentifier: 'com.apple.intents-ui-service',
@@ -168,7 +182,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
     },
     spotlight: {
       requiresCode: true,
-      isStandalone: false,
+      targetType: 'app_extension',
+      embedType: 'foundation-extension',
       frameworks: [],
       productType: 'com.apple.product-type.app-extension',
       extensionPointIdentifier: 'com.apple.spotlight.import',
@@ -178,7 +193,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
     },
     'bg-download': {
       requiresCode: true,
-      isStandalone: false,
+      targetType: 'app_extension',
+      embedType: 'foundation-extension',
       frameworks: [],
       productType: 'com.apple.product-type.app-extension',
       extensionPointIdentifier:
@@ -189,7 +205,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
     },
     'quicklook-thumbnail': {
       requiresCode: true,
-      isStandalone: false,
+      targetType: 'app_extension',
+      embedType: 'foundation-extension',
       frameworks: [],
       productType: 'com.apple.product-type.app-extension',
       extensionPointIdentifier: 'com.apple.quicklook.thumbnail',
@@ -199,7 +216,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
     },
     'location-push': {
       requiresCode: true,
-      isStandalone: false,
+      targetType: 'app_extension',
+      embedType: 'foundation-extension',
       frameworks: [],
       productType: 'com.apple.product-type.app-extension',
       extensionPointIdentifier: 'com.apple.location.push.service',
@@ -209,7 +227,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
     },
     'credentials-provider': {
       requiresCode: true,
-      isStandalone: false,
+      targetType: 'app_extension',
+      embedType: 'foundation-extension',
       frameworks: [],
       productType: 'com.apple.product-type.app-extension',
       extensionPointIdentifier:
@@ -220,7 +239,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
     },
     'account-auth': {
       requiresCode: true,
-      isStandalone: false,
+      targetType: 'app_extension',
+      embedType: 'foundation-extension',
       frameworks: [],
       productType: 'com.apple.product-type.app-extension',
       extensionPointIdentifier:
@@ -231,7 +251,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
     },
     'app-intent': {
       requiresCode: true,
-      isStandalone: false,
+      targetType: 'app_extension',
+      embedType: 'foundation-extension',
       frameworks: [],
       productType: 'com.apple.product-type.extensionkit-extension',
       extensionPointIdentifier: 'com.apple.appintents-extension',
@@ -241,7 +262,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
     },
     'device-activity-monitor': {
       requiresCode: true,
-      isStandalone: false,
+      targetType: 'app_extension',
+      embedType: 'foundation-extension',
       frameworks: [],
       productType: 'com.apple.product-type.app-extension',
       extensionPointIdentifier: 'com.apple.deviceactivity.monitor-extension',
@@ -251,7 +273,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
     },
     matter: {
       requiresCode: true,
-      isStandalone: false,
+      targetType: 'app_extension',
+      embedType: 'foundation-extension',
       frameworks: [],
       productType: 'com.apple.product-type.app-extension',
       extensionPointIdentifier:
@@ -262,7 +285,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
     },
     watch: {
       requiresCode: true,
-      isStandalone: true,
+      targetType: 'application',
+      embedType: 'none',
       frameworks: [],
       productType: 'com.apple.product-type.application',
       extensionPointIdentifier: '',
@@ -281,12 +305,14 @@ export function getTargetInfoPlistForType(
     throw new Error(`Unknown extension type: ${type}`);
   }
 
-  // Start with standard CFBundle keys that all targets need
   let basePlist: Record<string, any> = {
+    CFBundleDisplayName: '$(PRODUCT_NAME)',
     CFBundleName: '$(PRODUCT_NAME)',
     CFBundleIdentifier: '$(PRODUCT_BUNDLE_IDENTIFIER)',
     CFBundlePackageType: '$(PRODUCT_BUNDLE_PACKAGE_TYPE)',
+    CFBundleDevelopmentRegion: '$(DEVELOPMENT_LANGUAGE)',
     CFBundleShortVersionString: '1.0',
+    CFBundleInfoDictionaryVersion: '6.0',
     CFBundleVersion: '1',
     CFBundleExecutable: '$(EXECUTABLE_NAME)',
   };

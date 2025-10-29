@@ -29,10 +29,28 @@ export const withIosStickerPack: ConfigPlugin<{
       props.assets.forEach((assetPath) => {
         const absoluteAssetPath = path.isAbsolute(assetPath)
           ? assetPath
-          : path.join(props.targetDirectory, assetPath);
+          : path.join(
+              config.modRequest.projectRoot,
+              props.targetDirectory,
+              assetPath
+            );
 
         if (fs.existsSync(absoluteAssetPath)) {
-          const destPath = path.join(stickerPackPath, path.basename(assetPath));
+          const filename = path.basename(assetPath);
+          const baseName = path.basename(assetPath, path.extname(assetPath));
+          const stickerDirPath = path.join(
+            stickerPackPath,
+            `${baseName}.sticker`
+          );
+
+          // Create .sticker directory with Contents.json
+          Asset.createSticker({
+            stickerPath: stickerDirPath,
+            filename,
+          });
+
+          // Copy image into .sticker directory
+          const destPath = path.join(stickerDirPath, filename);
           fs.copyFileSync(absoluteAssetPath, destPath);
         } else {
           console.warn(
