@@ -12,6 +12,7 @@ import {
   type IOSTargetConfigWithReactNative,
   type Color,
 } from '../../config';
+import { Paths } from '../utils';
 
 interface IOSTargetProps extends IOSTargetConfigWithReactNative {
   type: ExtensionType;
@@ -114,8 +115,7 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
   }
 
   const targetName = props.displayName || props.name;
-  // Sanitize target name for Xcode (matches withXcodeChanges logic)
-  const targetProductName = targetName.replace(/[^a-zA-Z0-9]/g, '');
+  const targetProductName = Paths.sanitizeTargetName(targetName);
 
   // Pass resolved values to withXcodeChanges
   config = withXcodeChanges(config, {

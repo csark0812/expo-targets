@@ -7,9 +7,10 @@ import path from 'path';
 
 /**
  * Sanitize target name for use in Xcode (removes non-alphanumeric characters).
+ * Appends "Target" suffix to avoid conflicts with main app name.
  */
 export function sanitizeTargetName(name: string): string {
-  return name.replace(/[^a-zA-Z0-9]/g, '');
+  return name.replace(/[^a-zA-Z0-9]/g, '') + 'Target';
 }
 
 /**
@@ -40,11 +41,9 @@ export function getTargetGroupPath({
   platformProjectRoot: string;
   targetName: string;
 }): string {
-  const sanitized = sanitizeTargetName(targetName);
-  // Add 'Target' suffix to prevent collision with main app on case-insensitive filesystems
-  // e.g., "ShareExtension" -> "ShareExtensionTarget" to avoid collision with "shareextension"
-  // This ensures files are placed in separate directories even on case-insensitive filesystems
-  const dirName = `${sanitized}Target`;
+  const dirName = sanitizeTargetName(targetName);
+  // Note: sanitizeTargetName already includes 'Target' suffix to prevent collision
+  // with main app on case-insensitive filesystems (e.g., "ShareExtension" -> "ShareExtensionTarget")
   return path.join(platformProjectRoot, dirName);
 }
 
