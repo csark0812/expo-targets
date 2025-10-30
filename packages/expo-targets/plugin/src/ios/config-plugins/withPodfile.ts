@@ -36,10 +36,11 @@ export const withTargetPodfile: ConfigPlugin<{
         podfile = Podfile.removeTargetBlock(podfile, props.targetName);
       }
 
-      // Only React Native extensions need main app to use_frameworks! (they inherit pods)
-      // Standalone extensions are siblings and don't inherit, so they don't need this
       const projectRoot = config.modRequest.projectRoot;
       const mainTargetName = getProjectName(projectRoot);
+
+      // Only React Native extensions need main app to use_frameworks! (they inherit pods)
+      // Standalone extensions are siblings and don't inherit, so they don't need this
       if (!props.standalone) {
         podfile = Podfile.ensureMainTargetUsesFrameworks(
           podfile,
@@ -47,12 +48,19 @@ export const withTargetPodfile: ConfigPlugin<{
         );
       }
 
+      // For standalone targets, detect main app's use_frameworks! setting
+      // CocoaPods requires host app and extensions to have matching use_frameworks! settings
+      const mainUsesFrameworks = props.standalone
+        ? Podfile.mainTargetUsesFrameworks(podfile, mainTargetName)
+        : undefined;
+
       // Generate appropriate target block based on type
       // React Native targets are nested inside main target to inherit dependencies
       const targetBlock = props.standalone
         ? Podfile.generateStandaloneTargetBlock({
             targetName: props.targetName,
             deploymentTarget: props.deploymentTarget,
+            useFrameworks: mainUsesFrameworks,
           })
         : Podfile.generateReactNativeTargetBlock({
             targetName: props.targetName,

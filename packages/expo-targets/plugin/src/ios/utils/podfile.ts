@@ -25,6 +25,28 @@ export function generateReactNativeTargetBlock({
 }
 
 /**
+ * Check if main app target uses frameworks.
+ * Returns true if use_frameworks! is found in the main target block.
+ */
+export function mainTargetUsesFrameworks(
+  podfileContent: string,
+  mainTargetName: string
+): boolean {
+  const targetRegex = new RegExp(
+    `target\\s+'${mainTargetName}'\\s+do([\\s\\S]*?)(?=\\n\\s*target\\s+|post_install|$)`,
+    'm'
+  );
+
+  const match = podfileContent.match(targetRegex);
+  if (!match) {
+    return false;
+  }
+
+  const targetBlock = match[1];
+  return targetBlock.includes('use_frameworks!');
+}
+
+/**
  * Generate a Podfile target block for a standalone (non-RN) extension.
  * Standalone targets use native code only (Swift/Obj-C), no React Native or Expo modules.
  * Must match main app's use_frameworks! setting for CocoaPods integration.
@@ -32,14 +54,18 @@ export function generateReactNativeTargetBlock({
 export function generateStandaloneTargetBlock({
   targetName,
   deploymentTarget,
+  useFrameworks,
 }: {
   targetName: string;
   deploymentTarget: string;
+  useFrameworks?: boolean;
 }): string {
+  const frameworksLine = useFrameworks
+    ? `    use_frameworks! :linkage => :static\n`
+    : '';
   return `
   target '${targetName}' do
-    use_frameworks! :linkage => :static
-    platform :ios, '${deploymentTarget}'
+${frameworksLine}    platform :ios, '${deploymentTarget}'
   end
 `;
 }
