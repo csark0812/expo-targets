@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
-import { rnShareTarget } from './index';
+import { rnShareTarget } from '../index';
 
 interface SharedData {
   text?: string;
