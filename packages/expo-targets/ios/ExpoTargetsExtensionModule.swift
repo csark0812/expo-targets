@@ -96,11 +96,19 @@ public class ExpoTargetsExtensionModule: Module {
 
   @discardableResult
   private func openURL(_ url: URL) -> Bool {
-    if let extensionContext = findExtensionContext() {
-      extensionContext.open(url) { _ in }
-      return true
+    // Use responder chain to find UIApplication
+    // extensionContext.open() doesn't work reliably in share extensions
+    var responder: UIResponder? = UIApplication.shared.delegate as? UIResponder
+
+    while responder != nil {
+      if let application = responder as? UIApplication {
+        application.open(url, options: [:], completionHandler: nil)
+        return true
+      }
+      responder = responder?.next
     }
 
+    // Fallback: try UIApplication.shared directly
     if UIApplication.shared.canOpenURL(url) {
       UIApplication.shared.open(url, options: [:], completionHandler: nil)
       return true

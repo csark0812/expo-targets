@@ -15,11 +15,11 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.test.shareextension",
+      "bundleIdentifier": "com.test.shareextension2",
       "deploymentTarget": "17.0",
       "entitlements": {
         "com.apple.security.application-groups": [
-          "group.com.test.shareextension"
+          "group.com.test.shareextension2"
         ]
       }
     },

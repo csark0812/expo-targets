@@ -79,6 +79,12 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
         }
       }
 
+      // Also include the bundle ID as a URL scheme
+      // Expo automatically registers it, and openHostApp() uses it
+      if (config.ios?.bundleIdentifier) {
+        mainAppSchemes.push(config.ios.bundleIdentifier);
+      }
+
       const infoPlistContent = getTargetInfoPlistForType(
         props.type,
         props.infoPlist,

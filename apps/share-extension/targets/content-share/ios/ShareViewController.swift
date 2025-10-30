@@ -175,7 +175,7 @@ class ShareViewController: UIViewController {
 
                         if let url = data as? URL {
                             self?.collectSharedContent(type: "image", content: url.absoluteString)
-                        } else if let image = data as? UIImage {
+                        } else if data is UIImage {
                             self?.collectSharedContent(type: "image", content: "Image data received")
                         }
                     }
@@ -362,16 +362,29 @@ class ShareViewController: UIViewController {
             return
         }
 
-        extensionContext?.open(urlScheme, completionHandler: { [weak self] success in
-            DispatchQueue.main.async {
-                if success {
-                    self?.extensionContext?.completeRequest(returningItems: nil)
-                } else {
-                    self?.resetOpenButton()
-                    self?.showAlert(message: "Unable to open the main app. This feature may not work in the simulator. Please try on a physical device.")
-                }
+        if openURL(urlScheme) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                self?.extensionContext?.completeRequest(returningItems: nil)
             }
-        })
+        } else {
+            resetOpenButton()
+            showAlert(message: "Unable to open the main app. This feature may not work in the simulator. Please try on a physical device.")
+        }
+    }
+
+    @discardableResult
+    private func openURL(_ url: URL) -> Bool {
+        var responder: UIResponder? = self
+
+        while responder != nil {
+            if let application = responder as? UIApplication {
+                application.open(url, options: [:], completionHandler: nil)
+                return true
+            }
+            responder = responder?.next
+        }
+
+        return false
     }
 
     private func resetOpenButton() {
