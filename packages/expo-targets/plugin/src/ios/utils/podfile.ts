@@ -6,6 +6,7 @@
 /**
  * Generate a Podfile target block for a React Native extension.
  * Extension targets inherit React Native from main app to avoid duplicate XCFrameworks.
+ * Explicitly includes ExpoModulesCore for framework search paths.
  */
 export function generateReactNativeTargetBlock({
   targetName,
@@ -25,7 +26,7 @@ export function generateReactNativeTargetBlock({
 /**
  * Generate a Podfile target block for a standalone (non-RN) extension.
  * Standalone targets use native code only (Swift/Obj-C), no React Native or Expo modules.
- * No use_frameworks! needed since they have no pod dependencies.
+ * Must match main app's use_frameworks! setting for CocoaPods integration.
  */
 export function generateStandaloneTargetBlock({
   targetName,
@@ -36,6 +37,7 @@ export function generateStandaloneTargetBlock({
 }): string {
   return `
   target '${targetName}' do
+    use_frameworks! :linkage => :static
     platform :ios, '${deploymentTarget}'
   end
 `;
@@ -234,7 +236,8 @@ export function updatePodfilePlatform(
   // - platform :ios, '15.1'
   // - platform :ios, podfile_properties['ios.deploymentTarget'] || '15.1'
   // - platform :ios, "15.1"
-  const platformLineRegex = /(platform\s+:ios\s*,\s*)(?:podfile_properties\[['"]ios\.deploymentTarget['"]\]\s*\|\|\s*)?(['"])([^'"]+)(['"])/;
+  const platformLineRegex =
+    /(platform\s+:ios\s*,\s*)(?:podfile_properties\[['"]ios\.deploymentTarget['"]\]\s*\|\|\s*)?(['"])([^'"]+)(['"])/;
   const match = podfileContent.match(platformLineRegex);
 
   if (!match) {
