@@ -4,7 +4,7 @@ import MobileCoreServices
 import UniformTypeIdentifiers
 
 class ShareViewController: UIViewController {
-    private let appGroup = "group.com.test.shareextension"
+    private let appGroup = "group.com.test.shareextension2"
     private let processingGroup = DispatchGroup()
     private var processingCount = 0
     private var processedItems: [(type: String, content: String)] = []
