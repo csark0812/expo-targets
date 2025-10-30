@@ -309,7 +309,8 @@ export function getTargetInfoPlistForType(
     activationRules?: { type: string; maxCount?: number }[];
     preprocessingFile?: string;
   },
-  entry?: string
+  entry?: string,
+  mainAppSchemes?: string[]
 ): string {
   const typeCharacteristics = TYPE_CHARACTERISTICS[type];
   if (!typeCharacteristics) {
@@ -365,6 +366,18 @@ export function getTargetInfoPlistForType(
       NSExtensionPrincipalClass:
         '$(PRODUCT_MODULE_NAME).ReactNativeViewController',
     };
+  }
+
+  // Auto-inject LSApplicationQueriesSchemes from main app's URL schemes
+  // This allows extensions to query/open the main app via URL schemes
+  if (mainAppSchemes && mainAppSchemes.length > 0) {
+    const existingSchemes = customProperties?.LSApplicationQueriesSchemes || [];
+    const allSchemes = [...new Set([...mainAppSchemes, ...existingSchemes])];
+
+    basePlist.LSApplicationQueriesSchemes = allSchemes;
+    console.log(
+      `[expo-targets] Auto-injected LSApplicationQueriesSchemes: ${allSchemes.join(', ')}`
+    );
   }
 
   if (customProperties) {

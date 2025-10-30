@@ -316,15 +316,11 @@ class ShareViewController: UIViewController {
             let timestamp: Double
         }
 
-        struct SharedItemsData: Codable {
-            let items: [SharedItem]
-        }
-
         var items: [SharedItem] = []
-        if let jsonString = defaults.string(forKey: "ContentShare:data"),
+        if let jsonString = defaults.string(forKey: "items"),
            let jsonData = jsonString.data(using: .utf8),
-           let existingData = try? JSONDecoder().decode(SharedItemsData.self, from: jsonData) {
-            items = existingData.items
+           let existingItems = try? JSONDecoder().decode([SharedItem].self, from: jsonData) {
+            items = existingItems
         }
 
         for processedItem in processedItems {
@@ -337,10 +333,9 @@ class ShareViewController: UIViewController {
         }
         items = Array(items.prefix(50))
 
-        let data = SharedItemsData(items: items)
-        if let jsonData = try? JSONEncoder().encode(data),
+        if let jsonData = try? JSONEncoder().encode(items),
            let jsonString = String(data: jsonData, encoding: .utf8) {
-            defaults.set(jsonString, forKey: "ContentShare:data")
+            defaults.set(jsonString, forKey: "items")
             defaults.synchronize()
         }
     }
@@ -358,25 +353,42 @@ class ShareViewController: UIViewController {
     }
 
     @objc private func openAppTapped() {
-        guard let urlScheme = URL(string: "shareextension://") else { return }
+        openAppButton.isEnabled = false
+        openAppButton.setTitle("Opening...", for: .normal)
 
-        var responder: UIResponder? = self as UIResponder
-        let selector = #selector(openURL(_:))
-
-        while responder != nil {
-            if responder?.responds(to: selector) == true {
-                responder?.perform(selector, with: urlScheme)
-                break
-            }
-            responder = responder?.next
+        guard let urlScheme = URL(string: "shareextension://open") else {
+            showAlert(message: "Invalid URL scheme configuration")
+            resetOpenButton()
+            return
         }
 
+        extensionContext?.open(urlScheme, completionHandler: { [weak self] success in
+            DispatchQueue.main.async {
+                if success {
+                    self?.extensionContext?.completeRequest(returningItems: nil)
+                } else {
+                    self?.resetOpenButton()
+                    self?.showAlert(message: "Unable to open the main app. This feature may not work in the simulator. Please try on a physical device.")
+                }
+            }
+        })
+    }
+
+    private func resetOpenButton() {
+        openAppButton.isEnabled = true
+        openAppButton.setTitle("Open App", for: .normal)
+    }
+
+    private func closeAfterDelay() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
             self?.extensionContext?.completeRequest(returningItems: nil)
         }
     }
 
-    @objc private func openURL(_ url: URL) {
+    private func showAlert(message: String) {
+        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 
     @objc private func closeTapped() {

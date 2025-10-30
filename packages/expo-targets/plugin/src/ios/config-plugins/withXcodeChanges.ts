@@ -69,6 +69,16 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       targetName,
     });
     if (!File.isFile(infoPlistPath)) {
+      // Extract URL schemes from expo config for auto-injection into extensions
+      const mainAppSchemes: string[] = [];
+      if (config.scheme) {
+        if (typeof config.scheme === 'string') {
+          mainAppSchemes.push(config.scheme);
+        } else if (Array.isArray(config.scheme)) {
+          mainAppSchemes.push(...config.scheme);
+        }
+      }
+
       const infoPlistContent = getTargetInfoPlistForType(
         props.type,
         props.infoPlist,
@@ -78,7 +88,8 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
               preprocessingFile: props.preprocessingFile,
             }
           : undefined,
-        props.entry
+        props.entry,
+        mainAppSchemes.length > 0 ? mainAppSchemes : undefined
       );
       File.writeFileSafe(infoPlistPath, infoPlistContent);
       console.log(`[expo-targets] Generated Info.plist for ${targetName}`);
