@@ -8,7 +8,7 @@
     "android": "expo run:android"
   },
   "dependencies": {
-    "expo": "~54.0.18",
+    "expo": "54.0.21",
     "expo-file-system": "~19.0.3",
     "expo-status-bar": "~3.0.8",
     "expo-targets": "workspace:*",

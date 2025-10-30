@@ -1,9 +1,29 @@
 import UIKit
 import ExpoModulesCore
+import React
+
+// Bridge delegate for app extensions (cannot use UIApplication.shared)
+private class ExtensionBridgeDelegate: NSObject, RCTBridgeDelegate {
+    func sourceURL(for bridge: RCTBridge) -> URL? {
+        #if DEBUG
+        // Use RCTBundleURLProvider to dynamically detect Metro port
+        // Reads from RCT_METRO_PORT env var or defaults to 8081
+        // Uses same bundle root as main app for Expo compatibility
+        return RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: ".expo/.virtual-metro-entry")
+        #else
+        // In release, load from main bundle
+        guard let bundleURL = Bundle.main.url(forResource: "main", withExtension: "jsbundle") else {
+            // Fallback: try to construct path to bundle
+            return Bundle.main.url(forResource: "index", withExtension: "jsbundle")
+        }
+        return bundleURL
+        #endif
+    }
+}
 
 class ReactNativeViewController: UIViewController {
     private var appBridge: RCTBridge?
-    private var factory: ExpoReactNativeFactory?
+    private var bridgeDelegate: ExtensionBridgeDelegate?
 
     // MARK: - Extension Data
 
@@ -22,19 +42,19 @@ class ReactNativeViewController: UIViewController {
     // MARK: - React Native Setup
 
     private func setupReactNativeView() {
-        // Initialize Expo React Native factory
-        factory = ExpoReactNativeFactory()
+        // Create bridge delegate for extensions (avoids UIApplication.shared)
+        bridgeDelegate = ExtensionBridgeDelegate()
 
-        // Create bridge with entry point
-        guard let bridge = factory?.createBridge(
-            moduleName: "{{MODULE_NAME}}",
-            initialProperties: getInitialProperties(),
-            launchOptions: nil
-        ) else {
-            showError("Failed to initialize React Native")
+        // Create bridge directly (extensions cannot use ExpoReactDelegate)
+        guard let delegate = bridgeDelegate else {
+            showError("Failed to create bridge delegate")
             return
         }
 
+        guard let bridge = RCTBridge(delegate: delegate, launchOptions: nil) else {
+            showError("Failed to create React Native bridge")
+            return
+        }
         self.appBridge = bridge
 
         // Create root view
@@ -44,9 +64,9 @@ class ReactNativeViewController: UIViewController {
             initialProperties: getInitialProperties()
         )
 
-        rootView.backgroundColor = .clear
+        rootView.backgroundColor = UIColor.clear
         rootView.frame = view.bounds
-        rootView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        rootView.autoresizingMask = [UIView.AutoresizingMask.flexibleWidth, UIView.AutoresizingMask.flexibleHeight]
 
         view.addSubview(rootView)
     }

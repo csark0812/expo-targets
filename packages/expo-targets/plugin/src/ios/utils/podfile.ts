@@ -6,7 +6,8 @@
 /**
  * Generate a Podfile target block for a React Native extension.
  * Extension targets inherit React Native from main app to avoid duplicate XCFrameworks.
- * Explicitly includes ExpoModulesCore for framework search paths.
+ * Framework search paths are configured in post_install hook since inherit! :complete
+ * doesn't always propagate them for Swift imports.
  */
 export function generateReactNativeTargetBlock({
   targetName,
@@ -332,6 +333,123 @@ ${extensions
   // Fallback: couldn't find the post_install hook, skip modification
   console.warn(
     '[expo-targets] Could not find post_install hook to inject deployment target fixes'
+  );
+  return podfileContent;
+}
+
+/**
+ * Ensure React Native extension targets have proper framework search paths.
+ * inherit! :complete inherits dependencies but doesn't always propagate framework search paths
+ * for Swift imports, so we need to explicitly copy them from the main app target.
+ */
+export function ensureReactNativeExtensionFrameworkPaths(
+  podfileContent: string,
+  extensions: { targetName: string; deploymentTarget: string }[],
+  mainTargetName: string
+): string {
+  if (extensions.length === 0) {
+    return podfileContent;
+  }
+
+  // Remove any existing framework paths fix code
+  if (
+    podfileContent.includes(
+      '# [expo-targets] Fix React Native extension framework search paths'
+    )
+  ) {
+    const fixRegex =
+      /\s*# \[expo-targets\] Fix React Native extension framework search paths[\s\S]*?(?=\n\s{4}\w|\n\s{2}end)/;
+    podfileContent = podfileContent.replace(fixRegex, '');
+  }
+
+  // Generate the framework search paths fix code
+  const mainPodsTarget = `Pods-${mainTargetName}`;
+  const extensionTargetNames = extensions.map((e) => e.targetName);
+  const fixCode = `
+    # [expo-targets] Fix React Native extension framework search paths
+    # inherit! :complete doesn't always propagate framework search paths for Swift imports
+    installer.pods_project.targets.each do |target|
+${extensions
+  .map(
+    (ext) => `      if target.name.include?('${ext.targetName}')
+        target.build_configurations.each do |config|
+          config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '${ext.deploymentTarget}'
+          # Copy framework search paths from main app target
+          main_target = installer.pods_project.targets.find { |t| t.name == '${mainPodsTarget}' }
+          if main_target
+            main_config = main_target.build_configurations.find { |c| c.name == config.name }
+            if main_config && main_config.build_settings['FRAMEWORK_SEARCH_PATHS']
+              existing_paths = config.build_settings['FRAMEWORK_SEARCH_PATHS'] || ['$(inherited)']
+              inherited_paths = main_config.build_settings['FRAMEWORK_SEARCH_PATHS']
+              # Merge inherited paths, avoiding duplicates
+              merged_paths = existing_paths + inherited_paths.reject { |p| existing_paths.include?(p) }
+              config.build_settings['FRAMEWORK_SEARCH_PATHS'] = merged_paths
+            end
+          end
+          # Update the xcconfig file with framework search paths and deployment target
+          xcconfig_path = config.base_configuration_reference.real_path
+          if xcconfig_path && File.exist?(xcconfig_path)
+            xcconfig_content = File.read(xcconfig_path)
+            # Remove existing IPHONEOS_DEPLOYMENT_TARGET if present
+            xcconfig_content.gsub!(/^IPHONEOS_DEPLOYMENT_TARGET = .*$/, '')
+            # Add deployment target
+            xcconfig_content += "\\nIPHONEOS_DEPLOYMENT_TARGET = ${ext.deploymentTarget}\\n"
+            # Copy framework search paths and other Swift-related settings from main app's xcconfig
+            if main_target
+              main_config = main_target.build_configurations.find { |c| c.name == config.name }
+              if main_config
+                main_xcconfig_path = main_config.base_configuration_reference.real_path
+                if main_xcconfig_path && File.exist?(main_xcconfig_path)
+                  main_xcconfig_content = File.read(main_xcconfig_path)
+                  # Copy FRAMEWORK_SEARCH_PATHS (needed for Swift imports)
+                  framework_paths_match = main_xcconfig_content.match(/^FRAMEWORK_SEARCH_PATHS = (.+)$/m)
+                  if framework_paths_match
+                    xcconfig_content.gsub!(/^FRAMEWORK_SEARCH_PATHS = .*$/, '')
+                    xcconfig_content += "\\nFRAMEWORK_SEARCH_PATHS = #{framework_paths_match[1]}\\n"
+                  end
+                  # Copy HEADER_SEARCH_PATHS (includes ExpoModulesCore headers)
+                  header_paths_match = main_xcconfig_content.match(/^HEADER_SEARCH_PATHS = (.+)$/m)
+                  if header_paths_match
+                    xcconfig_content.gsub!(/^HEADER_SEARCH_PATHS = .*$/, '')
+                    xcconfig_content += "\\nHEADER_SEARCH_PATHS = #{header_paths_match[1]}\\n"
+                  end
+                  # Copy OTHER_SWIFT_FLAGS (includes module map files for ExpoModulesCore)
+                  swift_flags_match = main_xcconfig_content.match(/^OTHER_SWIFT_FLAGS = (.+)$/m)
+                  if swift_flags_match
+                    xcconfig_content.gsub!(/^OTHER_SWIFT_FLAGS = .*$/, '')
+                    xcconfig_content += "\\nOTHER_SWIFT_FLAGS = #{swift_flags_match[1]}\\n"
+                  end
+                  # Copy SWIFT_INCLUDE_PATHS (Swift module search paths)
+                  swift_include_match = main_xcconfig_content.match(/^SWIFT_INCLUDE_PATHS = (.+)$/m)
+                  if swift_include_match
+                    xcconfig_content.gsub!(/^SWIFT_INCLUDE_PATHS = .*$/, '')
+                    xcconfig_content += "\\nSWIFT_INCLUDE_PATHS = #{swift_include_match[1]}\\n"
+                  end
+                end
+              end
+            end
+            File.write(xcconfig_path, xcconfig_content)
+          end
+        end
+      end`
+  )
+  .join('\n')}
+    end
+`;
+
+  // Find the main app's post_install hook and inject our code before the closing 'end'
+  const postInstallRegex =
+    /(post_install do \|installer\|[\s\S]*?react_native_post_install\([\s\S]*?\)[\s\S]*?)(\n\s{2}end)/;
+
+  const match = podfileContent.match(postInstallRegex);
+  if (match) {
+    // Inject our code before the closing 'end' of post_install
+    return podfileContent.replace(postInstallRegex, `$1${fixCode}$2`);
+  }
+
+  // Fallback: couldn't find the post_install hook, skip modification
+  console.warn(
+    '[expo-targets] Could not find post_install hook to inject framework search paths'
   );
   return podfileContent;
 }
