@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { getSharedItems, clearSharedItems } from './targets/content-share';
 
 interface SharedItem {
   type: string;
@@ -26,14 +25,8 @@ export default function App() {
 
   const loadSharedItems = async () => {
     setRefreshing(true);
-    try {
-      const items = await getSharedItems();
-      setSharedItems(items.filter((item): item is SharedItem => item !== null));
-    } catch (error) {
-      console.error('Error loading shared items:', error);
-    } finally {
-      setRefreshing(false);
-    }
+
+    setRefreshing(false);
   };
 
   const handleClear = async () => {
@@ -46,7 +39,6 @@ export default function App() {
           text: 'Clear',
           style: 'destructive',
           onPress: async () => {
-            await clearSharedItems();
             setSharedItems([]);
           },
         },
