@@ -1,10 +1,9 @@
 {
   "platforms": ["ios", "android"],
   "ios": {
-    "modules": ["ExpoTargetsStorageModule"]
+    "modules": ["ExpoTargetsStorageModule", "ExpoTargetsExtensionModule"]
   },
   "android": {
     "modules": []
   }
 }
-

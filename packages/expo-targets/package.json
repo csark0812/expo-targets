@@ -12,12 +12,8 @@
     "./metro": {
       "import": "./metro/build/index.js",
       "require": "./metro/build/index.js"
-    }
-  },
-  "expo": {
-    "autolinking": {
-      "nativeModulesDir": "./src/modules"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "scripts": {
     "build": "bun run build:main && bun run build:plugin && bun run build:metro",
