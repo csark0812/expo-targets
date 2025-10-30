@@ -58,9 +58,7 @@ export class AppGroupStorage {
   }
 
   clear() {
-    console.warn(
-      'AppGroupStorage.clear() is not implemented. Remove keys individually.'
-    );
+    ExpoTargetsStorageModule.clearAll(this.appGroup);
   }
 
   setData(data: Record<string, any>) {
@@ -70,10 +68,36 @@ export class AppGroupStorage {
   }
 
   getData<T extends Record<string, any>>(): T {
-    console.warn(
-      'AppGroupStorage.getData() is not fully implemented. Use get() for individual keys.'
-    );
-    return {} as T;
+    try {
+      const rawData = ExpoTargetsStorageModule.getAllData(this.appGroup);
+      const parsedData: Record<string, any> = {};
+
+      Object.entries(rawData).forEach(([key, value]) => {
+        if (typeof value === 'string') {
+          try {
+            parsedData[key] = JSON.parse(value);
+          } catch {
+            parsedData[key] = value;
+          }
+        } else {
+          parsedData[key] = value;
+        }
+      });
+
+      return parsedData as T;
+    } catch (error) {
+      console.warn('Failed to get all data:', error);
+      return {} as T;
+    }
+  }
+
+  getKeys(): string[] {
+    try {
+      return ExpoTargetsStorageModule.getAllKeys(this.appGroup);
+    } catch (error) {
+      console.warn('Failed to get all keys:', error);
+      return [];
+    }
   }
 
   refresh(targetName?: string) {

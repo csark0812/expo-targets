@@ -22,8 +22,8 @@ export const withTargetsDir: ConfigPlugin<{
 
   console.log(`[expo-targets] Found ${targetConfigFiles.length} target(s)`);
 
-  // Collect target metadata for runtime access
-  const targetMetadata: Record<string, { appGroup?: string }> = {};
+  // Collect target configs for runtime access
+  const targetConfigs: any[] = [];
 
   targetConfigFiles.forEach((targetPath) => {
     let evaluatedConfig = require(targetPath);
@@ -52,17 +52,22 @@ export const withTargetsDir: ConfigPlugin<{
       `[expo-targets] Processing ${targetDirName}: type=${evaluatedConfig.type}, name=${targetName}`
     );
 
-    // Store metadata for runtime access
-    targetMetadata[targetName] = {
-      appGroup: evaluatedConfig.appGroup,
-    };
-
     const supportsIOS = evaluatedConfig.platforms.includes('ios');
     const supportsAndroid = evaluatedConfig.platforms.includes('android');
 
     console.log(
       `[expo-targets] ${targetDirName}: iOS=${supportsIOS}, Android=${supportsAndroid}`
     );
+
+    // Resolve appGroup (inherit from main app if not specified)
+    let appGroup = evaluatedConfig.appGroup;
+    if (!appGroup) {
+      const mainAppGroups =
+        config.ios?.entitlements?.['com.apple.security.application-groups'];
+      if (Array.isArray(mainAppGroups) && mainAppGroups.length > 0) {
+        appGroup = mainAppGroups[0];
+      }
+    }
 
     if (supportsIOS && evaluatedConfig.ios) {
       config = withIOSTarget(config, {
@@ -81,12 +86,18 @@ export const withTargetsDir: ConfigPlugin<{
         `[expo-targets] Android support not yet implemented for ${targetDirName}`
       );
     }
+
+    // Store full config for runtime access (with resolved appGroup)
+    targetConfigs.push({
+      ...evaluatedConfig,
+      appGroup,
+    });
   });
 
-  // Inject target metadata into expo config for runtime access
+  // Inject target configs into expo config for runtime access
   config.extra = {
     ...config.extra,
-    expoTargets: targetMetadata,
+    targets: targetConfigs,
   };
 
   return config;

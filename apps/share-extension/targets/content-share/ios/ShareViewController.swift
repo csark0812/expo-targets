@@ -5,6 +5,13 @@ import UniformTypeIdentifiers
 
 class ShareViewController: UIViewController {
     private let appGroup = "group.com.test.shareextension"
+    private let processingGroup = DispatchGroup()
+    private var processingCount = 0
+    private var hasProcessedContent = false
+
+    private var messageLabel: UILabel!
+    private var iconLabel: UILabel!
+    private var doneButton: UIButton!
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -23,7 +30,7 @@ class ShareViewController: UIViewController {
 
         view.addSubview(containerView)
 
-        let iconLabel = UILabel()
+        iconLabel = UILabel()
         iconLabel.text = "📤"
         iconLabel.font = .systemFont(ofSize: 60)
         iconLabel.textAlignment = .center
@@ -35,7 +42,7 @@ class ShareViewController: UIViewController {
         titleLabel.textAlignment = .center
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        let messageLabel = UILabel()
+        messageLabel = UILabel()
         messageLabel.text = "Processing your shared content..."
         messageLabel.font = .systemFont(ofSize: 16)
         messageLabel.textColor = .secondaryLabel
@@ -43,7 +50,7 @@ class ShareViewController: UIViewController {
         messageLabel.numberOfLines = 0
         messageLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        let doneButton = UIButton(type: .system)
+        doneButton = UIButton(type: .system)
         doneButton.setTitle("Done", for: .normal)
         doneButton.titleLabel?.font = .boldSystemFont(ofSize: 17)
         doneButton.backgroundColor = UIColor(named: "AccentColor")
@@ -84,6 +91,7 @@ class ShareViewController: UIViewController {
     private func processSharedContent() {
         guard let extensionContext = extensionContext,
               let items = extensionContext.inputItems as? [NSExtensionItem] else {
+            handleNoContent()
             return
         }
 
@@ -91,37 +99,84 @@ class ShareViewController: UIViewController {
             guard let attachments = item.attachments else { continue }
 
             for attachment in attachments {
-                // Handle text
-                if attachment.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) {
-                    attachment.loadItem(forTypeIdentifier: UTType.plainText.identifier) { [weak self] data, error in
-                        if let text = data as? String {
-                            self?.saveSharedContent(type: "text", content: text)
-                        } else if let data = data as? Data, let text = String(data: data, encoding: .utf8) {
-                            self?.saveSharedContent(type: "text", content: text)
-                        }
-                    }
-                }
+                processingGroup.enter()
+                processingCount += 1
 
-                // Handle URLs
-                if attachment.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
-                    attachment.loadItem(forTypeIdentifier: UTType.url.identifier) { [weak self] data, error in
-                        if let url = data as? URL {
-                            self?.saveSharedContent(type: "url", content: url.absoluteString)
-                        }
-                    }
-                }
-
-                // Handle images
                 if attachment.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
                     attachment.loadItem(forTypeIdentifier: UTType.image.identifier) { [weak self] data, error in
+                        defer { self?.processingGroup.leave() }
+
+                        if let error = error {
+                            print("Error loading image: \(error)")
+                            return
+                        }
+
                         if let url = data as? URL {
                             self?.saveSharedContent(type: "image", content: url.absoluteString)
                         } else if let image = data as? UIImage {
                             self?.saveSharedContent(type: "image", content: "Image data received")
                         }
                     }
+                } else if attachment.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
+                    attachment.loadItem(forTypeIdentifier: UTType.url.identifier) { [weak self] data, error in
+                        defer { self?.processingGroup.leave() }
+
+                        if let error = error {
+                            print("Error loading URL: \(error)")
+                            return
+                        }
+
+                        if let url = data as? URL {
+                            self?.saveSharedContent(type: "url", content: url.absoluteString)
+                        }
+                    }
+                } else if attachment.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) {
+                    attachment.loadItem(forTypeIdentifier: UTType.plainText.identifier) { [weak self] data, error in
+                        defer { self?.processingGroup.leave() }
+
+                        if let error = error {
+                            print("Error loading text: \(error)")
+                            return
+                        }
+
+                        if let text = data as? String {
+                            self?.saveSharedContent(type: "text", content: text)
+                        } else if let data = data as? Data, let text = String(data: data, encoding: .utf8) {
+                            self?.saveSharedContent(type: "text", content: text)
+                        }
+                    }
+                } else {
+                    processingGroup.leave()
                 }
             }
+        }
+
+        processingGroup.notify(queue: .main) { [weak self] in
+            self?.handleProcessingComplete()
+        }
+    }
+
+    private func handleNoContent() {
+        DispatchQueue.main.async { [weak self] in
+            self?.iconLabel.text = "⚠️"
+            self?.messageLabel.text = "No content to share"
+            self?.doneButton.isEnabled = true
+        }
+    }
+
+    private func handleProcessingComplete() {
+        if hasProcessedContent {
+            iconLabel.text = "✅"
+            messageLabel.text = "Content shared successfully!"
+        } else {
+            iconLabel.text = "⚠️"
+            messageLabel.text = "No content could be processed"
+        }
+
+        doneButton.isEnabled = true
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+            self?.doneTapped()
         }
     }
 
@@ -138,7 +193,6 @@ class ShareViewController: UIViewController {
             let items: [SharedItem]
         }
 
-        // Load existing items
         var items: [SharedItem] = []
         if let jsonString = defaults.string(forKey: "ContentShare:data"),
            let jsonData = jsonString.data(using: .utf8),
@@ -146,23 +200,20 @@ class ShareViewController: UIViewController {
             items = existingData.items
         }
 
-        // Add new item
         let newItem = SharedItem(
             type: type,
             content: content,
             timestamp: Date().timeIntervalSince1970
         )
         items.insert(newItem, at: 0)
-
-        // Keep only last 50 items
         items = Array(items.prefix(50))
 
-        // Save back
         let data = SharedItemsData(items: items)
         if let jsonData = try? JSONEncoder().encode(data),
            let jsonString = String(data: jsonData, encoding: .utf8) {
             defaults.set(jsonString, forKey: "ContentShare:data")
             defaults.synchronize()
+            hasProcessedContent = true
         }
     }
 

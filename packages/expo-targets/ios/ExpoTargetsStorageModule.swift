@@ -35,6 +35,30 @@ public class ExpoTargetsStorageModule: Module {
       defaults?.synchronize()
     }
 
+    Function("getAllKeys") { (suite: String?) -> [String] in
+      let defaults = UserDefaults(suiteName: suite ?? "")
+      guard let dict = defaults?.dictionaryRepresentation() else {
+        return []
+      }
+      return Array(dict.keys)
+    }
+
+    Function("getAllData") { (suite: String?) -> [String: Any] in
+      let defaults = UserDefaults(suiteName: suite ?? "")
+      return defaults?.dictionaryRepresentation() ?? [:]
+    }
+
+    Function("clearAll") { (suite: String?) -> Void in
+      let defaults = UserDefaults(suiteName: suite ?? "")
+      guard let dict = defaults?.dictionaryRepresentation() else {
+        return
+      }
+      for key in dict.keys {
+        defaults?.removeObject(forKey: key)
+      }
+      defaults?.synchronize()
+    }
+
     Function("refreshTarget") { (name: String?) -> Void in
       // Refresh widgets
       if #available(iOS 14.0, *) {
