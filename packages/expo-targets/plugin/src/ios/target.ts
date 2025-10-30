@@ -104,8 +104,14 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       requiresEntitlements: true,
       basePlist: {
         NSExtension: {
-          NSExtensionMainStoryboard: 'MainInterface',
-          NSExtensionActivationRule: 'TRUEPREDICATE',
+          NSExtensionPrincipalClass:
+            '$(PRODUCT_MODULE_NAME).ShareViewController',
+          NSExtensionAttributes: {
+            NSExtensionActivationRule: {
+              NSExtensionActivationSupportsText: true,
+              NSExtensionActivationSupportsWebURLWithMaxCount: 1,
+            },
+          },
         },
       },
     },
@@ -298,7 +304,12 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
 
 export function getTargetInfoPlistForType(
   type: ExtensionType,
-  customProperties?: Record<string, any>
+  customProperties?: Record<string, any>,
+  shareExtensionConfig?: {
+    activationRules?: { type: string; maxCount?: number }[];
+    preprocessingFile?: string;
+  },
+  entry?: string
 ): string {
   const typeCharacteristics = TYPE_CHARACTERISTICS[type];
   if (!typeCharacteristics) {
@@ -328,6 +339,34 @@ export function getTargetInfoPlistForType(
     };
   }
 
+  // Handle share extension activation rules
+  if (type === 'share' && shareExtensionConfig) {
+    const activationRules = buildShareExtensionActivationRules(
+      shareExtensionConfig.activationRules,
+      shareExtensionConfig.preprocessingFile
+    );
+
+    basePlist.NSExtension = {
+      ...basePlist.NSExtension,
+      NSExtensionAttributes: {
+        NSExtensionActivationRule: activationRules,
+        ...(shareExtensionConfig.preprocessingFile && {
+          NSExtensionJavaScriptPreprocessingFile:
+            shareExtensionConfig.preprocessingFile.replace(/\.[^/.]+$/, ''), // Remove extension
+        }),
+      },
+    };
+  }
+
+  // Override NSExtensionPrincipalClass for React Native extensions
+  if (entry && (type === 'share' || type === 'action' || type === 'clip')) {
+    basePlist.NSExtension = {
+      ...basePlist.NSExtension,
+      NSExtensionPrincipalClass:
+        '$(PRODUCT_MODULE_NAME).ReactNativeViewController',
+    };
+  }
+
   if (customProperties) {
     basePlist = deepMerge(basePlist, customProperties);
   }
@@ -337,6 +376,80 @@ export function getTargetInfoPlistForType(
 
 export function getFrameworksForType(type: ExtensionType): string[] {
   return TYPE_CHARACTERISTICS[type].frameworks;
+}
+
+/**
+ * Build NSExtensionActivationRule from share extension config
+ * @see https://developer.apple.com/library/archive/documentation/General/Conceptual/ExtensibilityPG/ExtensionScenarios.html
+ */
+export function buildShareExtensionActivationRules(
+  activationRules?: {
+    type: string;
+    maxCount?: number;
+  }[],
+  preprocessingFile?: string
+): Record<string, any> {
+  if (!activationRules || activationRules.length === 0) {
+    // Default: text and url
+    return {
+      NSExtensionActivationSupportsText: true,
+      NSExtensionActivationSupportsWebURLWithMaxCount: 1,
+    };
+  }
+
+  return activationRules.reduce(
+    (acc, rule) => {
+      const maxCount = rule.maxCount ?? 1;
+
+      switch (rule.type) {
+        case 'text':
+          return {
+            ...acc,
+            NSExtensionActivationSupportsText: true,
+          };
+        case 'url':
+          // If preprocessing file exists, enable webpage support
+          if (preprocessingFile) {
+            return {
+              ...acc,
+              NSExtensionActivationSupportsWebPageWithMaxCount: maxCount,
+              NSExtensionActivationSupportsWebURLWithMaxCount: maxCount,
+            };
+          }
+          return {
+            ...acc,
+            NSExtensionActivationSupportsWebURLWithMaxCount: maxCount,
+          };
+        case 'webpage':
+          // Explicit webpage support (requires preprocessing file)
+          return {
+            ...acc,
+            NSExtensionActivationSupportsWebPageWithMaxCount: maxCount,
+          };
+        case 'image':
+          return {
+            ...acc,
+            NSExtensionActivationSupportsImageWithMaxCount: maxCount,
+          };
+        case 'video':
+          return {
+            ...acc,
+            NSExtensionActivationSupportsMovieWithMaxCount: maxCount,
+          };
+        case 'file':
+          return {
+            ...acc,
+            NSExtensionActivationSupportsFileWithMaxCount: maxCount,
+          };
+        default:
+          console.warn(
+            `[expo-targets] Unknown share extension content type: ${rule.type}`
+          );
+          return acc;
+      }
+    },
+    {} as Record<string, any>
+  );
 }
 
 export function productTypeForType(type: ExtensionType): string {

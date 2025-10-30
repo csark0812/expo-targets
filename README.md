@@ -377,11 +377,15 @@ export type MyWidgetData = {
 
 ## Examples
 
-The repository includes a complete example app:
+The repository includes multiple example apps demonstrating different target types:
 
-- **apps/widget-basic**: Complete working widget with data sharing and type-safe API
+- **clip-advanced**: App Clip with URL handling and location features
+- **imessage-stickers**: iMessage sticker pack with asset catalog
+- **share-extension**: Share extension for content capture
+- **widget-interactive**: Advanced weather widget with timeline updates
+- **multi-target**: Task manager with widget + App Clip (multi-target architecture)
 
-See the [apps/](./apps/) directory for runnable examples.
+See the [apps/](./apps/) directory for complete, runnable examples.
 
 ## Project Structure
 

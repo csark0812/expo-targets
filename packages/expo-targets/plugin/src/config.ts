@@ -29,6 +29,33 @@ export interface Color {
   darkColor?: string;
 }
 
+// Share extension activation rules
+export type ShareExtensionContentType =
+  | 'text'
+  | 'url'
+  | 'image'
+  | 'video'
+  | 'file'
+  | 'webpage';
+
+export interface ShareExtensionActivationRule {
+  /**
+   * Type of content to accept
+   * - text: Plain text content
+   * - url: URLs (including web URLs)
+   * - image: Image files
+   * - video: Video files
+   * - file: Generic files
+   * - webpage: Web pages (requires preprocessingFile for full support)
+   */
+  type: ShareExtensionContentType;
+  /**
+   * Maximum number of items to accept (default: 1)
+   * Only applicable for url, image, video, and file types
+   */
+  maxCount?: number;
+}
+
 export interface StickerPack {
   name: string;
   assets: string[];
@@ -99,6 +126,26 @@ interface BaseIOSTargetConfig {
   targetedDeviceFamily?: string;
   clangEnableModules?: boolean | string;
   swiftEmitLocStrings?: boolean | string;
+
+  // Share extension configuration (only applies when type='share')
+  /**
+   * Content types this share extension accepts
+   * Only applies to share extension targets
+   * @example
+   * activationRules: [
+   *   { type: 'text' },
+   *   { type: 'url' },
+   *   { type: 'image', maxCount: 5 }
+   * ]
+   */
+  activationRules?: ShareExtensionActivationRule[];
+  /**
+   * JavaScript file for preprocessing web content
+   * Only applies to share extension targets
+   * Enables NSExtensionActivationSupportsWebPageWithMaxCount
+   * @see https://developer.apple.com/library/archive/documentation/General/Conceptual/ExtensibilityPG/Share.html
+   */
+  preprocessingFile?: string;
 }
 
 // Types that support React Native rendering
@@ -109,13 +156,27 @@ export type NativeOnlyType = Exclude<ExtensionType, ReactNativeCompatibleType>;
 
 // Config for React Native compatible types
 export interface IOSTargetConfigWithReactNative extends BaseIOSTargetConfig {
-  useReactNative?: boolean;
+  /**
+   * Entry point for React Native rendering (share, action, clip only)
+   * Path to JavaScript/TypeScript file that exports the extension component
+   * When specified, enables React Native rendering in the extension
+   * @example "./ShareExtension.tsx"
+   * @example "./targets/my-share/ShareExtension.js"
+   */
+  entry?: string;
+
+  /**
+   * Exclude specific Expo packages from the extension bundle
+   * Reduces bundle size by removing unused modules
+   * Only applies when `entry` is specified
+   * @example ['expo-dev-client', 'expo-updates']
+   */
   excludedPackages?: string[];
 }
 
 // Config for native-only types (no React Native options)
 export interface IOSTargetConfigNativeOnly extends BaseIOSTargetConfig {
-  useReactNative?: never;
+  entry?: never;
   excludedPackages?: never;
 }
 

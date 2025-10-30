@@ -1,4 +1,6 @@
 import { ConfigPlugin } from '@expo/config-plugins';
+import * as fs from 'fs';
+import * as path from 'path';
 
 import { withTargetEntitlements } from './withEntitlements';
 import { withIosColorset } from './withIosColorset';
@@ -28,19 +30,30 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
     'clip',
   ];
 
-  if (
-    props.useReactNative &&
-    !REACT_NATIVE_COMPATIBLE_TYPES.includes(props.type)
-  ) {
-    throw new Error(
-      `Target '${props.name}' (type: ${props.type}) does not support React Native. ` +
-        `useReactNative can only be used with: ${REACT_NATIVE_COMPATIBLE_TYPES.join(', ')}`
-    );
+  // Validate entry field
+  if (props.entry) {
+    if (!REACT_NATIVE_COMPATIBLE_TYPES.includes(props.type)) {
+      throw new Error(
+        `Target '${props.name}' (type: ${props.type}) does not support React Native. ` +
+          `'entry' can only be used with: ${REACT_NATIVE_COMPATIBLE_TYPES.join(', ')}`
+      );
+    }
+
+    // Validate that the entry file exists
+    const projectRoot = config._internal?.projectRoot || process.cwd();
+    const entryPath = path.resolve(projectRoot, props.entry);
+    if (!fs.existsSync(entryPath)) {
+      throw new Error(
+        `Target '${props.name}': Entry file not found at ${props.entry}. ` +
+          `Resolved path: ${entryPath}`
+      );
+    }
   }
 
-  if (props.excludedPackages && !props.useReactNative) {
+  // Validate excludedPackages
+  if (props.excludedPackages && !props.entry) {
     console.warn(
-      `[expo-targets] excludedPackages specified for ${props.name} but useReactNative is false. ` +
+      `[expo-targets] excludedPackages specified for ${props.name} but no 'entry' field provided. ` +
         `excludedPackages will be ignored.`
     );
   }
@@ -113,11 +126,10 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
 
   // Add Podfile target only for targets that use React Native
   // App Clips and other extensions without RN should be standalone (no Pods)
-  if (props.useReactNative) {
+  if (props.entry) {
     config = withTargetPodfile(config, {
       targetName: targetProductName, // Use sanitized name to match Xcode target
       deploymentTarget: deploymentTarget!, // Guaranteed to be set by resolution logic above
-      useReactNative: props.useReactNative,
       excludedPackages: props.excludedPackages,
     });
   } else {

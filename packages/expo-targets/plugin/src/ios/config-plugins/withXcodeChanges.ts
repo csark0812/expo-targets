@@ -14,7 +14,7 @@ import {
   getTargetInfoPlistForType,
   TYPE_CHARACTERISTICS,
 } from '../target';
-import { Xcode, Paths, File, Asset } from '../utils';
+import { Xcode, Paths, File, Asset, ReactNativeSwift } from '../utils';
 
 interface IOSTargetProps extends IOSTargetConfigWithReactNative {
   type: ExtensionType;
@@ -71,7 +71,14 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     if (!File.isFile(infoPlistPath)) {
       const infoPlistContent = getTargetInfoPlistForType(
         props.type,
-        props.infoPlist
+        props.infoPlist,
+        props.type === 'share'
+          ? {
+              activationRules: props.activationRules,
+              preprocessingFile: props.preprocessingFile,
+            }
+          : undefined,
+        props.entry
       );
       File.writeFileSafe(infoPlistPath, infoPlistContent);
       console.log(`[expo-targets] Generated Info.plist for ${targetName}`);
@@ -419,12 +426,43 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       projectRoot,
       targetDirectory: props.directory,
     });
-    const swiftFiles = typeConfig.requiresCode
+    let swiftFiles = typeConfig.requiresCode
       ? globSync('**/*.swift', {
           cwd: targetDirectory,
           absolute: false,
         })
       : [];
+
+    // Auto-generate ReactNativeViewController.swift if using React Native without user Swift files
+    if (props.entry && swiftFiles.length === 0) {
+      console.log(
+        `[expo-targets] No Swift files found - generating ReactNativeViewController.swift for React Native`
+      );
+
+      const moduleName = targetProductName;
+      const generatedSwift = ReactNativeSwift.generateReactNativeViewController(
+        {
+          type: props.type,
+          moduleName,
+          preprocessingFile: props.preprocessingFile,
+        }
+      );
+
+      const generatedFilePath = path.join(
+        targetGroupPath,
+        'ReactNativeViewController.swift'
+      );
+      File.writeFileSafe(generatedFilePath, generatedSwift);
+      swiftFiles = ['ReactNativeViewController.swift'];
+
+      console.log(
+        `[expo-targets] Generated ReactNativeViewController.swift for ${moduleName}`
+      );
+    } else if (props.entry && swiftFiles.length > 0) {
+      console.log(
+        `[expo-targets] Using user-provided Swift files with React Native entry point`
+      );
+    }
 
     console.log(
       `[expo-targets] Found ${swiftFiles.length} Swift file(s) in ${props.directory}/ios`
@@ -445,12 +483,28 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       console.log(`[expo-targets] Info.plist configured via build settings`);
     }
 
+    // Add Swift files to project (either user-provided or generated)
     swiftFiles.forEach((file) => {
-      const sourceFile = path.join(targetDirectory, file);
-      const destFile = path.join(targetGroupPath, path.basename(file));
+      let sourceFile: string;
+      let destFile: string;
 
-      File.copyFileSafe(sourceFile, destFile);
-      console.log(`[expo-targets]   Copied: ${file} -> ${targetProductName}/`);
+      if (
+        props.entry &&
+        file === 'ReactNativeViewController.swift' &&
+        !fs.existsSync(path.join(targetDirectory, file))
+      ) {
+        // Generated file - already at destination
+        destFile = path.join(targetGroupPath, file);
+        sourceFile = destFile; // No need to copy, already written
+      } else {
+        // User-provided file - copy it
+        sourceFile = path.join(targetDirectory, file);
+        destFile = path.join(targetGroupPath, path.basename(file));
+        File.copyFileSafe(sourceFile, destFile);
+        console.log(
+          `[expo-targets]   Copied: ${file} -> ${targetProductName}/`
+        );
+      }
 
       // Add the file to the target's Sources build phase
       const relativePath = path.relative(platformProjectRoot, destFile);

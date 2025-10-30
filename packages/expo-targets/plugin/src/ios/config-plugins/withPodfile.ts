@@ -6,7 +6,6 @@ import { Podfile, File } from '../utils';
 export const withTargetPodfile: ConfigPlugin<{
   targetName: string;
   deploymentTarget: string;
-  useReactNative?: boolean;
   excludedPackages?: string[];
 }> = (config, props) => {
   return withDangerousMod(config, [
@@ -30,16 +29,11 @@ export const withTargetPodfile: ConfigPlugin<{
         return config;
       }
 
-      // Generate appropriate target block
-      const targetBlock = props.useReactNative
-        ? Podfile.generateReactNativeTargetBlock({
-            targetName: props.targetName,
-            deploymentTarget: props.deploymentTarget,
-          })
-        : Podfile.generateStandaloneTargetBlock({
-            targetName: props.targetName,
-            deploymentTarget: props.deploymentTarget,
-          });
+      // Generate React Native target block
+      const targetBlock = Podfile.generateReactNativeTargetBlock({
+        targetName: props.targetName,
+        deploymentTarget: props.deploymentTarget,
+      });
 
       // Insert target block into Podfile
       podfile = Podfile.insertTargetBlock(podfile, targetBlock);

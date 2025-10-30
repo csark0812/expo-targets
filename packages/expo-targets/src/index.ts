@@ -1,13 +1,24 @@
+// Target API
+export { createTarget } from './Target';
+export type { Target } from './Target';
+
+// Storage module
 export {
   AppGroupStorage,
-  TargetStorage,
-  createTarget,
   refreshAllTargets,
+  clearSharedData,
+} from './modules/storage';
+
+// Extension module
+export {
+  Extension,
   close,
   openHostApp,
-  clearSharedData,
-} from './TargetStorage';
-export type { Target } from './TargetStorage';
+  getSharedData,
+} from './modules/extension';
+export type { SharedData } from './modules/extension';
+
+// Config types
 export type {
   TargetConfig,
   IOSTargetConfig,

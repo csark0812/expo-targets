@@ -1,0 +1,10 @@
+{
+  "platforms": ["ios", "android"],
+  "ios": {
+    "modules": ["ExpoTargetsExtensionModule"]
+  },
+  "android": {
+    "modules": []
+  }
+}
+
