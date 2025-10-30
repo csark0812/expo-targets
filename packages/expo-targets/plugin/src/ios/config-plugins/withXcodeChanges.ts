@@ -180,6 +180,12 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       projectName,
     });
 
+    // Remove any duplicate targets with the same product name
+    Xcode.removeDuplicateTargets({
+      project: xcodeProject,
+      productName: targetProductName,
+    });
+
     // Check if target already exists
     const existingTargetUuid = Xcode.findTargetByProductName({
       project: xcodeProject,
@@ -225,6 +231,23 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       `[expo-targets] Set product type to ${productType} for ${props.type}`
     );
 
+    // Remove auto-created build phases for asset-only targets
+    if (!typeConfig.requiresCode && !existingTargetUuid) {
+      console.log(
+        `[expo-targets] Removing auto-created code build phases from asset-only target`
+      );
+      Xcode.removeBuildPhases({
+        project: xcodeProject,
+        targetUuid: target.uuid,
+        phaseType: 'PBXSourcesBuildPhase',
+      });
+      Xcode.removeBuildPhases({
+        project: xcodeProject,
+        targetUuid: target.uuid,
+        phaseType: 'PBXFrameworksBuildPhase',
+      });
+    }
+
     // Get main app's build settings to inherit from
     const mainBuildSettings = Xcode.getMainAppBuildSettings({
       project: xcodeProject,
@@ -235,16 +258,19 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       `[expo-targets] Main app SWIFT_VERSION: ${mainBuildSettings.SWIFT_VERSION || 'NOT SET'}`
     );
 
+    // Get the actual directory name used for target files (includes 'Target' suffix)
+    const targetDirName = path.basename(targetGroupPath);
+
     // Build settings that should be target-specific
     const targetSpecificSettings: Record<string, string> = {
       PRODUCT_NAME: `"${targetProductName}"`,
       PRODUCT_BUNDLE_IDENTIFIER: `"${bundleIdentifier}"`,
-      INFOPLIST_FILE: `"${targetProductName}/Info.plist"`,
+      INFOPLIST_FILE: `"${targetDirName}/Info.plist"`,
     };
 
     // Only code-based targets need entitlements
     if (typeConfig.requiresEntitlements) {
-      targetSpecificSettings.CODE_SIGN_ENTITLEMENTS = `"${targetProductName}/generated.entitlements"`;
+      targetSpecificSettings.CODE_SIGN_ENTITLEMENTS = `"${targetDirName}/generated.entitlements"`;
     }
 
     // Inherit essential build settings from main app if not already set
@@ -269,14 +295,28 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       ...targetSpecificSettings,
     };
 
-    // Asset-only targets skip code-related build settings
+    // SWIFT_VERSION required even for asset-only targets
+    if (props.swiftVersion !== undefined) {
+      buildSettings.SWIFT_VERSION = String(props.swiftVersion);
+      console.log(
+        `[expo-targets] Using custom SWIFT_VERSION: ${props.swiftVersion}`
+      );
+    } else if (mainBuildSettings.SWIFT_VERSION) {
+      buildSettings.SWIFT_VERSION = mainBuildSettings.SWIFT_VERSION;
+      console.log(
+        `[expo-targets] Inherited SWIFT_VERSION: ${mainBuildSettings.SWIFT_VERSION}`
+      );
+    } else {
+      buildSettings.SWIFT_VERSION = '5.0';
+      console.log(`[expo-targets] Using fallback SWIFT_VERSION: 5.0`);
+    }
+
+    // Code-based targets need additional build settings
     if (typeConfig.requiresCode) {
-      // Map camelCase properties to Xcode build settings
       const buildSettingsMap: Record<
         string,
         { prop: keyof IOSTargetProps; xcodeKey: string }
       > = {
-        swiftVersion: { prop: 'swiftVersion', xcodeKey: 'SWIFT_VERSION' },
         targetedDeviceFamily: {
           prop: 'targetedDeviceFamily',
           xcodeKey: 'TARGETED_DEVICE_FAMILY',
@@ -291,28 +331,19 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
         },
       };
 
-      // Inherit or set build settings
       Object.entries(buildSettingsMap).forEach(([key, { prop, xcodeKey }]) => {
         if (props[prop] !== undefined) {
-          // User explicitly set it
           buildSettings[xcodeKey] = String(props[prop]);
           console.log(
             `[expo-targets] Using custom ${xcodeKey}: ${props[prop]}`
           );
         } else if (mainBuildSettings[xcodeKey]) {
-          // Inherit from main app
           buildSettings[xcodeKey] = mainBuildSettings[xcodeKey];
           console.log(
             `[expo-targets] Inherited ${xcodeKey}: ${mainBuildSettings[xcodeKey]}`
           );
         }
       });
-
-      // Fallback for SWIFT_VERSION
-      if (!buildSettings.SWIFT_VERSION) {
-        buildSettings.SWIFT_VERSION = '5.0';
-        console.log(`[expo-targets] Using fallback SWIFT_VERSION: 5.0`);
-      }
     } else {
       console.log(
         `[expo-targets] Skipping code-related build settings for asset-only target`
@@ -388,38 +419,81 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       `[expo-targets] Configured build settings for ${targetProductName}`
     );
 
-    // Ensure the target has a Sources build phase
-    const sourcesBuildPhase = xcodeProject.addBuildPhase(
-      [],
-      'PBXSourcesBuildPhase',
-      'Sources',
-      target.uuid
-    );
-    console.log(
-      `[expo-targets] Created Sources build phase for ${targetProductName}`
-    );
+    // Only code-based targets need Sources and Frameworks build phases
+    if (typeConfig.requiresCode) {
+      // Ensure the target has a Sources build phase (skip if already exists)
+      if (
+        !Xcode.hasBuildPhase({
+          project: xcodeProject,
+          targetUuid: target.uuid,
+          phaseType: 'PBXSourcesBuildPhase',
+        })
+      ) {
+        const sourcesBuildPhase = xcodeProject.addBuildPhase(
+          [],
+          'PBXSourcesBuildPhase',
+          'Sources',
+          target.uuid
+        );
+        console.log(
+          `[expo-targets] Created Sources build phase for ${targetProductName}`
+        );
+      } else {
+        console.log(
+          `[expo-targets] Sources build phase already exists for ${targetProductName}`
+        );
+      }
 
-    // Ensure the target has a Frameworks build phase
-    const frameworksBuildPhase = xcodeProject.addBuildPhase(
-      [],
-      'PBXFrameworksBuildPhase',
-      'Frameworks',
-      target.uuid
-    );
-    console.log(
-      `[expo-targets] Created Frameworks build phase for ${targetProductName}`
-    );
+      // Ensure the target has a Frameworks build phase (skip if already exists)
+      if (
+        !Xcode.hasBuildPhase({
+          project: xcodeProject,
+          targetUuid: target.uuid,
+          phaseType: 'PBXFrameworksBuildPhase',
+        })
+      ) {
+        const frameworksBuildPhase = xcodeProject.addBuildPhase(
+          [],
+          'PBXFrameworksBuildPhase',
+          'Frameworks',
+          target.uuid
+        );
+        console.log(
+          `[expo-targets] Created Frameworks build phase for ${targetProductName}`
+        );
+      } else {
+        console.log(
+          `[expo-targets] Frameworks build phase already exists for ${targetProductName}`
+        );
+      }
+    } else {
+      console.log(
+        `[expo-targets] Skipping Sources and Frameworks build phases for asset-only target`
+      );
+    }
 
-    // Ensure the target has a Resources build phase
-    const resourcesBuildPhase = xcodeProject.addBuildPhase(
-      [],
-      'PBXResourcesBuildPhase',
-      'Resources',
-      target.uuid
-    );
-    console.log(
-      `[expo-targets] Created Resources build phase for ${targetProductName}`
-    );
+    // Ensure the target has a Resources build phase (skip if already exists)
+    if (
+      !Xcode.hasBuildPhase({
+        project: xcodeProject,
+        targetUuid: target.uuid,
+        phaseType: 'PBXResourcesBuildPhase',
+      })
+    ) {
+      const resourcesBuildPhase = xcodeProject.addBuildPhase(
+        [],
+        'PBXResourcesBuildPhase',
+        'Resources',
+        target.uuid
+      );
+      console.log(
+        `[expo-targets] Created Resources build phase for ${targetProductName}`
+      );
+    } else {
+      console.log(
+        `[expo-targets] Resources build phase already exists for ${targetProductName}`
+      );
+    }
 
     // Copy Swift files from user's target directory (skip for asset-only targets)
     const targetDirectory = Paths.getTargetDirectory({
@@ -469,14 +543,14 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     );
 
     // Ensure group exists for the target
-    Xcode.ensureGroupRecursively(xcodeProject, targetProductName);
-    console.log(`[expo-targets] Ensured group exists: ${targetProductName}`);
+    Xcode.ensureGroupRecursively(xcodeProject, targetDirName);
+    console.log(`[expo-targets] Ensured group exists: ${targetDirName}`);
 
     // Copy and add Info.plist from build folder
     const infoPlistDest = path.join(targetGroupPath, 'Info.plist');
     if (File.isFile(infoPlistPath)) {
       File.copyFileSafe(infoPlistPath, infoPlistDest);
-      console.log(`[expo-targets] Copied Info.plist to ${targetProductName}/`);
+      console.log(`[expo-targets] Copied Info.plist to ${targetDirName}/`);
 
       // Manually add Info.plist to avoid addResourceFile's "Resources" group requirement
       // We use the build settings INFOPLIST_FILE instead of adding to Resources phase
@@ -501,16 +575,14 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
         sourceFile = path.join(targetDirectory, file);
         destFile = path.join(targetGroupPath, path.basename(file));
         File.copyFileSafe(sourceFile, destFile);
-        console.log(
-          `[expo-targets]   Copied: ${file} -> ${targetProductName}/`
-        );
+        console.log(`[expo-targets]   Copied: ${file} -> ${targetDirName}/`);
       }
 
       // Add the file to the target's Sources build phase
       const relativePath = path.relative(platformProjectRoot, destFile);
       Xcode.addBuildSourceFileToGroup({
         filepath: relativePath,
-        groupName: targetProductName,
+        groupName: targetDirName,
         project: xcodeProject,
         verbose: true,
         targetUuid: target.uuid,

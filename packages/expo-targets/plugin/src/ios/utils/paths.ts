@@ -27,6 +27,11 @@ export function getTargetDirectory({
 
 /**
  * Get the target group path in Xcode project (where target files live).
+ * Adds 'Target' suffix to prevent case-insensitivity collisions with main app on macOS.
+ *
+ * On case-insensitive filesystems (macOS default), directory names that differ only by case
+ * collide. For example, "shareextension" (main app) and "ShareExtension" (target) would resolve
+ * to the same directory. Adding "Target" suffix ensures uniqueness.
  */
 export function getTargetGroupPath({
   platformProjectRoot,
@@ -36,7 +41,11 @@ export function getTargetGroupPath({
   targetName: string;
 }): string {
   const sanitized = sanitizeTargetName(targetName);
-  return path.join(platformProjectRoot, sanitized);
+  // Add 'Target' suffix to prevent collision with main app on case-insensitive filesystems
+  // e.g., "ShareExtension" -> "ShareExtensionTarget" to avoid collision with "shareextension"
+  // This ensures files are placed in separate directories even on case-insensitive filesystems
+  const dirName = `${sanitized}Target`;
+  return path.join(platformProjectRoot, dirName);
 }
 
 /**

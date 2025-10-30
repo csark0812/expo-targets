@@ -29,6 +29,113 @@ interface XcodeTarget {
 }
 
 /**
+ * Check if target already has a specific build phase type
+ */
+export function hasBuildPhase({
+  project,
+  targetUuid,
+  phaseType,
+}: {
+  project: XcodeProject;
+  targetUuid: string;
+  phaseType: string;
+}): boolean {
+  const xcodeProject = project as any;
+  const target = xcodeProject.hash.project.objects.PBXNativeTarget[targetUuid];
+
+  if (!target || !target.buildPhases) {
+    return false;
+  }
+
+  const phaseSection = xcodeProject.hash.project.objects[phaseType];
+  if (!phaseSection) {
+    return false;
+  }
+
+  return target.buildPhases.some((phase: any) => {
+    const phaseUuid = phase.value;
+    return phaseSection[phaseUuid] !== undefined;
+  });
+}
+
+/**
+ * Remove build phases of a specific type from target
+ */
+export function removeBuildPhases({
+  project,
+  targetUuid,
+  phaseType,
+}: {
+  project: XcodeProject;
+  targetUuid: string;
+  phaseType: string;
+}): void {
+  const xcodeProject = project as any;
+  const target = xcodeProject.hash.project.objects.PBXNativeTarget[targetUuid];
+
+  if (!target || !target.buildPhases) {
+    return;
+  }
+
+  const phaseSection = xcodeProject.hash.project.objects[phaseType];
+  if (!phaseSection) {
+    return;
+  }
+
+  // Find matching phase UUIDs
+  const phasesToRemove: string[] = [];
+  target.buildPhases.forEach((phase: any) => {
+    const phaseUuid = phase.value;
+    if (phaseSection[phaseUuid]) {
+      phasesToRemove.push(phaseUuid);
+    }
+  });
+
+  // Remove phases from target's buildPhases array
+  target.buildPhases = target.buildPhases.filter(
+    (phase: any) => !phasesToRemove.includes(phase.value)
+  );
+
+  // Remove phase objects and comments from section
+  phasesToRemove.forEach((phaseUuid) => {
+    delete phaseSection[phaseUuid];
+    delete phaseSection[`${phaseUuid}_comment`];
+  });
+}
+
+/**
+ * Check if target dependency already exists
+ */
+export function hasTargetDependency({
+  project,
+  mainTargetUuid,
+  dependentTargetUuid,
+}: {
+  project: XcodeProject;
+  mainTargetUuid: string;
+  dependentTargetUuid: string;
+}): boolean {
+  const xcodeProject = project as any;
+  const mainTarget =
+    xcodeProject.hash.project.objects.PBXNativeTarget[mainTargetUuid];
+
+  if (!mainTarget || !mainTarget.dependencies) {
+    return false;
+  }
+
+  const dependencies = xcodeProject.hash.project.objects.PBXTargetDependency;
+  if (!dependencies) {
+    return false;
+  }
+
+  return mainTarget.dependencies.some((dep: any) => {
+    const depUuid = dep.value;
+    const dependency = dependencies[depUuid];
+    return dependency && dependency.target === dependentTargetUuid;
+  });
+}
+
+/**
  * Add target dependency from main app to extension/clip target.
  * Ensures PBXTargetDependency and PBXContainerItemProxy sections exist.
  */
@@ -41,6 +148,11 @@ export function addTargetDependency({
   mainTargetUuid: string;
   dependentTargetUuid: string;
 }): void {
+  // Check if dependency already exists
+  if (hasTargetDependency({ project, mainTargetUuid, dependentTargetUuid })) {
+    return;
+  }
+
   const xcodeProject = project as any;
 
   // Ensure required sections exist
@@ -281,7 +393,10 @@ export function applyBuildSettings({
     if (configSection?.buildSettings) {
       Object.entries(buildSettings).forEach(([key, value]) => {
         configSection.buildSettings[key] = value;
-        if (verbose && key === 'SWIFT_VERSION') {
+        if (
+          verbose &&
+          (key === 'SWIFT_VERSION' || key === 'IPHONEOS_DEPLOYMENT_TARGET')
+        ) {
           console.log(
             `[expo-targets]     Set ${key}=${value} to ${configName}`
           );
@@ -380,6 +495,95 @@ export function findTargetByProductName({
 }
 
 /**
+ * Find all target UUIDs with a given product name (detects duplicates)
+ */
+export function findAllTargetsByProductName({
+  project,
+  productName,
+}: {
+  project: XcodeProject;
+  productName: string;
+}): string[] {
+  const xcodeProject = project as any;
+  const pbxNativeTargetSection =
+    xcodeProject.hash.project.objects.PBXNativeTarget || {};
+  const matchingTargets: string[] = [];
+
+  for (const key in pbxNativeTargetSection) {
+    if (key.endsWith('_comment')) continue;
+    const target = pbxNativeTargetSection[key];
+    if (target?.name === productName) {
+      matchingTargets.push(key);
+    }
+  }
+
+  return matchingTargets;
+}
+
+/**
+ * Remove duplicate targets with the same product name, keeping only the first one
+ */
+export function removeDuplicateTargets({
+  project,
+  productName,
+}: {
+  project: XcodeProject;
+  productName: string;
+}): number {
+  const allTargets = findAllTargetsByProductName({ project, productName });
+
+  if (allTargets.length <= 1) {
+    return 0;
+  }
+
+  const xcodeProject = project as any;
+  const [keepTarget, ...duplicates] = allTargets;
+
+  console.log(
+    `[expo-targets] Found ${allTargets.length} targets named "${productName}", removing ${duplicates.length} duplicate(s)`
+  );
+
+  duplicates.forEach((targetUuid) => {
+    // Remove from PBXNativeTarget section
+    const pbxNativeTargetSection =
+      xcodeProject.hash.project.objects.PBXNativeTarget;
+    if (pbxNativeTargetSection) {
+      delete pbxNativeTargetSection[targetUuid];
+      delete pbxNativeTargetSection[`${targetUuid}_comment`];
+    }
+
+    // Remove from project targets list
+    const project = xcodeProject.hash.project.objects.PBXProject;
+    for (const projectKey in project) {
+      if (projectKey.endsWith('_comment')) continue;
+      const projectObj = project[projectKey];
+      if (projectObj?.targets) {
+        projectObj.targets = projectObj.targets.filter(
+          (t: any) => t.value !== targetUuid
+        );
+      }
+    }
+
+    // Remove build configuration list
+    const target =
+      xcodeProject.hash.project.objects.PBXNativeTarget?.[targetUuid];
+    if (target?.buildConfigurationList) {
+      const configListUuid = target.buildConfigurationList;
+      const configListSection =
+        xcodeProject.hash.project.objects.XCConfigurationList;
+      if (configListSection) {
+        delete configListSection[configListUuid];
+        delete configListSection[`${configListUuid}_comment`];
+      }
+    }
+
+    console.log(`[expo-targets]   Removed duplicate target: ${targetUuid}`);
+  });
+
+  return duplicates.length;
+}
+
+/**
  * Add Assets.xcassets to a target's Resources build phase if it exists.
  */
 export function addTargetAssets({
@@ -401,6 +605,12 @@ export function addTargetAssets({
     targetName,
     isStickers,
   });
+  // Get the actual group directory name (includes 'Target' suffix)
+  const targetGroupPath = Paths.getTargetGroupPath({
+    platformProjectRoot,
+    targetName,
+  });
+  const targetDirName = path.basename(targetGroupPath);
 
   if (File.isDirectory(assetsPath)) {
     const assetsFolderName = isStickers
@@ -415,7 +625,7 @@ export function addTargetAssets({
 
     addResourceFileToGroup({
       filepath: relativePath,
-      groupName: targetProductName,
+      groupName: targetDirName,
       project: xcodeProject,
       isBuildFile: true,
       verbose: true,

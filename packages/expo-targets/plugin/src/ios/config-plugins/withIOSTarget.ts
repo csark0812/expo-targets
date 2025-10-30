@@ -124,17 +124,21 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
     colors: Object.keys(colors).length > 0 ? colors : undefined,
   });
 
-  // Add Podfile target only for targets that use React Native
-  // App Clips and other extensions without RN should be standalone (no Pods)
-  if (props.entry) {
+  // Add Podfile target only for code-based targets (skip asset-only like stickers)
+  // Extensions with React Native need full RN setup, others need standalone config
+  const { TYPE_CHARACTERISTICS } = require('../target');
+  const typeConfig = TYPE_CHARACTERISTICS[props.type];
+
+  if (typeConfig.requiresCode) {
     config = withTargetPodfile(config, {
       targetName: targetProductName, // Use sanitized name to match Xcode target
       deploymentTarget: deploymentTarget!, // Guaranteed to be set by resolution logic above
       excludedPackages: props.excludedPackages,
+      standalone: !props.entry, // Standalone (no dependency inheritance) if not using React Native
     });
   } else {
     console.log(
-      `[expo-targets] Skipping Podfile target for ${targetProductName} - standalone target without React Native`
+      `[expo-targets] Skipping Podfile for asset-only target: ${targetProductName}`
     );
   }
 
