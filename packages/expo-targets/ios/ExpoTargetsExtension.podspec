@@ -8,11 +8,11 @@ Pod::Spec.new do |s|
   s.summary        = package['description']
   s.description    = 'Expo Targets Extension Module - Extension utilities for share, action, and clip extensions'
   s.license        = package['license']
-  s.author         = package['author']
+  s.authors        = package['author']
   s.homepage       = package['homepage']
   s.platforms      = { :ios => '13.0' }
   s.swift_version  = '5.4'
-  s.source         = { git: 'https://github.com/expo/expo.git' }
+  s.source         = { :git => package['repository']['url'], :tag => "v#{package['version']}" }
   s.static_framework = true
 
   s.dependency 'ExpoModulesCore'
