@@ -6,68 +6,84 @@ private var sharedImages: [String] = []
 private var sharedFiles: [String] = []
 private var preprocessedWebData: [String: Any]?
 
-private func loadSharedContent() {
+private func loadSharedContent() async {
     guard let extensionItem = extensionContext?.inputItems.first as? NSExtensionItem,
           let attachments = extensionItem.attachments else {
         return
     }
 
-    let group = DispatchGroup()
-
-    for attachment in attachments {
-        // Load text
-        if attachment.hasItemConformingToTypeIdentifier("public.plain-text") {
-            group.enter()
-            attachment.loadItem(forTypeIdentifier: "public.plain-text", options: nil) { data, error in
-                defer { group.leave() }
-                if let text = data as? String {
-                    self.sharedText = text
+    await withTaskGroup(of: Void.self) { group in
+        for attachment in attachments {
+            // Load text
+            if attachment.hasItemConformingToTypeIdentifier("public.plain-text") {
+                group.addTask {
+                    let data = await self.loadAttachmentItem(attachment, typeIdentifier: "public.plain-text")
+                    if let text = data as? String {
+                        await MainActor.run {
+                            self.sharedText = text
+                        }
+                    }
                 }
             }
-        }
 
-        // Load URL
-        if attachment.hasItemConformingToTypeIdentifier("public.url") {
-            group.enter()
-            attachment.loadItem(forTypeIdentifier: "public.url", options: nil) { data, error in
-                defer { group.leave() }
-                if let url = data as? URL {
-                    self.sharedURL = url.absoluteString
+            // Load URL
+            if attachment.hasItemConformingToTypeIdentifier("public.url") {
+                group.addTask {
+                    let data = await self.loadAttachmentItem(attachment, typeIdentifier: "public.url")
+                    if let url = data as? URL {
+                        await MainActor.run {
+                            self.sharedURL = url.absoluteString
+                        }
+                    }
                 }
             }
-        }
 
-        // Load images
-        if attachment.hasItemConformingToTypeIdentifier("public.image") {
-            group.enter()
-            attachment.loadItem(forTypeIdentifier: "public.image", options: nil) { data, error in
-                defer { group.leave() }
-                // Handle image data
-                if let url = data as? URL {
-                    self.sharedImages.append(url.absoluteString)
-                } else if let image = data as? UIImage, let pngData = image.pngData() {
-                    let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".png")
-                    try? pngData.write(to: tempURL)
-                    self.sharedImages.append(tempURL.absoluteString)
+            // Load images
+            if attachment.hasItemConformingToTypeIdentifier("public.image") {
+                group.addTask {
+                    let data = await self.loadAttachmentItem(attachment, typeIdentifier: "public.image")
+                    if let url = data as? URL {
+                        await MainActor.run {
+                            self.sharedImages.append(url.absoluteString)
+                        }
+                    } else if let image = data as? UIImage, let pngData = image.pngData() {
+                        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".png")
+                        try? pngData.write(to: tempURL)
+                        await MainActor.run {
+                            self.sharedImages.append(tempURL.absoluteString)
+                        }
+                    }
                 }
             }
-        }
 
-        // Load files
-        if attachment.hasItemConformingToTypeIdentifier("public.file-url") {
-            group.enter()
-            attachment.loadItem(forTypeIdentifier: "public.file-url", options: nil) { data, error in
-                defer { group.leave() }
-                if let url = data as? URL {
-                    self.sharedFiles.append(url.absoluteString)
+            // Load files
+            if attachment.hasItemConformingToTypeIdentifier("public.file-url") {
+                group.addTask {
+                    let data = await self.loadAttachmentItem(attachment, typeIdentifier: "public.file-url")
+                    if let url = data as? URL {
+                        await MainActor.run {
+                            self.sharedFiles.append(url.absoluteString)
+                        }
+                    }
                 }
             }
         }
     }
 
     {{PREPROCESSING_DATA_LOAD}}
+}
 
-    group.wait()
+private func loadAttachmentItem(_ attachment: NSItemProvider, typeIdentifier: String) async -> NSSecureCoding? {
+    await withCheckedContinuation { continuation in
+        attachment.loadItem(forTypeIdentifier: typeIdentifier, options: nil) { data, error in
+            if let error = error {
+                print("Error loading \(typeIdentifier): \(error)")
+                continuation.resume(returning: nil)
+            } else {
+                continuation.resume(returning: data)
+            }
+        }
+    }
 }
 
 private func getSharedDataProps() -> [String: Any] {

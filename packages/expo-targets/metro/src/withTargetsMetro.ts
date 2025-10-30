@@ -1,15 +1,14 @@
+import * as fs from 'fs';
 import type { MetroConfig } from 'metro-config';
 import * as path from 'path';
-import * as fs from 'fs';
 
 interface TargetConfig {
   name: string;
   type?: string;
   platforms?: string[];
-  ios?: {
-    entry?: string;
-    excludedPackages?: string[];
-  };
+  entry?: string;
+  excludedPackages?: string[];
+  ios?: Record<string, any>;
 }
 
 interface TargetEntryPoint {
@@ -31,20 +30,24 @@ function scanTargetsDirectory(projectRoot: string): TargetEntryPoint[] {
   for (const dir of targetDirs) {
     if (!dir.isDirectory()) continue;
 
-    const configPath = path.join(targetsDir, dir.name, 'expo-target.config.json');
+    const configPath = path.join(
+      targetsDir,
+      dir.name,
+      'expo-target.config.json'
+    );
     if (!fs.existsSync(configPath)) continue;
 
     try {
       const configContent = fs.readFileSync(configPath, 'utf-8');
       const config: TargetConfig = JSON.parse(configContent);
 
-      // Check if iOS config has entry field
-      if (config.ios?.entry) {
-        const entryPath = path.resolve(projectRoot, config.ios.entry);
+      // Check if config has entry field
+      if (config.entry) {
+        const entryPath = path.resolve(projectRoot, config.entry);
         entryPoints.push({
           targetName: config.name || dir.name,
           entryPath,
-          excludedPackages: config.ios.excludedPackages,
+          excludedPackages: config.excludedPackages,
         });
       }
     } catch (error) {

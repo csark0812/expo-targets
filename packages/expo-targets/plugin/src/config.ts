@@ -155,30 +155,10 @@ export type ReactNativeCompatibleType = 'share' | 'action' | 'clip';
 export type NativeOnlyType = Exclude<ExtensionType, ReactNativeCompatibleType>;
 
 // Config for React Native compatible types
-export interface IOSTargetConfigWithReactNative extends BaseIOSTargetConfig {
-  /**
-   * Entry point for React Native rendering (share, action, clip only)
-   * Path to JavaScript/TypeScript file that exports the extension component
-   * When specified, enables React Native rendering in the extension
-   * @example "./ShareExtension.tsx"
-   * @example "./targets/my-share/ShareExtension.js"
-   */
-  entry?: string;
-
-  /**
-   * Exclude specific Expo packages from the extension bundle
-   * Reduces bundle size by removing unused modules
-   * Only applies when `entry` is specified
-   * @example ['expo-dev-client', 'expo-updates']
-   */
-  excludedPackages?: string[];
-}
+export interface IOSTargetConfigWithReactNative extends BaseIOSTargetConfig {}
 
 // Config for native-only types (no React Native options)
-export interface IOSTargetConfigNativeOnly extends BaseIOSTargetConfig {
-  entry?: never;
-  excludedPackages?: never;
-}
+export interface IOSTargetConfigNativeOnly extends BaseIOSTargetConfig {}
 
 // Union type based on target type
 export type IOSTargetConfig =
@@ -201,6 +181,21 @@ type BaseTargetConfig = {
 // Target config for React Native compatible types
 type TargetConfigReactNativeCompatible = BaseTargetConfig & {
   type: ReactNativeCompatibleType;
+  /**
+   * Entry point for React Native rendering (share, action, clip only)
+   * Path to JavaScript/TypeScript file that exports the extension component
+   * When specified, enables React Native rendering in the extension
+   * @example "./ShareExtension.tsx"
+   * @example "./targets/my-share/ShareExtension.js"
+   */
+  entry?: string;
+  /**
+   * Exclude specific Expo packages from the extension bundle
+   * Reduces bundle size by removing unused modules
+   * Only applies when `entry` is specified
+   * @example ['expo-dev-client', 'expo-updates']
+   */
+  excludedPackages?: string[];
   ios?: IOSTargetConfigWithReactNative;
 };
 

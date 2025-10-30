@@ -19,6 +19,8 @@ import { Xcode, Paths, File, Asset, ReactNativeSwift } from '../utils';
 interface IOSTargetProps extends IOSTargetConfigWithReactNative {
   type: ExtensionType;
   name: string;
+  entry?: string;
+  excludedPackages?: string[];
   directory: string;
   configPath: string;
 }
@@ -536,6 +538,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
           type: props.type,
           moduleName,
           preprocessingFile: props.preprocessingFile,
+          entry: props.entry,
         }
       );
 

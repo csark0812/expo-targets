@@ -2,10 +2,10 @@
   "type": "share",
   "name": "RNShare",
   "platforms": ["ios"],
+  "entry": "./targets/rn-share/index.tsx",
   "appGroup": "group.com.test.shareextension2",
   "ios": {
     "bundleIdentifier": "com.test.shareextension2.share.reactnative",
-    "entry": "./targets/rn-share/index.tsx",
     "activationRules": [
       { "type": "text" },
       { "type": "url" },

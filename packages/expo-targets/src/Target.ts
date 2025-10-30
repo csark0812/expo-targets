@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { AppRegistry, ComponentProvider } from 'react-native';
 
 import { Extension, type SharedData } from './modules/extension';
 import { AppGroupStorage } from './modules/storage';
@@ -63,13 +64,19 @@ function isExtensionType(
 ): type is ReactNativeCompatibleType {
   return EXTENSION_TYPES.has(type as ReactNativeCompatibleType);
 }
-
-export function createTarget(targetName: string): Target {
+export function createTarget(
+  targetName: string,
+  componentFunc?: React.ComponentType<any>
+): Target {
   const config = getTargetConfig(targetName);
   if (!config) {
     throw new Error(
       `Target "${targetName}" not found. Ensure it's defined in app.json under "extra.targets"`
     );
+  }
+
+  if (componentFunc && 'entry' in config && config.entry) {
+    AppRegistry.registerComponent(targetName + 'Target', () => componentFunc);
   }
 
   const appGroup = getTargetAppGroup(targetName, config);

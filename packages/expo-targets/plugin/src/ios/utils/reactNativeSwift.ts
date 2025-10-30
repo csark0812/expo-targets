@@ -9,6 +9,7 @@ export interface ReactNativeViewControllerOptions {
   type: ExtensionType;
   moduleName: string;
   preprocessingFile?: string;
+  entry?: string;
 }
 
 function readTemplate(filename: string): string {
@@ -75,7 +76,14 @@ function getExtensionDataForType(
 
       return {
         properties: properties.join('\n    '),
-        loadMethod: 'loadSharedContent()',
+        loadMethod: `// Load shared content in background
+        Task {
+            await loadSharedContent()
+            // Update React Native view with loaded content
+            await MainActor.run {
+                updateReactNativeView()
+            }
+        }`,
         propsMethod:
           loadMethodLines.join('\n') + '\n\n' + propsMethodLines.join('\n'),
       };
@@ -193,9 +201,19 @@ export function generateReactNativeViewController(
     }
   }
 
+  // Convert entry path to bundle root for Metro
+  // e.g., "./targets/rn-share/index.tsx" -> "targets/rn-share/index"
+  let bundleRoot = '.expo/.virtual-metro-entry';
+  if (options.entry) {
+    bundleRoot = options.entry
+      .replace(/^\.\//, '') // Remove leading ./
+      .replace(/\.(tsx?|jsx?)$/, ''); // Remove file extension
+  }
+
   // Replace placeholders
   let result = baseTemplate
     .replace('{{MODULE_NAME}}', options.moduleName)
+    .replace('{{BUNDLE_ROOT}}', bundleRoot)
     .replace('{{EXTENSION_DATA_PROPERTIES}}', extensionData.properties)
     .replace('{{LOAD_EXTENSION_DATA}}', extensionData.loadMethod)
     .replace('{{INITIAL_PROPERTIES}}', initialProps);

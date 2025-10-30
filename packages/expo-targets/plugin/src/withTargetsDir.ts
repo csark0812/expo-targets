@@ -76,6 +76,8 @@ export const withTargetsDir: ConfigPlugin<{
         name: targetName,
         displayName: evaluatedConfig.displayName,
         appGroup: evaluatedConfig.appGroup,
+        entry: evaluatedConfig.entry,
+        excludedPackages: evaluatedConfig.excludedPackages,
         directory: targetDirectory,
         configPath: targetPath,
       });

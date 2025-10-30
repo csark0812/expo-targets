@@ -19,6 +19,8 @@ interface IOSTargetProps extends IOSTargetConfigWithReactNative {
   name: string;
   displayName?: string;
   appGroup?: string;
+  entry?: string;
+  excludedPackages?: string[];
   directory: string;
   configPath: string;
 }

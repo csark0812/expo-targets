@@ -8,8 +8,8 @@ private class ExtensionBridgeDelegate: NSObject, RCTBridgeDelegate {
         #if DEBUG
         // Use RCTBundleURLProvider to dynamically detect Metro port
         // Reads from RCT_METRO_PORT env var or defaults to 8081
-        // Uses same bundle root as main app for Expo compatibility
-        return RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: ".expo/.virtual-metro-entry")
+        // Uses target-specific bundle root
+        return RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "{{BUNDLE_ROOT}}")
         #else
         // In release, load from main bundle
         guard let bundleURL = Bundle.main.url(forResource: "main", withExtension: "jsbundle") else {
@@ -24,6 +24,7 @@ private class ExtensionBridgeDelegate: NSObject, RCTBridgeDelegate {
 class ReactNativeViewController: UIViewController {
     private var appBridge: RCTBridge?
     private var bridgeDelegate: ExtensionBridgeDelegate?
+    private var rootView: RCTRootView?
 
     // MARK: - Extension Data
 
@@ -34,9 +35,10 @@ class ReactNativeViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        {{LOAD_EXTENSION_DATA}}
-
+        // Setup React Native immediately (don't wait for content)
         setupReactNativeView()
+
+        {{LOAD_EXTENSION_DATA}}
     }
 
     // MARK: - React Native Setup
@@ -69,6 +71,14 @@ class ReactNativeViewController: UIViewController {
         rootView.autoresizingMask = [UIView.AutoresizingMask.flexibleWidth, UIView.AutoresizingMask.flexibleHeight]
 
         view.addSubview(rootView)
+        self.rootView = rootView
+    }
+
+    private func updateReactNativeView() {
+        guard let rootView = self.rootView else { return }
+
+        // Update root view with new properties containing loaded content
+        rootView.appProperties = getInitialProperties()
     }
 
     private func getInitialProperties() -> [String: Any] {
