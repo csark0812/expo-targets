@@ -6,14 +6,14 @@ export const withIosColorset: ConfigPlugin<{
   name: string;
   color: string;
   darkColor?: string;
-  targetDirectory: string;
+  targetName: string;
 }> = (config, props) => {
   return withDangerousMod(config, [
     'ios',
     async (config) => {
       const colorsetPath = Paths.getColorsetPath({
-        projectRoot: config.modRequest.projectRoot,
-        targetDirectory: props.targetDirectory,
+        platformProjectRoot: config.modRequest.platformProjectRoot,
+        targetName: props.targetName,
         colorName: props.name,
       });
 

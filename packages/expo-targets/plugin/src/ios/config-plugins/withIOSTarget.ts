@@ -1,4 +1,6 @@
 import { ConfigPlugin } from '@expo/config-plugins';
+import * as fs from 'fs';
+import * as path from 'path';
 
 import { withTargetEntitlements } from './withEntitlements';
 import { withIosColorset } from './withIosColorset';
@@ -10,12 +12,15 @@ import {
   type IOSTargetConfigWithReactNative,
   type Color,
 } from '../../config';
+import { Paths } from '../utils';
 
 interface IOSTargetProps extends IOSTargetConfigWithReactNative {
   type: ExtensionType;
   name: string;
   displayName?: string;
   appGroup?: string;
+  entry?: string;
+  excludedPackages?: string[];
   directory: string;
   configPath: string;
 }
@@ -28,19 +33,30 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
     'clip',
   ];
 
-  if (
-    props.useReactNative &&
-    !REACT_NATIVE_COMPATIBLE_TYPES.includes(props.type)
-  ) {
-    throw new Error(
-      `Target '${props.name}' (type: ${props.type}) does not support React Native. ` +
-        `useReactNative can only be used with: ${REACT_NATIVE_COMPATIBLE_TYPES.join(', ')}`
-    );
+  // Validate entry field
+  if (props.entry) {
+    if (!REACT_NATIVE_COMPATIBLE_TYPES.includes(props.type)) {
+      throw new Error(
+        `Target '${props.name}' (type: ${props.type}) does not support React Native. ` +
+          `'entry' can only be used with: ${REACT_NATIVE_COMPATIBLE_TYPES.join(', ')}`
+      );
+    }
+
+    // Validate that the entry file exists
+    const projectRoot = config._internal?.projectRoot || process.cwd();
+    const entryPath = path.resolve(projectRoot, props.entry);
+    if (!fs.existsSync(entryPath)) {
+      throw new Error(
+        `Target '${props.name}': Entry file not found at ${props.entry}. ` +
+          `Resolved path: ${entryPath}`
+      );
+    }
   }
 
-  if (props.excludedPackages && !props.useReactNative) {
+  // Validate excludedPackages
+  if (props.excludedPackages && !props.entry) {
     console.warn(
-      `[expo-targets] excludedPackages specified for ${props.name} but useReactNative is false. ` +
+      `[expo-targets] excludedPackages specified for ${props.name} but no 'entry' field provided. ` +
         `excludedPackages will be ignored.`
     );
   }
@@ -101,8 +117,7 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
   }
 
   const targetName = props.displayName || props.name;
-  // Sanitize target name for Xcode (matches withXcodeChanges logic)
-  const targetProductName = targetName.replace(/[^a-zA-Z0-9]/g, '');
+  const targetProductName = Paths.sanitizeTargetName(targetName);
 
   // Pass resolved values to withXcodeChanges
   config = withXcodeChanges(config, {
@@ -111,24 +126,26 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
     colors: Object.keys(colors).length > 0 ? colors : undefined,
   });
 
-  // Add Podfile target only for targets that use React Native
-  // App Clips and other extensions without RN should be standalone (no Pods)
-  if (props.useReactNative) {
+  // Add Podfile target only for code-based targets (skip asset-only like stickers)
+  // Extensions with React Native need full RN setup, others need standalone config
+  const { TYPE_CHARACTERISTICS } = require('../target');
+  const typeConfig = TYPE_CHARACTERISTICS[props.type];
+
+  if (typeConfig.requiresCode) {
     config = withTargetPodfile(config, {
       targetName: targetProductName, // Use sanitized name to match Xcode target
       deploymentTarget: deploymentTarget!, // Guaranteed to be set by resolution logic above
-      useReactNative: props.useReactNative,
       excludedPackages: props.excludedPackages,
+      standalone: !props.entry, // Standalone (no dependency inheritance) if not using React Native
     });
   } else {
     console.log(
-      `[expo-targets] Skipping Podfile target for ${targetProductName} - standalone target without React Native`
+      `[expo-targets] Skipping Podfile for asset-only target: ${targetProductName}`
     );
   }
 
   config = withTargetEntitlements(config, {
     targetName,
-    targetDirectory: props.directory,
     type: props.type,
     entitlements: props.entitlements,
   });
@@ -139,7 +156,7 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
         config = withIosColorset(config, {
           name: colorName,
           color: colorValue,
-          targetDirectory: props.directory,
+          targetName,
         });
       } else {
         const colorObj = colorValue as Color;
@@ -151,14 +168,14 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
             name: colorName,
             color: lightColor,
             darkColor,
-            targetDirectory: props.directory,
+            targetName,
           });
         }
       }
     });
 
-    // Note: Assets.xcassets is copied and added in withXcodeChanges where we have direct access to target.uuid
-    // This avoids plugin execution order issues
+    // Note: Assets.xcassets is added in withXcodeChanges where we have direct access to target.uuid
+    // Note: Sticker packs are also created in withXcodeChanges for proper execution order
   }
 
   return config;

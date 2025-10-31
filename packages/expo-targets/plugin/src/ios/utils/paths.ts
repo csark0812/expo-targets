@@ -7,9 +7,10 @@ import path from 'path';
 
 /**
  * Sanitize target name for use in Xcode (removes non-alphanumeric characters).
+ * Appends "Target" suffix to avoid conflicts with main app name.
  */
 export function sanitizeTargetName(name: string): string {
-  return name.replace(/[^a-zA-Z0-9]/g, '');
+  return name.replace(/[^a-zA-Z0-9]/g, '') + 'Target';
 }
 
 /**
@@ -26,20 +27,12 @@ export function getTargetDirectory({
 }
 
 /**
- * Get the target build directory path (where generated files go).
- */
-export function getTargetBuildDirectory({
-  projectRoot,
-  targetDirectory,
-}: {
-  projectRoot: string;
-  targetDirectory: string;
-}): string {
-  return path.join(projectRoot, targetDirectory, 'ios', 'build');
-}
-
-/**
- * Get the target group path in Xcode project (where files are copied to).
+ * Get the target group path in Xcode project (where target files live).
+ * Adds 'Target' suffix to prevent case-insensitivity collisions with main app on macOS.
+ *
+ * On case-insensitive filesystems (macOS default), directory names that differ only by case
+ * collide. For example, "shareextension" (main app) and "ShareExtension" (target) would resolve
+ * to the same directory. Adding "Target" suffix ensures uniqueness.
  */
 export function getTargetGroupPath({
   platformProjectRoot,
@@ -48,72 +41,100 @@ export function getTargetGroupPath({
   platformProjectRoot: string;
   targetName: string;
 }): string {
-  const sanitized = sanitizeTargetName(targetName);
-  return path.join(platformProjectRoot, sanitized);
+  const dirName = sanitizeTargetName(targetName);
+  // Note: sanitizeTargetName already includes 'Target' suffix to prevent collision
+  // with main app on case-insensitive filesystems (e.g., "ShareExtension" -> "ShareExtensionTarget")
+  return path.join(platformProjectRoot, dirName);
 }
 
 /**
- * Get path to generated entitlements file.
+ * Get path to generated entitlements file in Xcode project.
  */
 export function getGeneratedEntitlementsPath({
-  projectRoot,
-  targetDirectory,
+  platformProjectRoot,
+  targetName,
 }: {
-  projectRoot: string;
-  targetDirectory: string;
+  platformProjectRoot: string;
+  targetName: string;
 }): string {
   return path.join(
-    getTargetBuildDirectory({ projectRoot, targetDirectory }),
+    getTargetGroupPath({ platformProjectRoot, targetName }),
     'generated.entitlements'
   );
 }
 
 /**
- * Get path to Info.plist in build directory.
+ * Get path to Info.plist in Xcode project.
  */
 export function getInfoPlistPath({
-  projectRoot,
-  targetDirectory,
+  platformProjectRoot,
+  targetName,
 }: {
-  projectRoot: string;
-  targetDirectory: string;
+  platformProjectRoot: string;
+  targetName: string;
 }): string {
   return path.join(
-    getTargetBuildDirectory({ projectRoot, targetDirectory }),
+    getTargetGroupPath({ platformProjectRoot, targetName }),
     'Info.plist'
   );
 }
 
 /**
- * Get path to Assets.xcassets in build directory.
+ * Get path to Assets.xcassets in Xcode project.
+ * For sticker targets, returns Stickers.xcassets instead.
  */
 export function getAssetsXcassetsPath({
-  projectRoot,
-  targetDirectory,
+  platformProjectRoot,
+  targetName,
+  isStickers,
 }: {
-  projectRoot: string;
-  targetDirectory: string;
+  platformProjectRoot: string;
+  targetName: string;
+  isStickers?: boolean;
 }): string {
+  const assetsFolderName = isStickers ? 'Stickers.xcassets' : 'Assets.xcassets';
   return path.join(
-    getTargetBuildDirectory({ projectRoot, targetDirectory }),
-    'Assets.xcassets'
+    getTargetGroupPath({ platformProjectRoot, targetName }),
+    assetsFolderName
   );
 }
 
 /**
- * Get path to a specific colorset.
+ * Get path to a specific colorset in Xcode project.
  */
 export function getColorsetPath({
-  projectRoot,
-  targetDirectory,
+  platformProjectRoot,
+  targetName,
   colorName,
 }: {
-  projectRoot: string;
-  targetDirectory: string;
+  platformProjectRoot: string;
+  targetName: string;
   colorName: string;
 }): string {
   return path.join(
-    getAssetsXcassetsPath({ projectRoot, targetDirectory }),
+    getAssetsXcassetsPath({ platformProjectRoot, targetName }),
     `${colorName}.colorset`
+  );
+}
+
+/**
+ * Get path to a specific sticker pack in Xcode project.
+ */
+export function getStickerPackPath({
+  platformProjectRoot,
+  targetName,
+  stickerPackName,
+}: {
+  platformProjectRoot: string;
+  targetName: string;
+  stickerPackName: string;
+}): string {
+  return path.join(
+    getAssetsXcassetsPath({
+      platformProjectRoot,
+      targetName,
+      isStickers: true,
+    }),
+    `${stickerPackName}.stickerpack`
   );
 }

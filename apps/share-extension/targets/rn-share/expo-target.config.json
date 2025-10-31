@@ -1,0 +1,13 @@
+{
+  "type": "share",
+  "name": "RNShare",
+  "platforms": ["ios"],
+  "entry": "./targets/rn-share/index.tsx",
+  "ios": {
+    "activationRules": [
+      { "type": "text" },
+      { "type": "url" },
+      { "type": "image", "maxCount": 5 }
+    ]
+  }
+}

@@ -1,10 +1,10 @@
 # Configuration Reference
 
-Complete reference for configuring expo-targets extensions using the `defineTarget()` API.
+Complete reference for configuring expo-targets extensions using `expo-target.config.json`.
 
 ## Overview
 
-expo-targets uses a TypeScript-first configuration approach where you define targets in `index.ts` files within your `targets/` directory. The configuration is parsed at build time using Babel AST parsing.
+expo-targets uses JSON (or JavaScript/TypeScript) configuration files for defining targets. Each target lives in its own directory under `targets/` with an `expo-target.config.json` file.
 
 ### File Structure
 
@@ -12,102 +12,94 @@ expo-targets uses a TypeScript-first configuration approach where you define tar
 your-app/
 ├── targets/
 │   ├── my-widget/
-│   │   ├── index.ts          ← Configuration + Runtime API
+│   │   ├── expo-target.config.json  ← Configuration
+│   │   ├── index.ts                  ← Runtime API
 │   │   └── ios/
-│   │       └── Widget.swift
+│   │       └── Widget.swift          ← Implementation
 │   └── another-widget/
-│       ├── index.ts
+│       ├── expo-target.config.json
 │       └── ios/
 │           └── Widget.swift
 └── app.json
 ```
 
-### Basic Pattern
+### Supported Formats
 
-Each target directory contains an `index.ts` file that:
-
-1. Defines the target configuration for the build plugin
-2. Exports a runtime Target instance for your app to use
-3. Optionally exports TypeScript types for type-safe data
-
-```typescript
-// targets/my-widget/index.ts
-import { defineTarget } from 'expo-targets';
-
-export const MyWidget = defineTarget({
-  name: 'my-widget',
-  appGroup: 'group.com.yourapp',
-  type: 'widget',
-  displayName: 'My Widget',
-  platforms: {
-    ios: {
-      /* config */
-    },
-  },
-});
-
-export type MyWidgetData = {
-  // Your data types
-};
-```
+- `expo-target.config.json` - JSON
+- `expo-target.config.js` - JavaScript (can export function)
+- `expo-target.config.ts` - TypeScript
 
 ---
 
 ## Configuration Schema
 
-### Root Level
+### Complete Property Table
 
-#### `name` (required)
+| Property                | Type       | Required    | Default            | Description                                |
+| ----------------------- | ---------- | ----------- | ------------------ | ------------------------------------------ |
+| **Root Level**          |
+| `type`                  | `string`   | ✅ Yes      | -                  | Extension type (widget, clip, share, etc.) |
+| `name`                  | `string`   | ✅ Yes      | -                  | Target identifier (PascalCase)             |
+| `platforms`             | `string[]` | ✅ Yes      | -                  | Supported platforms (["ios"])              |
+| `displayName`           | `string`   | ❌ Optional | `name` value       | Human-readable name for UI                 |
+| `appGroup`              | `string`   | ❌ Optional | Auto-inherited     | App Group for data sharing                 |
+| `entry`                 | `string`   | ❌ Optional | -                  | React Native entry file path               |
+| `excludedPackages`      | `string[]` | ❌ Optional | `[]`               | Packages to exclude from RN bundle         |
+| `ios`                   | `object`   | ❌ Optional | `{}`               | iOS-specific configuration                 |
+| `android`               | `object`   | ❌ Optional | `{}`               | Android-specific configuration             |
+| **iOS Platform**        |
+| `ios.deploymentTarget`  | `string`   | ❌ Optional | `"18.0"`           | Minimum iOS version                        |
+| `ios.bundleIdentifier`  | `string`   | ❌ Optional | Auto-generated     | Bundle ID (absolute or relative)           |
+| `ios.displayName`       | `string`   | ❌ Optional | Root `displayName` | Platform-specific display name             |
+| `ios.icon`              | `string`   | ❌ Optional | -                  | Path to icon file                          |
+| `ios.colors`            | `object`   | ❌ Optional | `{}`               | Named colors for Assets.xcassets           |
+| `ios.images`            | `object`   | ❌ Optional | `{}`               | Named images for Assets.xcassets           |
+| `ios.frameworks`        | `string[]` | ❌ Optional | Type defaults      | Additional frameworks to link              |
+| `ios.entitlements`      | `object`   | ❌ Optional | Type defaults      | Custom entitlements                        |
+| `ios.infoPlist`         | `object`   | ❌ Optional | Type defaults      | Custom Info.plist entries                  |
+| `ios.activationRules`   | `array`    | ❌ Optional | -                  | Share extension activation rules           |
+| `ios.preprocessingFile` | `string`   | ❌ Optional | -                  | Preprocessing JS for web content           |
+| `ios.stickerPacks`      | `array`    | ❌ Optional | -                  | iMessage sticker pack configuration        |
+| `ios.imessageAppIcon`   | `string`   | ❌ Optional | -                  | iMessage app icon path                     |
 
-**Type:** `string`
+### Basic Schema Example
 
-Target identifier used internally. Must match the directory name.
-
-```typescript
-name: 'my-widget'; // For targets/my-widget/
+```json
+{
+  "type": "widget",
+  "name": "MyWidget",
+  "displayName": "My Widget",
+  "platforms": ["ios"],
+  "appGroup": "group.com.yourapp",
+  "ios": {
+    // iOS-specific configuration
+  }
+}
 ```
 
-**Rules:**
+---
 
-- Must match directory name exactly
-- Used as Xcode target name (sanitized)
-- Used as widget `kind` in iOS
-- Cannot contain spaces (hyphens and underscores OK)
+## Required Fields
 
-#### `appGroup` (required)
+### `type`
 
 **Type:** `string`
-
-App Group identifier for shared data storage between main app and extension.
-
-```typescript
-appGroup: 'group.com.yourcompany.yourapp';
-```
-
-**Rules:**
-
-- Must start with `group.`
-- Must match App Group in `app.json` entitlements
-- Must be registered in Apple Developer Portal for physical devices
-- Used by `UserDefaults(suiteName:)` in Swift code
-
-#### `type` (required)
-
-**Type:** `ExtensionType`
 
 Extension type. Determines product type, frameworks, and Info.plist configuration.
 
-```typescript
-type: 'widget'; // or 'clip', 'imessage', 'share', etc.
+```json
+{
+  "type": "widget"
+}
 ```
 
 **Available types:**
 
-| Type                      | iOS Support | Description                        |
+| Type                      | iOS Version | Description                        |
 | ------------------------- | ----------- | ---------------------------------- |
 | `widget`                  | iOS 14+     | Home screen widgets                |
 | `clip`                    | iOS 14+     | App Clips                          |
-| `imessage`                | iOS 10+     | iMessage sticker packs             |
+| `stickers`                | iOS 10+     | iMessage sticker packs             |
 | `share`                   | iOS 8+      | Share extensions                   |
 | `action`                  | iOS 8+      | Action extensions                  |
 | `safari`                  | iOS 15+     | Safari web extensions              |
@@ -126,14 +118,57 @@ type: 'widget'; // or 'clip', 'imessage', 'share', etc.
 | `matter`                  | iOS 16.1+   | Matter extensions                  |
 | `watch`                   | watchOS 2+  | Watch app extensions               |
 
-#### `displayName` (optional)
+### `name`
+
+**Type:** `string`
+
+Target identifier used in Xcode and runtime API. Use PascalCase.
+
+```json
+{
+  "name": "MyWidget"
+}
+```
+
+**Rules:**
+
+- Used as Xcode target name
+- Used in `createTarget('MyWidget')`
+- Used as widget `kind` in iOS
+- PascalCase recommended
+- No spaces (hyphens and underscores OK)
+
+### `platforms`
+
+**Type:** `string[]`
+
+Array of supported platforms.
+
+```json
+{
+  "platforms": ["ios"]
+}
+```
+
+**Available platforms:**
+
+- `"ios"` - iOS (implemented)
+- `"android"` - Android (coming soon)
+
+---
+
+## Optional Fields
+
+### `displayName`
 
 **Type:** `string`
 
 Human-readable name shown in UI (widget gallery, extension picker, etc.).
 
-```typescript
-displayName: 'My Awesome Widget';
+```json
+{
+  "displayName": "My Awesome Widget"
+}
 ```
 
 **Default:** Uses `name` if not specified
@@ -145,95 +180,186 @@ displayName: 'My Awesome Widget';
 - Extension picker sheets
 - App Store listing
 
-#### `platforms` (required)
+### `appGroup`
 
-**Type:** `{ ios?: IOSTargetConfig; android?: AndroidTargetConfig }`
+**Type:** `string`
+**Required:** ❌ Optional (auto-inherited if not specified)
 
-Platform-specific configuration.
+App Group identifier for shared data storage.
 
-```typescript
-platforms: {
-  ios: {
-    // iOS configuration
-  },
-  android: {
-    // Android configuration (coming soon)
-  },
+```json
+{
+  "appGroup": "group.com.yourcompany.yourapp"
 }
 ```
+
+**Rules:**
+
+- Must start with `group.`
+- Must match App Group in `app.json` entitlements
+- Must be registered in Apple Developer Portal for physical devices
+- Used by `UserDefaults(suiteName:)` in Swift
+
+**Default:** Auto-inherited from main app's first App Group if not specified
+
+**When to specify:**
+
+- Multiple App Groups and you want a specific one
+- Target needs different App Group than main app
+- Explicit configuration preferred
+
+### `entry`
+
+**Type:** `string`
+**Required:** ❌ Optional
+**Applies to:** `share`, `action`, `clip` types only
+
+React Native entry point for extensions that support RN rendering.
+
+```json
+{
+  "entry": "./targets/share-ext/index.tsx"
+}
+```
+
+**Requirements:**
+
+- Must be a valid file path relative to project root
+- File must exist at prebuild time
+- File must register component with `AppRegistry.registerComponent`
+- Component name must match target `name`
+- Wrap Metro config with `withTargetsMetro`
+- Must build in Release mode
+
+**Example entry file:**
+
+```typescript
+// targets/share-ext/index.tsx
+import { AppRegistry } from 'react-native';
+import ShareExtension from './src/ShareExtension';
+
+AppRegistry.registerComponent('ShareExt', () => ShareExtension);
+```
+
+**See also:** [React Native Extensions Guide](./react-native-extensions.md)
+
+### `excludedPackages`
+
+**Type:** `string[]`
+**Required:** ❌ Optional
+**Only applies when:** `entry` field is specified
+
+Expo/React Native packages to exclude from extension bundle (reduces size).
+
+```json
+{
+  "excludedPackages": [
+    "expo-updates",
+    "expo-dev-client",
+    "@react-native-community/netinfo"
+  ]
+}
+```
+
+**Common exclusions:**
+
+| Package                                     | Reason                        | Size Savings |
+| ------------------------------------------- | ----------------------------- | ------------ |
+| `expo-updates`                              | OTA updates not needed        | ~500KB       |
+| `expo-dev-client`                           | Development tools             | ~800KB       |
+| `@react-native-community/netinfo`           | Network monitoring not needed | ~100KB       |
+| `react-native-reanimated`                   | Animations if not used        | ~1.5MB       |
+| `@react-native-async-storage/async-storage` | Use App Groups instead        | ~200KB       |
+
+**Validation:**
+
+- Ignored if `entry` is not specified
+- Warning logged if used without `entry`
+
+**See also:** [React Native Extensions Guide](./react-native-extensions.md)
 
 ---
 
 ## iOS Platform Configuration
 
-### `deploymentTarget` (optional)
+### `ios.deploymentTarget`
 
 **Type:** `string`
 
-Minimum iOS/iPadOS version required for this extension.
+Minimum iOS version required for this extension.
 
-```typescript
-ios: {
-  deploymentTarget: '14.0';
+```json
+{
+  "ios": {
+    "deploymentTarget": "14.0"
+  }
 }
 ```
 
-**Default:** `'18.0'` (package default)
+**Default:** `"18.0"`
 
 **Recommendations by type:**
 
-- `widget`: `'14.0'` (widgets introduced)
-- `clip`: `'14.0'` (App Clips introduced)
-- `imessage`: `'10.0'` (iMessage apps introduced)
-- `share`: `'8.0'` (extensions introduced)
-- `notification-content`: `'10.0'` (rich notifications)
+- `widget`: `"14.0"`
+- `clip`: `"14.0"`
+- `stickers`: `"10.0"`
+- `share`: `"8.0"`
 
-### `bundleIdentifier` (optional)
+### `ios.bundleIdentifier`
 
 **Type:** `string`
 
 Bundle identifier for the extension.
 
-```typescript
-// Relative (appended to main app bundle ID)
-bundleIdentifier: '.widget';
-// Result: com.yourcompany.yourapp.widget
-
+```json
 // Absolute
-bundleIdentifier: 'com.yourcompany.customwidget';
-// Result: com.yourcompany.customwidget
+{
+  "ios": {
+    "bundleIdentifier": "com.yourcompany.customwidget"
+  }
+}
+
+// Relative (recommended)
+{
+  "ios": {
+    "bundleIdentifier": ".widget"
+  }
+}
 ```
 
-**Default:** `.{name}` (e.g., `.mywidget`)
+**Default:** Auto-generated from type (e.g., `.widget`)
 
 **Rules:**
 
-- Relative: Starts with `.` → appended to main bundle ID
-- Absolute: No leading `.` → used as-is
+- Relative (starts with `.`): Appended to main app bundle ID
+- Absolute (no leading `.`): Used as-is
 - Must be unique across all targets
-- Must be registered in Apple Developer Portal for physical devices
 
-### `displayName` (optional)
+### `ios.displayName`
 
 **Type:** `string`
 
 Platform-specific display name (overrides root `displayName` for iOS).
 
-```typescript
-ios: {
-  displayName: 'iOS Widget Name';
+```json
+{
+  "ios": {
+    "displayName": "iOS Widget Name"
+  }
 }
 ```
 
-### `icon` (optional)
+### `ios.icon`
 
 **Type:** `string`
 
 Path to icon file for the extension.
 
-```typescript
-ios: {
-  icon: './assets/widget-icon.png';
+```json
+{
+  "ios": {
+    "icon": "./assets/widget-icon.png"
+  }
 }
 ```
 
@@ -242,74 +368,76 @@ ios: {
 - Relative path from project root
 - PNG format recommended
 - Automatically added to `Assets.xcassets`
-- Supports @2x, @3x naming conventions
 
-### `colors` (optional)
+### `ios.colors`
 
 **Type:** `Record<string, string | Color>`
 
 Named colors for use in extension UI. Automatically generates color sets in `Assets.xcassets`.
 
-```typescript
-ios: {
-  colors: {
-    // Simple color
-    $accent: '#007AFF',
-
-    // Light/dark mode
-    background: {
-      light: '#FFFFFF',
-      dark: '#1C1C1E'
-    },
-
-    // Alternative syntax
-    primary: {
-      color: '#007AFF',
-      darkColor: '#0A84FF'
-    },
-
-    // RGB/RGBA
-    warning: 'rgb(255, 149, 0)',
-    error: 'rgba(255, 59, 48, 0.8)',
-
-    // Named colors
-    success: 'green',
+```json
+{
+  "ios": {
+    "colors": {
+      "AccentColor": "#007AFF",
+      "Background": {
+        "light": "#FFFFFF",
+        "dark": "#1C1C1E"
+      },
+      "Primary": {
+        "color": "#007AFF",
+        "darkColor": "#0A84FF"
+      }
+    }
   }
 }
 ```
 
 **Color formats:**
 
-- Hex: `'#RGB'`, `'#RRGGBB'`, `'#RRGGBBAA'`
-- RGB: `'rgb(r, g, b)'`
-- RGBA: `'rgba(r, g, b, a)'`
-- Named: CSS color names (`'red'`, `'blue'`, etc.)
+- Hex: `"#RGB"`, `"#RRGGBB"`, `"#RRGGBBAA"`
+- RGB: `"rgb(r, g, b)"`
+- RGBA: `"rgba(r, g, b, a)"`
+- Named: CSS color names
+
+**Light/Dark mode:**
+
+```json
+{
+  "light": "#FFFFFF",
+  "dark": "#000000"
+}
+```
+
+Or:
+
+```json
+{
+  "color": "#FFFFFF",
+  "darkColor": "#000000"
+}
+```
 
 **Usage in Swift:**
 
 ```swift
-Color("$accent")
-Color("background")
+Color("AccentColor")
+Color("Background")
 ```
 
-**Notes:**
-
-- Names with `$` prefix: prefix preserved in asset name
-- Names without prefix: used as-is
-- Generated into `targets/{name}/ios/Assets.xcassets/{name}.colorset/`
-
-### `images` (optional)
+### `ios.images`
 
 **Type:** `Record<string, string>`
 
-Named images for extension assets. Automatically adds to `Assets.xcassets`.
+Named images for extension assets.
 
-```typescript
-ios: {
-  images: {
-    logo: './assets/logo.png',
-    banner: './assets/banner.png',
-    icon: './assets/icon.png',
+```json
+{
+  "ios": {
+    "images": {
+      "Logo": "./assets/logo.png",
+      "Banner": "./assets/banner.png"
+    }
   }
 }
 ```
@@ -317,25 +445,27 @@ ios: {
 **Requirements:**
 
 - Relative paths from project root
-- Supports @2x, @3x naming conventions
+- Supports @2x, @3x naming
 - PNG, JPEG, PDF supported
 
 **Usage in Swift:**
 
 ```swift
-Image("logo")
-Image("banner")
+Image("Logo")
+Image("Banner")
 ```
 
-### `frameworks` (optional)
+### `ios.frameworks`
 
 **Type:** `string[]`
 
-Additional frameworks to link. Auto-detected based on `type`, but can add more.
+Additional frameworks to link.
 
-```typescript
-ios: {
-  frameworks: ['CoreLocation', 'MapKit'];
+```json
+{
+  "ios": {
+    "frameworks": ["CoreLocation", "MapKit"]
+  }
 }
 ```
 
@@ -344,184 +474,149 @@ ios: {
 | Type             | Default Frameworks                                  |
 | ---------------- | --------------------------------------------------- |
 | `widget`         | `WidgetKit`, `SwiftUI`, `ActivityKit`, `AppIntents` |
-| `imessage`       | `Messages`                                          |
+| `stickers`       | `Messages`                                          |
 | `share`          | `Social`, `MobileCoreServices`                      |
-| `clip`           | (inherits from main app)                            |
 | `notification-*` | `UserNotifications`                                 |
-| Others           | (type-specific)                                     |
 
-**Common additions:**
-
-- `CoreLocation`: Location services
-- `MapKit`: Maps
-- `StoreKit`: In-app purchases
-- `AVFoundation`: Audio/video
-- `CoreData`: Database
-
-### `entitlements` (optional)
+### `ios.entitlements`
 
 **Type:** `Record<string, any>`
 
 Custom entitlements for the extension.
 
-```typescript
-ios: {
-  entitlements: {
-    'com.apple.security.application-groups': [
-      'group.com.yourapp.widgets'
-    ],
-    'com.apple.developer.networking.wifi-info': true,
+```json
+{
+  "ios": {
+    "entitlements": {
+      "com.apple.developer.networking.wifi-info": true,
+      "com.apple.developer.applesignin": ["Default"]
+    }
   }
 }
 ```
 
 **Auto-managed entitlements:**
 
-| Type                      | Auto-Added Entitlements                                                |
-| ------------------------- | ---------------------------------------------------------------------- |
-| `widget`, `share`, `clip` | App Groups (synced from main app)                                      |
-| `clip`                    | App Clip Parent (`com.apple.developer.parent-application-identifiers`) |
-| `bg-download`             | App Groups (synced)                                                    |
+- App Groups (synced from main app for widget, share, clip, bg-download)
+- App Clip Parent (for clip type)
 
-**Notes:**
+### `ios.infoPlist`
 
-- App Groups automatically synced from main app for widget, clip, share, bg-download types
-- Custom entitlements merged with auto-detected ones
-- Must be enabled in Apple Developer Portal for physical devices
+**Type:** `Record<string, any>`
 
-### `buildSettings` (optional)
+Custom Info.plist entries. Deep merged with type-specific defaults.
 
-**Type:** `Record<string, string>`
-
-Custom Xcode build settings.
-
-```typescript
-ios: {
-  buildSettings: {
-    'SWIFT_VERSION': '5.0',
-    'IPHONEOS_DEPLOYMENT_TARGET': '14.0',
-    'ENABLE_BITCODE': 'NO',
+```json
+{
+  "ios": {
+    "infoPlist": {
+      "CFBundleURLTypes": [
+        {
+          "CFBundleURLSchemes": ["myapp"]
+        }
+      ],
+      "NSLocationWhenInUseUsageDescription": "Show nearby locations"
+    }
   }
 }
 ```
 
-**Common settings:**
+**Merge behavior:**
 
-- `SWIFT_VERSION`: Swift language version
-- `IPHONEOS_DEPLOYMENT_TARGET`: Deployment target
-- `ENABLE_BITCODE`: Bitcode support
-- `GCC_PREPROCESSOR_DEFINITIONS`: Preprocessor macros
-- `OTHER_SWIFT_FLAGS`: Additional Swift compiler flags
+- Top-level keys: Custom overrides defaults
+- Nested objects: Deep merged
+- Arrays: Replace entirely
 
-**Notes:**
+**Default Info.plist by type:**
 
-- Merged with plugin-generated settings
-- Custom settings take precedence
-- Some settings auto-inherited from main app:
-  - `SWIFT_VERSION`
-  - `TARGETED_DEVICE_FAMILY`
-  - `CLANG_ENABLE_MODULES`
+| Type       | Defaults                                               |
+| ---------- | ------------------------------------------------------ |
+| `clip`     | `NSAppClip`, `UILaunchStoryboardName`, bundle metadata |
+| `widget`   | `NSExtension` (WidgetKit), bundle metadata             |
+| `stickers` | `NSExtension` (Messages), principal class              |
+| `share`    | `NSExtension` (Share services), activation rules       |
+| `action`   | `NSExtension` (Services), activation rules             |
 
-### `useReactNative` (optional)
+### `ios.activationRules`
 
-**Type:** `boolean`
+**Type:** `ShareExtensionActivationRule[]`
 
-Enable React Native rendering in the extension.
+Content types this share extension accepts (only for `type: "share"`).
 
-```typescript
-ios: {
-  useReactNative: true;
+```json
+{
+  "type": "share",
+  "ios": {
+    "activationRules": [
+      { "type": "text" },
+      { "type": "url" },
+      { "type": "image", "maxCount": 5 }
+    ]
+  }
 }
 ```
 
-**Default:** `false`
+**Activation rule types:**
 
-**Supported types:**
+- `"text"` - Plain text
+- `"url"` - URLs (including web URLs)
+- `"image"` - Image files
+- `"video"` - Video files
+- `"file"` - Generic files
+- `"webpage"` - Web pages (requires `preprocessingFile`)
 
-- `share` ✅
-- `action` ✅
-- `clip` ✅
-- `widget` ❌ (use SwiftUI)
-- `imessage` ❌ (use native stickers)
+**Options:**
 
-**Requirements:**
+- `maxCount` (number): Maximum items (default: 1)
 
-1. Create entry file: `index.{targetName}.js`
-2. Wrap Metro config with `withTargetsMetro`
-3. Build in Release mode (Debug not supported)
+### `ios.preprocessingFile`
 
-**Example:**
+**Type:** `string`
 
-```typescript
-// targets/share-ext/index.ts
-export const ShareExt = defineTarget({
-  name: 'share-ext',
-  appGroup: 'group.com.app',
-  type: 'share',
-  platforms: {
-    ios: {
-      useReactNative: true,
-      excludedPackages: ['expo-updates', 'expo-dev-client'],
-    },
-  },
-});
-```
+JavaScript file for preprocessing web content (only for `type: "share"`).
 
-```javascript
-// index.share-ext.js
-import { AppRegistry } from 'react-native';
-import ShareExtension from './src/ShareExtension';
-
-AppRegistry.registerComponent('shareExt', () => ShareExtension);
-```
-
-```javascript
-// metro.config.js
-const { getDefaultConfig } = require('expo/metro-config');
-const { withTargetsMetro } = require('expo-targets/metro');
-
-module.exports = withTargetsMetro(getDefaultConfig(__dirname));
-```
-
-### `excludedPackages` (optional)
-
-**Type:** `string[]`
-
-Packages to exclude from React Native bundle (reduces size).
-
-```typescript
-ios: {
-  useReactNative: true,
-  excludedPackages: [
-    'expo-updates',
-    'expo-dev-client',
-    '@react-native-community/netinfo',
-    'react-native-reanimated',
-  ]
+```json
+{
+  "type": "share",
+  "ios": {
+    "preprocessingFile": "./preprocessing.js"
+  }
 }
 ```
 
-**Only applies when `useReactNative: true`**
+**Enables:** `NSExtensionActivationSupportsWebPageWithMaxCount`
 
-**Common exclusions:**
+### `ios.stickerPacks`
 
-- `expo-updates`: OTA updates (not needed in extensions)
-- `expo-dev-client`: Development tools
-- `@react-native-community/netinfo`: Network monitoring
-- `react-native-reanimated`: Animations (if not used)
-- `@react-native-async-storage/async-storage`: Storage (use App Groups instead)
+**Type:** `StickerPack[]`
 
----
+Sticker pack configuration (only for `type: "stickers"`).
 
-## Android Platform Configuration
+```json
+{
+  "type": "stickers",
+  "ios": {
+    "stickerPacks": [
+      {
+        "name": "Pack 1",
+        "assets": ["./stickers/sticker1.png", "./stickers/sticker2.png"]
+      }
+    ]
+  }
+}
+```
 
-> **Status:** Coming soon
+### `ios.imessageAppIcon`
 
-```typescript
-platforms: {
-  android: {
-    resourceName: 'my_widget',
-    // More options coming
+**Type:** `string`
+
+Path to icon for iMessage app icon (only for `type: "stickers"`).
+
+```json
+{
+  "type": "stickers",
+  "ios": {
+    "imessageAppIcon": "./assets/imessage-icon.png"
   }
 }
 ```
@@ -532,227 +627,209 @@ platforms: {
 
 ### Basic Widget
 
-```typescript
-import { defineTarget } from 'expo-targets';
-
-export const SimpleWidget = defineTarget({
-  name: 'simple-widget',
-  appGroup: 'group.com.yourapp',
-  type: 'widget',
-  displayName: 'Simple Widget',
-  platforms: {
-    ios: {
-      deploymentTarget: '14.0',
-      colors: {
-        $accent: '#007AFF',
-      },
-    },
-  },
-});
-
-export type SimpleWidgetData = {
-  message: string;
-};
+```json
+{
+  "type": "widget",
+  "name": "SimpleWidget",
+  "displayName": "Simple Widget",
+  "platforms": ["ios"],
+  "appGroup": "group.com.yourapp",
+  "ios": {
+    "deploymentTarget": "14.0",
+    "colors": {
+      "AccentColor": "#007AFF"
+    }
+  }
+}
 ```
 
-### Advanced Widget with Assets
+### Advanced Widget
 
-```typescript
-import { defineTarget } from 'expo-targets';
-
-export const AdvancedWidget = defineTarget({
-  name: 'advanced-widget',
-  appGroup: 'group.com.yourapp',
-  type: 'widget',
-  displayName: 'Advanced Widget',
-  platforms: {
-    ios: {
-      deploymentTarget: '16.0',
-      bundleIdentifier: '.advancedwidget',
-      icon: './assets/widget-icon.png',
-
-      colors: {
-        $primary: '#007AFF',
-        $secondary: '#5856D6',
-        $background: {
-          light: '#F2F2F7',
-          dark: '#1C1C1E',
-        },
-        $text: {
-          light: '#000000',
-          dark: '#FFFFFF',
-        },
-      },
-
-      images: {
-        logo: './assets/logo.png',
-        placeholder: './assets/placeholder.png',
-      },
-
-      frameworks: ['CoreLocation', 'MapKit'],
-
-      buildSettings: {
-        SWIFT_VERSION: '5.0',
-      },
+```json
+{
+  "type": "widget",
+  "name": "WeatherWidget",
+  "displayName": "Weather",
+  "platforms": ["ios"],
+  "appGroup": "group.com.yourapp",
+  "ios": {
+    "deploymentTarget": "16.0",
+    "bundleIdentifier": ".weather",
+    "colors": {
+      "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" },
+      "SunnyColor": { "light": "#FFB800", "dark": "#FFD60A" },
+      "CloudyColor": { "light": "#8E8E93", "dark": "#98989D" },
+      "RainyColor": { "light": "#5AC8FA", "dark": "#64D2FF" },
+      "Background": { "light": "#FFFFFF", "dark": "#1C1C1E" },
+      "TextPrimary": { "light": "#000000", "dark": "#FFFFFF" },
+      "TextSecondary": { "light": "#666666", "dark": "#98989D" }
     },
-  },
-});
-
-export type AdvancedWidgetData = {
-  title: string;
-  subtitle: string;
-  location?: {
-    latitude: number;
-    longitude: number;
-  };
-  lastUpdated: number;
-};
+    "images": {
+      "Logo": "./assets/logo.png"
+    },
+    "frameworks": ["CoreLocation", "MapKit"],
+    "entitlements": {
+      "com.apple.developer.networking.wifi-info": true
+    }
+  }
+}
 ```
 
 ### App Clip
 
-```typescript
-import { defineTarget } from 'expo-targets';
-
-export const QuickOrder = defineTarget({
-  name: 'quick-order',
-  appGroup: 'group.com.yourapp',
-  type: 'clip',
-  displayName: 'Quick Order',
-  platforms: {
-    ios: {
-      deploymentTarget: '14.0',
-      bundleIdentifier: '.clip',
-
-      colors: {
-        $brand: '#FF6B6B',
-      },
-
-      entitlements: {
-        'com.apple.developer.applesignin': ['Default'],
-      },
+```json
+{
+  "type": "clip",
+  "name": "QuickOrder",
+  "displayName": "Quick Order",
+  "platforms": ["ios"],
+  "appGroup": "group.com.yourapp",
+  "ios": {
+    "deploymentTarget": "14.0",
+    "bundleIdentifier": ".clip",
+    "colors": {
+      "BrandColor": "#FF6B6B"
     },
-  },
-});
+    "entitlements": {
+      "com.apple.developer.applesignin": ["Default"],
+      "com.apple.developer.associated-domains": ["appclips:yourapp.example.com"]
+    },
+    "infoPlist": {
+      "NSAppClip": {
+        "NSAppClipRequestEphemeralUserNotification": true,
+        "NSAppClipRequestLocationConfirmation": false
+      },
+      "NSLocationWhenInUseUsageDescription": "Show nearby stores"
+    }
+  }
+}
 ```
 
 ### iMessage Stickers
 
-```typescript
-import { defineTarget } from 'expo-targets';
-
-export const CuteStickers = defineTarget({
-  name: 'cute-stickers',
-  appGroup: 'group.com.yourapp',
-  type: 'imessage',
-  displayName: 'Cute Stickers',
-  platforms: {
-    ios: {
-      deploymentTarget: '10.0',
-      bundleIdentifier: '.stickers',
-      icon: './assets/sticker-icon.png',
-    },
-  },
-});
+```json
+{
+  "type": "stickers",
+  "name": "CuteStickers",
+  "displayName": "Cute Stickers",
+  "platforms": ["ios"],
+  "ios": {
+    "deploymentTarget": "10.0",
+    "bundleIdentifier": ".stickers",
+    "imessageAppIcon": "./assets/imessage-icon.png",
+    "stickerPacks": [
+      {
+        "name": "Animals",
+        "assets": [
+          "./stickers/cat.png",
+          "./stickers/dog.png",
+          "./stickers/bird.png"
+        ]
+      },
+      {
+        "name": "Emojis",
+        "assets": ["./stickers/happy.png", "./stickers/sad.png"]
+      }
+    ]
+  }
+}
 ```
 
 ### Share Extension with React Native
 
-```typescript
-import { defineTarget } from 'expo-targets';
-
-export const ShareToApp = defineTarget({
-  name: 'share-to-app',
-  appGroup: 'group.com.yourapp',
-  type: 'share',
-  displayName: 'Share to MyApp',
-  platforms: {
-    ios: {
-      deploymentTarget: '13.0',
-      useReactNative: true,
-      excludedPackages: [
-        'expo-updates',
-        'expo-dev-client',
-        '@react-native-async-storage/async-storage',
-      ],
-
-      colors: {
-        $brand: '#FF6B6B',
-        $background: {
-          light: '#FFFFFF',
-          dark: '#000000',
-        },
-      },
-    },
-  },
-});
-
-export type ShareData = {
-  url: string;
-  title?: string;
-  timestamp: number;
-};
+```json
+{
+  "type": "share",
+  "name": "ShareToApp",
+  "displayName": "Share to MyApp",
+  "platforms": ["ios"],
+  "appGroup": "group.com.yourapp",
+  "entry": "./ShareExtension.tsx",
+  "excludedPackages": [
+    "expo-updates",
+    "expo-dev-client",
+    "@react-native-async-storage/async-storage"
+  ],
+  "ios": {
+    "deploymentTarget": "13.0",
+    "activationRules": [
+      { "type": "text" },
+      { "type": "url" },
+      { "type": "image", "maxCount": 5 }
+    ],
+    "colors": {
+      "BrandColor": "#FF6B6B",
+      "Background": { "light": "#FFFFFF", "dark": "#000000" }
+    }
+  }
+}
 ```
 
-### Multiple Targets
+### Share Extension (Native Swift)
 
-```typescript
-// targets/index.ts
-export { HelloWidget } from './hello-widget';
-export { DashboardWidget } from './dashboard-widget';
-export { ShareExtension } from './share-extension';
-
-export type { HelloWidgetData } from './hello-widget';
-export type { DashboardData } from './dashboard-widget';
-export type { ShareData } from './share-extension';
+```json
+{
+  "type": "share",
+  "name": "ShareNative",
+  "displayName": "Share",
+  "platforms": ["ios"],
+  "appGroup": "group.com.yourapp",
+  "ios": {
+    "deploymentTarget": "13.0",
+    "activationRules": [{ "type": "url" }, { "type": "webpage" }],
+    "preprocessingFile": "./preprocessing.js"
+  }
+}
 ```
 
 ---
 
-## Computed Configuration
+## Dynamic Configuration
 
-Configuration can be computed at build time:
+Configuration files can export functions for dynamic config:
 
-```typescript
-import { defineTarget } from 'expo-targets';
+```javascript
+// expo-target.config.js
+module.exports = (config) => {
+  const isDev = process.env.NODE_ENV === 'development';
 
-const isDev = process.env.NODE_ENV === 'development';
-
-export const MyWidget = defineTarget({
-  name: 'my-widget',
-  appGroup: isDev ? 'group.com.yourapp.dev' : 'group.com.yourapp',
-  type: 'widget',
-  displayName: isDev ? 'My Widget (Dev)' : 'My Widget',
-  platforms: {
+  return {
+    type: 'widget',
+    name: 'MyWidget',
+    displayName: isDev ? 'My Widget (Dev)' : 'My Widget',
+    platforms: ['ios'],
+    appGroup: isDev ? 'group.com.yourapp.dev' : 'group.com.yourapp',
     ios: {
       deploymentTarget: '14.0',
       colors: {
-        $accent: isDev ? '#FF0000' : '#007AFF',
+        AccentColor: isDev ? '#FF0000' : '#007AFF',
       },
     },
-  },
-});
+  };
+};
 ```
 
 ---
 
-## Configuration Validation
+## Validation
 
 The plugin validates configuration at build time:
 
-**Required fields:**
+**Errors:**
 
-- `name` must match directory name
-- `appGroup` must be valid App Group identifier
-- `type` must be valid extension type
-- `platforms` must have at least one platform
+- Missing required fields (`type`, `name`, `platforms`)
+- Invalid extension type
+- Invalid platform
+- Invalid deployment target format
+- Invalid color format
+- Missing referenced files (images, icons)
 
 **Warnings:**
 
-- `deploymentTarget` too high for target type
-- Missing App Groups in main app entitlements
+- Deployment target too high for type
+- Missing App Groups in main app
 - Bundle identifier conflicts
-- Unsupported `useReactNative` for target type
+- React Native not supported for type
 
 ---
 
@@ -760,66 +837,78 @@ The plugin validates configuration at build time:
 
 ### Use Relative Bundle IDs
 
-```typescript
-// ✅ Good: Adapts to main app bundle ID
-bundleIdentifier: '.widget';
+```json
+// ✅ Good: Adapts to main app
+{
+  "ios": {
+    "bundleIdentifier": ".widget"
+  }
+}
 
-// ❌ Avoid: Hard-coded, requires manual updates
-bundleIdentifier: 'com.mycompany.myapp.widget';
+// ❌ Avoid: Hard-coded
+{
+  "ios": {
+    "bundleIdentifier": "com.mycompany.myapp.widget"
+  }
+}
 ```
 
 ### Set Appropriate Deployment Targets
 
-```typescript
-// ✅ Good: Minimum required for features
-deploymentTarget: '14.0'; // Widgets
-
-// ❌ Too high: Excludes older devices unnecessarily
-deploymentTarget: '18.0';
-```
-
-### Organize Colors Semantically
-
-```typescript
-// ✅ Good: Semantic naming
-colors: {
-  $primary: '#007AFF',
-  $secondary: '#5856D6',
-  $success: '#34C759',
-  $error: '#FF3B30',
-  $background: { light: '#FFFFFF', dark: '#000000' },
+```json
+// ✅ Good: Minimum for features
+{
+  "type": "widget",
+  "ios": {
+    "deploymentTarget": "14.0"
+  }
 }
 
-// ❌ Avoid: Color-based naming
-colors: {
-  blue: '#007AFF',
-  purple: '#5856D6',
-  // Colors might change but names are fixed
+// ❌ Too high: Excludes users
+{
+  "type": "widget",
+  "ios": {
+    "deploymentTarget": "18.0"
+  }
 }
 ```
 
-### Exclude Unnecessary Packages
+### Use Semantic Color Names
 
-```typescript
-// ✅ Good: Minimal bundle
-useReactNative: true,
-excludedPackages: ['expo-updates', 'expo-dev-client']
+```json
+// ✅ Good: Semantic
+{
+  "colors": {
+    "Primary": "#007AFF",
+    "Secondary": "#5856D6",
+    "Success": "#34C759",
+    "Error": "#FF3B30",
+    "Background": { "light": "#FFFFFF", "dark": "#000000" }
+  }
+}
 
-// ❌ Avoid: Large bundle
-useReactNative: true,
-excludedPackages: []
+// ❌ Avoid: Color-based
+{
+  "colors": {
+    "Blue": "#007AFF",
+    "Purple": "#5856D6"
+  }
+}
 ```
 
-### Export Types for Data
+### Minimize React Native Bundle
 
-```typescript
-// ✅ Good: Type-safe data operations
-export type WidgetData = {
-  message: string;
-  count: number;
-};
-
-// Usage: Widget.setData<WidgetData>(data)
+```json
+// ✅ Good: Exclude unused
+{
+  "entry": "./ShareExtension.tsx",
+  "excludedPackages": [
+    "expo-updates",
+    "expo-dev-client",
+    "@react-native-community/netinfo",
+    "react-native-reanimated"
+  ]
+}
 ```
 
 ---
@@ -828,96 +917,33 @@ export type WidgetData = {
 
 ### Config not being detected?
 
-**Causes:**
+**Solutions:**
 
-- File not named `index.ts` or `index.tsx`
-- Not using `defineTarget()` function
-- Syntax errors in config file
+1. Ensure file is named `expo-target.config.*`
+2. Check JSON syntax (use validator)
+3. Run `npx expo prebuild -p ios --clean`
+
+### Build errors after config change?
 
 **Solutions:**
 
-1. Ensure file is `targets/{name}/index.ts`
-2. Use `defineTarget()` from `expo-targets`
-3. Check for TypeScript errors
-4. Run `npx expo prebuild -p ios --clean`
+1. Clean build: Product → Clean Build Folder (Cmd+Shift+K)
+2. Delete `ios/` and re-run prebuild
+3. Check Xcode console for specific errors
 
-### Bundle ID conflicts?
-
-**Causes:**
-
-- Multiple targets with same bundle ID
-- Absolute bundle IDs conflicting with main app
-
-**Solutions:**
-
-1. Use unique relative bundle IDs: `.widget1`, `.widget2`
-2. Check Apple Developer Portal for conflicts
-3. Review all target `bundleIdentifier` settings
-
-### Colors not appearing in widget?
-
-**Causes:**
-
-- Invalid color format
-- Typo in color name
-- Colors not generated in Assets.xcassets
+### Colors not appearing?
 
 **Solutions:**
 
 1. Verify color format (hex, rgb, named)
-2. Check color name in Swift: `Color("colorName")`
-3. Re-run `npx expo prebuild -p ios --clean`
+2. Check color name in Swift
+3. Re-run prebuild
 4. Check `targets/{name}/ios/Assets.xcassets/`
-
-### React Native extensions not working?
-
-**Causes:**
-
-- Missing `index.{targetName}.js` entry file
-- Metro config not wrapped
-- Unsupported target type
-
-**Solutions:**
-
-1. Create entry file: `index.{targetName}.js`
-2. Wrap Metro: `withTargetsMetro(getDefaultConfig(__dirname))`
-3. Build in Release mode
-4. Verify type supports React Native (share, action, clip)
 
 ---
 
-## Migration from JSON Config
+## See Also
 
-### Before (JSON config - not supported)
-
-```javascript
-// expo-target.config.js
-module.exports = {
-  type: 'widget',
-  displayName: 'My Widget',
-  platforms: { ios: {} },
-};
-```
-
-### After (TypeScript with defineTarget)
-
-```typescript
-// index.ts
-import { defineTarget } from 'expo-targets';
-
-export const MyWidget = defineTarget({
-  name: 'my-widget',
-  appGroup: 'group.com.yourapp',
-  type: 'widget',
-  displayName: 'My Widget',
-  platforms: { ios: {} },
-});
-```
-
-**Benefits:**
-
-- Single source of truth (config + runtime)
-- Type-safe configuration
-- IDE autocomplete
-- Runtime API included
-- Export data types
+- [API Reference](./api-reference.md)
+- [Getting Started Guide](./getting-started.md)
+- [Implementation Status](../IMPLEMENTATION_STATUS.md)

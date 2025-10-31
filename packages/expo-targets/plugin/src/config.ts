@@ -3,7 +3,7 @@ import type { ExpoConfig } from '@expo/config-types';
 export type ExtensionType =
   | 'widget'
   | 'clip'
-  | 'imessage'
+  | 'stickers'
   | 'share'
   | 'action'
   | 'safari'
@@ -29,10 +29,42 @@ export interface Color {
   darkColor?: string;
 }
 
+// Share extension activation rules
+export type ShareExtensionContentType =
+  | 'text'
+  | 'url'
+  | 'image'
+  | 'video'
+  | 'file'
+  | 'webpage';
+
+export interface ShareExtensionActivationRule {
+  /**
+   * Type of content to accept
+   * - text: Plain text content
+   * - url: URLs (including web URLs)
+   * - image: Image files
+   * - video: Video files
+   * - file: Generic files
+   * - webpage: Web pages (requires preprocessingFile for full support)
+   */
+  type: ShareExtensionContentType;
+  /**
+   * Maximum number of items to accept (default: 1)
+   * Only applicable for url, image, video, and file types
+   */
+  maxCount?: number;
+}
+
+export interface StickerPack {
+  name: string;
+  assets: string[];
+}
+
 export const TYPE_MINIMUM_DEPLOYMENT_TARGETS: Record<ExtensionType, string> = {
   widget: '14.0',
   clip: '14.0',
-  imessage: '10.0',
+  stickers: '10.0',
   share: '8.0',
   action: '8.0',
   'notification-content': '10.0',
@@ -55,7 +87,7 @@ export const TYPE_MINIMUM_DEPLOYMENT_TARGETS: Record<ExtensionType, string> = {
 export const TYPE_BUNDLE_IDENTIFIER_SUFFIXES: Record<ExtensionType, string> = {
   widget: 'widget',
   clip: 'clip',
-  imessage: 'imessage',
+  stickers: 'stickers',
   share: 'share',
   action: 'action',
   safari: 'safari',
@@ -83,14 +115,37 @@ interface BaseIOSTargetConfig {
   displayName?: string;
   colors?: Record<string, string | Color>;
   images?: Record<string, string>;
+  stickerPacks?: StickerPack[];
+  imessageAppIcon?: string; // Path to source icon for iMessage App Icon (sticker packs)
   frameworks?: string[];
   entitlements?: Record<string, any>;
+  infoPlist?: Record<string, any>;
 
   // CamelCase build settings
   swiftVersion?: string;
   targetedDeviceFamily?: string;
   clangEnableModules?: boolean | string;
   swiftEmitLocStrings?: boolean | string;
+
+  // Share extension configuration (only applies when type='share')
+  /**
+   * Content types this share extension accepts
+   * Only applies to share extension targets
+   * @example
+   * activationRules: [
+   *   { type: 'text' },
+   *   { type: 'url' },
+   *   { type: 'image', maxCount: 5 }
+   * ]
+   */
+  activationRules?: ShareExtensionActivationRule[];
+  /**
+   * JavaScript file for preprocessing web content
+   * Only applies to share extension targets
+   * Enables NSExtensionActivationSupportsWebPageWithMaxCount
+   * @see https://developer.apple.com/library/archive/documentation/General/Conceptual/ExtensibilityPG/Share.html
+   */
+  preprocessingFile?: string;
 }
 
 // Types that support React Native rendering
@@ -100,16 +155,10 @@ export type ReactNativeCompatibleType = 'share' | 'action' | 'clip';
 export type NativeOnlyType = Exclude<ExtensionType, ReactNativeCompatibleType>;
 
 // Config for React Native compatible types
-export interface IOSTargetConfigWithReactNative extends BaseIOSTargetConfig {
-  useReactNative?: boolean;
-  excludedPackages?: string[];
-}
+export interface IOSTargetConfigWithReactNative extends BaseIOSTargetConfig {}
 
 // Config for native-only types (no React Native options)
-export interface IOSTargetConfigNativeOnly extends BaseIOSTargetConfig {
-  useReactNative?: never;
-  excludedPackages?: never;
-}
+export interface IOSTargetConfigNativeOnly extends BaseIOSTargetConfig {}
 
 // Union type based on target type
 export type IOSTargetConfig =
@@ -132,6 +181,21 @@ type BaseTargetConfig = {
 // Target config for React Native compatible types
 type TargetConfigReactNativeCompatible = BaseTargetConfig & {
   type: ReactNativeCompatibleType;
+  /**
+   * Entry point for React Native rendering (share, action, clip only)
+   * Path to JavaScript/TypeScript file that exports the extension component
+   * When specified, enables React Native rendering in the extension
+   * @example "./ShareExtension.tsx"
+   * @example "./targets/my-share/ShareExtension.js"
+   */
+  entry?: string;
+  /**
+   * Exclude specific Expo packages from the extension bundle
+   * Reduces bundle size by removing unused modules
+   * Only applies when `entry` is specified
+   * @example ['expo-dev-client', 'expo-updates']
+   */
+  excludedPackages?: string[];
   ios?: IOSTargetConfigWithReactNative;
 };
 

@@ -22,8 +22,8 @@ export const withTargetsDir: ConfigPlugin<{
 
   console.log(`[expo-targets] Found ${targetConfigFiles.length} target(s)`);
 
-  // Collect target metadata for runtime access
-  const targetMetadata: Record<string, { appGroup?: string }> = {};
+  // Collect target configs for runtime access
+  const targetConfigs: any[] = [];
 
   targetConfigFiles.forEach((targetPath) => {
     let evaluatedConfig = require(targetPath);
@@ -52,55 +52,54 @@ export const withTargetsDir: ConfigPlugin<{
       `[expo-targets] Processing ${targetDirName}: type=${evaluatedConfig.type}, name=${targetName}`
     );
 
-    // Store metadata for runtime access
-    targetMetadata[targetName] = {
-      appGroup: evaluatedConfig.appGroup,
-    };
-
-    const hasIOS = fs.existsSync(path.join(path.dirname(targetPath), 'ios'));
-    const hasAndroid = fs.existsSync(
-      path.join(path.dirname(targetPath), 'android')
-    );
+    const supportsIOS = evaluatedConfig.platforms.includes('ios');
+    const supportsAndroid = evaluatedConfig.platforms.includes('android');
 
     console.log(
-      `[expo-targets] ${targetDirName}: iOS=${hasIOS}, Android=${hasAndroid}`
+      `[expo-targets] ${targetDirName}: iOS=${supportsIOS}, Android=${supportsAndroid}`
     );
 
-    // Validate platforms array matches actual directories
-    if (hasIOS && !evaluatedConfig.platforms.includes('ios')) {
-      console.warn(
-        `[expo-targets] iOS directory exists but 'ios' not in platforms array for ${targetDirName}`
-      );
-    }
-    if (hasAndroid && !evaluatedConfig.platforms.includes('android')) {
-      console.warn(
-        `[expo-targets] Android directory exists but 'android' not in platforms array for ${targetDirName}`
-      );
+    // Resolve appGroup (inherit from main app if not specified)
+    let appGroup = evaluatedConfig.appGroup;
+    if (!appGroup) {
+      const mainAppGroups =
+        config.ios?.entitlements?.['com.apple.security.application-groups'];
+      if (Array.isArray(mainAppGroups) && mainAppGroups.length > 0) {
+        appGroup = mainAppGroups[0];
+      }
     }
 
-    if (hasIOS && evaluatedConfig.ios) {
+    if (supportsIOS && evaluatedConfig.ios) {
       config = withIOSTarget(config, {
         ...evaluatedConfig.ios,
         type: evaluatedConfig.type,
         name: targetName,
         displayName: evaluatedConfig.displayName,
         appGroup: evaluatedConfig.appGroup,
+        entry: evaluatedConfig.entry,
+        excludedPackages: evaluatedConfig.excludedPackages,
         directory: targetDirectory,
         configPath: targetPath,
       });
     }
 
-    if (hasAndroid && evaluatedConfig.android) {
+    if (supportsAndroid && evaluatedConfig.android) {
       console.warn(
         `[expo-targets] Android support not yet implemented for ${targetDirName}`
       );
     }
+
+    // Store full config for runtime access (with resolved appGroup)
+    targetConfigs.push({
+      ...evaluatedConfig,
+      appGroup,
+    });
   });
 
-  // Inject target metadata into expo config for runtime access
+  // Inject target configs into expo config for runtime access
   config.extra = {
     ...config.extra,
-    expoTargets: targetMetadata,
+    targets: targetConfigs,
   };
 
   return config;

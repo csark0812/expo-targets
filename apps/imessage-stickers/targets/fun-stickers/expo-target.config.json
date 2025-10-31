@@ -1,11 +1,15 @@
 {
-  "type": "imessage",
+  "type": "stickers",
   "name": "FunStickers",
   "displayName": "Fun Stickers",
   "platforms": ["ios"],
   "ios": {
-    "deploymentTarget": "17.0",
-    "bundleIdentifier": "com.test.imessagestickers.stickers",
-    "displayName": "Fun Stickers"
+    "imessageAppIcon": "./assets/icon-iphone-60x45@3x.png",
+    "stickerPacks": [
+      {
+        "name": "Sticker Pack",
+        "assets": ["stickers/excited.png", "stickers/happy.png"]
+      }
+    ]
   }
 }

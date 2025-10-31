@@ -1,19 +1,18 @@
 # expo-targets
 
-Add iOS widgets, App Clips, iMessage stickers, and other native extensions to your Expo app with a simple, type-safe API.
+Add iOS widgets, App Clips, iMessage stickers, share extensions, and other native extensions to your Expo app.
 
-> **Status**: iOS widget support is production-ready. App Clips and iMessage stickers are supported. Share/action extensions planned. Android support coming soon.
+> **Status**: Production-ready for iOS. Android support coming soon.
 
 ## Features
 
-- 🎯 **Multiple Target Types**: iOS widgets, App Clips, iMessage stickers, and more
-- 📦 **Simple TypeScript API**: Define targets with type-safe `defineTarget()` function
-- 🔄 **Data Sharing**: Built-in `TargetStorage` for communication between app and extensions
-- ⚛️ **React Native Support**: Optional RN rendering in compatible extensions
+- 🎯 **Multiple Target Types**: Widgets, App Clips, iMessage stickers, share extensions
+- 📦 **Simple JSON Config**: Define targets with `expo-target.config.json`
+- 🔄 **Data Sharing**: Built-in storage for communication between app and extensions
+- ⚛️ **React Native Support**: Optional RN rendering in share/action/clip extensions
 - 🎨 **Asset Management**: Automatic color and image asset generation
 - 🚀 **CLI Tool**: Scaffold new targets with `npx create-target`
 - 🔧 **Xcode Integration**: Full Xcode project manipulation for seamless native builds
-- 📱 **iOS First**: Production-ready iOS support with Android architecture prepared
 
 ## Quick Start
 
@@ -26,7 +25,7 @@ bun add expo-targets
 
 ### 1. Configure App Groups
 
-Add App Groups to your `app.json` for data sharing:
+Add App Groups to `app.json` for data sharing between app and extensions:
 
 ```json
 {
@@ -52,31 +51,23 @@ Use the CLI to scaffold:
 npx create-target
 ```
 
-Or manually create `targets/my-widget/index.ts`:
+Or manually create `targets/my-widget/expo-target.config.json`:
 
-```typescript
-import { defineTarget } from 'expo-targets';
-
-export const MyWidget = defineTarget({
-  name: 'my-widget',
-  appGroup: 'group.com.yourcompany.yourapp',
-  type: 'widget',
-  displayName: 'My Widget',
-  platforms: {
-    ios: {
-      deploymentTarget: '14.0',
-      colors: {
-        $accent: '#007AFF',
-        $background: { light: '#FFFFFF', dark: '#1C1C1E' },
-      },
-    },
-  },
-});
-
-export type MyWidgetData = {
-  message: string;
-  count?: number;
-};
+```json
+{
+  "type": "widget",
+  "name": "MyWidget",
+  "displayName": "My Widget",
+  "platforms": ["ios"],
+  "appGroup": "group.com.yourcompany.yourapp",
+  "ios": {
+    "deploymentTarget": "14.0",
+    "colors": {
+      "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" },
+      "BackgroundColor": { "light": "#FFFFFF", "dark": "#1C1C1E" }
+    }
+  }
+}
 ```
 
 Create `targets/my-widget/ios/Widget.swift`:
@@ -104,13 +95,16 @@ struct WidgetView: View {
 
     var body: some View {
         VStack {
-            Text("Hello Widget")
-                .foregroundColor(Color("$accent"))
+            Text(entry.message)
+                .foregroundColor(Color("AccentColor"))
         }
+        .containerBackground(Color("BackgroundColor"), for: .widget)
     }
 }
 
 struct Provider: TimelineProvider {
+    let appGroup = "group.com.yourcompany.yourapp"
+
     func placeholder(in context: Context) -> SimpleEntry {
         SimpleEntry(date: Date(), message: "Loading...")
     }
@@ -120,8 +114,12 @@ struct Provider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> ()) {
-        let entry = SimpleEntry(date: Date(), message: "Hello")
-        let timeline = Timeline(entries: [entry], policy: .atEnd)
+        let defaults = UserDefaults(suiteName: appGroup)
+        let message = defaults?.string(forKey: "message") ?? "No data"
+        let entry = SimpleEntry(date: Date(), message: message)
+
+        let nextUpdate = Calendar.current.date(byAdding: .minute, value: 15, to: Date())!
+        let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
         completion(timeline)
     }
 }
@@ -132,48 +130,24 @@ struct SimpleEntry: TimelineEntry {
 }
 ```
 
-### 3. Use Your Widget in Your App
+### 3. Use in Your App
 
-Import and use your widget instance directly:
+Create `targets/my-widget/index.ts`:
 
 ```typescript
-import { MyWidget } from './targets/my-widget';
+import { createTarget } from 'expo-targets';
 
-function updateWidget() {
-  // Simple key-value storage
-  MyWidget.set('message', 'Hello from app!');
-  MyWidget.set('count', 42);
-
-  // Or type-safe data object
-  MyWidget.setData<MyWidgetData>({
-    message: 'Hello Widget!',
-    count: 42,
-  });
-
-  // Refresh widget to show new data
-  MyWidget.refresh();
-}
-
-function readWidget() {
-  const message = MyWidget.get('message');
-  const data = MyWidget.getData<MyWidgetData>();
-  console.log('Message:', message);
-  console.log('Data:', data);
-}
+export const myWidget = createTarget('MyWidget');
 ```
 
-In your widget Swift code, read from the App Group:
+Import and use in your app:
 
-```swift
-func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> ()) {
-    let defaults = UserDefaults(suiteName: "group.com.yourcompany.yourapp")
-    let message = defaults?.string(forKey: "message") ?? "No data"
-    let entry = SimpleEntry(date: Date(), message: message)
+```typescript
+import { myWidget } from './targets/my-widget';
 
-    // Update every 15 minutes
-    let nextUpdate = Calendar.current.date(byAdding: .minute, value: 15, to: Date())!
-    let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
-    completion(timeline)
+function updateWidget() {
+  myWidget.setData({ message: 'Hello Widget!' });
+  myWidget.refresh();
 }
 ```
 
@@ -186,285 +160,185 @@ npx expo run:ios
 
 ## Supported Target Types
 
-| Type                   | iOS | Android | Description                             |
-| ---------------------- | --- | ------- | --------------------------------------- |
-| `widget`               | ✅  | 🔜      | Home screen widgets                     |
-| `clip`                 | ✅  | 🔜      | App Clips (lightweight app experiences) |
-| `imessage`             | ✅  | -       | iMessage sticker packs                  |
-| `share`                | 📝  | 🔜      | Share extensions                        |
-| `action`               | 📝  | 🔜      | Action extensions                       |
-| `intent`               | 📝  | -       | Siri intents                            |
-| `notification-service` | 📝  | 🔜      | Rich notifications                      |
-| `safari`               | 📝  | -       | Safari extensions                       |
-| _...and more_          | 📝  | 🔜      | Full iOS/Android extension support      |
+| Type                   | iOS | Description                |
+| ---------------------- | --- | -------------------------- |
+| `widget`               | ✅  | Home screen widgets        |
+| `clip`                 | ✅  | App Clips                  |
+| `stickers`             | ✅  | iMessage sticker packs     |
+| `share`                | ✅  | Share extensions           |
+| `action`               | ✅  | Action extensions          |
+| `intent`               | 📝  | Siri intents               |
+| `notification-content` | 📝  | Notification content       |
+| `notification-service` | 📝  | Notification service       |
+| `safari`               | 📝  | Safari extensions          |
+| _...and more_          | 📝  | Full iOS extension support |
 
-✅ Implemented | 📝 Planned | 🔜 Coming Soon
-
-## React Native in Extensions
-
-Some extension types support React Native rendering:
-
-```javascript
-// targets/share-extension/expo-target.config.js
-module.exports = {
-  type: 'share',
-  platforms: {
-    ios: {
-      useReactNative: true,
-      excludedPackages: ['expo-updates', 'expo-dev-client'],
-    },
-  },
-};
-```
-
-Create `index.share.js`:
-
-```javascript
-import { AppRegistry } from 'react-native';
-import ShareExtension from './src/ShareExtension';
-
-AppRegistry.registerComponent('shareExtension', () => ShareExtension);
-```
-
-Wrap your Metro config:
-
-```javascript
-// metro.config.js
-const { getDefaultConfig } = require('expo/metro-config');
-const { withTargetsMetro } = require('expo-targets/metro');
-
-module.exports = withTargetsMetro(getDefaultConfig(__dirname));
-```
+✅ Implemented | 📝 Planned
 
 ## API Reference
 
-### `defineTarget(options)`
-
-Creates a type-safe target instance with built-in data storage and lifecycle methods.
+### Target Instance
 
 ```typescript
-import { defineTarget } from 'expo-targets';
+import { createTarget } from 'expo-targets';
 
-export const MyWidget = defineTarget({
-  name: 'my-widget', // Required: Target identifier
-  appGroup: 'group.com.yourapp', // Required: App Group for shared data
-  type: 'widget', // Required: Extension type
-  displayName: 'My Widget', // Optional: Display name
-  platforms: {
-    ios: {
-      deploymentTarget: '14.0',
-      colors: { $accent: '#007AFF' },
-      // ... iOS configuration
-    },
-  },
-});
-```
+const widget = createTarget('WidgetName');
 
-#### Target Instance Methods
+// Storage methods
+widget.set(key: string, value: any): void
+widget.get<T>(key: string): T | null
+widget.remove(key: string): void
+widget.clear(): void
 
-```typescript
-// Store individual values
-MyWidget.set(key: string, value: string | number | object | array): void
-MyWidget.get(key: string): string | null
-MyWidget.remove(key: string): void
+// Batch operations
+widget.setData(data: Record<string, any>): void
+widget.getData<T>(): T
 
-// Store/retrieve typed data object
-MyWidget.setData<T>(data: T): void
-MyWidget.getData<T>(): T | null
-
-// Refresh widget UI
-MyWidget.refresh(): void
-
-// Direct storage access for advanced use
-MyWidget.storage: AppGroupStorage
-```
-
-### Legacy API (Backward Compatible)
-
-```typescript
-import { TargetStorage, refreshAllTargets } from 'expo-targets';
-
-// Create instance manually
-const storage = new TargetStorage('group.com.yourapp', 'WidgetName');
-storage.set('key', 'value');
-storage.refresh();
-
-// Refresh all targets
-refreshAllTargets();
+// Lifecycle
+widget.refresh(): void  // Refresh this specific target
 ```
 
 ### Utility Functions
 
 ```typescript
-import { close, openHostApp, clearSharedData } from 'expo-targets';
+import {
+  refreshAllTargets,
+  clearSharedData,
+  close,
+  openHostApp,
+  getSharedData,
+} from 'expo-targets';
 
-// Close extension (share, action extensions)
-close();
+// Refresh all widgets/controls
+refreshAllTargets();
 
-// Open main app from extension with deep link
-openHostApp('/path');
+// Clear all data for an app group
+clearSharedData('group.com.yourapp');
 
-// Clear shared data (coming soon)
-await clearSharedData();
+// Extension functions (share, action, clip only)
+close(); // Close extension
+openHostApp('/path'); // Open main app with deep link
+const data = getSharedData(); // Get shared content
+```
+
+### Storage Class
+
+```typescript
+import { AppGroupStorage } from 'expo-targets';
+
+const storage = new AppGroupStorage('group.com.yourapp');
+
+storage.set(key, value);
+storage.get<T>(key);
+storage.remove(key);
+storage.clear();
+storage.setData(data);
+storage.getData<T>();
+storage.getKeys();
+storage.refresh(targetName?);
 ```
 
 ## Configuration Reference
 
-Define targets in `targets/{name}/index.ts` using `defineTarget()`:
+### Basic Structure
 
-```typescript
-import { defineTarget } from 'expo-targets';
+`targets/{name}/expo-target.config.json`:
 
-export const MyWidget = defineTarget({
-  // Required fields
-  name: 'my-widget', // Target identifier (matches directory name)
-  appGroup: 'group.com.yourapp', // App Group for data sharing
-  type: 'widget', // Extension type
+```json
+{
+  "type": "widget",
+  "name": "MyWidget",
+  "displayName": "My Widget",
+  "platforms": ["ios"],
+  "appGroup": "group.com.yourapp",
+  "ios": {
+    // iOS-specific config
+  }
+}
+```
 
-  // Optional fields
-  displayName: 'My Widget', // Human-readable name
+### Required Fields
 
-  // Platform configuration
-  platforms: {
-    ios: {
-      deploymentTarget: '14.0', // Minimum iOS version
-      bundleIdentifier: '.widget', // Relative or absolute bundle ID
+- `type`: Extension type (`widget`, `clip`, `stickers`, `share`, `action`, etc.)
+- `name`: Target identifier (PascalCase recommended)
+- `platforms`: Array of supported platforms (`["ios"]`)
+- `appGroup`: App Group for data sharing (must start with `group.`)
 
-      // Visual assets
-      icon: './assets/widget-icon.png',
-      colors: {
-        $accent: '#007AFF', // Single color
-        background: {
-          // Light/dark mode support
-          light: '#FFFFFF',
-          dark: '#1C1C1E',
-        },
-      },
-      images: {
-        logo: './assets/logo.png', // Named images for Assets.xcassets
-      },
+### Optional Fields
 
-      // Build configuration
-      frameworks: ['WidgetKit', 'SwiftUI'], // Additional frameworks
-      buildSettings: {
-        // Custom Xcode build settings
-        SWIFT_VERSION: '5.0',
-      },
+- `displayName`: Human-readable name shown in UI
+- `entry`: React Native entry point (for share/action/clip with RN)
+- `excludedPackages`: Expo packages to exclude from RN bundle
 
-      // Entitlements (App Groups auto-synced from main app)
-      entitlements: {
-        'com.apple.security.application-groups': ['group.com.yourapp'],
-      },
+### iOS Configuration
 
-      // React Native support (for share, action, clip types)
-      useReactNative: false,
-      excludedPackages: ['expo-updates', 'expo-dev-client'],
+```json
+{
+  "ios": {
+    "deploymentTarget": "14.0",
+    "bundleIdentifier": "com.yourapp.widget",
+    "colors": {
+      "AccentColor": "#007AFF",
+      "Background": { "light": "#FFFFFF", "dark": "#000000" }
     },
-
-    android: {
-      // Coming soon
-      resourceName: 'my_widget',
+    "images": {
+      "Logo": "./assets/logo.png"
     },
-  },
-});
-
-// Export type for type-safe data
-export type MyWidgetData = {
-  message: string;
-  count?: number;
-};
+    "frameworks": ["CoreLocation", "MapKit"],
+    "entitlements": {
+      "com.apple.developer.networking.wifi-info": true
+    },
+    "infoPlist": {
+      "NSLocationWhenInUseUsageDescription": "Show nearby locations"
+    }
+  }
+}
 ```
 
 ## Examples
 
-The repository includes a complete example app:
+See [apps/](./apps/) for complete examples:
 
-- **apps/widget-basic**: Complete working widget with data sharing and type-safe API
+- **clip-advanced**: App Clip with URL handling
+- **imessage-stickers**: iMessage sticker pack
+- **share-extension**: Share extension with React Native
+- **widget-interactive**: Advanced weather widget
+- **multi-target**: Multiple targets in one app
 
-See the [apps/](./apps/) directory for runnable examples.
+## Documentation
 
-## Project Structure
-
-```
-your-app/
-├── targets/                          # All extension targets
-│   ├── my-widget/
-│   │   ├── index.ts                  # Target definition with defineTarget()
-│   │   └── ios/
-│   │       ├── Widget.swift          # Widget implementation
-│   │       ├── SmallWidgetView.swift # Optional: Size-specific views
-│   │       ├── MediumWidgetView.swift
-│   │       └── LargeWidgetView.swift
-│   ├── app-clip/
-│   │   ├── index.ts
-│   │   └── ios/
-│   │       └── AppClip.swift
-│   └── share-extension/
-│       ├── index.ts
-│       ├── index.share.js            # React Native entry (if useReactNative: true)
-│       └── ios/
-│           └── ShareViewController.swift
-├── App.tsx                           # Main app (imports targets)
-├── metro.config.js                   # Wrapped with withTargetsMetro (for RN extensions)
-└── app.json                          # Includes expo-targets plugin
-```
-
-## How It Works
-
-1. **Target Discovery**: Plugin scans `targets/*/index.ts` for `defineTarget()` calls
-2. **Config Parsing**: Extracts configuration from `defineTarget()` arguments using Babel AST
-3. **Xcode Manipulation**: Creates native targets, links Swift files, configures build settings
-4. **Asset Generation**: Generates color sets and image assets in `Assets.xcassets`
-5. **Entitlements**: Syncs App Groups from main app, adds target-specific entitlements
-6. **Data Sharing**: Native Swift module enables `UserDefaults` sharing via App Groups
-7. **Widget Refresh**: Calls `WidgetCenter` and `ControlCenter` APIs to update UI
+- [Getting Started](./docs/getting-started.md) - Step-by-step guide
+- [API Reference](./docs/api-reference.md) - Complete API documentation
+- [Config Reference](./docs/config-reference.md) - Configuration options
+- [Architecture](./docs/ARCHITECTURE.md) - How it works
+- [Implementation Status](./IMPLEMENTATION_STATUS.md) - What's implemented
 
 ## Troubleshooting
 
-### Widget not appearing in widget gallery?
+### Widget not appearing?
 
-1. Run `npx expo prebuild -p ios --clean` to regenerate Xcode project
-2. Build and run app on device/simulator
-3. Check that target appears in Xcode project navigator
-4. Verify `Info.plist` exists in `targets/{name}/ios/`
+1. Run `npx expo prebuild -p ios --clean`
+2. Check Xcode project for target
+3. Verify `Info.plist` exists in target directory
 
-### Widget not updating with new data?
+### Widget not updating?
 
-1. Verify App Group ID matches in `app.json` and `defineTarget()`:
-   ```typescript
-   // Must match exactly
-   app.json: "com.apple.security.application-groups": ["group.com.yourapp"]
-   index.ts: appGroup: 'group.com.yourapp'
-   ```
-2. Confirm you're calling `MyWidget.refresh()` after setting data
-3. Test on physical device (simulators can have caching issues)
-4. Check widget timeline update policy in Swift code
+1. Verify App Group IDs match exactly in:
+   - `app.json` entitlements
+   - `expo-target.config.json` appGroup
+   - Swift code `UserDefaults(suiteName:)`
+2. Call `widget.refresh()` after setting data
+3. Test on physical device (simulators cache aggressively)
 
-### Build errors in Xcode?
+### Build errors?
 
-1. Clean build folder: **Product → Clean Build Folder** (Cmd+Shift+K)
-2. Delete `ios/` directory: `rm -rf ios/ && npx expo prebuild -p ios --clean`
-3. Verify deployment target is iOS 14.0+ for widgets
-4. Check Swift version compatibility in build settings
-
-### Type errors with `defineTarget`?
-
-1. Ensure `expo-targets` is installed: `bun add expo-targets`
-2. Verify TypeScript config includes `node_modules`
-3. Restart TypeScript server in your editor
-4. Check that types are exported: `export type MyWidgetData = {...}`
-
-### React Native extensions not working?
-
-1. Wrap Metro config: `withTargetsMetro(getDefaultConfig(__dirname))`
-2. Create entry file: `index.{targetName}.js`
-3. Set `useReactNative: true` in target config
-4. Build in Release mode (Debug not supported for extensions)
-5. Exclude unnecessary packages to reduce bundle size
+1. Clean build folder: Product → Clean Build Folder (Cmd+Shift+K)
+2. Delete `ios/` and re-run prebuild
+3. Check deployment target is appropriate for extension type
 
 ## Contributing
 
-This project is in active development. Contributions welcome!
+Contributions welcome! This project is in active development.
 
 ## License
 
@@ -474,7 +348,6 @@ MIT
 
 Inspired by:
 
-- [@bacons/apple-targets](https://github.com/EvanBacon/expo-apple-targets) by Evan Bacon
-- [expo-widgets](https://github.com/bittingz/expo-widgets) by @bittingz
-- [expo-share-extension](https://github.com/MaxAst/expo-share-extension) by MaxAst
-- [expo-live-activity](https://github.com/software-mansion-labs/expo-live-activity) by Software Mansion
+- [@bacons/apple-targets](https://github.com/EvanBacon/expo-apple-targets)
+- [expo-widgets](https://github.com/bittingz/expo-widgets)
+- [expo-share-extension](https://github.com/MaxAst/expo-share-extension)
