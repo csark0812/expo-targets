@@ -14,8 +14,6 @@ export class AppGroupStorage {
       ExpoTargetsStorageModule.setString(key, value, this.appGroup);
     } else if (typeof value === 'boolean') {
       ExpoTargetsStorageModule.setInt(key, value ? 1 : 0, this.appGroup);
-    } else if (value === null || value === undefined) {
-      ExpoTargetsStorageModule.remove(key, this.appGroup);
     } else if (Array.isArray(value)) {
       ExpoTargetsStorageModule.setString(
         key,

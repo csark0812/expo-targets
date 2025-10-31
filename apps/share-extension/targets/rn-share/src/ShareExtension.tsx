@@ -26,11 +26,11 @@ export default function ShareExtension(props: ShareExtensionProps) {
         content: props,
       });
     }
-    rnShareTarget.close?.();
+    rnShareTarget.close();
   };
 
   const handleCancel = () => {
-    rnShareTarget.close?.();
+    rnShareTarget.close();
   };
 
   return (

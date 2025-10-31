@@ -1,6 +1,11 @@
 // Target API
 export { createTarget } from './Target';
-export type { Target } from './Target';
+export type {
+  Target,
+  ExtensionTarget,
+  NonExtensionTarget,
+  BaseTarget,
+} from './Target';
 
 // Storage module
 export {
@@ -24,5 +29,6 @@ export type {
   IOSTargetConfig,
   AndroidTargetConfig,
   ExtensionType,
+  ReactNativeCompatibleType,
   Color,
 } from '../plugin/src/config';

@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
+import { rnShareTarget } from './targets/rn-share';
 
 interface SharedItem {
   type: string;
@@ -25,8 +26,67 @@ export default function App() {
 
   const loadSharedItems = async () => {
     setRefreshing(true);
+    try {
+      const data = rnShareTarget.getData<{
+        sharedAt?: string;
+        content?: {
+          text?: string;
+          url?: string;
+          images?: string[];
+          files?: string[];
+        };
+      }>();
 
-    setRefreshing(false);
+      const items: SharedItem[] = [];
+
+      if (data.content) {
+        const timestamp = data.sharedAt
+          ? new Date(data.sharedAt).getTime()
+          : Date.now();
+
+        if (data.content.text) {
+          items.push({
+            type: 'text',
+            content: data.content.text,
+            timestamp,
+          });
+        }
+
+        if (data.content.url) {
+          items.push({
+            type: 'url',
+            content: data.content.url,
+            timestamp,
+          });
+        }
+
+        if (data.content.images?.length) {
+          data.content.images.forEach((image) => {
+            items.push({
+              type: 'image',
+              content: image,
+              timestamp,
+            });
+          });
+        }
+
+        if (data.content.files?.length) {
+          data.content.files.forEach((file) => {
+            items.push({
+              type: 'file',
+              content: file,
+              timestamp,
+            });
+          });
+        }
+      }
+
+      setSharedItems(items);
+    } catch (error) {
+      console.error('Failed to load shared items:', error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const handleClear = async () => {
@@ -39,7 +99,12 @@ export default function App() {
           text: 'Clear',
           style: 'destructive',
           onPress: async () => {
-            setSharedItems([]);
+            try {
+              rnShareTarget.storage.clear();
+              setSharedItems([]);
+            } catch (error) {
+              console.error('Failed to clear shared items:', error);
+            }
           },
         },
       ]

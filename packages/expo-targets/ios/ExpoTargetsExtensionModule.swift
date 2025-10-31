@@ -6,8 +6,10 @@ public class ExpoTargetsExtensionModule: Module {
     Name("ExpoTargetsExtension")
 
     Function("closeExtension") { () -> Void in
-      if let extensionContext = self.findExtensionContext() {
-        extensionContext.completeRequest(returningItems: nil, completionHandler: nil)
+      DispatchQueue.main.async {
+        if let extensionContext = self.findExtensionContext() {
+          extensionContext.completeRequest(returningItems: nil, completionHandler: nil)
+        }
       }
     }
 
@@ -77,18 +79,22 @@ public class ExpoTargetsExtensionModule: Module {
   }
 
   private func findExtensionContext() -> NSExtensionContext? {
-    guard let windowScene = UIApplication.shared.connectedScenes
-            .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
-          let rootViewController = windowScene.windows.first?.rootViewController else {
-      return nil
-    }
+    // Search for ReactNativeViewController which has the extension context
+    // Must be called on main thread
+    for window in UIApplication.shared.windows {
+      if let rootVC = window.rootViewController {
+        // Check root VC first
+        if let context = rootVC.extensionContext {
+          return context
+        }
 
-    var currentVC: UIViewController? = rootViewController
-    while currentVC != nil {
-      if let extensionContext = currentVC?.extensionContext {
-        return extensionContext
+        // Check child VCs (ReactNativeViewController is a child of _UIViewServiceRootViewController)
+        for childVC in rootVC.children {
+          if let context = childVC.extensionContext {
+            return context
+          }
+        }
       }
-      currentVC = currentVC?.presentedViewController ?? currentVC?.children.first
     }
 
     return nil

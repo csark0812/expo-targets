@@ -9,7 +9,7 @@ import type {
   ReactNativeCompatibleType,
 } from '../plugin/src/config';
 
-export interface Target {
+export interface BaseTarget {
   name: string;
   type: ExtensionType;
   appGroup: string;
@@ -18,10 +18,22 @@ export interface Target {
   setData(data: Record<string, any>): void;
   getData<T extends Record<string, any>>(): T;
   refresh(): void;
-  close?: () => void;
-  openHostApp?: (path?: string) => void;
-  getSharedData?: () => SharedData | null;
 }
+
+export interface ExtensionTarget extends BaseTarget {
+  type: ReactNativeCompatibleType;
+  close: () => void;
+  openHostApp: (path?: string) => void;
+  getSharedData: () => SharedData | null;
+}
+
+export interface NonExtensionTarget extends BaseTarget {
+  close?: undefined;
+  openHostApp?: undefined;
+  getSharedData?: undefined;
+}
+
+export type Target = ExtensionTarget | NonExtensionTarget;
 
 function getTargetConfig(targetName: string): TargetConfig | null {
   const expoConfig = Constants.expoConfig;
@@ -81,10 +93,10 @@ function isExtensionType(
 ): type is ReactNativeCompatibleType {
   return EXTENSION_TYPES.has(type as ReactNativeCompatibleType);
 }
-export function createTarget(
+export function createTarget<T extends ExtensionType = ExtensionType>(
   targetName: string,
   componentFunc?: React.ComponentType<any>
-): Target {
+): T extends ReactNativeCompatibleType ? ExtensionTarget : Target {
   const config = getTargetConfig(targetName);
   if (!config) {
     throw new Error(
@@ -120,7 +132,7 @@ export function createTarget(
   }
 
   const storage = new AppGroupStorage(appGroup);
-  const target: Target = {
+  const baseTarget: BaseTarget = {
     name: targetName,
     type: config.type,
     appGroup,
@@ -139,10 +151,21 @@ export function createTarget(
 
   if (isExtensionType(config.type)) {
     const extension = new Extension();
-    target.close = () => extension.close();
-    target.openHostApp = (path?: string) => extension.openHostApp(path);
-    target.getSharedData = () => extension.getSharedData();
+    const extensionTarget: ExtensionTarget = {
+      ...baseTarget,
+      type: config.type as ReactNativeCompatibleType,
+      close: () => extension.close(),
+      openHostApp: (path?: string) => extension.openHostApp(path),
+      getSharedData: () => extension.getSharedData(),
+    };
+    return extensionTarget as any;
   }
 
-  return target;
+  const nonExtensionTarget: NonExtensionTarget = {
+    ...baseTarget,
+    close: undefined,
+    openHostApp: undefined,
+    getSharedData: undefined,
+  };
+  return nonExtensionTarget as any;
 }
