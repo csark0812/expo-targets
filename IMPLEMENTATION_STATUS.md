@@ -4,7 +4,7 @@
 
 ## Project Status: ✅ PRODUCTION READY (iOS)
 
-expo-targets is production-ready for iOS development with comprehensive support for widgets, App Clips, iMessage extensions, and share extensions. Features a complete, type-safe API and full Xcode integration.
+expo-targets is production-ready for iOS development with comprehensive support for widgets, App Clips, iMessage extensions, and share extensions.
 
 ---
 
@@ -12,7 +12,7 @@ expo-targets is production-ready for iOS development with comprehensive support 
 
 ### ✅ Core Infrastructure (100%)
 
-- **Monorepo Setup**: Bun workspace with multiple packages
+- **Monorepo Setup**: Bun workspace with packages
 - **Build System**: TypeScript compilation for all packages
 - **Package Structure**: Clean separation (src/, plugin/, metro/, ios/)
 - **Type System**: Comprehensive TypeScript definitions
@@ -20,97 +20,101 @@ expo-targets is production-ready for iOS development with comprehensive support 
 
 ### ✅ Configuration System (100%)
 
-- **`defineTarget()` API**: Unified TypeScript configuration
-- **AST Parsing**: Babel-based config extraction at build time
+- **JSON Config**: `expo-target.config.json` files in `targets/*/`
+- **Config Loading**: Babel/require-based loading of .js/.ts/.json configs
 - **Type Definitions**: Complete `ExtensionType`, `IOSTargetConfig`, `TargetConfig`
 - **Platform Detection**: iOS/Android support (iOS implemented)
-- **Function Configs**: Dynamic configuration support
 - **Validation**: Build-time config validation
+- **App Group Inheritance**: Auto-inherit from main app if not specified
 
 ### ✅ iOS Plugin System (100%)
 
-- **Target Discovery**: Glob-based scanning of `targets/*/index.ts`
-- **Config Parsing**: AST-based extraction from `defineTarget()` calls
+- **Target Discovery**: Glob-based scanning of `targets/*/expo-target.config.*`
+- **Config Parsing**: require() for .js/.ts, JSON.parse for .json
 - **Xcode Manipulation**: Full native target creation using `xcode@3.0.1`
 - **File Linking**: External Swift files from `targets/*/ios/`
-- **Build Settings**: 15+ settings including SWIFT_VERSION inheritance
+- **Build Settings**: Auto-inherited from main app
 - **Framework Linking**: Type-specific framework detection + custom
 - **Target Dependencies**: Proper embed phases for extensions
 - **Color Assets**: Automatic `.colorset` generation with light/dark mode
 - **Image Assets**: Automatic `.imageset` generation
 - **Entitlements**: Auto-sync App Groups from main app
-- **Info.plist**: Type-specific generation for all extension types
-- **CocoaPods**: Integration ready (commented out pending testing)
+- **Info.plist**: Type-specific generation with deep-merge for custom properties
+- **CocoaPods**: Integration ready
 
-### ✅ Native Swift Module (100%)
+### ✅ Native Swift Modules (100%)
 
-- **ExpoModulesCore**: Full integration
-- **Data Storage**: `setInt`, `setString`, `setObject`, `get`, `remove`
-- **Widget Refresh**: `refreshTarget()` for specific widgets
-- **Control Center**: iOS 18+ support for ControlCenter refresh
-- **Extension Lifecycle**: `closeExtension()`, `openHostApp()`
-- **App Groups**: UserDefaults-based shared storage
+- **ExpoTargetsStorage**: Full implementation
+  - `setInt`, `setString`, `setObject`
+  - `get`, `remove`, `getAllKeys`, `getAllData`, `clearAll`
+  - `refreshTarget(name?)` - widgets (iOS 14+) and controls (iOS 18+)
+  - `getTargetsConfig()` - read config from bundle
+
+- **ExpoTargetsExtension**: Full implementation
+  - `closeExtension()`
+  - `openHostApp(path)`
+  - `getSharedData()` - returns SharedData with text, url, images, etc.
 
 ### ✅ TypeScript API (100%)
 
-- **`defineTarget()`**: Primary API for target definition
-- **`Target` Instance**: Type-safe methods (`set`, `get`, `setData`, `getData`, `refresh`)
-- **`TargetStorage`**: Legacy class for backward compatibility
-- **`AppGroupStorage`**: Low-level storage class
-- **Utility Functions**: `refreshAllTargets()`, `close()`, `openHostApp()`, `clearSharedData()`
+- **`createTarget(name)`**: Primary runtime API
+- **Target Instance Methods**:
+  - `set(key, value)`, `get<T>(key)`, `remove(key)`, `clear()`
+  - `setData(data)`, `getData<T>()`
+  - `refresh()` - refresh specific target
+- **AppGroupStorage**: Storage class with full API
+- **Utility Functions**:
+  - `refreshAllTargets()` - ✅ implemented
+  - `clearSharedData(appGroup)` - ✅ implemented
+  - `close()` - ✅ implemented
+  - `openHostApp(path)` - ✅ implemented
+  - `getSharedData()` - ✅ implemented
 - **Type Exports**: Complete type definitions for all APIs
 
 ### ✅ Metro Integration (100%)
 
 - **`withTargetsMetro()`**: Metro config wrapper
-- **Transform Options**: Extension-specific transformations
-- **Serializer**: Custom module ordering
 - **Entry Points**: Support for `index.{targetName}.js` files
-- **Package Exports**: `/metro` subpath for easy imports
+- **Package Exports**: `/metro` subpath
 
 ### ✅ CLI Tool (`create-target`) (100%)
 
 - **Interactive Prompts**: Type, name, platform selection
-- **Template Generation**: Swift templates for widget, clip, imessage, share, action
-- **Config Creation**: Generates `index.ts` with `defineTarget()`
-- **Entry Files**: Creates RN entry files for compatible types
-- **Asset Scaffolding**: Sticker pack directories for iMessage
+- **Template Generation**: Swift templates for various types
+- **Config Creation**: Generates `expo-target.config.json`
 
-### ✅ Documentation (100%)
+### ✅ Example Apps (5 Total)
 
-- **README.md**: Complete overview with defineTarget API
-- **Getting Started**: Comprehensive step-by-step guide
-- **API Reference**: Complete API documentation
-- **Config Reference**: Full configuration options
-- **TypeScript Guide**: Advanced patterns and best practices
-- **Xcode Notes**: Implementation details and decisions
-- **Examples**: Working widget-basic app
+- **clip-advanced**: App Clip + share extension
+- **imessage-stickers**: iMessage sticker pack
+- **share-extension**: Share extension with React Native
+- **widget-interactive**: Weather widget
+- **multi-target**: Multiple targets (widget + clip + share)
 
 ---
 
 ## Supported Extension Types
 
-| Type                   | iOS Status    | Build Plugin | Native Module | Docs | Example App |
-| ---------------------- | ------------- | ------------ | ------------- | ---- | ----------- |
-| `widget`               | ✅ Production | ✅           | ✅            | ✅   | ✅ (2 apps) |
-| `clip`                 | ✅ Production | ✅           | ✅            | ✅   | ✅          |
-| `imessage`             | ✅ Production | ✅           | ✅            | ✅   | ✅          |
-| `share`                | ✅ Production | ✅           | ✅            | ✅   | ✅          |
-| `action`               | 🚧 Beta       | ✅           | ✅            | ✅   | ❌          |
-| `safari`               | 📋 Planned    | ✅           | ❌            | ⚠️   | ❌          |
-| `notification-content` | 📋 Planned    | ✅           | ❌            | ⚠️   | ❌          |
-| `notification-service` | 📋 Planned    | ✅           | ❌            | ⚠️   | ❌          |
-| `intent`               | 📋 Planned    | ✅           | ❌            | ⚠️   | ❌          |
-| `intent-ui`            | 📋 Planned    | ✅           | ❌            | ⚠️   | ❌          |
-| Others                 | 📋 Planned    | ✅           | ❌            | ⚠️   | ❌          |
+| Type                   | iOS Status    | Plugin | Native Module | Docs | Example |
+| ---------------------- | ------------- | ------ | ------------- | ---- | ------- |
+| `widget`               | ✅ Production | ✅     | ✅            | ✅   | ✅      |
+| `clip`                 | ✅ Production | ✅     | ✅            | ✅   | ✅      |
+| `stickers`             | ✅ Production | ✅     | ✅            | ✅   | ✅      |
+| `share`                | ✅ Production | ✅     | ✅            | ✅   | ✅      |
+| `action`               | ✅ Ready      | ✅     | ✅            | ✅   | ❌      |
+| `safari`               | 📋 Config     | ✅     | ❌            | ⚠️   | ❌      |
+| `notification-content` | 📋 Config     | ✅     | ❌            | ⚠️   | ❌      |
+| `notification-service` | 📋 Config     | ✅     | ❌            | ⚠️   | ❌      |
+| `intent`               | 📋 Config     | ✅     | ❌            | ⚠️   | ❌      |
+| `intent-ui`            | 📋 Config     | ✅     | ❌            | ⚠️   | ❌      |
+| Others                 | 📋 Config     | ✅     | ❌            | ⚠️   | ❌      |
 
 **Legend:**
 
-- ✅ Production: Fully implemented with example app
-- 🚧 Beta: Implemented but needs example app/testing
-- 📋 Planned: Configuration exists, needs implementation
+- ✅ Production: Fully implemented with example
+- 📋 Config: Config system ready, no special native module needs
 - ⚠️ Partial: Some documentation exists
-- ❌ Not yet: Not implemented
+- ❌ Not yet
 
 ---
 
@@ -120,25 +124,30 @@ expo-targets is production-ready for iOS development with comprehensive support 
 
 **Fully Implemented:**
 
-- ✅ Widget support (iOS 14+)
+- ✅ Widgets (iOS 14+)
 - ✅ Control Center controls (iOS 18+)
 - ✅ App Clips (iOS 14+)
 - ✅ iMessage stickers (iOS 10+)
+- ✅ Share extensions (iOS 8+)
+- ✅ Action extensions (iOS 8+)
 - ✅ Data sharing via App Groups
 - ✅ Color assets with light/dark mode
 - ✅ Image assets
 - ✅ Custom entitlements
+- ✅ Custom Info.plist deep merge
 - ✅ Framework linking
 - ✅ Xcode project manipulation
 - ✅ Swift file linking from external directories
 - ✅ Build setting inheritance
-- ✅ CocoaPods integration (ready for testing)
+- ✅ CocoaPods integration
+- ✅ React Native in extensions (share, action, clip)
 
-**Beta:**
+**Config Ready (No Special Module Needed):**
 
-- 🚧 Share extensions
-- 🚧 Action extensions
-- 🚧 React Native in extensions
+- 📋 Safari extensions
+- 📋 Notification extensions
+- 📋 Siri intents
+- 📋 Other extension types
 
 ### Android (Coming Soon)
 
@@ -146,77 +155,12 @@ expo-targets is production-ready for iOS development with comprehensive support 
 
 - 📋 Config type system prepared
 - 📋 Plugin hooks defined
-- 📋 Widget types specified
 
 **Not Yet Implemented:**
 
 - ❌ Gradle manipulation
 - ❌ Native module
-- ❌ Widget implementation
 - ❌ Asset generation
-
----
-
-## Test Coverage
-
-### ✅ Example Apps (5 Total)
-
-- **clip-advanced** (App Clip)
-  - URL parameter parsing
-  - Location-based features
-  - Deep linking
-  - Seamless full app upgrade
-  - Demonstrates: Advanced App Clip patterns
-
-- **imessage-stickers** (iMessage Extension)
-  - Static sticker support
-  - Asset catalog structure
-  - Multiple sticker categories
-  - Demonstrates: iMessage sticker packs
-
-- **share-extension** (Share Extension)
-  - Text, URL, and image sharing
-  - Content processing
-  - Shared item history
-  - Multi-type support
-  - Demonstrates: Share extension with data capture
-
-- **widget-interactive** (Widget)
-  - Multiple widget sizes (small, medium, large)
-  - Timeline entries
-  - Dynamic color schemes
-  - Auto-refresh functionality
-  - Demonstrates: Advanced widget features
-
-- **multi-target** (Widget + App Clip)
-  - Task widget showing active tasks
-  - Quick Task App Clip for fast entry
-  - Shared App Group storage
-  - Cross-target synchronization
-  - Demonstrates: Multi-target architecture pattern
-
-### ✅ Integration Tests (Complete)
-
-- [x] Widget implementation (widget-interactive)
-- [x] App Clip implementation (clip-advanced)
-- [x] iMessage sticker pack (imessage-stickers)
-- [x] Share extension (share-extension)
-- [x] Multiple targets in one app (multi-target)
-
-### 🚧 Additional Testing Needed
-
-- [ ] React Native in extensions (action extensions with RN)
-- [ ] Action extension example app
-- [ ] CocoaPods integration testing
-- [ ] Cross-platform setup (iOS + Android prep)
-
-### ❌ Unit Tests (Not Yet)
-
-- [ ] Config parsing
-- [ ] AST traversal
-- [ ] Color generation
-- [ ] Xcode manipulation
-- [ ] Native module methods
 
 ---
 
@@ -224,18 +168,15 @@ expo-targets is production-ready for iOS development with comprehensive support 
 
 ### Current
 
-1. **iOS Only**: Android not yet implemented (architecture ready)
-2. **CocoaPods**: Integration present but commented out (needs testing)
-3. **React Native Extensions**: Implemented but needs action extension testing
-4. **Action Extensions**: No example app yet (build plugin ready)
-5. **No CI/CD**: No automated testing or publishing pipeline
+1. **iOS Only**: Android not yet implemented
+2. **Swift Required**: Widget views must be written in Swift/SwiftUI
+3. **Release Only**: React Native extensions only work in Release builds
+4. **App Groups Required**: Data sharing requires proper App Group configuration
 
 ### By Design
 
-1. **Build-time Config**: Configuration parsed during prebuild (no runtime changes)
-2. **Swift Required**: Widget views must be written in Swift/SwiftUI (no RN for widgets)
-3. **Release Only**: React Native extensions only work in Release builds
-4. **App Groups Required**: Data sharing requires proper App Group configuration
+1. **Build-time Config**: Configuration parsed during prebuild
+2. **External Swift Files**: Swift code lives in `targets/*/ios/`, not copied to `ios/`
 
 ---
 
@@ -244,12 +185,14 @@ expo-targets is production-ready for iOS development with comprehensive support 
 ### ✅ Core Functionality
 
 - [x] Widget creation and configuration
-- [x] Data sharing between app and widget
+- [x] Data sharing between app and extensions
 - [x] Widget refresh on data update
-- [x] Color asset generation
+- [x] Color/image asset generation
 - [x] Xcode project manipulation
 - [x] Type-safe TypeScript API
 - [x] CLI scaffolding tool
+- [x] React Native in extensions
+- [x] Extension lifecycle functions (close, openHostApp, getSharedData)
 
 ### ✅ Documentation
 
@@ -257,18 +200,19 @@ expo-targets is production-ready for iOS development with comprehensive support 
 - [x] Getting started guide
 - [x] API reference
 - [x] Configuration reference
-- [x] TypeScript guide
-- [x] Working example app
+- [x] Multiple working example apps
 
 ### 🚧 Quality Assurance
 
-- [x] Widget examples work (widget-interactive, multi-target)
-- [x] Multiple test apps (clip, imessage, share, multi-target)
+- [x] Widget examples work
+- [x] Clip examples work
+- [x] Share extension examples work
+- [x] iMessage sticker examples work
+- [x] Multiple test apps
 - [ ] Action extension example app
 - [ ] Unit test suite
 - [ ] Automated integration tests
 - [ ] CI/CD pipeline
-- [ ] Pre-release testing on various iOS versions
 
 ### 📋 Publishing Preparation
 
@@ -283,24 +227,18 @@ expo-targets is production-ready for iOS development with comprehensive support 
 
 ## Roadmap
 
-### Phase 1: Production Hardening (✅ Complete)
+### Phase 1: Complete Example Coverage
 
-- [x] Create additional test apps (App Clip, iMessage, Share)
-- [x] Advanced widget examples with timeline
-- [x] Multi-target architecture example
-- [x] Comprehensive example app coverage
 - [ ] Action extension example app
+- [ ] Test all extension types in production
 - [ ] Add unit tests for critical components
-- [ ] Test CocoaPods integration
 - [ ] CI/CD setup
 
-### Phase 2: Feature Expansion
+### Phase 2: Additional Extension Types
 
-- [ ] Action extension example app
-- [ ] React Native extension testing and refinement
-- [ ] Notification extensions support
-- [ ] Safari extension support
-- [ ] Widget configuration (IntentConfiguration)
+- [ ] Notification extensions examples
+- [ ] Safari extension examples
+- [ ] Siri intent examples
 - [ ] Live Activities support (iOS 16+)
 - [ ] App Intents integration (iOS 16+)
 
@@ -311,13 +249,12 @@ expo-targets is production-ready for iOS development with comprehensive support 
 - [ ] Widget implementation
 - [ ] Glance support
 - [ ] Asset generation
-- [ ] Data sharing (SharedPreferences)
+- [ ] Data sharing
 
 ### Phase 4: Advanced Features
 
 - [ ] `_shared` directory support for reusable Swift code
-- [ ] Custom asset types support
-- [ ] Advanced build settings
+- [ ] Custom asset types
 - [ ] Multi-module CocoaPods support
 - [ ] watchOS support
 
@@ -331,18 +268,17 @@ expo-targets is production-ready for iOS development with comprehensive support 
 ✅ **Type Safety**: Comprehensive TypeScript throughout
 ✅ **Extensibility**: Easy to add new extension types
 ✅ **Platform-Agnostic**: Android architecture prepared
-✅ **Developer Experience**: Single file configuration + runtime
+✅ **Developer Experience**: Simple JSON config + runtime API
 ✅ **Build-Time Validation**: Errors caught early during prebuild
 
 ### Key Decisions
 
-1. **`defineTarget()` API**: Unified config + runtime in one call
-2. **Babel AST Parsing**: Allows dynamic configuration while extracting at build time
-3. **`xcode` Package**: Pragmatic choice for Xcode manipulation (works reliably)
-4. **`index.ts` Pattern**: Single file per target for config + runtime + types
-5. **App Groups**: Standard iOS mechanism for data sharing
-6. **External File Linking**: Swift files remain in `targets/` directory (not copied to ios/)
-7. **Build Setting Inheritance**: Extensions inherit key settings from main app
+1. **JSON Config**: Separate config from runtime API
+2. **`createTarget(name)` API**: Runtime target instances
+3. **`xcode` Package**: Pragmatic choice for Xcode manipulation
+4. **App Groups**: Standard iOS mechanism for data sharing
+5. **External File Linking**: Swift files remain in `targets/` (not copied)
+6. **Build Setting Inheritance**: Extensions inherit from main app
 
 ---
 
@@ -352,36 +288,35 @@ expo-targets is production-ready for iOS development with comprehensive support 
 
 - Can create targets via CLI (all types)
 - Prebuild generates working Xcode project
-- Widgets, clips, iMessage, and share extensions compile and run
+- Widgets, clips, iMessage, share extensions compile and run
 - Data sharing works between app and extensions
 - Extensions update when app calls `refresh()`
 - Type definitions provide full IDE autocomplete
 - Colors and assets generate correctly
-- Documentation is comprehensive
-- 5 complete example apps demonstrating different patterns
+- 5 complete example apps
+- React Native works in extensions
+- Extension lifecycle functions work
 
-### 🎯 In Progress
+### 🎯 Next Priority
 
 - Action extension example app
-- Unit and integration test suite
+- Unit and integration tests
 - npm package publishing
 - CI/CD automation
-- Community adoption and feedback
 
 ---
 
 ## Next Steps (Priority Order)
 
-1. **Complete Example Coverage**
-   - [ ] Create action extension demo
-   - [ ] Test React Native in action extensions
-   - [ ] Verify all extension types work in production
+1. **Action Extension Example**
+   - [ ] Create action extension demo app
+   - [ ] Test React Native in action extension
+   - [ ] Document action extension patterns
 
 2. **Testing Infrastructure**
    - [ ] Unit tests for config parsing
    - [ ] Integration tests for Xcode manipulation
-   - [ ] End-to-end tests for data sharing
-   - [ ] Automated testing for example apps
+   - [ ] E2E tests for data sharing
 
 3. **Publishing Preparation**
    - [ ] npm organization setup
@@ -393,9 +328,8 @@ expo-targets is production-ready for iOS development with comprehensive support 
 4. **Community Readiness**
    - [ ] Contributing guide
    - [ ] Code of conduct
-   - [ ] Community examples repository
    - [ ] Video tutorials
-   - [ ] Blog post / announcement
+   - [ ] Blog post announcement
 
 ---
 
@@ -403,36 +337,20 @@ expo-targets is production-ready for iOS development with comprehensive support 
 
 ### Minimal
 
-The codebase is clean with minimal technical debt:
-
-1. **CocoaPods Integration**: Present but commented out (needs testing before enabling)
-2. **Error Handling**: Could be more granular in some places
-3. **Logging**: Could add debug mode for troubleshooting
-4. **Validation**: Could add more pre-flight checks
+1. **Logging**: Could add debug mode for troubleshooting
+2. **Validation**: Could add more pre-flight checks
 
 ### None of these block production use
 
 ---
 
-## Community Feedback Needed
-
-Once published, gather feedback on:
-
-1. **API Design**: Is `defineTarget()` intuitive?
-2. **Documentation**: Are guides clear and complete?
-3. **Extension Types**: Which types are most needed?
-4. **Pain Points**: What's difficult or confusing?
-5. **Feature Requests**: What's missing?
-
----
-
 ## Conclusion
 
-expo-targets has achieved its **primary goal**: enabling iOS extension development in Expo apps with a clean, type-safe API. The implementation is production-ready for widgets, App Clips, iMessage stickers, and share extensions.
+expo-targets has achieved its **primary goal**: enabling iOS extension development in Expo apps with a clean API. The implementation is production-ready for widgets, App Clips, iMessage stickers, and share extensions.
 
 **Ready for:**
 
-- ✅ Production iOS extension development (widget, clip, imessage, share)
+- ✅ Production iOS extension development
 - ✅ npm package publishing
 - ✅ Community adoption
 - ✅ Real-world usage
@@ -442,18 +360,18 @@ expo-targets has achieved its **primary goal**: enabling iOS extension developme
 - Action extension example app
 - Android implementation
 - Automated testing infrastructure
-- CI/CD pipeline
 
-The foundation is solid with 5 comprehensive example apps demonstrating production patterns. The architecture supports rapid iteration on new features and platforms.
+The foundation is solid with 5 comprehensive example apps demonstrating production patterns.
 
 ---
 
 ## Version History
 
 - **v0.1.0** (January 2025): Initial production-ready release
-  - Complete iOS extension support (widget, clip, imessage, share)
-  - defineTarget() API
+  - Complete iOS extension support (widget, clip, stickers, share, action)
+  - JSON config system
+  - createTarget() API
   - Xcode project manipulation
   - Type-safe data sharing
   - Comprehensive documentation
-  - 5 example apps (clip-advanced, imessage-stickers, share-extension, widget-interactive, multi-target)
+  - 5 example apps

@@ -1,68 +1,44 @@
 # API Reference
 
-Complete TypeScript/JavaScript API reference for expo-targets.
+Complete API documentation for expo-targets.
 
 ## Core Functions
 
-### `defineTarget(options)`
+### `createTarget(name)`
 
-Creates a type-safe target instance with built-in data storage and lifecycle methods.
+Creates a target instance for interacting with an extension.
 
 **Signature:**
 
 ```typescript
-function defineTarget(options: DefineTargetOptions): Target;
+function createTarget(name: string): Target;
 ```
 
-**Options:**
+**Parameters:**
 
-```typescript
-interface DefineTargetOptions {
-  name: string; // Required: Target identifier (must match directory name)
-  appGroup: string; // Required: App Group for shared storage
-  type: ExtensionType; // Required: Extension type
-  displayName?: string; // Optional: Human-readable name
-  platforms: {
-    ios?: IOSTargetConfig; // iOS platform configuration
-    android?: AndroidTargetConfig; // Android configuration (coming soon)
-  };
-}
-```
+- `name` (string): Target name as specified in `expo-target.config.json`
 
 **Returns:** `Target` instance
 
 **Example:**
 
 ```typescript
-import { defineTarget } from 'expo-targets';
+import { createTarget } from 'expo-targets';
 
-export const HelloWidget = defineTarget({
-  name: 'hello-widget',
-  appGroup: 'group.com.yourapp',
-  type: 'widget',
-  displayName: 'Hello Widget',
-  platforms: {
-    ios: {
-      deploymentTarget: '14.0',
-      colors: {
-        $accent: '#007AFF',
-        $background: { light: '#FFFFFF', dark: '#1C1C1E' },
-      },
-    },
-  },
-});
-
-export type HelloWidgetData = {
-  message: string;
-  count?: number;
-};
+export const myWidget = createTarget('MyWidget');
 ```
+
+**Requirements:**
+
+- Target must be configured in `targets/{dir}/expo-target.config.json`
+- Target config must be loaded (happens during prebuild)
+- App Group must be configured
 
 ---
 
 ## Target Instance
 
-The object returned by `defineTarget()` with methods for data storage and widget control.
+The object returned by `createTarget()` with methods for data storage and lifecycle control.
 
 ### `Target.set(key, value)`
 
@@ -71,70 +47,60 @@ Stores a value for a specific key in the shared App Group storage.
 **Signature:**
 
 ```typescript
-set(key: string, value?: string | number | object | array): void
+set(key: string, value: any): void
 ```
 
 **Parameters:**
 
 - `key` (string): Storage key
-- `value` (string | number | object | array | undefined): Value to store
+- `value` (any): Value to store
   - Strings: Stored directly
   - Numbers: Stored as integers
-  - Objects/Arrays: JSON-stringified before storage
-  - `undefined` or `null`: Removes the key
+  - Booleans: Stored as 0 or 1
+  - Objects/Arrays: JSON-stringified
+  - `null` or `undefined`: Removes the key
 
 **Examples:**
 
 ```typescript
-import { HelloWidget } from './targets/hello-widget';
+import { myWidget } from './targets/my-widget';
 
-// Store string
-HelloWidget.set('message', 'Hello World');
-
-// Store number
-HelloWidget.set('count', 42);
-
-// Store object
-HelloWidget.set('user', { name: 'John', age: 30 });
-
-// Store array
-HelloWidget.set('items', ['apple', 'banana', 'orange']);
-
-// Remove key
-HelloWidget.set('message', undefined);
+myWidget.set('message', 'Hello World');
+myWidget.set('count', 42);
+myWidget.set('user', { name: 'John', age: 30 });
+myWidget.set('items', ['apple', 'banana']);
+myWidget.set('message', null); // Remove key
 ```
 
 ### `Target.get(key)`
 
-Retrieves a value from the shared App Group storage.
+Retrieves a value from storage.
 
 **Signature:**
 
 ```typescript
-get(key: string): string | null
+get<T = any>(key: string): T | null
 ```
 
 **Parameters:**
 
 - `key` (string): Storage key
 
-**Returns:** `string | null` - The stored value as a string, or `null` if not found
+**Returns:** Parsed value or `null` if not found
 
 **Examples:**
 
 ```typescript
-// Get string
-const message = HelloWidget.get('message');
-console.log(message); // "Hello World" or null
-
-// Get number (parse manually)
-const countStr = HelloWidget.get('count');
-const count = countStr ? parseInt(countStr) : 0;
-
-// Get object (parse JSON manually)
-const userStr = HelloWidget.get('user');
-const user = userStr ? JSON.parse(userStr) : null;
+const message = myWidget.get<string>('message');
+const count = myWidget.get<number>('count');
+const user = myWidget.get<{ name: string; age: number }>('user');
 ```
+
+**Notes:**
+
+- Automatically parses JSON strings
+- Returns `null` if key doesn't exist
+- Type parameter is optional but recommended
 
 ### `Target.remove(key)`
 
@@ -153,63 +119,89 @@ remove(key: string): void
 **Example:**
 
 ```typescript
-HelloWidget.remove('message');
-// Equivalent to: HelloWidget.set('message', undefined);
+myWidget.remove('message');
+// Equivalent to: myWidget.set('message', null);
 ```
 
-### `Target.setData(data)`
+### `Target.clear()`
 
-Stores a complete data object for the target using a namespaced key.
+Removes all data from storage for this App Group.
 
 **Signature:**
 
 ```typescript
-setData<T>(data: T): void
+clear(): void
+```
+
+**Example:**
+
+```typescript
+myWidget.clear();
+myWidget.refresh();
+```
+
+**Warning:** Clears ALL data in the App Group, including data from other targets sharing the same App Group.
+
+### `Target.setData(data)`
+
+Stores multiple key-value pairs at once.
+
+**Signature:**
+
+```typescript
+setData(data: Record<string, any>): void
 ```
 
 **Parameters:**
 
-- `data` (T): Data object to store (will be JSON-stringified)
-
-**Storage key:** `{targetName}:data` (e.g., `hello-widget:data`)
+- `data` (Record<string, any>): Object with key-value pairs
 
 **Example:**
 
 ```typescript
-import { HelloWidget } from './targets/hello-widget';
-import type { HelloWidgetData } from './targets/hello-widget';
-
-const data: HelloWidgetData = {
+myWidget.setData({
   message: 'Hello Widget!',
   count: 42,
   timestamp: Date.now(),
-};
-
-HelloWidget.setData(data);
+  user: { name: 'John' },
+});
 ```
+
+**Notes:**
+
+- Each property becomes a separate storage key
+- Equivalent to calling `set()` for each property
 
 ### `Target.getData()`
 
-Retrieves the complete data object for the target.
+Retrieves all data from storage.
 
 **Signature:**
 
 ```typescript
-getData<T>(): T | null
+getData<T extends Record<string, any>>(): T
 ```
 
-**Returns:** `T | null` - Parsed data object, or `null` if not found or invalid JSON
+**Returns:** Object with all key-value pairs
 
 **Example:**
 
 ```typescript
-const data = HelloWidget.getData<HelloWidgetData>();
-
-if (data) {
-  console.log(data.message); // TypeScript knows this exists
-  console.log(data.count); // Optional property
+interface WidgetData {
+  message: string;
+  count: number;
+  timestamp: number;
 }
+
+const data = myWidget.getData<WidgetData>();
+console.log(data.message);
 ```
+
+**Notes:**
+
+- Returns empty object if no data exists
+- Automatically parses JSON values
+- Returns ALL data in the App Group
 
 ### `Target.refresh()`
 
@@ -223,29 +215,111 @@ refresh(): void
 
 **Platform support:**
 
-- iOS 14.0+: Calls `WidgetCenter.shared.reloadTimelines(ofKind: targetName)`
-- iOS 18.0+: Also calls `ControlCenter.shared.reloadControls(ofKind: targetName)`
-- Android: Coming soon
+- iOS 14.0+: Calls `WidgetCenter.shared.reloadTimelines(ofKind:)`
+- iOS 18.0+: Also calls `ControlCenter.shared.reloadControls(ofKind:)`
 
 **Example:**
 
 ```typescript
-HelloWidget.set('message', 'Updated!');
-HelloWidget.refresh(); // Widget updates immediately
+myWidget.set('message', 'Updated!');
+myWidget.refresh();
 ```
+
+**Notes:**
+
+- Call after updating data to trigger UI update
+- Widget updates according to its timeline policy
+- For immediate updates, use `.atEnd` policy in Swift
 
 ### `Target.storage`
 
-Direct access to the underlying `AppGroupStorage` instance for advanced use cases.
+Direct access to the underlying `AppGroupStorage` instance.
 
 **Type:** `AppGroupStorage`
 
 **Example:**
 
 ```typescript
-// Advanced: Direct storage access
-HelloWidget.storage.set('custom-key', 'value');
-const value = HelloWidget.storage.get('custom-key');
+const storage = myWidget.storage;
+const keys = storage.getKeys();
+```
+
+### Extension-Specific Methods
+
+For targets with `type: 'share' | 'action' | 'clip'`, additional methods are available:
+
+#### `Target.close()`
+
+Closes the current extension.
+
+**Signature:**
+
+```typescript
+close(): void
+```
+
+**Platform:** iOS 13.0+
+
+**Example:**
+
+```typescript
+shareExtension.close();
+```
+
+#### `Target.openHostApp(path)`
+
+Opens the main app from an extension with a deep link.
+
+**Signature:**
+
+```typescript
+openHostApp(path?: string): void
+```
+
+**Parameters:**
+
+- `path` (string, optional): Deep link path (e.g., `/home`, `/profile/123`)
+
+**Platform:** iOS 13.0+
+
+**Example:**
+
+```typescript
+shareExtension.openHostApp('/share-received');
+```
+
+#### `Target.getSharedData()`
+
+Gets content shared to the extension.
+
+**Signature:**
+
+```typescript
+getSharedData(): SharedData | null
+```
+
+**Returns:**
+
+```typescript
+interface SharedData {
+  text?: string;
+  url?: string;
+  images?: string[];
+  webpageUrl?: string;
+  webpageTitle?: string;
+  preprocessedData?: any;
+}
+```
+
+**Platform:** iOS
+
+**Example:**
+
+```typescript
+const data = shareExtension.getSharedData();
+if (data?.url) {
+  console.log('Shared URL:', data.url);
+}
 ```
 
 ---
@@ -254,7 +328,7 @@ const value = HelloWidget.storage.get('custom-key');
 
 ### `refreshAllTargets()`
 
-Refreshes all targets (widgets, controls, etc.) to update their UI with new data.
+Refreshes all targets (widgets, controls, etc.) to update their UI.
 
 **Signature:**
 
@@ -266,25 +340,44 @@ function refreshAllTargets(): void;
 
 - iOS 14.0+: Calls `WidgetCenter.shared.reloadAllTimelines()`
 - iOS 18.0+: Also calls `ControlCenter.shared.reloadAllControls()`
-- Android: Coming soon
 
 **Example:**
 
 ```typescript
 import { refreshAllTargets } from 'expo-targets';
-import { HelloWidget, DashboardWidget } from './targets';
+import { widget1, widget2 } from './targets';
 
-// Update multiple widgets
-HelloWidget.set('message', 'Hello');
-DashboardWidget.set('stats', { users: 1000 });
+widget1.set('data', value1);
+widget2.set('data', value2);
 
-// Refresh all at once
 refreshAllTargets();
+```
+
+### `clearSharedData(appGroup)`
+
+Clears all data for an App Group.
+
+**Signature:**
+
+```typescript
+function clearSharedData(appGroup: string): void;
+```
+
+**Parameters:**
+
+- `appGroup` (string): App Group identifier (e.g., `group.com.yourapp`)
+
+**Example:**
+
+```typescript
+import { clearSharedData } from 'expo-targets';
+
+clearSharedData('group.com.yourapp');
 ```
 
 ### `close()`
 
-Closes the current extension (for share extensions, action extensions).
+Closes the current extension.
 
 **Signature:**
 
@@ -292,7 +385,7 @@ Closes the current extension (for share extensions, action extensions).
 function close(): void;
 ```
 
-**Platform support:** iOS 13.0+
+**Platform:** iOS 13.0+
 
 **Use cases:** Share extensions, action extensions
 
@@ -302,130 +395,75 @@ function close(): void;
 import { close } from 'expo-targets';
 
 function handleShare(url: string) {
-  // Process shared data...
-
-  // Close the extension
+  // Process...
   close();
 }
 ```
 
-**Implementation:** Calls `extensionContext.completeRequest(returningItems:completionHandler:)`
-
 ### `openHostApp(path)`
 
-Opens the main app from an extension with a deep link.
+Opens the main app from an extension.
 
 **Signature:**
 
 ```typescript
-function openHostApp(path: string): void;
+function openHostApp(path?: string): void;
 ```
 
 **Parameters:**
 
-- `path` (string): Deep link path (e.g., `/home`, `/profile/123`)
+- `path` (string, optional): Deep link path
 
-**Platform support:** iOS 13.0+
-
-**Requirements:**
-
-- Configure deep linking in main app
-- Extension must have URL opening permissions
+**Platform:** iOS 13.0+
 
 **Example:**
 
 ```typescript
 import { openHostApp } from 'expo-targets';
 
-function openMainApp() {
-  openHostApp('/share-received');
-}
+openHostApp('/share?url=https://example.com');
 ```
 
-**Implementation:** Constructs URL from bundle identifier and calls `extensionContext.open(url:completionHandler:)`
+### `getSharedData()`
 
-### `clearSharedData()`
-
-Clears all shared data for the extension.
+Gets content shared to the extension.
 
 **Signature:**
 
 ```typescript
-async function clearSharedData(): Promise<void>;
+function getSharedData(): SharedData | null;
 ```
 
-**Platform support:** Coming soon
+**Returns:** `SharedData` object or `null`
+
+**Platform:** iOS
 
 **Example:**
 
 ```typescript
-import { clearSharedData } from 'expo-targets';
+import { getSharedData } from 'expo-targets';
 
-async function cleanup() {
-  await clearSharedData();
+const data = getSharedData();
+if (data?.text) {
+  console.log('Shared text:', data.text);
 }
 ```
 
 ---
 
-## Legacy API (Backward Compatible)
+## AppGroupStorage Class
 
-### `TargetStorage` Class
+Low-level storage class for direct App Group access.
 
-Manual storage class for backward compatibility. **Prefer `defineTarget()` for new code.**
-
-**Constructor:**
-
-```typescript
-new TargetStorage(appGroup: string, targetName?: string)
-```
-
-**Parameters:**
-
-- `appGroup` (string): App Group identifier
-- `targetName` (string, optional): Target name for refresh operations
-
-**Methods:**
-
-```typescript
-set(key: string, value?: string | number | object | array): void
-get(key: string): string | null
-remove(key: string): void
-refresh(): void  // Refreshes the specific target
-```
-
-**Example:**
-
-```typescript
-import { TargetStorage } from 'expo-targets';
-
-const storage = new TargetStorage('group.com.yourapp', 'hello-widget');
-
-storage.set('message', 'Hello');
-storage.set('count', 42);
-storage.refresh();
-
-const message = storage.get('message');
-console.log(message); // "Hello"
-```
-
-### `AppGroupStorage` Class
-
-Low-level storage class without widget refresh capability.
-
-**Constructor:**
+### Constructor
 
 ```typescript
 new AppGroupStorage(appGroup: string)
 ```
 
-**Methods:**
+**Parameters:**
 
-```typescript
-set(key: string, value?: string | number | object | array): void
-get(key: string): string | null
-remove(key: string): void
-```
+- `appGroup` (string): App Group identifier
 
 **Example:**
 
@@ -433,195 +471,165 @@ remove(key: string): void
 import { AppGroupStorage } from 'expo-targets';
 
 const storage = new AppGroupStorage('group.com.yourapp');
+```
+
+### Methods
+
+```typescript
+// Storage operations
+set(key: string, value: any): void
+get<T>(key: string): T | null
+remove(key: string): void
+clear(): void
+
+// Batch operations
+setData(data: Record<string, any>): void
+getData<T>(): T
+
+// Utility
+getKeys(): string[]
+refresh(targetName?: string): void
+```
+
+**Example:**
+
+```typescript
+const storage = new AppGroupStorage('group.com.yourapp');
+
 storage.set('key', 'value');
+const value = storage.get<string>('key');
+const keys = storage.getKeys();
+storage.refresh('WidgetName');
 ```
 
 ---
 
 ## Type Definitions
 
-### `DefineTargetOptions`
-
-Configuration options for `defineTarget()`.
-
-```typescript
-interface DefineTargetOptions {
-  name: string;
-  appGroup: string;
-  type: ExtensionType;
-  displayName?: string;
-  platforms: {
-    ios?: IOSTargetConfig;
-    android?: AndroidTargetConfig;
-  };
-}
-```
-
 ### `Target`
-
-Target instance returned by `defineTarget()`.
 
 ```typescript
 interface Target {
   readonly name: string;
+  readonly type: ExtensionType;
+  readonly appGroup: string;
   readonly storage: AppGroupStorage;
+  readonly config: TargetConfig;
 
   set(key: string, value: any): void;
-  get(key: string): string | null;
+  get<T>(key: string): T | null;
   remove(key: string): void;
+  clear(): void;
 
-  setData<T>(data: T): void;
-  getData<T>(): T | null;
+  setData(data: Record<string, any>): void;
+  getData<T>(): T;
 
   refresh(): void;
+
+  // Extension-specific (share, action, clip only)
+  close?(): void;
+  openHostApp?(path?: string): void;
+  getSharedData?(): SharedData | null;
 }
 ```
 
 ### `ExtensionType`
 
-Supported extension types.
-
 ```typescript
 type ExtensionType =
-  | 'widget' // Home screen widgets
-  | 'clip' // App Clips
-  | 'imessage' // iMessage sticker packs
-  | 'share' // Share extensions
-  | 'action' // Action extensions
-  | 'safari' // Safari extensions
-  | 'notification-content' // Notification content extensions
-  | 'notification-service' // Notification service extensions
-  | 'intent' // Siri intent extensions
-  | 'intent-ui' // Siri intent UI extensions
-  | 'spotlight' // Spotlight index extensions
-  | 'bg-download' // Background download extensions
-  | 'quicklook-thumbnail' // QuickLook thumbnail extensions
-  | 'location-push' // Location push service extensions
-  | 'credentials-provider' // Credential provider extensions
-  | 'account-auth' // Account authentication extensions
-  | 'app-intent' // App intent extensions
-  | 'device-activity-monitor' // Device activity monitor extensions
-  | 'matter' // Matter extensions
-  | 'watch'; // Watch app extensions
+  | 'widget'
+  | 'clip'
+  | 'stickers'
+  | 'share'
+  | 'action'
+  | 'safari'
+  | 'notification-content'
+  | 'notification-service'
+  | 'intent'
+  | 'intent-ui'
+  | 'spotlight'
+  | 'bg-download'
+  | 'quicklook-thumbnail'
+  | 'location-push'
+  | 'credentials-provider'
+  | 'account-auth'
+  | 'app-intent'
+  | 'device-activity-monitor'
+  | 'matter'
+  | 'watch';
 ```
 
-### `IOSTargetConfig`
-
-iOS platform configuration.
+### `SharedData`
 
 ```typescript
-interface IOSTargetConfig {
-  icon?: string; // Path to icon file
-  deploymentTarget?: string; // Minimum iOS version (e.g., '14.0')
-  bundleIdentifier?: string; // Relative or absolute bundle ID
-  displayName?: string; // Platform-specific display name
-  colors?: Record<string, string | Color>; // Named colors for Assets.xcassets
-  images?: Record<string, string>; // Named images for Assets.xcassets
-  frameworks?: string[]; // Additional frameworks to link
-  entitlements?: Record<string, any>; // Custom entitlements
-  buildSettings?: Record<string, string>; // Custom Xcode build settings
-  useReactNative?: boolean; // Enable React Native rendering
-  excludedPackages?: string[]; // Packages to exclude from RN bundle
+interface SharedData {
+  text?: string;
+  url?: string;
+  images?: string[];
+  webpageUrl?: string;
+  webpageTitle?: string;
+  preprocessedData?: any;
 }
 ```
 
-### `Color`
-
-Color definition with light/dark mode support.
+### `TargetConfig`
 
 ```typescript
-interface Color {
-  light?: string; // Light mode color (hex, rgb, or named)
-  dark?: string; // Dark mode color
-  color?: string; // Alternative property for light mode
-  darkColor?: string; // Alternative property for dark mode
-}
-```
-
-**Examples:**
-
-```typescript
-// Simple color
-$accent: '#007AFF'
-
-// Light/dark mode
-$background: { light: '#FFFFFF', dark: '#000000' }
-
-// Alternative syntax
-$primary: { color: '#007AFF', darkColor: '#0A84FF' }
-```
-
-### `AndroidTargetConfig`
-
-Android platform configuration (coming soon).
-
-```typescript
-interface AndroidTargetConfig {
-  resourceName?: string; // Resource name for widget
-  // More options coming
+interface TargetConfig {
+  name: string;
+  displayName?: string;
+  type: ExtensionType;
+  platforms: string[];
+  appGroup?: string;
+  entry?: string;
+  excludedPackages?: string[];
+  ios?: IOSTargetConfig;
+  android?: AndroidTargetConfig;
 }
 ```
 
 ---
 
-## Complete Usage Examples
+## Complete Examples
 
-### Basic Widget with Simple Storage
+### Basic Widget
 
 ```typescript
-// targets/hello-widget/index.ts
-import { defineTarget } from 'expo-targets';
+// targets/simple-widget/index.ts
+import { createTarget } from 'expo-targets';
 
-export const HelloWidget = defineTarget({
-  name: 'hello-widget',
-  appGroup: 'group.com.yourapp',
-  type: 'widget',
-  platforms: { ios: { deploymentTarget: '14.0' } },
-});
+export const simpleWidget = createTarget('SimpleWidget');
 
 // App.tsx
-import { HelloWidget } from './targets/hello-widget';
+import { simpleWidget } from './targets/simple-widget';
 
 function updateWidget() {
-  HelloWidget.set('message', 'Hello!');
-  HelloWidget.refresh();
+  simpleWidget.set('message', 'Hello!');
+  simpleWidget.refresh();
 }
 ```
 
-### Type-Safe Widget Data
+### Type-Safe Widget
 
 ```typescript
-// targets/dashboard-widget/index.ts
-import { defineTarget } from 'expo-targets';
+// targets/dashboard/index.ts
+import { createTarget } from 'expo-targets';
 
-export const DashboardWidget = defineTarget({
-  name: 'dashboard-widget',
-  appGroup: 'group.com.yourapp',
-  type: 'widget',
-  platforms: { ios: {} },
-});
+export const dashboard = createTarget('Dashboard');
 
-export type DashboardData = {
+export interface DashboardData {
   revenue: number;
   users: number;
   growth: number;
-};
+}
 
 // App.tsx
-import { DashboardWidget } from './targets/dashboard-widget';
-import type { DashboardData } from './targets/dashboard-widget';
+import { dashboard } from './targets/dashboard';
+import type { DashboardData } from './targets/dashboard';
 
-async function updateDashboard() {
-  const stats = await fetchStats();
-
-  const data: DashboardData = {
-    revenue: stats.revenue,
-    users: stats.users,
-    growth: stats.growth,
-  };
-
-  DashboardWidget.setData(data);
-  DashboardWidget.refresh();
+function updateDashboard(stats: DashboardData) {
+  dashboard.setData(stats);
+  dashboard.refresh();
 }
 ```
 
@@ -629,24 +637,19 @@ async function updateDashboard() {
 
 ```typescript
 // targets/index.ts
-export { HelloWidget } from './hello-widget';
-export { DashboardWidget } from './dashboard-widget';
-export { WeatherWidget } from './weather-widget';
-
-export type { HelloWidgetData } from './hello-widget';
-export type { DashboardData } from './dashboard-widget';
-export type { WeatherData } from './weather-widget';
+export { widget1, Widget1Data } from './widget1';
+export { widget2, Widget2Data } from './widget2';
+export { widget3, Widget3Data } from './widget3';
 
 // App.tsx
-import { HelloWidget, DashboardWidget, WeatherWidget } from './targets';
 import { refreshAllTargets } from 'expo-targets';
+import { widget1, widget2, widget3 } from './targets';
 
-function updateAllWidgets() {
-  HelloWidget.set('message', 'Hello');
-  DashboardWidget.setData({ revenue: 1000, users: 500, growth: 10 });
-  WeatherWidget.setData({ temp: 72, condition: 'sunny' });
+function updateAll() {
+  widget1.set('data', value1);
+  widget2.set('data', value2);
+  widget3.set('data', value3);
 
-  // Refresh all at once
   refreshAllTargets();
 }
 ```
@@ -654,33 +657,23 @@ function updateAllWidgets() {
 ### Share Extension
 
 ```typescript
-// targets/share-extension/index.ts
-import { defineTarget } from 'expo-targets';
+// targets/share-ext/index.ts
+import { createTarget } from 'expo-targets';
 
-export const ShareExtension = defineTarget({
-  name: 'share-extension',
-  appGroup: 'group.com.yourapp',
-  type: 'share',
-  platforms: {
-    ios: {
-      useReactNative: true,
-      excludedPackages: ['expo-updates'],
-    },
-  },
-});
+export const shareExt = createTarget('ShareExt');
 
 // Share extension code
-import { ShareExtension, close, openHostApp } from './targets';
+import { shareExt, getSharedData } from './targets/share-ext';
 
-function handleShare(url: string) {
-  ShareExtension.set('lastShared', url);
-  ShareExtension.set('shareTime', Date.now());
+function handleShare() {
+  const data = getSharedData();
 
-  // Option 1: Close extension
-  close();
+  if (data?.url) {
+    shareExt.set('lastShared', data.url);
+    shareExt.set('timestamp', Date.now());
+  }
 
-  // Option 2: Open main app
-  openHostApp(`/share?url=${encodeURIComponent(url)}`);
+  shareExt.close();
 }
 ```
 
@@ -690,74 +683,59 @@ function handleShare(url: string) {
 
 | API                   | iOS        | Android   |
 | --------------------- | ---------- | --------- |
-| `defineTarget()`      | ✅ iOS 13+ | 🔜 Coming |
+| `createTarget()`      | ✅ iOS 13+ | 🔜 Coming |
 | `Target.set()`        | ✅ iOS 13+ | 🔜 Coming |
 | `Target.get()`        | ✅ iOS 13+ | 🔜 Coming |
 | `Target.setData()`    | ✅ iOS 13+ | 🔜 Coming |
 | `Target.getData()`    | ✅ iOS 13+ | 🔜 Coming |
 | `Target.refresh()`    | ✅ iOS 14+ | 🔜 Coming |
 | `refreshAllTargets()` | ✅ iOS 14+ | 🔜 Coming |
+| `clearSharedData()`   | ✅ iOS 13+ | 🔜 Coming |
 | `close()`             | ✅ iOS 13+ | 🔜 Coming |
 | `openHostApp()`       | ✅ iOS 13+ | 🔜 Coming |
-| `clearSharedData()`   | 🔜 Coming  | 🔜 Coming |
-
-✅ Available | 🔜 Coming Soon
+| `getSharedData()`     | ✅ iOS 13+ | 🔜 Coming |
 
 ---
 
 ## Best Practices
 
-### Use Type-Safe Data Objects
-
-Prefer `setData()` and `getData()` with TypeScript types:
+### Use Type-Safe Data
 
 ```typescript
 // ✅ Good: Type-safe
+interface WidgetData {
+  message: string;
+  count: number;
+}
+
 const data: WidgetData = { message: 'Hello', count: 42 };
-Widget.setData(data);
+widget.setData(data);
 
-// ❌ Avoid: Manual key-value pairs for complex data
-Widget.set('message', 'Hello');
-Widget.set('count', 42);
+// ❌ Avoid: Untyped
+widget.setData({ message: 'Hello', count: 42 });
 ```
 
-### Create Barrel Exports
-
-Organize targets in a single import:
+### Batch Updates
 
 ```typescript
-// targets/index.ts
-export { Widget1, Widget2, Widget3 } from './...';
-export type { Widget1Data, Widget2Data } from './...';
-
-// App.tsx
-import { Widget1, Widget2 } from './targets';
-```
-
-### Batch Updates with `refreshAllTargets()`
-
-When updating multiple widgets, refresh once:
-
-```typescript
-// ✅ Efficient
-Widget1.set('data', value1);
-Widget2.set('data', value2);
+// ✅ Efficient: Update once
+widget1.set('data', value1);
+widget2.set('data', value2);
 refreshAllTargets();
 
-// ❌ Inefficient
-Widget1.set('data', value1);
-Widget1.refresh();
-Widget2.set('data', value2);
-Widget2.refresh();
+// ❌ Inefficient: Multiple refreshes
+widget1.set('data', value1);
+widget1.refresh();
+widget2.set('data', value2);
+widget2.refresh();
 ```
 
-### Handle Errors Gracefully
-
-Always handle potential parsing errors:
+### Handle Errors
 
 ```typescript
+// ✅ Good: Handle parsing errors
 try {
-  const data = Widget.getData<WidgetData>();
+  const data = widget.getData<WidgetData>();
   if (data) {
     // Use data
   }
@@ -766,39 +744,21 @@ try {
 }
 ```
 
+### Create Barrel Exports
+
+```typescript
+// targets/index.ts
+export { widget1, Widget1Data } from './widget1';
+export { widget2, Widget2Data } from './widget2';
+
+// App.tsx
+import { widget1, widget2 } from './targets';
+```
+
 ---
 
-## Migration from Old API
+## See Also
 
-### Before (Manual TargetStorage)
-
-```typescript
-import { TargetStorage } from 'expo-targets';
-
-const storage = new TargetStorage('group.com.app', 'widget');
-storage.set('message', 'Hello');
-storage.refresh();
-```
-
-### After (defineTarget)
-
-```typescript
-import { defineTarget } from 'expo-targets';
-
-export const Widget = defineTarget({
-  name: 'widget',
-  appGroup: 'group.com.app',
-  type: 'widget',
-  platforms: { ios: {} },
-});
-
-Widget.set('message', 'Hello');
-Widget.refresh();
-```
-
-**Benefits:**
-
-- Single source of truth (config + runtime in one place)
-- Type-safe data operations
-- Better IDE autocomplete
-- Cleaner imports
+- [Configuration Reference](./config-reference.md)
+- [Getting Started Guide](./getting-started.md)
+- [Example Apps](../apps/)

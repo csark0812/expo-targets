@@ -1,31 +1,31 @@
-# Share Extension Configuration Guide
+# Share Extension Configuration
 
-This guide covers the configuration options for iOS share extensions in expo-targets.
+Detailed reference for configuring iOS share extensions in expo-targets.
 
 ## Overview
 
-Share extensions allow users to share content from other apps into your app. The share extension appears in the iOS share sheet and can accept various types of content including text, URLs, images, videos, and files.
+Share extensions allow users to share content from other apps into your app. The share extension appears in the iOS share sheet and can accept text, URLs, images, videos, and files.
 
 ## Basic Configuration
 
 ```json
 {
   "type": "share",
-  "name": "ContentShare",
+  "name": "ShareExt",
   "displayName": "Share to App",
   "platforms": ["ios"],
   "appGroup": "group.com.yourapp",
   "ios": {
-    "deploymentTarget": "13.0",
-    "bundleIdentifier": "com.yourapp.share",
-    "displayName": "Share Extension"
+    "deploymentTarget": "13.0"
   }
 }
 ```
 
+For React Native-enabled share extensions, see [React Native Extensions Guide](./react-native-extensions.md).
+
 ## Activation Rules
 
-Control what content types your share extension accepts using the `ios.activationRules` configuration:
+Control what content types your share extension accepts using `ios.activationRules`:
 
 ```json
 {
@@ -53,30 +53,47 @@ Control what content types your share extension accepts using the `ios.activatio
 
 ### Maximum Count
 
-For content types that support `maxCount`, you can specify how many items to accept:
+For types supporting `maxCount`, specify how many items to accept:
 
 ```json
 {
   "ios": {
     "activationRules": [
-      { "type": "image", "maxCount": 10 }, // Accept up to 10 images
-      { "type": "url", "maxCount": 1 } // Accept 1 URL
+      { "type": "image", "maxCount": 10 },
+      { "type": "url", "maxCount": 1 }
     ]
   }
 }
 ```
 
-**Default:** If `maxCount` is not specified, it defaults to `1`.
+**Default:** `1` if not specified
+
+### Default Behavior
+
+Without `activationRules`, the share extension accepts:
+
+- Text content
+- URLs (1 maximum)
+
+Equivalent to:
+
+```json
+{
+  "ios": {
+    "activationRules": [{ "type": "text" }, { "type": "url" }]
+  }
+}
+```
 
 ## Web Page Preprocessing
 
-To extract data from web pages before the share extension opens, use a preprocessing JavaScript file:
+Extract data from web pages before the share extension opens:
 
 ```json
 {
   "ios": {
     "activationRules": [{ "type": "webpage" }],
-    "preprocessingFile": "./preprocessing.js"
+    "preprocessingFile": "./targets/share-ext/preprocessing.js"
   }
 }
 ```
@@ -90,6 +107,7 @@ class ShareExtensionPreprocessor {
       url: window.location.href,
       title: document.title,
       description: document.querySelector('meta[name="description"]')?.content,
+      selection: window.getSelection().toString(),
     });
   }
 }
@@ -97,30 +115,22 @@ class ShareExtensionPreprocessor {
 var ExtensionPreprocessingJS = new ShareExtensionPreprocessor();
 ```
 
-**Important:** When using `preprocessingFile`:
+**Access preprocessed data:**
 
-- The `webpage` type enables `NSExtensionActivationSupportsWebPageWithMaxCount`
-- The `url` type will also enable webpage support automatically
-- Your preprocessing results will be available in the extension's initial data
+```typescript
+import { getSharedData } from 'expo-targets';
 
-## Default Behavior
-
-If you don't specify `activationRules`, the share extension will accept:
-
-- Text content
-- URLs (1 maximum)
-
-This is equivalent to:
-
-```json
-{
-  "ios": {
-    "activationRules": [{ "type": "text" }, { "type": "url" }]
-  }
-}
+const data = getSharedData();
+console.log(data.preprocessedData); // { url, title, description, selection }
 ```
 
-## Examples
+**Notes:**
+
+- `webpage` type enables `NSExtensionActivationSupportsWebPageWithMaxCount`
+- `url` type also enables webpage support automatically
+- Preprocessing runs in Safari's JavaScript context
+
+## Configuration Examples
 
 ### Social Media App
 
@@ -136,7 +146,7 @@ Accept text and multiple images:
 
 ### Bookmark Manager
 
-Accept URLs only:
+URLs only:
 
 ```json
 {
@@ -148,7 +158,7 @@ Accept URLs only:
 
 ### Media Downloader
 
-Accept URLs with web page preprocessing:
+URLs with web page preprocessing:
 
 ```json
 {
@@ -161,7 +171,7 @@ Accept URLs with web page preprocessing:
 
 ### File Manager
 
-Accept all types:
+All content types:
 
 ```json
 {
@@ -181,7 +191,7 @@ Accept all types:
 
 ### Info.plist Mapping
 
-The `activationRules` are converted to iOS-native keys:
+Activation rules map to iOS-native keys:
 
 | Rule                             | iOS Key                                               |
 | -------------------------------- | ----------------------------------------------------- |
@@ -192,26 +202,37 @@ The `activationRules` are converted to iOS-native keys:
 | `{ type: "file", maxCount: N }`  | `NSExtensionActivationSupportsFileWithMaxCount: N`    |
 | `{ type: "webpage" }`            | `NSExtensionActivationSupportsWebPageWithMaxCount: N` |
 
-### Swift View Controller
+### Info.plist Structure
 
-Your share extension uses `ShareViewController.swift` which:
-
-- Inherits from `UIViewController`
-- Uses programmatic UI (no storyboard required)
-- Accesses shared content via `extensionContext`
-
-The Info.plist automatically configures:
+Generated automatically:
 
 ```xml
-<key>NSExtensionPrincipalClass</key>
-<string>$(PRODUCT_MODULE_NAME).ShareViewController</string>
+<key>NSExtension</key>
+<dict>
+  <key>NSExtensionAttributes</key>
+  <dict>
+    <key>NSExtensionActivationRule</key>
+    <dict>
+      <key>NSExtensionActivationSupportsText</key>
+      <true/>
+      <key>NSExtensionActivationSupportsWebURLWithMaxCount</key>
+      <integer>1</integer>
+      <key>NSExtensionActivationSupportsImageWithMaxCount</key>
+      <integer>5</integer>
+    </dict>
+  </dict>
+  <key>NSExtensionPrincipalClass</key>
+  <string>$(PRODUCT_MODULE_NAME).ShareViewController</string>
+  <key>NSExtensionPointIdentifier</key>
+  <string>com.apple.share-services</string>
+</dict>
 ```
 
 ## Advanced Configuration
 
 ### Custom Info.plist Overrides
 
-You can override any Info.plist key using the `infoPlist` option:
+Override Info.plist keys using `infoPlist`:
 
 ```json
 {
@@ -231,13 +252,11 @@ You can override any Info.plist key using the `infoPlist` option:
 }
 ```
 
-**Note:** The `infoPlist` is merged AFTER `activationRules` configuration, so it takes precedence.
+**Note:** `infoPlist` is deep merged AFTER `activationRules`, so custom values take precedence.
 
-## Migration from Manual Configuration
+### Migration from Manual Configuration
 
-If you were previously using manual `infoPlist` configuration:
-
-**Before:**
+**Before (manual Info.plist):**
 
 ```json
 {
@@ -255,7 +274,7 @@ If you were previously using manual `infoPlist` configuration:
 }
 ```
 
-**After:**
+**After (activation rules):**
 
 ```json
 {
@@ -271,26 +290,51 @@ If you were previously using manual `infoPlist` configuration:
 
 ## Troubleshooting
 
-### Share extension doesn't appear in share sheet
+### Share extension doesn't appear
 
-- Check your `activationRules` match the content you're sharing
-- Verify `bundleIdentifier` is correct (should be `your.app.id.share`)
-- Ensure the extension is embedded in the main app
+**Causes:**
 
-### Share extension crashes on launch
+- `activationRules` don't match shared content type
+- Bundle identifier incorrect
+- Extension not embedded in main app
 
-- Verify `ShareViewController.swift` exists in `targets/your-share/ios/`
-- Check that class name matches `ShareViewController`
-- Review Xcode console for specific error messages
+**Solutions:**
+
+1. Verify `activationRules` match content you're sharing
+2. Check bundle ID format (should end with `.share` or similar)
+3. Run `npx expo prebuild -p ios --clean`
+4. Check extension target exists in Xcode
 
 ### Wrong content types accepted
 
-- Review your `activationRules` configuration
-- Test with different content types to verify behavior
-- Check generated `Info.plist` in Xcode
+**Solutions:**
 
-## References
+1. Review `activationRules` configuration
+2. Test with different content types
+3. Check generated Info.plist in Xcode:
+   - Open Xcode
+   - Select share extension target
+   - View Info tab
+   - Verify NSExtension configuration
 
-- [Apple: Share Extensions](https://developer.apple.com/library/archive/documentation/General/Conceptual/ExtensibilityPG/Share.html)
-- [Apple: Extension Activation Rules](https://developer.apple.com/library/archive/documentation/General/Conceptual/ExtensibilityPG/ExtensionScenarios.html)
-- [expo-targets Documentation](../README.md)
+### Extension crashes on launch
+
+**Causes:**
+
+- Missing `ShareViewController.swift`
+- Incorrect class name
+- React Native issues (if using RN)
+
+**Solutions:**
+
+1. Verify `ShareViewController.swift` exists in `targets/{name}/ios/`
+2. Check class name matches `ShareViewController`
+3. For RN extensions, see [React Native Extensions Guide](./react-native-extensions.md)
+4. Check Xcode console for error messages
+
+## See Also
+
+- [Config Reference](./config-reference.md) - Complete configuration options
+- [React Native Extensions](./react-native-extensions.md) - Using RN in share extensions
+- [API Reference](./api-reference.md) - Runtime APIs
+- [Apple Documentation](https://developer.apple.com/library/archive/documentation/General/Conceptual/ExtensibilityPG/Share.html)

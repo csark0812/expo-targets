@@ -38,7 +38,7 @@ expo-targets is a monorepo providing iOS/Android extension development for Expo 
 - **Type-Safe**: Full TypeScript throughout
 - **Build-Time Validation**: Errors caught during prebuild
 - **Platform-Agnostic**: iOS implementation with Android architecture prepared
-- **Developer Experience**: Single file for config + runtime
+- **Developer Experience**: Simple JSON config + runtime API
 - **Extensible**: Easy to add new extension types
 
 ---
@@ -97,13 +97,12 @@ expo-targets/
 │   ├── expo-targets/           # Main package
 │   │   ├── src/                # TypeScript API (runtime)
 │   │   │   ├── index.ts        # Public exports
-│   │   │   ├── TargetStorage.ts # Storage implementation
-│   │   │   └── TargetStorageModule.ts # Native binding
+│   │   │   ├── Target.ts       # Target creation
+│   │   │   └── modules/        # Storage & extension modules
 │   │   ├── plugin/             # Config plugin (build-time)
 │   │   │   ├── src/
 │   │   │   │   ├── index.ts    # Plugin entry
 │   │   │   │   ├── withTargetsDir.ts # Target scanner
-│   │   │   │   ├── parseTargetConfig.ts # AST parser
 │   │   │   │   ├── config.ts   # Type definitions
 │   │   │   │   └── ios/        # iOS-specific plugins
 │   │   │   │       ├── withIOSTarget.ts # Orchestrator
@@ -133,7 +132,8 @@ expo-targets/
 │   └── widget-basic/           # Example app
 │       ├── targets/
 │       │   └── hello-widget/
-│       │       ├── index.ts    # Target definition
+│       │       ├── expo-target.config.json # Target configuration
+│       │       ├── index.ts    # Runtime API
 │       │       └── ios/
 │       │           └── Widget.swift
 │       ├── App.tsx
@@ -174,11 +174,11 @@ User runs: npx expo prebuild -p ios --clean
 ┌──────────────────────────────────────────────────────┐
 │ withTargetsDir Plugin                                │
 │                                                       │
-│ 1. Glob scan: targets/*/index.@(ts|tsx|js|jsx)      │
+│ 1. Glob scan: targets/*/expo-target.config.*        │
 │ 2. For each found file:                              │
-│    - Parse with Babel AST                            │
-│    - Extract defineTarget() arguments                │
-│    - Evaluate object literals                        │
+│    - Load config (require for .js/.ts, parse .json) │
+│    - Validate required fields                        │
+│    - Resolve App Group if not specified              │
 │ 3. Pass config to platform plugins                   │
 └───────────────────┬──────────────────────────────────┘
                     │
@@ -224,13 +224,13 @@ User runs: npx expo prebuild -p ios --clean
 ### 2. Runtime (Widget Update)
 
 ```
-User app calls: HelloWidget.set('message', 'Hello')
+User app calls: helloWidget.set('message', 'Hello')
        │
        ▼
 ┌──────────────────────────────────────────────────────┐
 │ Target Instance (JavaScript)                         │
 │                                                       │
-│ defineTarget() returned object with methods          │
+│ createTarget('HelloWidget') returned object          │
 │ - set(key, value)                                    │
 │ - get(key)                                           │
 │ - setData(data)                                      │
@@ -249,7 +249,7 @@ User app calls: HelloWidget.set('message', 'Hello')
                     │
                     ▼
 ┌──────────────────────────────────────────────────────┐
-│ ExpoTargetsModule (Native Swift)                     │
+│ ExpoTargetsStorageModule (Native Swift)              │
 │                                                       │
 │ Function: setString(key, value, appGroup)            │
 │ - Get UserDefaults(suiteName: appGroup)              │
@@ -266,11 +266,11 @@ User app calls: HelloWidget.set('message', 'Hello')
 │ └─ Library/Preferences/group.com.app.plist           │
 └──────────────────────────────────────────────────────┘
 
-User app calls: HelloWidget.refresh()
+User app calls: helloWidget.refresh()
        │
        ▼
 ┌──────────────────────────────────────────────────────┐
-│ ExpoTargetsModule.refreshTarget(name)                │
+│ ExpoTargetsStorageModule.refreshTarget(name)         │
 │                                                       │
 │ iOS 14+:                                             │
 │ - WidgetCenter.shared.reloadTimelines(ofKind: name)  │
@@ -295,47 +295,123 @@ User app calls: HelloWidget.refresh()
 
 ## Configuration System
 
-### defineTarget() Implementation
+### JSON Config Files
 
-**Location:** `packages/expo-targets/src/TargetStorage.ts`
+**Location:** `targets/{name}/expo-target.config.json` (or .js/.ts)
+
+```json
+{
+  "type": "widget",
+  "name": "MyWidget",
+  "platforms": ["ios"],
+  "appGroup": "group.com.yourapp",
+  "ios": {
+    "deploymentTarget": "14.0",
+    "colors": {
+      "AccentColor": "#007AFF"
+    }
+  }
+}
+```
+
+**Design:**
+
+- Separate configuration from runtime code
+- Standard JSON format (or JS/TS for dynamic configs)
+- Loaded via `require()` during prebuild
+- Validated at build time
+
+### Config Loading
+
+**Location:** `packages/expo-targets/plugin/src/withTargetsDir.ts`
 
 ```typescript
-export function defineTarget(options: DefineTargetOptions): Target {
-  const storage = new AppGroupStorage(options.appGroup);
-  const dataKey = `${options.name}:data`;
+export const withTargetsDir: ConfigPlugin = (config, options) => {
+  const targetConfigFiles = globSync(
+    `${targetsRoot}/*/expo-target.config.@(js|ts|json)`,
+    { cwd: projectRoot, absolute: true }
+  );
+
+  targetConfigFiles.forEach((targetPath) => {
+    let evaluatedConfig = require(targetPath);
+
+    // Handle ES module default export
+    if (evaluatedConfig && evaluatedConfig.default) {
+      evaluatedConfig = evaluatedConfig.default;
+    }
+
+    // Validate required fields
+    if (!evaluatedConfig.name) {
+      throw new Error('Target must specify "name" property');
+    }
+
+    // Resolve appGroup (inherit from main app if not specified)
+    let appGroup = evaluatedConfig.appGroup;
+    if (!appGroup) {
+      const mainAppGroups =
+        config.ios?.entitlements?.['com.apple.security.application-groups'];
+      if (Array.isArray(mainAppGroups) && mainAppGroups.length > 0) {
+        appGroup = mainAppGroups[0];
+      }
+    }
+
+    // Pass to platform plugins
+    config = withIOSTarget(config, { ...evaluatedConfig, appGroup });
+  });
+
+  return config;
+};
+```
+
+**Design:**
+
+- Glob scan for config files
+- Load via Node's `require()` (supports .js, .ts, .json)
+- Auto-inherit App Group from main app
+- Validate required fields at load time
+
+**Benefits:**
+
+- Standard configuration format
+- Dynamic configs via JavaScript/TypeScript
+- No AST parsing complexity
+- Separate concerns (config vs runtime)
+
+### Runtime API
+
+**Location:** `packages/expo-targets/src/Target.ts`
+
+```typescript
+export function createTarget(targetName: string): Target {
+  const config = getTargetConfig(targetName);
+  const appGroup = config.appGroup;
+  const storage = new AppGroupStorage(appGroup);
 
   return {
-    name: options.name,
+    name: targetName,
+    type: config.type,
+    appGroup,
     storage,
+    config,
 
     set(key: string, value: any) {
       storage.set(key, value);
     },
 
-    get(key: string) {
-      return storage.get(key);
+    get<T>(key: string): T | null {
+      return storage.get<T>(key);
     },
 
-    remove(key: string) {
-      storage.remove(key);
+    setData(data: Record<string, any>) {
+      storage.setData(data);
     },
 
-    setData<T>(data: T) {
-      storage.set(dataKey, data as any);
-    },
-
-    getData<T>(): T | null {
-      const raw = storage.get(dataKey);
-      if (!raw) return null;
-      try {
-        return JSON.parse(raw) as T;
-      } catch {
-        return null;
-      }
+    getData<T>(): T {
+      return storage.getData<T>();
     },
 
     refresh() {
-      ExpoTargetsModule.refreshTarget(options.name);
+      storage.refresh(targetName);
     },
   };
 }
@@ -343,71 +419,10 @@ export function defineTarget(options: DefineTargetOptions): Target {
 
 **Design:**
 
-- Returns object with methods (not class instance)
-- Encapsulates AppGroupStorage
-- Namespaces data key for `setData()`/`getData()`
-- Type-safe through generics
-
-### AST Parsing
-
-**Location:** `packages/expo-targets/plugin/src/parseTargetConfig.ts`
-
-```typescript
-export function parseTargetConfigFromFile(filePath: string): TargetConfig {
-  const code = fs.readFileSync(filePath, 'utf-8');
-
-  const ast = parser.parse(code, {
-    sourceType: 'module',
-    plugins: ['typescript', 'jsx'],
-  });
-
-  let targetConfig: TargetConfig | null = null;
-
-  traverse(ast, {
-    CallExpression(path) {
-      const { node } = path;
-
-      if (
-        t.isIdentifier(node.callee) &&
-        node.callee.name === 'defineTarget' &&
-        node.arguments.length > 0
-      ) {
-        const firstArg = node.arguments[0];
-
-        if (t.isObjectExpression(firstArg)) {
-          targetConfig = evaluateObjectExpression(firstArg);
-        }
-      }
-    },
-  });
-
-  if (!targetConfig) {
-    throw new Error(`No defineTarget() call found in ${filePath}`);
-  }
-
-  return targetConfig;
-}
-```
-
-**Design:**
-
-- Parses TypeScript/JSX without runtime execution
-- Finds `defineTarget()` call
-- Evaluates object literals statically
-- Supports: strings, numbers, booleans, objects, arrays, template literals
-- Does not support: function calls, computations (for safety)
-
-**Limitations:**
-
-- Cannot evaluate computed values at build time
-- No support for imports/constants (values must be literals)
-- Template literals must have no expressions
-
-**Why AST parsing?**
-
-- Extracts config at build time without executing user code
-- Allows dynamic configuration while maintaining build-time validation
-- Single file for config + runtime (DX improvement)
+- Factory function creates target instances
+- Loads config from Expo config or bundle Info.plist
+- Encapsulates storage operations
+- Extension-specific methods for compatible types
 
 ---
 
@@ -469,16 +484,15 @@ export const withMyPlugin: ConfigPlugin<Props> = (config, props) => {
 
 ### Swift Implementation
 
-**Location:** `packages/expo-targets/ios/ExpoTargetsModule.swift`
+**Location:** `packages/expo-targets/ios/ExpoTargetsStorageModule.swift`
 
 ```swift
 import ExpoModulesCore
 import WidgetKit
-import UIKit
 
-public class ExpoTargetsModule: Module {
+public class ExpoTargetsStorageModule: Module {
   public func definition() -> ModuleDefinition {
-    Name("ExpoTargets")
+    Name("ExpoTargetsStorage")
 
     Function("setString") { (key: String, value: String, suite: String?) -> Void in
       let defaults = UserDefaults(suiteName: suite ?? "")
@@ -521,22 +535,36 @@ public class ExpoTargetsModule: Module {
 
 ### JavaScript Bridge
 
-**Location:** `packages/expo-targets/src/TargetStorageModule.ts`
+**Location:** `packages/expo-targets/src/modules/storage/index.ts`
 
 ```typescript
 import { requireNativeModule } from 'expo-modules-core';
 
-export default requireNativeModule('ExpoTargets');
-```
+const ExpoTargetsStorageModule = requireNativeModule('ExpoTargetsStorage');
 
-**Bound in:** `packages/expo-targets/src/TargetStorage.ts`
+export class AppGroupStorage {
+  constructor(private readonly appGroup: string) {}
 
-```typescript
-import ExpoTargetsModule from './TargetStorageModule';
+  set(key: string, value: any) {
+    if (typeof value === 'number') {
+      ExpoTargetsStorageModule.setInt(key, Math.floor(value), this.appGroup);
+    } else if (typeof value === 'string') {
+      ExpoTargetsStorageModule.setString(key, value, this.appGroup);
+    } else {
+      ExpoTargetsStorageModule.setString(
+        key,
+        JSON.stringify(value),
+        this.appGroup
+      );
+    }
+  }
 
-// Direct calls to native
-ExpoTargetsModule.setString(key, value, appGroup);
-ExpoTargetsModule.refreshTarget(name);
+  refresh(targetName?: string) {
+    ExpoTargetsStorageModule.refreshTarget(targetName);
+  }
+
+  // ... more methods
+}
 ```
 
 **Design:**
@@ -621,7 +649,7 @@ module.exports = withTargetsMetro(getDefaultConfig(__dirname));
 export type ExtensionType =
   | 'widget'
   | 'clip'
-  | 'imessage'
+  | 'stickers'
   | 'share'
   | 'action'
   | 'safari'
@@ -658,62 +686,63 @@ export interface IOSTargetConfig {
   images?: Record<string, string>;
   frameworks?: string[];
   entitlements?: Record<string, any>;
-  buildSettings?: Record<string, string>;
-  useReactNative?: boolean;
-  excludedPackages?: string[];
+  infoPlist?: Record<string, any>;
+  activationRules?: ShareExtensionActivationRule[];
+  preprocessingFile?: string;
+  stickerPacks?: StickerPack[];
+  imessageAppIcon?: string;
 }
 
 // Target configuration
 export interface TargetConfig {
   type: ExtensionType;
-  name?: string;
+  name: string;
   displayName?: string;
   appGroup?: string;
-  platforms: {
-    ios?: IOSTargetConfig;
-    android?: AndroidTargetConfig;
-  };
+  platforms: string[];
+  entry?: string;
+  excludedPackages?: string[];
+  ios?: IOSTargetConfig;
+  android?: AndroidTargetConfig;
 }
 ```
 
 ### Runtime Types
 
-**Location:** `packages/expo-targets/src/TargetStorage.ts`
+**Location:** `packages/expo-targets/src/Target.ts`
 
 ```typescript
 export interface Target {
   readonly name: string;
+  readonly type: ExtensionType;
+  readonly appGroup: string;
   readonly storage: AppGroupStorage;
+  readonly config: TargetConfig;
 
   set(key: string, value: any): void;
-  get(key: string): string | null;
+  get<T>(key: string): T | null;
   remove(key: string): void;
+  clear(): void;
 
-  setData<T>(data: T): void;
-  getData<T>(): T | null;
+  setData(data: Record<string, any>): void;
+  getData<T>(): T;
 
   refresh(): void;
-}
 
-export interface DefineTargetOptions {
-  name: string;
-  appGroup: string;
-  type: ExtensionType;
-  displayName?: string;
-  platforms: {
-    ios?: IOSTargetConfig;
-    android?: AndroidTargetConfig;
-  };
+  // Extension-specific methods (share, action, clip only)
+  close?(): void;
+  openHostApp?(path?: string): void;
+  getSharedData?(): SharedData | null;
 }
 ```
 
 ### Type Flow
 
 ```
-User Code (index.ts)
-  ↓ (uses)
-DefineTargetOptions
-  ↓ (parsed by plugin)
+User Config (expo-target.config.json)
+  ↓ (loaded by)
+withTargetsDir Plugin
+  ↓ (creates)
 TargetConfig
   ↓ (consumed by)
 Plugin System
@@ -721,9 +750,9 @@ Plugin System
 Native Xcode Project
 
 User Code (App.tsx)
-  ↓ (uses)
+  ↓ (calls createTarget)
 Target Instance
-  ↓ (calls)
+  ↓ (calls methods)
 Native Module
 ```
 
@@ -746,10 +775,10 @@ Native Module
    - withTargetsDir scans targets/
 
 4. For Each Target:
-   a. Parse Configuration
-      - Read targets/{name}/index.ts
-      - Parse with Babel AST
-      - Extract defineTarget() config
+   a. Load Configuration
+      - Read targets/{name}/expo-target.config.*
+      - Load with require() (.js/.ts/.json)
+      - Validate required fields
 
    b. iOS Plugin Chain
       - withXcodeChanges
@@ -810,39 +839,43 @@ ios/
 
 ## Design Decisions
 
-### 1. Single File Configuration
+### 1. Separate Config Files
 
-**Decision:** Use `index.ts` for both config and runtime
+**Decision:** Use `expo-target.config.json` for configuration, separate runtime API
 
 **Rationale:**
 
-- Single source of truth
-- No code generation needed
-- Better DX (import target directly)
-- Type-safe by default
+- Clear separation of concerns
+- Standard configuration format
+- No build-time parsing complexity
+- Supports JSON, JavaScript, or TypeScript configs
+- Dynamic configs via JS/TS when needed
 
 **Alternatives considered:**
 
-- Separate config files (`expo-target.config.js`) → More boilerplate
-- JSON config only → No runtime API
+- Single file with AST parsing → Complex, error-prone
 - Code generation → Build complexity
+- Inline config in app.json → Not scalable
 
-### 2. AST Parsing vs Runtime Evaluation
+### 2. require() vs AST Parsing
 
-**Decision:** Parse configuration statically with Babel AST
+**Decision:** Load config files with Node's `require()`
 
 **Rationale:**
 
-- Extracts config without executing user code (security)
-- Allows dynamic values while maintaining build-time access
-- Supports TypeScript out of the box
+- Simple and reliable
+- Supports multiple formats (.json, .js, .ts)
+- Allows dynamic configuration
+- No custom parsing logic needed
 
-**Limitations:**
+**Benefits:**
 
-- Cannot evaluate computed values
-- No support for imports in config
+- Standard Node.js mechanism
+- TypeScript support via ts-node
+- Can use environment variables and computations
+- Less code to maintain
 
-**Trade-off:** Safety and build-time validation vs some flexibility
+**Trade-off:** Simpler implementation, more flexibility
 
 ### 3. App Groups for Data Sharing
 
@@ -987,7 +1020,7 @@ ios/
 
 ### Adding New Native Methods
 
-1. **Add Swift function** (`ios/ExpoTargetsModule.swift`):
+1. **Add Swift function** (`ios/ExpoTargetsStorageModule.swift` or `ios/ExpoTargetsExtensionModule.swift`):
 
    ```swift
    Function("yourMethod") { (param: String) -> String in
@@ -996,17 +1029,17 @@ ios/
    }
    ```
 
-2. **Add TypeScript binding** (`src/TargetStorage.ts`):
+2. **Add TypeScript binding** (`src/modules/storage/index.ts` or `src/modules/extension/index.ts`):
 
    ```typescript
    export function yourMethod(param: string): string {
-     return ExpoTargetsModule.yourMethod(param);
+     return ExpoTargetsStorageModule.yourMethod(param);
    }
    ```
 
 3. **Export from index** (`src/index.ts`):
    ```typescript
-   export { yourMethod } from './TargetStorage';
+   export { yourMethod } from './modules/storage';
    ```
 
 ### Adding New Plugins
@@ -1137,31 +1170,22 @@ packages/expo-targets/plugin/src/android/
 - Glance instead of WidgetKit
 - SharedPreferences instead of UserDefaults
 
-### Planned Features
+### Roadmap Features
 
-1. **`_shared` directory**: Reusable Swift code across targets
+1. **Live Activities**: iOS 16+ dynamic island support
 
-   ```
-   targets/
-   ├── _shared/
-   │   └── SharedViews.swift
-   └── widget-1/
-       └── ios/
-           └── Widget.swift  # Imports from _shared
-   ```
+2. **App Intents**: iOS 16+ interactive widgets
 
-2. **Live Activities**: iOS 16+ dynamic island support
+3. **Widget Configuration**: `IntentConfiguration` for user-customizable widgets
 
-3. **App Intents**: iOS 16+ interactive widgets
+4. **watchOS Support**: Apple Watch complications and apps
 
-4. **Widget Configuration**: `IntentConfiguration` for user-customizable widgets
-
-5. **watchOS Support**: Apple Watch complications and apps
-
-6. **Advanced Asset Types**:
+5. **Advanced Asset Types**:
    - Localized strings
    - Multiple icon sets
    - Symbol variations
+
+6. **Shared Code**: Reusable Swift code across targets
 
 ---
 
