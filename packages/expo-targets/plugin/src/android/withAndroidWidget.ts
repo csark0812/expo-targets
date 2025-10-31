@@ -1,0 +1,232 @@
+import {
+  ConfigPlugin,
+  AndroidConfig,
+  withAndroidManifest,
+  withDangerousMod,
+  withStringsXml,
+} from '@expo/config-plugins';
+import * as path from 'path';
+import * as fs from 'fs';
+import type { TargetConfig } from '../config';
+
+interface WidgetProps extends TargetConfig {
+  directory: string;
+}
+
+export const withAndroidWidget: ConfigPlugin<WidgetProps> = (config, props) => {
+  const androidConfig = props.android || {};
+  
+  // 1. Register ExpoTargetsReceiver in manifest (for refresh functionality)
+  config = withAndroidManifest(config, (manifestConfig) => {
+    const mainApplication = AndroidConfig.Manifest.getMainApplicationOrThrow(
+      manifestConfig.modResults
+    );
+    addExpoTargetsReceiver(mainApplication, config);
+    addWidgetReceiver(mainApplication, config, props);
+    return manifestConfig;
+  });
+  
+  // 2. Add description string if provided
+  if (androidConfig.description) {
+    config = withStringsXml(config, (stringsConfig) => {
+      stringsConfig.modResults = AndroidConfig.Strings.setStringItem(
+        [{
+          $: {
+            name: `widget_${props.name.toLowerCase()}_description`,
+            translatable: 'false',
+          },
+          _: androidConfig.description.replace(/'/g, "\\'"),
+        }],
+        stringsConfig.modResults
+      );
+      return stringsConfig;
+    });
+  }
+  
+  // 3. Generate resources and copy user code
+  config = withDangerousMod(config, [
+    'android',
+    (dangerousConfig) => {
+      const platformRoot = dangerousConfig.modRequest.platformProjectRoot;
+      generateWidgetResources(platformRoot, config, props);
+      copyUserCode(platformRoot, config, props);
+      copyUserResources(platformRoot, config, props);
+      return dangerousConfig;
+    },
+  ]);
+  
+  return config;
+};
+
+function addExpoTargetsReceiver(mainApplication: any, config: any) {
+  const packageName = config.android?.package;
+  if (!packageName) throw new Error('Android package name not found in app.json');
+  
+  mainApplication.receiver = mainApplication.receiver || [];
+  
+  const receiverName = 'expo.modules.targets.ExpoTargetsReceiver';
+  const alreadyAdded = mainApplication.receiver.some(
+    (r: any) => r.$['android:name'] === receiverName
+  );
+  
+  if (alreadyAdded) return;
+  
+  mainApplication.receiver.push({
+    '$': {
+      'android:name': receiverName,
+      'android:exported': 'false',
+    },
+    'intent-filter': [{
+      action: [{ $: { 'android:name': 'expo.modules.targets.WIDGET_EVENT' } }],
+    }],
+  });
+}
+
+function addWidgetReceiver(mainApplication: any, config: any, props: WidgetProps) {
+  const packageName = config.android?.package;
+  mainApplication.receiver = mainApplication.receiver || [];
+  
+  const widgetClassName = `${packageName}.widget.${props.name}`;
+  const alreadyAdded = mainApplication.receiver.some(
+    (r: any) => r.$['android:name'] === widgetClassName
+  );
+  
+  if (alreadyAdded) return;
+  
+  mainApplication.receiver.push({
+    '$': {
+      'android:name': widgetClassName,
+      'android:exported': 'true',
+      'android:label': props.displayName || props.name,
+    },
+    'intent-filter': [{
+      action: [{ $: { 'android:name': 'android.appwidget.action.APPWIDGET_UPDATE' } }],
+    }],
+    'meta-data': {
+      $: {
+        'android:name': 'android.appwidget.provider',
+        'android:resource': `@xml/widgetprovider_${props.name.toLowerCase()}`,
+      },
+    },
+  });
+}
+
+function generateWidgetResources(
+  platformRoot: string,
+  config: any,
+  props: WidgetProps
+) {
+  const androidConfig = props.android || {};
+  const xmlDir = path.join(platformRoot, 'app/src/main/res/xml');
+  fs.mkdirSync(xmlDir, { recursive: true });
+  
+  const widgetInfo = `<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="${androidConfig.minWidth || '180dp'}"
+    android:minHeight="${androidConfig.minHeight || '110dp'}"
+    android:resizeMode="${androidConfig.resizeMode || 'horizontal|vertical'}"
+    android:updatePeriodMillis="${androidConfig.updatePeriodMillis || 0}"
+    android:widgetCategory="${androidConfig.widgetCategory || 'home_screen'}"
+    android:initialLayout="@layout/widget_${props.name.toLowerCase()}"
+    ${androidConfig.previewImage ? `android:previewImage="@drawable/${props.name.toLowerCase()}_preview"` : ''}
+    ${androidConfig.description ? `android:description="@string/widget_${props.name.toLowerCase()}_description"` : ''}>
+</appwidget-provider>`;
+  
+  fs.writeFileSync(
+    path.join(xmlDir, `widgetprovider_${props.name.toLowerCase()}.xml`),
+    widgetInfo.trim()
+  );
+  
+  if (androidConfig.colors) {
+    generateColorResources(platformRoot, props, androidConfig.colors);
+  }
+}
+
+function copyUserCode(platformRoot: string, config: any, props: WidgetProps) {
+  const projectRoot = config._internal?.projectRoot || process.cwd();
+  const userAndroidDir = path.join(projectRoot, props.directory, 'android');
+  if (!fs.existsSync(userAndroidDir)) return;
+  
+  const packageName = config.android?.package;
+  const targetDir = path.join(
+    platformRoot,
+    'app/src/main/java',
+    ...packageName.split('.'),
+    'widget',
+    props.name.toLowerCase()
+  );
+  
+  fs.mkdirSync(targetDir, { recursive: true });
+  
+  const files = fs.readdirSync(userAndroidDir);
+  files.forEach(file => {
+    if (file.endsWith('.kt') || file.endsWith('.java')) {
+      fs.copyFileSync(
+        path.join(userAndroidDir, file),
+        path.join(targetDir, file)
+      );
+    }
+  });
+}
+
+function copyUserResources(platformRoot: string, config: any, props: WidgetProps) {
+  const projectRoot = config._internal?.projectRoot || process.cwd();
+  const userResDir = path.join(projectRoot, props.directory, 'android', 'res');
+  if (!fs.existsSync(userResDir)) return;
+  
+  const targetResDir = path.join(platformRoot, 'app/src/main/res');
+  
+  // Copy all resource directories (layout, drawable, values, etc.)
+  function copyRecursive(src: string, dest: string) {
+    if (!fs.existsSync(src)) return;
+    
+    if (fs.statSync(src).isDirectory()) {
+      fs.mkdirSync(dest, { recursive: true });
+      fs.readdirSync(src).forEach(item => {
+        copyRecursive(path.join(src, item), path.join(dest, item));
+      });
+    } else {
+      fs.copyFileSync(src, dest);
+    }
+  }
+  
+  copyRecursive(userResDir, targetResDir);
+}
+
+function generateColorResources(
+  platformRoot: string,
+  props: WidgetProps,
+  colors: Record<string, any>
+) {
+  const valuesDir = path.join(platformRoot, 'app/src/main/res/values');
+  const valuesNightDir = path.join(platformRoot, 'app/src/main/res/values-night');
+  
+  fs.mkdirSync(valuesDir, { recursive: true });
+  fs.mkdirSync(valuesNightDir, { recursive: true });
+  
+  const lightColors: string[] = [];
+  const darkColors: string[] = [];
+  
+  Object.entries(colors).forEach(([name, value]) => {
+    if (typeof value === 'string') {
+      lightColors.push(`    <color name="${name}">${value}</color>`);
+      darkColors.push(`    <color name="${name}">${value}</color>`);
+    } else if (value.light || value.dark) {
+      lightColors.push(`    <color name="${name}">${value.light || '#000000'}</color>`);
+      darkColors.push(`    <color name="${name}">${value.dark || value.light || '#FFFFFF'}</color>`);
+    }
+  });
+  
+  const lightXml = `<?xml version="1.0" encoding="utf-8"?>
+<resources>
+${lightColors.join('\n')}
+</resources>`;
+  
+  const darkXml = `<?xml version="1.0" encoding="utf-8"?>
+<resources>
+${darkColors.join('\n')}
+</resources>`;
+  
+  fs.writeFileSync(path.join(valuesDir, `colors_${props.name.toLowerCase()}.xml`), lightXml);
+  fs.writeFileSync(path.join(valuesNightDir, `colors_${props.name.toLowerCase()}.xml`), darkXml);
+}

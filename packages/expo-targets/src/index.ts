@@ -23,6 +23,10 @@ export {
 } from './modules/extension';
 export type { SharedData } from './modules/extension';
 
+// Capabilities API
+export { ExpoTargets } from './ExpoTargets';
+export type { Capabilities } from './ExpoTargets';
+
 // Config types
 export type {
   TargetConfig,

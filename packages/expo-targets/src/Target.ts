@@ -1,5 +1,6 @@
 import Constants from 'expo-constants';
 import { AppRegistry, ComponentProvider } from 'react-native';
+import { Platform } from 'react-native';
 
 import { Extension, type SharedData } from './modules/extension';
 import { AppGroupStorage, getTargetsConfigFromBundle } from './modules/storage';
@@ -124,7 +125,12 @@ export function createTarget<T extends ExtensionType = ExtensionType>(
     );
   }
 
-  const appGroup = getTargetAppGroup(targetName, config);
+  // For Android widgets, use target name as storage key if appGroup not provided
+  // For iOS, appGroup is required
+  let appGroup = getTargetAppGroup(targetName, config);
+  if (!appGroup && Platform.OS === 'android' && config.type === 'widget') {
+    appGroup = targetName; // Use target name as storage key for Android widgets
+  }
   if (!appGroup) {
     throw new Error(
       `App Group not configured for target "${targetName}". Add "appGroup" to your target config.`

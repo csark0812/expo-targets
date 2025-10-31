@@ -1,37 +1,45 @@
 import { requireNativeModule } from 'expo-modules-core';
+import { Platform } from 'react-native';
 
 const ExpoTargetsStorageModule = requireNativeModule('ExpoTargetsStorage');
 
 export class AppGroupStorage {
   constructor(private readonly appGroup: string) {}
+  
+  // On Android, use widgetName (appGroup) directly; on iOS, use appGroup as suite
+  private getStorageKey(): string {
+    return this.appGroup;
+  }
 
   set(key: string, value: any) {
+    const storageKey = this.getStorageKey();
     if (value === null || value === undefined) {
-      ExpoTargetsStorageModule.remove(key, this.appGroup);
+      ExpoTargetsStorageModule.remove(key, storageKey);
     } else if (typeof value === 'number') {
-      ExpoTargetsStorageModule.setInt(key, Math.floor(value), this.appGroup);
+      ExpoTargetsStorageModule.setInt(key, Math.floor(value), storageKey);
     } else if (typeof value === 'string') {
-      ExpoTargetsStorageModule.setString(key, value, this.appGroup);
+      ExpoTargetsStorageModule.setString(key, value, storageKey);
     } else if (typeof value === 'boolean') {
-      ExpoTargetsStorageModule.setInt(key, value ? 1 : 0, this.appGroup);
+      ExpoTargetsStorageModule.setInt(key, value ? 1 : 0, storageKey);
     } else if (Array.isArray(value)) {
       ExpoTargetsStorageModule.setString(
         key,
         JSON.stringify(value),
-        this.appGroup
+        storageKey
       );
     } else {
       ExpoTargetsStorageModule.setString(
         key,
         JSON.stringify(value),
-        this.appGroup
+        storageKey
       );
     }
   }
 
   get<T = any>(key: string): T | null {
     try {
-      const value = ExpoTargetsStorageModule.get(key, this.appGroup);
+      const storageKey = this.getStorageKey();
+      const value = ExpoTargetsStorageModule.get(key, storageKey);
       if (value === null || value === undefined) {
         return null;
       }
@@ -52,11 +60,13 @@ export class AppGroupStorage {
   }
 
   remove(key: string) {
-    ExpoTargetsStorageModule.remove(key, this.appGroup);
+    const storageKey = this.getStorageKey();
+    ExpoTargetsStorageModule.remove(key, storageKey);
   }
 
   clear() {
-    ExpoTargetsStorageModule.clearAll(this.appGroup);
+    const storageKey = this.getStorageKey();
+    ExpoTargetsStorageModule.clearAll(storageKey);
   }
 
   setData(data: Record<string, any>) {
@@ -67,7 +77,8 @@ export class AppGroupStorage {
 
   getData<T extends Record<string, any>>(): T {
     try {
-      const rawData = ExpoTargetsStorageModule.getAllData(this.appGroup);
+      const storageKey = this.getStorageKey();
+      const rawData = ExpoTargetsStorageModule.getAllData(storageKey);
       const parsedData: Record<string, any> = {};
 
       Object.entries(rawData).forEach(([key, value]) => {
@@ -91,7 +102,8 @@ export class AppGroupStorage {
 
   getKeys(): string[] {
     try {
-      return ExpoTargetsStorageModule.getAllKeys(this.appGroup);
+      const storageKey = this.getStorageKey();
+      return ExpoTargetsStorageModule.getAllKeys(storageKey);
     } catch (error) {
       console.warn('Failed to get all keys:', error);
       return [];
