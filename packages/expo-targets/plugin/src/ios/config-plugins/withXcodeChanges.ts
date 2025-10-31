@@ -87,6 +87,9 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
         mainAppSchemes.push(config.ios.bundleIdentifier);
       }
 
+      // Extract targets config to embed in Info.plist for runtime access
+      const targetsConfig = config.extra?.targets as any[] | undefined;
+
       const infoPlistContent = getTargetInfoPlistForType(
         props.type,
         props.infoPlist,
@@ -97,7 +100,8 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
             }
           : undefined,
         props.entry,
-        mainAppSchemes.length > 0 ? mainAppSchemes : undefined
+        mainAppSchemes.length > 0 ? mainAppSchemes : undefined,
+        targetsConfig
       );
       File.writeFileSafe(infoPlistPath, infoPlistContent);
       console.log(`[expo-targets] Generated Info.plist for ${targetName}`);

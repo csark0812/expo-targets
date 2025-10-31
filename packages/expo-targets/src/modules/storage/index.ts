@@ -113,3 +113,12 @@ export function clearSharedData(appGroup: string) {
   const storage = new AppGroupStorage(appGroup);
   storage.clear();
 }
+
+export function getTargetsConfigFromBundle(): any[] | null {
+  try {
+    return ExpoTargetsStorageModule.getTargetsConfig();
+  } catch (error) {
+    console.warn('Failed to read targets config from bundle:', error);
+    return null;
+  }
+}

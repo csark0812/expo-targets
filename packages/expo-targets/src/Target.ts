@@ -2,7 +2,7 @@ import Constants from 'expo-constants';
 import { AppRegistry, ComponentProvider } from 'react-native';
 
 import { Extension, type SharedData } from './modules/extension';
-import { AppGroupStorage } from './modules/storage';
+import { AppGroupStorage, getTargetsConfigFromBundle } from './modules/storage';
 import type {
   TargetConfig,
   ExtensionType,
@@ -25,16 +25,33 @@ export interface Target {
 
 function getTargetConfig(targetName: string): TargetConfig | null {
   const expoConfig = Constants.expoConfig;
-  if (!expoConfig) {
-    console.warn('Expo config not found');
-    return null;
+
+  // Try expo config first (works in main app)
+  let targets = (expoConfig?.extra?.targets as TargetConfig[]) || [];
+
+  // Fallback to Info.plist for extensions
+  if (targets.length === 0) {
+    const bundleTargets = getTargetsConfigFromBundle();
+    if (bundleTargets) {
+      console.log(
+        '[expo-targets] Loaded targets config from bundle Info.plist'
+      );
+      targets = bundleTargets as TargetConfig[];
+    } else {
+      console.warn(
+        '[expo-targets] No targets config found in expo config or bundle'
+      );
+      return null;
+    }
   }
 
-  const targets = (expoConfig.extra?.targets as TargetConfig[]) || [];
   const target = targets.find((t) => t.name === targetName);
 
   if (!target) {
-    console.warn(`Target "${targetName}" not found in expo config`);
+    console.warn(`[expo-targets] Target "${targetName}" not found`);
+    console.warn(
+      `[expo-targets] Available targets: ${targets.map((t) => t.name).join(', ')}`
+    );
     return null;
   }
 
@@ -76,7 +93,23 @@ export function createTarget(
   }
 
   if (componentFunc && 'entry' in config && config.entry) {
-    AppRegistry.registerComponent(targetName + 'Target', () => componentFunc);
+    let qualifiedComponent = componentFunc;
+
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        const { withDevTools } = require('expo/src/launch/withDevTools');
+        qualifiedComponent = withDevTools(componentFunc);
+      } catch (error) {
+        console.warn(
+          '[expo-targets] Could not load withDevTools, using component as-is'
+        );
+      }
+    }
+
+    AppRegistry.registerComponent(
+      targetName + 'Target',
+      () => qualifiedComponent
+    );
   }
 
   const appGroup = getTargetAppGroup(targetName, config);

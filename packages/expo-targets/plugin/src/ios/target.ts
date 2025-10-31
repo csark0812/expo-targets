@@ -310,7 +310,8 @@ export function getTargetInfoPlistForType(
     preprocessingFile?: string;
   },
   entry?: string,
-  mainAppSchemes?: string[]
+  mainAppSchemes?: string[],
+  targetsConfig?: any[]
 ): string {
   const typeCharacteristics = TYPE_CHARACTERISTICS[type];
   if (!typeCharacteristics) {
@@ -377,6 +378,15 @@ export function getTargetInfoPlistForType(
     basePlist.LSApplicationQueriesSchemes = allSchemes;
     console.log(
       `[expo-targets] Auto-injected LSApplicationQueriesSchemes: ${allSchemes.join(', ')}`
+    );
+  }
+
+  // Embed targets config for runtime access via expo-constants
+  // This makes Constants.expoConfig.extra.targets available in extensions
+  if (targetsConfig && targetsConfig.length > 0) {
+    basePlist.ExpoTargetsConfig = targetsConfig;
+    console.log(
+      `[expo-targets] Embedded ${targetsConfig.length} target(s) config in Info.plist`
     );
   }
 

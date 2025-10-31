@@ -78,6 +78,14 @@ public class ExpoTargetsStorageModule: Module {
         }
       }
     }
+
+    Function("getTargetsConfig") { () -> [[String: Any]]? in
+      // Read targets config from bundle's Info.plist
+      guard let config = Bundle.main.object(forInfoDictionaryKey: "ExpoTargetsConfig") as? [[String: Any]] else {
+        return nil
+      }
+      return config
+    }
   }
 }
 
