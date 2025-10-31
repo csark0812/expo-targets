@@ -537,6 +537,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
         {
           type: props.type,
           moduleName,
+          targetName: props.name,
           preprocessingFile: props.preprocessingFile,
           entry: props.entry,
         }

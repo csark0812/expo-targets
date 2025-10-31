@@ -1,19 +1,41 @@
 import UIKit
-import ExpoModulesCore
 import React
+import React_RCTAppDelegate
+import ReactAppDependencyProvider
 
-// Bridge delegate for app extensions (cannot use UIApplication.shared)
-private class ExtensionBridgeDelegate: NSObject, RCTBridgeDelegate {
-    func sourceURL(for bridge: RCTBridge) -> URL? {
+// Extension-compatible delegate using standard RCT pattern
+private class ExtensionReactDelegate: RCTDefaultReactNativeFactoryDelegate {
+    var bundleRoot: String
+
+    init(bundleRoot: String) {
+        self.bundleRoot = bundleRoot
+        super.init()
+    }
+
+    override func sourceURL(for bridge: RCTBridge) -> URL? {
+        bundleURL()
+    }
+
+    override func bundleURL() -> URL? {
         #if DEBUG
-        // Use RCTBundleURLProvider to dynamically detect Metro port
-        // Reads from RCT_METRO_PORT env var or defaults to 8081
-        // Uses target-specific bundle root
-        return RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "{{BUNDLE_ROOT}}")
+        let settings = RCTBundleURLProvider.sharedSettings()
+        settings.enableDev = true
+        settings.enableMinification = false
+
+        // Use target-specific bundle root with query parameter
+        if let bundleURL = settings.jsBundleURL(forBundleRoot: bundleRoot) {
+            if var components = URLComponents(url: bundleURL, resolvingAgainstBaseURL: false) {
+                components.queryItems = (components.queryItems ?? []) + [
+                    URLQueryItem(name: "target", value: "{{TARGET_NAME}}")
+                ]
+                return components.url ?? bundleURL
+            }
+            return bundleURL
+        }
+        return nil
         #else
         // In release, load from main bundle
         guard let bundleURL = Bundle.main.url(forResource: "main", withExtension: "jsbundle") else {
-            // Fallback: try to construct path to bundle
             return Bundle.main.url(forResource: "index", withExtension: "jsbundle")
         }
         return bundleURL
@@ -22,9 +44,10 @@ private class ExtensionBridgeDelegate: NSObject, RCTBridgeDelegate {
 }
 
 class ReactNativeViewController: UIViewController {
-    private var appBridge: RCTBridge?
-    private var bridgeDelegate: ExtensionBridgeDelegate?
-    private var rootView: RCTRootView?
+    private var reactNativeFactory: RCTReactNativeFactory?
+    private var reactNativeFactoryDelegate: RCTReactNativeFactoryDelegate?
+    private var rootView: UIView?
+    private var isCleanedUp = false
 
     // MARK: - Extension Data
 
@@ -32,61 +55,84 @@ class ReactNativeViewController: UIViewController {
 
     // MARK: - Lifecycle
 
+    deinit {
+        print("🧹 ReactNativeViewController deinit for {{TARGET_NAME}}")
+        cleanupAfterClose()
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        // Setup React Native immediately (don't wait for content)
-        setupReactNativeView()
+        // Set the contentScaleFactor for proper rendering
+        self.view.contentScaleFactor = UIScreen.main.scale
+        isCleanedUp = false
 
         {{LOAD_EXTENSION_DATA}}
     }
 
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        if isBeingDismissed {
+            cleanupAfterClose()
+        }
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        cleanupAfterClose()
+    }
+
     // MARK: - React Native Setup
 
-    private func setupReactNativeView() {
-        // Create bridge delegate for extensions (avoids UIApplication.shared)
-        bridgeDelegate = ExtensionBridgeDelegate()
+    private func setupReactNativeView(with sharedData: [String: Any]?) {
+        // Create delegate with target-specific bundle root
+        reactNativeFactoryDelegate = ExtensionReactDelegate(bundleRoot: "{{BUNDLE_ROOT}}")
+        reactNativeFactoryDelegate!.dependencyProvider = RCTAppDependencyProvider()
 
-        // Create bridge directly (extensions cannot use ExpoReactDelegate)
-        guard let delegate = bridgeDelegate else {
-            showError("Failed to create bridge delegate")
-            return
-        }
+        // Create factory using standard RCT pattern
+        reactNativeFactory = RCTReactNativeFactory(delegate: reactNativeFactoryDelegate!)
 
-        guard let bridge = RCTBridge(delegate: delegate, launchOptions: nil) else {
-            showError("Failed to create React Native bridge")
-            return
-        }
-        self.appBridge = bridge
+        // Capture current view properties
+        let currentBounds = self.view.bounds
+        let currentScale = UIScreen.main.scale
 
-        // Create root view
-        let rootView = RCTRootView(
-            bridge: bridge,
-            moduleName: "{{MODULE_NAME}}",
-            initialProperties: getInitialProperties()
+        var initialProps = sharedData ?? [:]
+
+        // Add screen metrics for React Native
+        initialProps["initialViewWidth"] = currentBounds.width
+        initialProps["initialViewHeight"] = currentBounds.height
+        initialProps["pixelRatio"] = currentScale
+        initialProps["fontScale"] = UIFont.preferredFont(forTextStyle: .body).pointSize / 17.0
+
+        // Create root view using factory
+        let rootView = reactNativeFactory!.rootViewFactory.view(
+            withModuleName: "{{MODULE_NAME}}",
+            initialProperties: initialProps
         )
 
-        rootView.backgroundColor = UIColor.clear
+        rootView.backgroundColor = .clear
         rootView.frame = view.bounds
-        rootView.autoresizingMask = [UIView.AutoresizingMask.flexibleWidth, UIView.AutoresizingMask.flexibleHeight]
+        rootView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
 
         view.addSubview(rootView)
         self.rootView = rootView
     }
 
-    private func updateReactNativeView() {
-        guard let rootView = self.rootView else { return }
+    private func cleanupAfterClose() {
+        if isCleanedUp { return }
+        isCleanedUp = true
 
-        // Update root view with new properties containing loaded content
-        rootView.appProperties = getInitialProperties()
-    }
+        // Remove React Native view and deallocate resources
+        view.subviews.forEach { subview in
+            if subview is RCTRootView {
+                subview.removeFromSuperview()
+            }
+        }
 
-    private func getInitialProperties() -> [String: Any] {
-        var props: [String: Any] = [:]
+        reactNativeFactory = nil
+        reactNativeFactoryDelegate = nil
 
-        {{INITIAL_PROPERTIES}}
-
-        return props
+        print("🧹 ReactNativeViewController cleaned up for {{TARGET_NAME}}")
     }
 
     // MARK: - Error Handling

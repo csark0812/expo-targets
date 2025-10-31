@@ -123,57 +123,54 @@ export function withTargetsMetro(
     );
   }
 
-  const originalGetTransformOptions =
-    metroConfig.transformer?.getTransformOptions;
-  const originalResolveRequest = metroConfig.resolver?.resolveRequest;
-
-  console.log(
-    `[expo-targets-metro] 🔧 Setting up custom resolver for target entry points...`
-  );
-
-  // Create a map for quick lookup of bundle roots to entry paths
-  const bundleRootMap = new Map<string, string>();
+  // Create a map for quick lookup of target names to bundle roots and entry paths
+  const targetMap = new Map<
+    string,
+    { bundleRoot: string; entryPath: string }
+  >();
   targetEntryPoints.forEach((target) => {
     // Calculate the bundle root that would be used in ReactNativeViewController
     // e.g., "./targets/rn-share/index.tsx" -> "targets/rn-share/index"
     const relativeEntry = path.relative(projectRoot, target.entryPath);
     const bundleRoot = relativeEntry.replace(/\.(tsx?|jsx?)$/, '');
-    bundleRootMap.set(bundleRoot, target.entryPath);
+
+    targetMap.set(target.targetName, {
+      bundleRoot,
+      entryPath: target.entryPath,
+    });
+
     console.log(
-      `[expo-targets-metro]   📌 Registered: "${bundleRoot}" -> "${target.entryPath}"`
+      `[expo-targets-metro]   📌 Registered: ${target.targetName} -> "${bundleRoot}"`
     );
   });
+
+  const originalGetTransformOptions =
+    metroConfig.transformer?.getTransformOptions;
+  const originalRewriteRequestUrl = metroConfig.server?.rewriteRequestUrl;
+
+  console.log(
+    `[expo-targets-metro] 🔧 Setting up URL rewriting for target entry points...`
+  );
 
   return {
     ...metroConfig,
     resolver: {
       ...metroConfig.resolver,
+      // Keep custom resolver for initial module resolution
       resolveRequest: (context, moduleName, platform) => {
-        // Log all module resolution attempts for targets
-        if (moduleName.includes('targets/')) {
-          console.log(
-            `[expo-targets-metro] 🔍 Resolving module: "${moduleName}" (platform: ${platform})`
-          );
-        }
-
-        // Check if this matches any of our registered bundle roots
+        // Check if module matches any target bundle root
         const normalizedModuleName = moduleName.replace(/^\.\//, '');
-        if (bundleRootMap.has(normalizedModuleName)) {
-          const resolvedPath = bundleRootMap.get(normalizedModuleName)!;
-          console.log(
-            `[expo-targets-metro] ✅ Resolved "${moduleName}" -> "${resolvedPath}"`
-          );
-          return {
-            type: 'sourceFile',
-            filePath: resolvedPath,
-          };
-        }
 
-        // Try to match as a prefix (in case extensions are added)
-        for (const [bundleRoot, entryPath] of bundleRootMap.entries()) {
-          if (normalizedModuleName.startsWith(bundleRoot)) {
+        for (const [
+          targetName,
+          { bundleRoot, entryPath },
+        ] of targetMap.entries()) {
+          if (
+            normalizedModuleName === bundleRoot ||
+            normalizedModuleName.startsWith(bundleRoot)
+          ) {
             console.log(
-              `[expo-targets-metro] ✅ Prefix matched "${moduleName}" -> "${entryPath}"`
+              `[expo-targets-metro] ✅ Resolved "${moduleName}" -> "${entryPath}"`
             );
             return {
               type: 'sourceFile',
@@ -183,11 +180,37 @@ export function withTargetsMetro(
         }
 
         // Fall back to default resolver
-        if (originalResolveRequest) {
-          return originalResolveRequest(context, moduleName, platform);
+        return context.resolveRequest(context, moduleName, platform);
+      },
+    },
+    server: {
+      ...metroConfig.server,
+      rewriteRequestUrl: (url: string) => {
+        // Apply original URL rewrite first
+        const rewrittenUrl = originalRewriteRequestUrl
+          ? originalRewriteRequestUrl(url)
+          : url;
+
+        // Check for target query parameter
+        const targetMatch = rewrittenUrl.match(/[?&]target=([^&]+)/);
+
+        if (targetMatch) {
+          const targetName = targetMatch[1];
+          const targetInfo = targetMap.get(targetName);
+
+          if (targetInfo) {
+            console.log(
+              `[expo-targets-metro] 🔄 Rewriting URL for target: ${targetName}`
+            );
+            // Keep the bundle root in the URL but flag it as a target bundle
+            return rewrittenUrl.replace(
+              'index.bundle',
+              `index.${targetName}.bundle`
+            );
+          }
         }
 
-        return context.resolveRequest(context, moduleName, platform);
+        return rewrittenUrl;
       },
     },
     transformer: {
@@ -219,11 +242,6 @@ export function withTargetsMetro(
           },
         };
       },
-    },
-    serializer: {
-      ...metroConfig.serializer,
-      // Don't override getModulesRunBeforeMainModule - let default behavior work
-      // This is needed for React Native polyfills like FormData, fetch, etc.
     },
   };
 }

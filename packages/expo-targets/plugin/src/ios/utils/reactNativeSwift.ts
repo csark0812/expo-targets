@@ -8,6 +8,7 @@ const TEMPLATES_DIR = path.join(__dirname, '..', 'templates');
 export interface ReactNativeViewControllerOptions {
   type: ExtensionType;
   moduleName: string;
+  targetName: string;
   preprocessingFile?: string;
   entry?: string;
 }
@@ -76,12 +77,13 @@ function getExtensionDataForType(
 
       return {
         properties: properties.join('\n    '),
-        loadMethod: `// Load shared content in background
+        loadMethod: `// Load shared content before creating React Native view
         Task {
             await loadSharedContent()
-            // Update React Native view with loaded content
+            // Create React Native view with loaded content
             await MainActor.run {
-                updateReactNativeView()
+                let sharedData = getSharedDataProps()
+                setupReactNativeView(with: sharedData)
             }
         }`,
         propsMethod:
@@ -122,7 +124,9 @@ function getExtensionDataForType(
 
       return {
         properties: properties.join('\n    '),
-        loadMethod: 'loadActionContent()',
+        loadMethod: `loadActionContent()
+        let actionData = getActionDataProps()
+        setupReactNativeView(with: actionData)`,
         propsMethod:
           loadMethodLines.join('\n') + '\n\n' + propsMethodLines.join('\n'),
       };
@@ -161,7 +165,9 @@ function getExtensionDataForType(
 
       return {
         properties: properties.join('\n    '),
-        loadMethod: 'loadClipContent()',
+        loadMethod: `loadClipContent()
+        let clipData = getClipDataProps()
+        setupReactNativeView(with: clipData)`,
         propsMethod:
           loadMethodLines.join('\n') + '\n\n' + propsMethodLines.join('\n'),
       };
@@ -171,7 +177,7 @@ function getExtensionDataForType(
       // For other types, no extension-specific data
       return {
         properties: '',
-        loadMethod: '// No extension data to load',
+        loadMethod: 'setupReactNativeView(with: nil)',
         propsMethod: '',
       };
   }
@@ -186,21 +192,6 @@ export function generateReactNativeViewController(
     options.preprocessingFile
   );
 
-  // Build initial properties
-  let initialProps = '';
-  if (extensionData.propsMethod) {
-    if (options.type === 'share') {
-      initialProps = `let sharedData = getSharedDataProps()
-        props.merge(sharedData) { (_, new) in new }`;
-    } else if (options.type === 'action') {
-      initialProps = `let actionData = getActionDataProps()
-        props.merge(actionData) { (_, new) in new }`;
-    } else if (options.type === 'clip') {
-      initialProps = `let clipData = getClipDataProps()
-        props.merge(clipData) { (_, new) in new }`;
-    }
-  }
-
   // Convert entry path to bundle root for Metro
   // e.g., "./targets/rn-share/index.tsx" -> "targets/rn-share/index"
   let bundleRoot = '.expo/.virtual-metro-entry';
@@ -210,13 +201,13 @@ export function generateReactNativeViewController(
       .replace(/\.(tsx?|jsx?)$/, ''); // Remove file extension
   }
 
-  // Replace placeholders
+  // Replace placeholders (use replaceAll to catch multiple occurrences)
   let result = baseTemplate
-    .replace('{{MODULE_NAME}}', options.moduleName)
-    .replace('{{BUNDLE_ROOT}}', bundleRoot)
+    .replace(/{{MODULE_NAME}}/g, options.moduleName)
+    .replace(/{{TARGET_NAME}}/g, options.targetName)
+    .replace(/{{BUNDLE_ROOT}}/g, bundleRoot)
     .replace('{{EXTENSION_DATA_PROPERTIES}}', extensionData.properties)
-    .replace('{{LOAD_EXTENSION_DATA}}', extensionData.loadMethod)
-    .replace('{{INITIAL_PROPERTIES}}', initialProps);
+    .replace('{{LOAD_EXTENSION_DATA}}', extensionData.loadMethod);
 
   // Add extension data methods if needed
   if (extensionData.propsMethod) {
