@@ -1,10 +1,23 @@
 import UIKit
 import ExpoModulesCore
 import React
+import Expo
+import ReactAppDependencyProvider
 
-// Bridge delegate for app extensions (cannot use UIApplication.shared)
-private class ExtensionBridgeDelegate: NSObject, RCTBridgeDelegate {
-    func sourceURL(for bridge: RCTBridge) -> URL? {
+// Extension-compatible delegate using Expo's infrastructure
+private class ExtensionReactDelegate: ExpoReactNativeFactoryDelegate {
+    var dependencyProvider: any RCTDependencyProvider
+
+    override init() {
+        self.dependencyProvider = RCTAppDependencyProvider()
+        super.init()
+    }
+
+    override func sourceURL(for bridge: RCTBridge) -> URL? {
+        bundleURL()
+    }
+
+    override func bundleURL() -> URL? {
         #if DEBUG
         // Use RCTBundleURLProvider to dynamically detect Metro port
         // Reads from RCT_METRO_PORT env var or defaults to 8081
@@ -19,12 +32,19 @@ private class ExtensionBridgeDelegate: NSObject, RCTBridgeDelegate {
         return bundleURL
         #endif
     }
+
+    override func newArchEnabled() -> Bool {
+        #if RCT_NEW_ARCH_ENABLED
+        return true
+        #else
+        return false
+        #endif
+    }
 }
 
 class ReactNativeViewController: UIViewController {
-    private var appBridge: RCTBridge?
-    private var bridgeDelegate: ExtensionBridgeDelegate?
-    private var rootView: RCTRootView?
+    private var reactNativeFactory: ExpoReactNativeFactory?
+    private var rootView: UIView?
 
     // MARK: - Extension Data
 
@@ -44,31 +64,22 @@ class ReactNativeViewController: UIViewController {
     // MARK: - React Native Setup
 
     private func setupReactNativeView() {
-        // Create bridge delegate for extensions (avoids UIApplication.shared)
-        bridgeDelegate = ExtensionBridgeDelegate()
+        // Use Expo's factory - gets new architecture automatically!
+        let delegate = ExtensionReactDelegate()
+        let factory = ExpoReactNativeFactory(delegate: delegate)
+        self.reactNativeFactory = factory
 
-        // Create bridge directly (extensions cannot use ExpoReactDelegate)
-        guard let delegate = bridgeDelegate else {
-            showError("Failed to create bridge delegate")
-            return
-        }
-
-        guard let bridge = RCTBridge(delegate: delegate, launchOptions: nil) else {
-            showError("Failed to create React Native bridge")
-            return
-        }
-        self.appBridge = bridge
-
-        // Create root view
-        let rootView = RCTRootView(
-            bridge: bridge,
+        // Create root view using factory (supports both architectures)
+        let rootView = factory.recreateRootView(
+            withBundleURL: nil,  // Uses delegate's bundleURL
             moduleName: "{{MODULE_NAME}}",
-            initialProperties: getInitialProperties()
+            initialProps: getInitialProperties(),
+            launchOptions: nil
         )
 
-        rootView.backgroundColor = UIColor.clear
+        rootView.backgroundColor = .clear
         rootView.frame = view.bounds
-        rootView.autoresizingMask = [UIView.AutoresizingMask.flexibleWidth, UIView.AutoresizingMask.flexibleHeight]
+        rootView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
 
         view.addSubview(rootView)
         self.rootView = rootView
