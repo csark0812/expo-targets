@@ -2,9 +2,9 @@
 
 **Last Updated:** January 2025
 
-## Project Status: ✅ PRODUCTION READY (iOS)
+## Project Status: ✅ PRODUCTION READY (iOS) | 🚧 BETA (Android Widgets)
 
-expo-targets is production-ready for iOS development with comprehensive support for widgets, App Clips, iMessage extensions, and share extensions.
+expo-targets is production-ready for iOS development with comprehensive support for widgets, App Clips, iMessage extensions, and share extensions. Android widget support is implemented and in beta testing.
 
 ---
 
@@ -22,10 +22,11 @@ expo-targets is production-ready for iOS development with comprehensive support 
 
 - **JSON Config**: `expo-target.config.json` files in `targets/*/`
 - **Config Loading**: Babel/require-based loading of .js/.ts/.json configs
-- **Type Definitions**: Complete `ExtensionType`, `IOSTargetConfig`, `TargetConfig`
-- **Platform Detection**: iOS/Android support (iOS implemented)
+- **Type Definitions**: Complete `ExtensionType`, `IOSTargetConfig`, `AndroidTargetConfig`, `TargetConfig`
+- **Platform Detection**: iOS/Android support
 - **Validation**: Build-time config validation
-- **App Group Inheritance**: Auto-inherit from main app if not specified
+- **Platform-Specific Config**: Separate `ios` and `android` sections for platform-specific options
+- **App Group Inheritance**: Auto-inherit from main app if not specified (iOS)
 
 ### ✅ iOS Plugin System (100%)
 
@@ -42,7 +43,20 @@ expo-targets is production-ready for iOS development with comprehensive support 
 - **Info.plist**: Type-specific generation with deep-merge for custom properties
 - **CocoaPods**: Integration ready
 
-### ✅ Native Swift Modules (100%)
+### ✅ Android Plugin System (Beta - Widgets Only)
+
+- **Target Discovery**: Same glob-based scanning as iOS
+- **Config Parsing**: Shared config system with iOS
+- **Manifest Manipulation**: Automatic receiver registration via `withAndroidManifest`
+- **Code Copying**: Kotlin files from `targets/*/android/` to package structure
+- **Resource Generation**: XML widget provider configs with all attributes
+- **Color Resources**: Automatic `values/colors_*.xml` generation with light/dark mode
+- **Layout Resources**: User-provided layout XML copying from `targets/*/android/res/`
+- **Widget Configuration**: Full `<appwidget-provider>` XML generation
+- **Broadcast Receivers**: Automatic `ExpoTargetsReceiver` registration
+- **Glance Support**: Modern Compose-based widgets (Android 12+)
+
+### ✅ Native iOS Modules (100%)
 
 - **ExpoTargetsStorage**: Full implementation
   - `setInt`, `setString`, `setObject`
@@ -54,6 +68,27 @@ expo-targets is production-ready for iOS development with comprehensive support 
   - `closeExtension()`
   - `openHostApp(path)`
   - `getSharedData()` - returns SharedData with text, url, images, etc.
+
+### ✅ Native Android Modules (100%)
+
+- **ExpoTargetsStorageModule**: Full implementation
+  - `setInt`, `setString`, `setObject`
+  - `get`, `remove`, `getAllKeys`, `getAllData`, `clearAll`
+  - `refreshTarget(name?)` - widget refresh via broadcast
+  - SharedPreferences-based storage
+
+- **ExpoTargetsExtensionModule**: Basic implementation
+  - Platform version detection
+  - Widget refresh functionality
+
+- **ExpoTargetsReceiver**: Broadcast receiver for widget updates
+  - `WIDGET_EVENT` action handling
+  - Multi-widget refresh support
+
+- **ExpoTargetsWidgetProvider**: Base class for user widgets
+  - Abstract widget provider
+  - SharedPreferences access helpers
+  - Lifecycle management
 
 ### ✅ TypeScript API (100%)
 
@@ -95,26 +130,27 @@ expo-targets is production-ready for iOS development with comprehensive support 
 
 ## Supported Extension Types
 
-| Type                   | iOS Status    | Plugin | Native Module | Docs | Example |
-| ---------------------- | ------------- | ------ | ------------- | ---- | ------- |
-| `widget`               | ✅ Production | ✅     | ✅            | ✅   | ✅      |
-| `clip`                 | ✅ Production | ✅     | ✅            | ✅   | ✅      |
-| `stickers`             | ✅ Production | ✅     | ✅            | ✅   | ✅      |
-| `share`                | ✅ Production | ✅     | ✅            | ✅   | ✅      |
-| `action`               | ✅ Ready      | ✅     | ✅            | ✅   | ❌      |
-| `safari`               | 📋 Config     | ✅     | ❌            | ⚠️   | ❌      |
-| `notification-content` | 📋 Config     | ✅     | ❌            | ⚠️   | ❌      |
-| `notification-service` | 📋 Config     | ✅     | ❌            | ⚠️   | ❌      |
-| `intent`               | 📋 Config     | ✅     | ❌            | ⚠️   | ❌      |
-| `intent-ui`            | 📋 Config     | ✅     | ❌            | ⚠️   | ❌      |
-| Others                 | 📋 Config     | ✅     | ❌            | ⚠️   | ❌      |
+| Type                   | iOS Status    | Android Status | Plugin | Native Module | Docs | Example |
+| ---------------------- | ------------- | -------------- | ------ | ------------- | ---- | ------- |
+| `widget`               | ✅ Production | 🚧 Beta        | ✅     | ✅            | ✅   | ✅      |
+| `clip`                 | ✅ Production | ❌ Not planned | ✅     | ✅            | ✅   | ✅      |
+| `stickers`             | ✅ Production | ❌ Not planned | ✅     | ✅            | ✅   | ✅      |
+| `share`                | ✅ Production | 📋 Planned     | ✅     | ✅            | ✅   | ✅      |
+| `action`               | ✅ Ready      | ❌ Not planned | ✅     | ✅            | ✅   | ❌      |
+| `safari`               | 📋 Config     | ❌ Not planned | ✅     | ❌            | ⚠️   | ❌      |
+| `notification-content` | 📋 Config     | 📋 Planned     | ✅     | ❌            | ⚠️   | ❌      |
+| `notification-service` | 📋 Config     | 📋 Planned     | ✅     | ❌            | ⚠️   | ❌      |
+| `intent`               | 📋 Config     | ❌ N/A         | ✅     | ❌            | ⚠️   | ❌      |
+| `intent-ui`            | 📋 Config     | ❌ N/A         | ✅     | ❌            | ⚠️   | ❌      |
+| Others                 | 📋 Config     | ❌ TBD         | ✅     | ❌            | ⚠️   | ❌      |
 
 **Legend:**
 
 - ✅ Production: Fully implemented with example
-- 📋 Config: Config system ready, no special native module needs
+- 🚧 Beta: Implemented, needs production testing
+- 📋 Config/Planned: Config system ready or future implementation planned
 - ⚠️ Partial: Some documentation exists
-- ❌ Not yet
+- ❌ Not yet/Not planned/N/A: Not implemented or not applicable to platform
 
 ---
 
@@ -149,18 +185,32 @@ expo-targets is production-ready for iOS development with comprehensive support 
 - 📋 Siri intents
 - 📋 Other extension types
 
-### Android (Coming Soon)
+### Android (Beta - Widgets Only)
+
+**Fully Implemented:**
+
+- ✅ Native modules (`ExpoTargetsStorageModule`, `ExpoTargetsExtensionModule`)
+- ✅ Widget plugin system (`withAndroidWidget`)
+- ✅ Manifest manipulation (receiver registration)
+- ✅ Resource generation (colors with light/dark mode, XML layouts)
+- ✅ SharedPreferences-based data sharing
+- ✅ Widget refresh mechanism (`ExpoTargetsReceiver`)
+- ✅ Base widget provider class (`ExpoTargetsWidgetProvider`)
+- ✅ Glance API support (modern widgets for Android 12+)
+- ✅ Example app with working widget (`widget-interactive`)
+- ✅ User code and resource copying from `targets/*/android/`
 
 **Architecture Ready:**
 
-- 📋 Config type system prepared
-- 📋 Plugin hooks defined
+- 📋 Config type system for all extension types
+- 📋 Plugin hooks defined for future extension types
 
 **Not Yet Implemented:**
 
-- ❌ Gradle manipulation
-- ❌ Native module
-- ❌ Asset generation
+- ❌ Share extensions
+- ❌ Other extension types (clip equivalents, etc.)
+- ❌ Comprehensive documentation
+- ❌ Production testing at scale
 
 ---
 
@@ -168,15 +218,20 @@ expo-targets is production-ready for iOS development with comprehensive support 
 
 ### Current
 
-1. **iOS Only**: Android not yet implemented
-2. **Swift Required**: Widget views must be written in Swift/SwiftUI
-3. **Release Only**: React Native extensions only work in Release builds
-4. **App Groups Required**: Data sharing requires proper App Group configuration
+1. **Android: Widgets Only**: Only widget type implemented for Android (share/clip/other types iOS-only)
+2. **Swift Required (iOS)**: iOS widget views must be written in Swift/SwiftUI
+3. **Kotlin/Glance Required (Android)**: Android widgets must be written in Kotlin with Glance/Compose
+4. **Release Only**: React Native extensions only work in Release builds
+5. **App Groups Required (iOS)**: iOS data sharing requires proper App Group configuration
+6. **SharedPreferences (Android)**: Android uses SharedPreferences for data sharing
 
 ### By Design
 
 1. **Build-time Config**: Configuration parsed during prebuild
-2. **External Swift Files**: Swift code lives in `targets/*/ios/`, not copied to `ios/`
+2. **External Native Files**:
+   - Swift code lives in `targets/*/ios/`
+   - Kotlin code lives in `targets/*/android/`
+   - Native code copied to platform directories during prebuild
 
 ---
 
@@ -244,12 +299,16 @@ expo-targets is production-ready for iOS development with comprehensive support 
 
 ### Phase 3: Android Implementation
 
-- [ ] Android plugin infrastructure
-- [ ] Gradle manipulation
-- [ ] Widget implementation
-- [ ] Glance support
-- [ ] Asset generation
-- [ ] Data sharing
+- [x] Android plugin infrastructure
+- [x] Gradle/Manifest manipulation
+- [x] Widget implementation (beta)
+- [x] Glance support
+- [x] Asset generation (colors, layouts)
+- [x] Data sharing (SharedPreferences)
+- [ ] Share extension implementation
+- [ ] Notification extension implementation
+- [ ] Production testing and refinement
+- [ ] Comprehensive Android documentation
 
 ### Phase 4: Advanced Features
 
@@ -287,19 +346,23 @@ expo-targets is production-ready for iOS development with comprehensive support 
 ### ✅ Achieved
 
 - Can create targets via CLI (all types)
-- Prebuild generates working Xcode project
-- Widgets, clips, iMessage, share extensions compile and run
-- Data sharing works between app and extensions
-- Extensions update when app calls `refresh()`
+- Prebuild generates working Xcode project (iOS)
+- Prebuild generates working Android manifest/resources (Android widgets)
+- Widgets, clips, iMessage, share extensions compile and run (iOS)
+- Android widgets compile and run with Glance API
+- Data sharing works between app and extensions (iOS: App Groups, Android: SharedPreferences)
+- Extensions update when app calls `refresh()` (iOS and Android)
 - Type definitions provide full IDE autocomplete
-- Colors and assets generate correctly
-- 5 complete example apps
-- React Native works in extensions
-- Extension lifecycle functions work
+- Colors and assets generate correctly (iOS and Android)
+- 5 complete example apps (iOS full support, Android widget example ready)
+- React Native works in extensions (iOS only)
+- Extension lifecycle functions work (iOS)
 
 ### 🎯 Next Priority
 
-- Action extension example app
+- Android widget production testing
+- Android widget documentation
+- Action extension example app (iOS)
 - Unit and integration tests
 - npm package publishing
 - CI/CD automation
@@ -308,24 +371,31 @@ expo-targets is production-ready for iOS development with comprehensive support 
 
 ## Next Steps (Priority Order)
 
-1. **Action Extension Example**
+1. **Android Widget Completion**
+   - [ ] Production testing on multiple Android versions
+   - [ ] Document Android widget setup and development
+   - [ ] Test widget refresh mechanism in production
+   - [ ] Performance optimization and best practices
+
+2. **Action Extension Example (iOS)**
    - [ ] Create action extension demo app
    - [ ] Test React Native in action extension
    - [ ] Document action extension patterns
 
-2. **Testing Infrastructure**
+3. **Testing Infrastructure**
    - [ ] Unit tests for config parsing
-   - [ ] Integration tests for Xcode manipulation
-   - [ ] E2E tests for data sharing
+   - [ ] Integration tests for Xcode manipulation (iOS)
+   - [ ] Integration tests for Android manifest manipulation
+   - [ ] E2E tests for data sharing (iOS and Android)
 
-3. **Publishing Preparation**
+4. **Publishing Preparation**
    - [ ] npm organization setup
    - [ ] Release automation scripts
    - [ ] GitHub Actions CI/CD
    - [ ] Issue and PR templates
    - [ ] Version 1.0.0 release
 
-4. **Community Readiness**
+5. **Community Readiness**
    - [ ] Contributing guide
    - [ ] Code of conduct
    - [ ] Video tutorials
@@ -346,26 +416,36 @@ expo-targets is production-ready for iOS development with comprehensive support 
 
 ## Conclusion
 
-expo-targets has achieved its **primary goal**: enabling iOS extension development in Expo apps with a clean API. The implementation is production-ready for widgets, App Clips, iMessage stickers, and share extensions.
+expo-targets has achieved its **primary goal**: enabling iOS extension development in Expo apps with a clean API. The implementation is production-ready for widgets, App Clips, iMessage stickers, and share extensions. Android widget support is implemented and in beta testing.
 
 **Ready for:**
 
 - ✅ Production iOS extension development
+- ✅ Beta Android widget development
 - ✅ npm package publishing
 - ✅ Community adoption
 - ✅ Real-world usage
 
 **Needs work:**
 
-- Action extension example app
-- Android implementation
+- Android widget production testing and documentation
+- Action extension example app (iOS)
+- Android share/notification extension implementation
 - Automated testing infrastructure
 
-The foundation is solid with 5 comprehensive example apps demonstrating production patterns.
+The foundation is solid with 5 comprehensive example apps demonstrating production patterns across both iOS (full support) and Android (widget support).
 
 ---
 
 ## Version History
+
+- **v0.2.0** (January 2025): Android widget support (beta)
+  - Android widget implementation with Glance API
+  - Native Android modules (Storage, Extension, Receiver, WidgetProvider)
+  - Android plugin system with manifest manipulation
+  - SharedPreferences-based data sharing for Android
+  - Color resource generation for Android
+  - Widget example with Android support
 
 - **v0.1.0** (January 2025): Initial production-ready release
   - Complete iOS extension support (widget, clip, stickers, share, action)
