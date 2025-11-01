@@ -1,0 +1,52 @@
+# SwiftLint configuration for test code
+
+disabled_rules:
+  - line_length           # Tests can have longer descriptive names
+  - function_body_length  # Tests can be longer for thorough verification
+  - file_length          # Test files can be comprehensive
+  - type_body_length     # Test classes can have many test methods
+  - force_cast           # Sometimes needed in tests for clarity
+  - force_try            # Acceptable in test setup/teardown
+
+opt_in_rules:
+  - empty_count
+  - explicit_init
+  - first_where
+  - sorted_imports
+  - vertical_whitespace_closing_braces
+  - vertical_whitespace_opening_braces
+
+excluded:
+  - Pods
+  - build
+  - .build
+
+# Custom rule adjustments for tests
+function_parameter_count:
+  warning: 8
+  error: 10
+
+nesting:
+  type_level:
+    warning: 3
+
+identifier_name:
+  min_length:
+    warning: 1
+  excluded:
+    - i
+    - j
+    - k
+    - id
+    - url
+    - URL
+
+# Test-specific naming
+test_case_accessibility:
+  allowed_prefixes:
+    - test
+
+# Cyclomatic complexity - more lenient for tests
+cyclomatic_complexity:
+  warning: 15
+  error: 20
