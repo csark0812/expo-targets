@@ -166,7 +166,6 @@ export type IOSTargetConfig =
   | IOSTargetConfigNativeOnly;
 
 export interface AndroidTargetConfig {
-  resourceName?: string;
   minSdkVersion?: number;
   minWidth?: `${number}dp`;
   minHeight?: `${number}dp`;

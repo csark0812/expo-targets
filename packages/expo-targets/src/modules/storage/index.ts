@@ -1,37 +1,43 @@
-import { requireNativeModule } from 'expo-modules-core';
-
-const ExpoTargetsStorageModule = requireNativeModule('ExpoTargetsStorage');
+import ExpoTargetsStorageModule from '../ExpoTargetsStorageModule';
 
 export class AppGroupStorage {
   constructor(private readonly appGroup: string) {}
 
-  set(key: string, value: any) {
+  // On Android, use widgetName (appGroup) directly; on iOS, use appGroup as suite
+  // The wrapper module handles platform differences
+  private getStorageKey(): string {
+    return this.appGroup;
+  }
+
+  async set(key: string, value: any): Promise<void> {
+    const storageKey = this.getStorageKey();
     if (value === null || value === undefined) {
-      ExpoTargetsStorageModule.remove(key, this.appGroup);
+      await ExpoTargetsStorageModule.remove(key, storageKey);
     } else if (typeof value === 'number') {
-      ExpoTargetsStorageModule.setInt(key, Math.floor(value), this.appGroup);
+      await ExpoTargetsStorageModule.setInt(key, Math.floor(value), storageKey);
     } else if (typeof value === 'string') {
-      ExpoTargetsStorageModule.setString(key, value, this.appGroup);
+      await ExpoTargetsStorageModule.setString(key, value, storageKey);
     } else if (typeof value === 'boolean') {
-      ExpoTargetsStorageModule.setInt(key, value ? 1 : 0, this.appGroup);
+      await ExpoTargetsStorageModule.setInt(key, value ? 1 : 0, storageKey);
     } else if (Array.isArray(value)) {
-      ExpoTargetsStorageModule.setString(
+      await ExpoTargetsStorageModule.setString(
         key,
         JSON.stringify(value),
-        this.appGroup
+        storageKey
       );
     } else {
-      ExpoTargetsStorageModule.setString(
+      await ExpoTargetsStorageModule.setString(
         key,
         JSON.stringify(value),
-        this.appGroup
+        storageKey
       );
     }
   }
 
-  get<T = any>(key: string): T | null {
+  async get<T = any>(key: string): Promise<T | null> {
     try {
-      const value = ExpoTargetsStorageModule.get(key, this.appGroup);
+      const storageKey = this.getStorageKey();
+      const value = await ExpoTargetsStorageModule.get(key, storageKey);
       if (value === null || value === undefined) {
         return null;
       }
@@ -51,23 +57,26 @@ export class AppGroupStorage {
     }
   }
 
-  remove(key: string) {
-    ExpoTargetsStorageModule.remove(key, this.appGroup);
+  async remove(key: string): Promise<void> {
+    const storageKey = this.getStorageKey();
+    await ExpoTargetsStorageModule.remove(key, storageKey);
   }
 
-  clear() {
-    ExpoTargetsStorageModule.clearAll(this.appGroup);
+  async clear(): Promise<void> {
+    const storageKey = this.getStorageKey();
+    await ExpoTargetsStorageModule.clearAll(storageKey);
   }
 
-  setData(data: Record<string, any>) {
-    Object.entries(data).forEach(([key, value]) => {
-      this.set(key, value);
-    });
+  async setData(data: Record<string, any>): Promise<void> {
+    await Promise.all(
+      Object.entries(data).map(([key, value]) => this.set(key, value))
+    );
   }
 
-  getData<T extends Record<string, any>>(): T {
+  async getData<T extends Record<string, any>>(): Promise<T> {
     try {
-      const rawData = ExpoTargetsStorageModule.getAllData(this.appGroup);
+      const storageKey = this.getStorageKey();
+      const rawData = await ExpoTargetsStorageModule.getAllData(storageKey);
       const parsedData: Record<string, any> = {};
 
       Object.entries(rawData).forEach(([key, value]) => {
@@ -89,31 +98,40 @@ export class AppGroupStorage {
     }
   }
 
-  getKeys(): string[] {
+  async getKeys(): Promise<string[]> {
     try {
-      return ExpoTargetsStorageModule.getAllKeys(this.appGroup);
+      const storageKey = this.getStorageKey();
+      return await ExpoTargetsStorageModule.getAllKeys(storageKey);
     } catch (error) {
       console.warn('Failed to get all keys:', error);
       return [];
     }
   }
 
-  refresh(targetName?: string) {
-    ExpoTargetsStorageModule.refreshTarget(targetName);
+  /**
+   * Refresh a target/widget
+   * On iOS: Calls WidgetCenter.reloadTimelines or ControlCenter.reloadControls
+   * On Android: Triggers widget update via BroadcastReceiver
+   */
+  async refresh(targetName?: string): Promise<void> {
+    await ExpoTargetsStorageModule.refreshTarget(targetName);
   }
 }
 
-export function refreshAllTargets() {
-  ExpoTargetsStorageModule.refreshTarget(undefined);
+export async function refreshAllTargets(): Promise<void> {
+  await ExpoTargetsStorageModule.refreshTarget(undefined);
 }
 
-export function clearSharedData(appGroup: string) {
+export async function clearSharedData(appGroup: string): Promise<void> {
   const storage = new AppGroupStorage(appGroup);
-  storage.clear();
+  await storage.clear();
 }
 
 export function getTargetsConfigFromBundle(): any[] | null {
   try {
+    // iOS native module supports synchronous calls for this
+    // For Android, this will return null (no Info.plist equivalent)
+    // We use synchronous call to maintain compatibility with existing code
     return ExpoTargetsStorageModule.getTargetsConfig();
   } catch (error) {
     console.warn('Failed to read targets config from bundle:', error);

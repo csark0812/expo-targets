@@ -7,7 +7,7 @@ import {
 } from '@expo/config-plugins';
 import * as path from 'path';
 import * as fs from 'fs';
-import type { TargetConfig, Color } from '../config';
+import type { TargetConfig, AndroidTargetConfig, Color } from '../config';
 
 interface WidgetProps extends TargetConfig {
   directory: string;
@@ -15,7 +15,7 @@ interface WidgetProps extends TargetConfig {
 
 export const withAndroidWidget: ConfigPlugin<WidgetProps> = (config, props) => {
   const androidConfig = props.android || {};
-  
+
   // 1. Register ExpoTargetsReceiver in manifest (for refresh functionality)
   config = withAndroidManifest(config, (manifestConfig) => {
     const mainApplication = AndroidConfig.Manifest.getMainApplicationOrThrow(
@@ -25,7 +25,7 @@ export const withAndroidWidget: ConfigPlugin<WidgetProps> = (config, props) => {
     addWidgetReceiver(mainApplication, config, props);
     return manifestConfig;
   });
-  
+
   // 2. Add description string if provided
   if (androidConfig.description) {
     config = withStringsXml(config, (stringsConfig) => {
@@ -42,7 +42,7 @@ export const withAndroidWidget: ConfigPlugin<WidgetProps> = (config, props) => {
       return stringsConfig;
     });
   }
-  
+
   // 3. Generate resources and copy user code
   config = withDangerousMod(config, [
     'android',
@@ -54,23 +54,23 @@ export const withAndroidWidget: ConfigPlugin<WidgetProps> = (config, props) => {
       return dangerousConfig;
     },
   ]);
-  
+
   return config;
 };
 
 function addExpoTargetsReceiver(mainApplication: any, config: any) {
   const packageName = config.android?.package;
   if (!packageName) throw new Error('Android package name not found in app.json');
-  
+
   mainApplication.receiver = mainApplication.receiver || [];
-  
+
   const receiverName = 'expo.modules.targets.ExpoTargetsReceiver';
   const alreadyAdded = mainApplication.receiver.some(
     (r: any) => r.$['android:name'] === receiverName
   );
-  
+
   if (alreadyAdded) return;
-  
+
   mainApplication.receiver.push({
     '$': {
       'android:name': receiverName,
@@ -85,14 +85,14 @@ function addExpoTargetsReceiver(mainApplication: any, config: any) {
 function addWidgetReceiver(mainApplication: any, config: any, props: WidgetProps) {
   const packageName = config.android?.package;
   mainApplication.receiver = mainApplication.receiver || [];
-  
+
   const widgetClassName = `${packageName}.widget.${props.name}`;
   const alreadyAdded = mainApplication.receiver.some(
     (r: any) => r.$['android:name'] === widgetClassName
   );
-  
+
   if (alreadyAdded) return;
-  
+
   mainApplication.receiver.push({
     '$': {
       'android:name': widgetClassName,
@@ -102,12 +102,12 @@ function addWidgetReceiver(mainApplication: any, config: any, props: WidgetProps
     'intent-filter': [{
       action: [{ $: { 'android:name': 'android.appwidget.action.APPWIDGET_UPDATE' } }],
     }],
-    'meta-data': {
+    'meta-data': [{
       $: {
         'android:name': 'android.appwidget.provider',
         'android:resource': `@xml/widgetprovider_${props.name.toLowerCase()}`,
       },
-    },
+    }],
   });
 }
 
@@ -119,24 +119,57 @@ function generateWidgetResources(
   const androidConfig = props.android || {};
   const xmlDir = path.join(platformRoot, 'app/src/main/res/xml');
   fs.mkdirSync(xmlDir, { recursive: true });
-  
-  const widgetInfo = `<?xml version="1.0" encoding="utf-8"?>
+
+  // Extract configuration with defaults
+  const minWidth = androidConfig.minWidth || '180dp';
+  const minHeight = androidConfig.minHeight || '110dp';
+  const resizeMode = androidConfig.resizeMode || 'horizontal|vertical';
+  const updatePeriodMillis = androidConfig.updatePeriodMillis || 0;
+  const widgetCategory = androidConfig.widgetCategory || 'home_screen';
+  const layoutName = `widget_${props.name.toLowerCase()}`;
+
+  // Build XML with required attributes
+  let widgetInfo = `<?xml version="1.0" encoding="utf-8"?>
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:minWidth="${androidConfig.minWidth || '180dp'}"
-    android:minHeight="${androidConfig.minHeight || '110dp'}"
-    android:resizeMode="${androidConfig.resizeMode || 'horizontal|vertical'}"
-    android:updatePeriodMillis="${androidConfig.updatePeriodMillis || 0}"
-    android:widgetCategory="${androidConfig.widgetCategory || 'home_screen'}"
-    android:initialLayout="@layout/widget_${props.name.toLowerCase()}"
-    ${androidConfig.previewImage ? `android:previewImage="@drawable/${props.name.toLowerCase()}_preview"` : ''}
-    ${androidConfig.description ? `android:description="@string/widget_${props.name.toLowerCase()}_description"` : ''}>
-</appwidget-provider>`;
-  
+    android:minWidth="${minWidth}"
+    android:minHeight="${minHeight}"
+    android:resizeMode="${resizeMode}"
+    android:updatePeriodMillis="${updatePeriodMillis}"
+    android:widgetCategory="${widgetCategory}"
+    android:initialLayout="@layout/${layoutName}"`;
+
+  // Add optional attributes if provided
+  if (androidConfig.previewImage) {
+    widgetInfo += `\n    android:previewImage="@drawable/${props.name.toLowerCase()}_preview"`;
+  }
+
+  if (androidConfig.description) {
+    widgetInfo += `\n    android:description="@string/widget_${props.name.toLowerCase()}_description"`;
+  }
+
+  if (androidConfig.maxResizeWidth) {
+    widgetInfo += `\n    android:maxResizeWidth="${androidConfig.maxResizeWidth}"`;
+  }
+
+  if (androidConfig.maxResizeHeight) {
+    widgetInfo += `\n    android:maxResizeHeight="${androidConfig.maxResizeHeight}"`;
+  }
+
+  if (androidConfig.targetCellWidth) {
+    widgetInfo += `\n    android:targetCellWidth="${androidConfig.targetCellWidth}"`;
+  }
+
+  if (androidConfig.targetCellHeight) {
+    widgetInfo += `\n    android:targetCellHeight="${androidConfig.targetCellHeight}"`;
+  }
+
+  widgetInfo += `>\n</appwidget-provider>`;
+
   fs.writeFileSync(
     path.join(xmlDir, `widgetprovider_${props.name.toLowerCase()}.xml`),
-    widgetInfo.trim()
+    widgetInfo
   );
-  
+
   if (androidConfig.colors) {
     generateColorResources(platformRoot, props, androidConfig.colors);
   }
@@ -146,28 +179,25 @@ function copyUserCode(platformRoot: string, config: any, props: WidgetProps) {
   const projectRoot = config._internal?.projectRoot || process.cwd();
   const userAndroidDir = path.join(projectRoot, props.directory, 'android');
   if (!fs.existsSync(userAndroidDir)) return;
-  
+
   const packageName = config.android?.package;
   const targetDir = path.join(
     platformRoot,
     'app/src/main/java',
     ...packageName.split('.'),
-    'widget'
+    'widget',
+    props.name.toLowerCase()
   );
-  
+
   fs.mkdirSync(targetDir, { recursive: true });
-  
+
   const files = fs.readdirSync(userAndroidDir);
   files.forEach(file => {
     if (file.endsWith('.kt') || file.endsWith('.java')) {
-      const sourceFile = path.join(userAndroidDir, file);
-      const destFile = path.join(targetDir, file);
-      
-      // Read the file and replace the package name placeholder
-      let content = fs.readFileSync(sourceFile, 'utf8');
-      content = content.replace(/package\s+YOUR_PACKAGE_NAME/g, `package ${packageName}.widget`);
-      
-      fs.writeFileSync(destFile, content);
+      fs.copyFileSync(
+        path.join(userAndroidDir, file),
+        path.join(targetDir, file)
+      );
     }
   });
 }
@@ -176,13 +206,13 @@ function copyUserResources(platformRoot: string, config: any, props: WidgetProps
   const projectRoot = config._internal?.projectRoot || process.cwd();
   const userResDir = path.join(projectRoot, props.directory, 'android', 'res');
   if (!fs.existsSync(userResDir)) return;
-  
+
   const targetResDir = path.join(platformRoot, 'app/src/main/res');
-  
+
   // Copy all resource directories (layout, drawable, values, etc.)
   function copyRecursive(src: string, dest: string) {
     if (!fs.existsSync(src)) return;
-    
+
     if (fs.statSync(src).isDirectory()) {
       fs.mkdirSync(dest, { recursive: true });
       fs.readdirSync(src).forEach(item => {
@@ -192,24 +222,24 @@ function copyUserResources(platformRoot: string, config: any, props: WidgetProps
       fs.copyFileSync(src, dest);
     }
   }
-  
+
   copyRecursive(userResDir, targetResDir);
 }
 
 function generateColorResources(
   platformRoot: string,
   props: WidgetProps,
-  colors: Record<string, string | Color>
+  colors: Record<string, any>
 ) {
   const valuesDir = path.join(platformRoot, 'app/src/main/res/values');
   const valuesNightDir = path.join(platformRoot, 'app/src/main/res/values-night');
-  
+
   fs.mkdirSync(valuesDir, { recursive: true });
   fs.mkdirSync(valuesNightDir, { recursive: true });
-  
+
   const lightColors: string[] = [];
   const darkColors: string[] = [];
-  
+
   Object.entries(colors).forEach(([name, value]) => {
     if (typeof value === 'string') {
       lightColors.push(`    <color name="${name}">${value}</color>`);
@@ -219,19 +249,17 @@ function generateColorResources(
       darkColors.push(`    <color name="${name}">${value.dark || value.light || '#FFFFFF'}</color>`);
     }
   });
-  
-  if (lightColors.length === 0) return;
-  
+
   const lightXml = `<?xml version="1.0" encoding="utf-8"?>
 <resources>
 ${lightColors.join('\n')}
 </resources>`;
-  
+
   const darkXml = `<?xml version="1.0" encoding="utf-8"?>
 <resources>
 ${darkColors.join('\n')}
 </resources>`;
-  
+
   fs.writeFileSync(path.join(valuesDir, `colors_${props.name.toLowerCase()}.xml`), lightXml);
   fs.writeFileSync(path.join(valuesNightDir, `colors_${props.name.toLowerCase()}.xml`), darkXml);
 }

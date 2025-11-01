@@ -1,7 +1,4 @@
-import { requireNativeModule } from 'expo-modules-core';
-import { Platform } from 'react-native';
-
-const ExpoTargetsExtensionModule = requireNativeModule('ExpoTargetsExtension');
+import ExpoTargetsExtensionModule from './modules/ExpoTargetsExtensionModule';
 
 /**
  * Platform capabilities interface
@@ -18,16 +15,9 @@ export interface Capabilities {
  */
 export const ExpoTargets = {
   get capabilities(): Capabilities {
-    if (Platform.OS === 'android') {
-      return {
-        supportsGlance: ExpoTargetsExtensionModule.supportsGlance ?? false,
-        platformVersion: ExpoTargetsExtensionModule.platformVersion ?? 0,
-      };
-    }
-    // iOS doesn't expose these capabilities yet
     return {
-      supportsGlance: false,
-      platformVersion: 0,
+      supportsGlance: ExpoTargetsExtensionModule.supportsGlance,
+      platformVersion: ExpoTargetsExtensionModule.platformVersion,
     };
   },
 };

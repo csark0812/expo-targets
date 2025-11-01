@@ -1,5 +1,6 @@
 import Constants from 'expo-constants';
 import { AppRegistry, ComponentProvider } from 'react-native';
+import { Platform } from 'react-native';
 
 import { Extension, type SharedData } from './modules/extension';
 import { AppGroupStorage, getTargetsConfigFromBundle } from './modules/storage';
@@ -15,9 +16,9 @@ export interface BaseTarget {
   appGroup: string;
   storage: AppGroupStorage;
   config: TargetConfig;
-  setData(data: Record<string, any>): void;
-  getData<T extends Record<string, any>>(): T;
-  refresh(): void;
+  setData(data: Record<string, any>): Promise<void>;
+  getData<T extends Record<string, any>>(): Promise<T>;
+  refresh(): Promise<void>;
 }
 
 export interface ExtensionTarget extends BaseTarget {
@@ -43,8 +44,11 @@ function getTargetConfig(targetName: string): TargetConfig | null {
 
   // Fallback to Info.plist for extensions
   if (targets.length === 0) {
+    // Note: getTargetsConfigFromBundle is async but we can't make this function async
+    // So we'll handle it synchronously - iOS native module supports sync calls
+    try {
     const bundleTargets = getTargetsConfigFromBundle();
-    if (bundleTargets) {
+      if (bundleTargets && Array.isArray(bundleTargets)) {
       console.log(
         '[expo-targets] Loaded targets config from bundle Info.plist'
       );
@@ -52,6 +56,13 @@ function getTargetConfig(targetName: string): TargetConfig | null {
     } else {
       console.warn(
         '[expo-targets] No targets config found in expo config or bundle'
+        );
+        return null;
+      }
+    } catch (error) {
+      console.warn(
+        '[expo-targets] Failed to load targets config from bundle:',
+        error
       );
       return null;
     }
@@ -124,7 +135,12 @@ export function createTarget<T extends ExtensionType = ExtensionType>(
     );
   }
 
-  const appGroup = getTargetAppGroup(targetName, config);
+  // For Android widgets, use target name as storage key if appGroup not provided
+  // For iOS, appGroup is required
+  let appGroup = getTargetAppGroup(targetName, config);
+  if (!appGroup && Platform.OS === 'android' && config.type === 'widget') {
+    appGroup = targetName; // Use target name as storage key for Android widgets
+  }
   if (!appGroup) {
     throw new Error(
       `App Group not configured for target "${targetName}". Add "appGroup" to your target config.`
@@ -138,14 +154,14 @@ export function createTarget<T extends ExtensionType = ExtensionType>(
     appGroup,
     storage,
     config,
-    setData(data: Record<string, any>) {
-      storage.setData(data);
+    async setData(data: Record<string, any>): Promise<void> {
+      await storage.setData(data);
     },
-    getData<T extends Record<string, any>>(): T {
-      return storage.getData<T>();
+    async getData<T extends Record<string, any>>(): Promise<T> {
+      return await storage.getData<T>();
     },
-    refresh() {
-      storage.refresh(targetName);
+    async refresh(): Promise<void> {
+      await storage.refresh(targetName);
     },
   };
 
