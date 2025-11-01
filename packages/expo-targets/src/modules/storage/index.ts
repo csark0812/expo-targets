@@ -1,34 +1,32 @@
-import { requireNativeModule } from 'expo-modules-core';
-import { Platform } from 'react-native';
-
-const ExpoTargetsStorageModule = requireNativeModule('ExpoTargetsStorage');
+import ExpoTargetsStorageModule from './ExpoTargetsStorageModule';
 
 export class AppGroupStorage {
   constructor(private readonly appGroup: string) {}
   
   // On Android, use widgetName (appGroup) directly; on iOS, use appGroup as suite
+  // The wrapper module handles platform differences
   private getStorageKey(): string {
     return this.appGroup;
   }
 
-  set(key: string, value: any) {
+  async set(key: string, value: any): Promise<void> {
     const storageKey = this.getStorageKey();
     if (value === null || value === undefined) {
-      ExpoTargetsStorageModule.remove(key, storageKey);
+      await ExpoTargetsStorageModule.remove(key, storageKey);
     } else if (typeof value === 'number') {
-      ExpoTargetsStorageModule.setInt(key, Math.floor(value), storageKey);
+      await ExpoTargetsStorageModule.setInt(key, Math.floor(value), storageKey);
     } else if (typeof value === 'string') {
-      ExpoTargetsStorageModule.setString(key, value, storageKey);
+      await ExpoTargetsStorageModule.setString(key, value, storageKey);
     } else if (typeof value === 'boolean') {
-      ExpoTargetsStorageModule.setInt(key, value ? 1 : 0, storageKey);
+      await ExpoTargetsStorageModule.setInt(key, value ? 1 : 0, storageKey);
     } else if (Array.isArray(value)) {
-      ExpoTargetsStorageModule.setString(
+      await ExpoTargetsStorageModule.setString(
         key,
         JSON.stringify(value),
         storageKey
       );
     } else {
-      ExpoTargetsStorageModule.setString(
+      await ExpoTargetsStorageModule.setString(
         key,
         JSON.stringify(value),
         storageKey
@@ -36,10 +34,10 @@ export class AppGroupStorage {
     }
   }
 
-  get<T = any>(key: string): T | null {
+  async get<T = any>(key: string): Promise<T | null> {
     try {
       const storageKey = this.getStorageKey();
-      const value = ExpoTargetsStorageModule.get(key, storageKey);
+      const value = await ExpoTargetsStorageModule.get(key, storageKey);
       if (value === null || value === undefined) {
         return null;
       }
@@ -59,26 +57,26 @@ export class AppGroupStorage {
     }
   }
 
-  remove(key: string) {
+  async remove(key: string): Promise<void> {
     const storageKey = this.getStorageKey();
-    ExpoTargetsStorageModule.remove(key, storageKey);
+    await ExpoTargetsStorageModule.remove(key, storageKey);
   }
 
-  clear() {
+  async clear(): Promise<void> {
     const storageKey = this.getStorageKey();
-    ExpoTargetsStorageModule.clearAll(storageKey);
+    await ExpoTargetsStorageModule.clearAll(storageKey);
   }
 
-  setData(data: Record<string, any>) {
-    Object.entries(data).forEach(([key, value]) => {
-      this.set(key, value);
-    });
+  async setData(data: Record<string, any>): Promise<void> {
+    await Promise.all(
+      Object.entries(data).map(([key, value]) => this.set(key, value))
+    );
   }
 
-  getData<T extends Record<string, any>>(): T {
+  async getData<T extends Record<string, any>>(): Promise<T> {
     try {
       const storageKey = this.getStorageKey();
-      const rawData = ExpoTargetsStorageModule.getAllData(storageKey);
+      const rawData = await ExpoTargetsStorageModule.getAllData(storageKey);
       const parsedData: Record<string, any> = {};
 
       Object.entries(rawData).forEach(([key, value]) => {
@@ -100,33 +98,33 @@ export class AppGroupStorage {
     }
   }
 
-  getKeys(): string[] {
+  async getKeys(): Promise<string[]> {
     try {
       const storageKey = this.getStorageKey();
-      return ExpoTargetsStorageModule.getAllKeys(storageKey);
+      return await ExpoTargetsStorageModule.getAllKeys(storageKey);
     } catch (error) {
       console.warn('Failed to get all keys:', error);
       return [];
     }
   }
 
-  refresh(targetName?: string) {
-    ExpoTargetsStorageModule.refreshTarget(targetName);
+  async refresh(targetName?: string): Promise<void> {
+    await ExpoTargetsStorageModule.refreshTarget(targetName);
   }
 }
 
-export function refreshAllTargets() {
-  ExpoTargetsStorageModule.refreshTarget(undefined);
+export async function refreshAllTargets(): Promise<void> {
+  await ExpoTargetsStorageModule.refreshTarget(undefined);
 }
 
-export function clearSharedData(appGroup: string) {
+export async function clearSharedData(appGroup: string): Promise<void> {
   const storage = new AppGroupStorage(appGroup);
-  storage.clear();
+  await storage.clear();
 }
 
-export function getTargetsConfigFromBundle(): any[] | null {
+export async function getTargetsConfigFromBundle(): Promise<any[] | null> {
   try {
-    return ExpoTargetsStorageModule.getTargetsConfig();
+    return await ExpoTargetsStorageModule.getTargetsConfig();
   } catch (error) {
     console.warn('Failed to read targets config from bundle:', error);
     return null;

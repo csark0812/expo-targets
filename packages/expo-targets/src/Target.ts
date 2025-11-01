@@ -16,9 +16,9 @@ export interface BaseTarget {
   appGroup: string;
   storage: AppGroupStorage;
   config: TargetConfig;
-  setData(data: Record<string, any>): void;
-  getData<T extends Record<string, any>>(): T;
-  refresh(): void;
+  setData(data: Record<string, any>): Promise<void>;
+  getData<T extends Record<string, any>>(): Promise<T>;
+  refresh(): Promise<void>;
 }
 
 export interface ExtensionTarget extends BaseTarget {
@@ -144,14 +144,14 @@ export function createTarget<T extends ExtensionType = ExtensionType>(
     appGroup,
     storage,
     config,
-    setData(data: Record<string, any>) {
-      storage.setData(data);
+    async setData(data: Record<string, any>): Promise<void> {
+      await storage.setData(data);
     },
-    getData<T extends Record<string, any>>(): T {
-      return storage.getData<T>();
+    async getData<T extends Record<string, any>>(): Promise<T> {
+      return await storage.getData<T>();
     },
-    refresh() {
-      storage.refresh(targetName);
+    async refresh(): Promise<void> {
+      await storage.refresh(targetName);
     },
   };
 

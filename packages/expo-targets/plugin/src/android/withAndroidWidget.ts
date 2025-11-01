@@ -7,7 +7,7 @@ import {
 } from '@expo/config-plugins';
 import * as path from 'path';
 import * as fs from 'fs';
-import type { TargetConfig } from '../config';
+import type { TargetConfig, AndroidTargetConfig, Color } from '../config';
 
 interface WidgetProps extends TargetConfig {
   directory: string;
@@ -102,12 +102,12 @@ function addWidgetReceiver(mainApplication: any, config: any, props: WidgetProps
     'intent-filter': [{
       action: [{ $: { 'android:name': 'android.appwidget.action.APPWIDGET_UPDATE' } }],
     }],
-    'meta-data': {
+    'meta-data': [{
       $: {
         'android:name': 'android.appwidget.provider',
         'android:resource': `@xml/widgetprovider_${props.name.toLowerCase()}`,
       },
-    },
+    }],
   });
 }
 
@@ -120,21 +120,54 @@ function generateWidgetResources(
   const xmlDir = path.join(platformRoot, 'app/src/main/res/xml');
   fs.mkdirSync(xmlDir, { recursive: true });
   
-  const widgetInfo = `<?xml version="1.0" encoding="utf-8"?>
+  // Extract configuration with defaults
+  const minWidth = androidConfig.minWidth || '180dp';
+  const minHeight = androidConfig.minHeight || '110dp';
+  const resizeMode = androidConfig.resizeMode || 'horizontal|vertical';
+  const updatePeriodMillis = androidConfig.updatePeriodMillis || 0;
+  const widgetCategory = androidConfig.widgetCategory || 'home_screen';
+  const layoutName = `widget_${props.name.toLowerCase()}`;
+  
+  // Build XML with required attributes
+  let widgetInfo = `<?xml version="1.0" encoding="utf-8"?>
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:minWidth="${androidConfig.minWidth || '180dp'}"
-    android:minHeight="${androidConfig.minHeight || '110dp'}"
-    android:resizeMode="${androidConfig.resizeMode || 'horizontal|vertical'}"
-    android:updatePeriodMillis="${androidConfig.updatePeriodMillis || 0}"
-    android:widgetCategory="${androidConfig.widgetCategory || 'home_screen'}"
-    android:initialLayout="@layout/widget_${props.name.toLowerCase()}"
-    ${androidConfig.previewImage ? `android:previewImage="@drawable/${props.name.toLowerCase()}_preview"` : ''}
-    ${androidConfig.description ? `android:description="@string/widget_${props.name.toLowerCase()}_description"` : ''}>
-</appwidget-provider>`;
+    android:minWidth="${minWidth}"
+    android:minHeight="${minHeight}"
+    android:resizeMode="${resizeMode}"
+    android:updatePeriodMillis="${updatePeriodMillis}"
+    android:widgetCategory="${widgetCategory}"
+    android:initialLayout="@layout/${layoutName}"`;
+  
+  // Add optional attributes if provided
+  if (androidConfig.previewImage) {
+    widgetInfo += `\n    android:previewImage="@drawable/${props.name.toLowerCase()}_preview"`;
+  }
+  
+  if (androidConfig.description) {
+    widgetInfo += `\n    android:description="@string/widget_${props.name.toLowerCase()}_description"`;
+  }
+  
+  if (androidConfig.maxResizeWidth) {
+    widgetInfo += `\n    android:maxResizeWidth="${androidConfig.maxResizeWidth}"`;
+  }
+  
+  if (androidConfig.maxResizeHeight) {
+    widgetInfo += `\n    android:maxResizeHeight="${androidConfig.maxResizeHeight}"`;
+  }
+  
+  if (androidConfig.targetCellWidth) {
+    widgetInfo += `\n    android:targetCellWidth="${androidConfig.targetCellWidth}"`;
+  }
+  
+  if (androidConfig.targetCellHeight) {
+    widgetInfo += `\n    android:targetCellHeight="${androidConfig.targetCellHeight}"`;
+  }
+  
+  widgetInfo += `>\n</appwidget-provider>`;
   
   fs.writeFileSync(
     path.join(xmlDir, `widgetprovider_${props.name.toLowerCase()}.xml`),
-    widgetInfo.trim()
+    widgetInfo
   );
   
   if (androidConfig.colors) {

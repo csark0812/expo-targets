@@ -42,25 +42,42 @@ open class ExpoTargetsReceiver : BroadcastReceiver() {
     }
     
     private fun refreshWidgetViews(context: Context, widgetName: String?) {
-        // Trigger AppWidgetManager update for all instances of this widget
-        // Implementation depends on generated widget providers
-        if (widgetName != null) {
-            try {
-                val appWidgetManager = AppWidgetManager.getInstance(context)
-                val componentName = ComponentName(
-                    context.packageName,
-                    "${context.packageName}.widget.${widgetName}"
-                )
-                val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
-                if (appWidgetIds.isNotEmpty()) {
-                    appWidgetManager.notifyAppWidgetViewDataChanged(
-                        appWidgetIds,
-                        android.R.id.list
-                    )
-                }
-            } catch (e: Exception) {
-                // Widget provider may not exist yet, ignore
+        if (widgetName == null) {
+            android.util.Log.w("ExpoTargetsReceiver", "Widget name is null, cannot refresh")
+            return
+        }
+        
+        try {
+            val appWidgetManager = AppWidgetManager.getInstance(context)
+            val componentName = ComponentName(
+                context.packageName,
+                "${context.packageName}.widget.${widgetName}"
+            )
+            
+            val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+            
+            if (appWidgetIds.isEmpty()) {
+                android.util.Log.d("ExpoTargetsReceiver", "No widget instances found for $widgetName")
+                return
             }
+            
+            // Notify all widget instances to update
+            appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, android.R.id.list)
+            
+            // Also trigger update to force widget provider's onUpdate
+            for (appWidgetId in appWidgetIds) {
+                val updateIntent = Intent(context, componentName.javaClass).apply {
+                    action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(appWidgetId))
+                }
+                context.sendBroadcast(updateIntent)
+            }
+            
+            android.util.Log.d("ExpoTargetsReceiver", "Refreshed ${appWidgetIds.size} widget instance(s) for $widgetName")
+        } catch (e: ClassNotFoundException) {
+            android.util.Log.w("ExpoTargetsReceiver", "Widget provider not found for $widgetName: ${e.message}")
+        } catch (e: Exception) {
+            android.util.Log.e("ExpoTargetsReceiver", "Failed to refresh widget $widgetName", e)
         }
     }
 }
