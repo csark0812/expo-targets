@@ -108,6 +108,11 @@ export class AppGroupStorage {
     }
   }
 
+  /**
+   * Refresh a target/widget
+   * On iOS: Calls WidgetCenter.reloadTimelines or ControlCenter.reloadControls
+   * On Android: Triggers widget update via BroadcastReceiver
+   */
   async refresh(targetName?: string): Promise<void> {
     await ExpoTargetsStorageModule.refreshTarget(targetName);
   }
@@ -122,9 +127,19 @@ export async function clearSharedData(appGroup: string): Promise<void> {
   await storage.clear();
 }
 
-export async function getTargetsConfigFromBundle(): Promise<any[] | null> {
+export function getTargetsConfigFromBundle(): any[] | null {
   try {
-    return await ExpoTargetsStorageModule.getTargetsConfig();
+    // iOS native module supports synchronous calls for this
+    // For Android, this will return null (no Info.plist equivalent)
+    // We use synchronous call to maintain compatibility with existing code
+    const result = ExpoTargetsStorageModule.getTargetsConfig();
+    // Handle both sync and async returns
+    if (result instanceof Promise) {
+      // If it's a promise, return null for now (shouldn't happen on iOS)
+      console.warn('[expo-targets] getTargetsConfig returned a promise unexpectedly');
+      return null;
+    }
+    return result;
   } catch (error) {
     console.warn('Failed to read targets config from bundle:', error);
     return null;

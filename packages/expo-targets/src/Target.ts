@@ -44,15 +44,25 @@ function getTargetConfig(targetName: string): TargetConfig | null {
 
   // Fallback to Info.plist for extensions
   if (targets.length === 0) {
-    const bundleTargets = getTargetsConfigFromBundle();
-    if (bundleTargets) {
-      console.log(
-        '[expo-targets] Loaded targets config from bundle Info.plist'
-      );
-      targets = bundleTargets as TargetConfig[];
-    } else {
+    // Note: getTargetsConfigFromBundle is async but we can't make this function async
+    // So we'll handle it synchronously - iOS native module supports sync calls
+    try {
+      const bundleTargets = getTargetsConfigFromBundle();
+      if (bundleTargets && Array.isArray(bundleTargets)) {
+        console.log(
+          '[expo-targets] Loaded targets config from bundle Info.plist'
+        );
+        targets = bundleTargets as TargetConfig[];
+      } else {
+        console.warn(
+          '[expo-targets] No targets config found in expo config or bundle'
+        );
+        return null;
+      }
+    } catch (error) {
       console.warn(
-        '[expo-targets] No targets config found in expo config or bundle'
+        '[expo-targets] Failed to load targets config from bundle:',
+        error
       );
       return null;
     }

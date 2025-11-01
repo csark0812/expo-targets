@@ -65,13 +65,12 @@ open class ExpoTargetsReceiver : BroadcastReceiver() {
             appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, android.R.id.list)
             
             // Also trigger update to force widget provider's onUpdate
-            for (appWidgetId in appWidgetIds) {
-                val updateIntent = Intent(context, componentName.javaClass).apply {
-                    action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(appWidgetId))
-                }
-                context.sendBroadcast(updateIntent)
+            // Send a single broadcast for all widget IDs
+            val updateIntent = Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE).apply {
+                component = componentName
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds)
             }
+            context.sendBroadcast(updateIntent)
             
             android.util.Log.d("ExpoTargetsReceiver", "Refreshed ${appWidgetIds.size} widget instance(s) for $widgetName")
         } catch (e: ClassNotFoundException) {

@@ -113,22 +113,27 @@ const ExpoTargetsStorageModule = {
 
   /**
    * Refresh a target/widget
+   * On iOS: Synchronous call to WidgetCenter.reloadTimelines/ControlCenter.reloadControls
+   * On Android: Async call that triggers BroadcastReceiver
    */
   async refreshTarget(targetName: string | undefined): Promise<void> {
     if (Platform.OS === 'ios') {
-      await NativeModule.refreshTarget(targetName);
+      // iOS native module Function (synchronous) - but we keep async for consistency
+      NativeModule.refreshTarget(targetName);
     } else if (Platform.OS === 'android') {
-      // Android module signature: refreshTarget(targetName)
+      // Android module signature: refreshTarget(targetName) - AsyncFunction
       await NativeModule.refreshTarget(targetName);
     }
   },
 
   /**
    * Get targets config from bundle (iOS only)
+   * Note: iOS native module supports synchronous calls, so this can be sync
    */
-  async getTargetsConfig(): Promise<any[] | null> {
+  getTargetsConfig(): any[] | null {
     if (Platform.OS === 'ios') {
-      return await NativeModule.getTargetsConfig();
+      // iOS native module Function (not AsyncFunction) supports sync calls
+      return NativeModule.getTargetsConfig();
     }
     // Android doesn't have Info.plist equivalent
     return null;

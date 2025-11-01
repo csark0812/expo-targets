@@ -10,16 +10,16 @@ const NativeModule = requireNativeModule('ExpoTargetsExtension');
 const ExpoTargetsExtensionModule = {
   /**
    * Refresh a widget/target
+   * Note: For iOS, refresh is handled by StorageModule.refreshTarget
+   * This method is primarily for Android widgets
    */
   async refresh(widgetName: string): Promise<boolean> {
-    if (Platform.OS === 'ios') {
-      // iOS uses refreshTarget which calls WidgetCenter.reloadTimelines
-      await NativeModule.refreshTarget(widgetName);
-      return true;
-    } else if (Platform.OS === 'android') {
+    if (Platform.OS === 'android') {
       // Android module signature: refresh(widgetName)
       return await NativeModule.refresh(widgetName);
     }
+    // iOS refresh is handled via StorageModule.refreshTarget
+    // This method is not used on iOS
     return false;
   },
 
