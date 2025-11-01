@@ -26,11 +26,7 @@ const ExpoTargetsStorageModule = {
   /**
    * Set a string value
    */
-  async setString(
-    key: string,
-    value: string,
-    storageKey: string
-  ): Promise<void> {
+  async setString(key: string, value: string, storageKey: string): Promise<void> {
     if (Platform.OS === 'ios') {
       await NativeModule.setString(key, value, storageKey);
     } else if (Platform.OS === 'android') {
@@ -42,11 +38,7 @@ const ExpoTargetsStorageModule = {
   /**
    * Set an object value (serialized as JSON)
    */
-  async setObject(
-    key: string,
-    value: Record<string, any>,
-    storageKey: string
-  ): Promise<boolean> {
+  async setObject(key: string, value: Record<string, any>, storageKey: string): Promise<boolean> {
     if (Platform.OS === 'ios') {
       return await NativeModule.setObject(key, value, storageKey);
     } else if (Platform.OS === 'android') {

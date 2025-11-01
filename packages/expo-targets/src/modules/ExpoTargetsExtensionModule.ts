@@ -48,4 +48,3 @@ const ExpoTargetsExtensionModule = {
 };
 
 export default ExpoTargetsExtensionModule;
-

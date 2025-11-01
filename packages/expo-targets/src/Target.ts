@@ -47,15 +47,15 @@ function getTargetConfig(targetName: string): TargetConfig | null {
     // Note: getTargetsConfigFromBundle is async but we can't make this function async
     // So we'll handle it synchronously - iOS native module supports sync calls
     try {
-    const bundleTargets = getTargetsConfigFromBundle();
+      const bundleTargets = getTargetsConfigFromBundle();
       if (bundleTargets && Array.isArray(bundleTargets)) {
-      console.log(
-        '[expo-targets] Loaded targets config from bundle Info.plist'
-      );
-      targets = bundleTargets as TargetConfig[];
-    } else {
-      console.warn(
-        '[expo-targets] No targets config found in expo config or bundle'
+        console.log(
+          '[expo-targets] Loaded targets config from bundle Info.plist'
+        );
+        targets = bundleTargets as TargetConfig[];
+      } else {
+        console.warn(
+          '[expo-targets] No targets config found in expo config or bundle'
         );
         return null;
       }
