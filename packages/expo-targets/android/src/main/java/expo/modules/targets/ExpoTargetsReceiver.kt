@@ -45,25 +45,25 @@ open class ExpoTargetsReceiver : BroadcastReceiver() {
         if (widgetName == null) return
         
         // Trigger AppWidgetManager update for all instances of this widget
-        val appWidgetManager = AppWidgetManager.getInstance(context)
-        
-        // Find all widget provider classes and update matching ones
-        // This will be called by specific widget implementations
-        val packageName = context.packageName
         try {
-            // Attempt to find and trigger widget provider update
-            val componentName = ComponentName(context, "$packageName.widget.$widgetName")
+            val appWidgetManager = AppWidgetManager.getInstance(context)
+            val componentName = ComponentName(
+                context.packageName,
+                "${context.packageName}.widget.${widgetName}"
+            )
             val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
             
             if (appWidgetIds.isNotEmpty()) {
-                val updateIntent = Intent(context, Class.forName("$packageName.widget.$widgetName")).apply {
-                    action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds)
-                }
-                context.sendBroadcast(updateIntent)
+                // Notify the widget that its data has changed
+                // This will trigger onUpdate in the widget provider
+                appWidgetManager.notifyAppWidgetViewDataChanged(
+                    appWidgetIds,
+                    android.R.id.list
+                )
             }
         } catch (e: Exception) {
-            // Widget class not found or not yet generated - this is normal during initial setup
+            // Widget provider may not exist yet or widget not added to home screen
+            // This is normal during development, ignore silently
         }
     }
 }
