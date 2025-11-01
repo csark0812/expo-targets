@@ -2,6 +2,54 @@
 
 Complete API documentation for expo-targets.
 
+## Platform Capabilities
+
+### `ExpoTargets.capabilities`
+
+Query platform capabilities to detect Android version and feature support.
+
+**Signature:**
+
+```typescript
+interface Capabilities {
+  supportsGlance: boolean;
+  platformVersion: number;
+}
+
+const capabilities: Capabilities;
+```
+
+**Properties:**
+
+- `supportsGlance` (boolean): Whether the platform supports Glance (Android 13+/API 33+). Always `false` on iOS.
+- `platformVersion` (number): Platform version number. Android API level on Android, always `0` on iOS.
+
+**Example:**
+
+```typescript
+import { ExpoTargets } from 'expo-targets';
+
+const { supportsGlance, platformVersion } = ExpoTargets.capabilities;
+
+if (supportsGlance) {
+  console.log('Can use Glance API');
+} else {
+  console.log('Using legacy AppWidget');
+}
+
+console.log(`Running on Android API ${platformVersion}`);
+```
+
+**Platform Behavior:**
+
+| Platform     | `supportsGlance` | `platformVersion`       |
+| ------------ | ---------------- | ----------------------- |
+| iOS          | `false`          | `0`                     |
+| Android < 13 | `false`          | API level (e.g., 26-32) |
+| Android ≥ 13 | `true`           | API level (e.g., 33+)   |
+
+---
+
 ## Core Functions
 
 ### `createTarget(name)`

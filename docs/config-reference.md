@@ -35,32 +35,48 @@ your-app/
 
 ### Complete Property Table
 
-| Property                | Type       | Required    | Default            | Description                                |
-| ----------------------- | ---------- | ----------- | ------------------ | ------------------------------------------ |
-| **Root Level**          |
-| `type`                  | `string`   | ✅ Yes      | -                  | Extension type (widget, clip, share, etc.) |
-| `name`                  | `string`   | ✅ Yes      | -                  | Target identifier (PascalCase)             |
-| `platforms`             | `string[]` | ✅ Yes      | -                  | Supported platforms (["ios"])              |
-| `displayName`           | `string`   | ❌ Optional | `name` value       | Human-readable name for UI                 |
-| `appGroup`              | `string`   | ❌ Optional | Auto-inherited     | App Group for data sharing                 |
-| `entry`                 | `string`   | ❌ Optional | -                  | React Native entry file path               |
-| `excludedPackages`      | `string[]` | ❌ Optional | `[]`               | Packages to exclude from RN bundle         |
-| `ios`                   | `object`   | ❌ Optional | `{}`               | iOS-specific configuration                 |
-| `android`               | `object`   | ❌ Optional | `{}`               | Android-specific configuration             |
-| **iOS Platform**        |
-| `ios.deploymentTarget`  | `string`   | ❌ Optional | `"18.0"`           | Minimum iOS version                        |
-| `ios.bundleIdentifier`  | `string`   | ❌ Optional | Auto-generated     | Bundle ID (absolute or relative)           |
-| `ios.displayName`       | `string`   | ❌ Optional | Root `displayName` | Platform-specific display name             |
-| `ios.icon`              | `string`   | ❌ Optional | -                  | Path to icon file                          |
-| `ios.colors`            | `object`   | ❌ Optional | `{}`               | Named colors for Assets.xcassets           |
-| `ios.images`            | `object`   | ❌ Optional | `{}`               | Named images for Assets.xcassets           |
-| `ios.frameworks`        | `string[]` | ❌ Optional | Type defaults      | Additional frameworks to link              |
-| `ios.entitlements`      | `object`   | ❌ Optional | Type defaults      | Custom entitlements                        |
-| `ios.infoPlist`         | `object`   | ❌ Optional | Type defaults      | Custom Info.plist entries                  |
-| `ios.activationRules`   | `array`    | ❌ Optional | -                  | Share extension activation rules           |
-| `ios.preprocessingFile` | `string`   | ❌ Optional | -                  | Preprocessing JS for web content           |
-| `ios.stickerPacks`      | `array`    | ❌ Optional | -                  | iMessage sticker pack configuration        |
-| `ios.imessageAppIcon`   | `string`   | ❌ Optional | -                  | iMessage app icon path                     |
+| Property                     | Type       | Required    | Default                  | Description                                |
+| ---------------------------- | ---------- | ----------- | ------------------------ | ------------------------------------------ |
+| **Root Level**               |
+| `type`                       | `string`   | ✅ Yes      | -                        | Extension type (widget, clip, share, etc.) |
+| `name`                       | `string`   | ✅ Yes      | -                        | Target identifier (PascalCase)             |
+| `platforms`                  | `string[]` | ✅ Yes      | -                        | Supported platforms (["ios"])              |
+| `displayName`                | `string`   | ❌ Optional | `name` value             | Human-readable name for UI                 |
+| `appGroup`                   | `string`   | ❌ Optional | Auto-inherited           | App Group for data sharing                 |
+| `entry`                      | `string`   | ❌ Optional | -                        | React Native entry file path               |
+| `excludedPackages`           | `string[]` | ❌ Optional | `[]`                     | Packages to exclude from RN bundle         |
+| `ios`                        | `object`   | ❌ Optional | `{}`                     | iOS-specific configuration                 |
+| `android`                    | `object`   | ❌ Optional | `{}`                     | Android-specific configuration (widgets)   |
+| **iOS Platform**             |
+| `ios.deploymentTarget`       | `string`   | ❌ Optional | `"18.0"`                 | Minimum iOS version                        |
+| `ios.bundleIdentifier`       | `string`   | ❌ Optional | Auto-generated           | Bundle ID (absolute or relative)           |
+| `ios.displayName`            | `string`   | ❌ Optional | Root `displayName`       | Platform-specific display name             |
+| `ios.icon`                   | `string`   | ❌ Optional | -                        | Path to icon file                          |
+| `ios.colors`                 | `object`   | ❌ Optional | `{}`                     | Named colors for Assets.xcassets           |
+| `ios.images`                 | `object`   | ❌ Optional | `{}`                     | Named images for Assets.xcassets           |
+| `ios.frameworks`             | `string[]` | ❌ Optional | Type defaults            | Additional frameworks to link              |
+| `ios.entitlements`           | `object`   | ❌ Optional | Type defaults            | Custom entitlements                        |
+| `ios.infoPlist`              | `object`   | ❌ Optional | Type defaults            | Custom Info.plist entries                  |
+| `ios.activationRules`        | `array`    | ❌ Optional | -                        | Share extension activation rules           |
+| `ios.preprocessingFile`      | `string`   | ❌ Optional | -                        | Preprocessing JS for web content           |
+| `ios.stickerPacks`           | `array`    | ❌ Optional | -                        | iMessage sticker pack configuration        |
+| `ios.imessageAppIcon`        | `string`   | ❌ Optional | -                        | iMessage app icon path                     |
+| **Android Platform**         |
+| `android.minSdkVersion`      | `number`   | ❌ Optional | `26`                     | Minimum Android API level                  |
+| `android.minWidth`           | `string`   | ❌ Optional | `"180dp"`                | Minimum widget width                       |
+| `android.minHeight`          | `string`   | ❌ Optional | `"110dp"`                | Minimum widget height                      |
+| `android.targetCellWidth`    | `number`   | ❌ Optional | -                        | Target grid cell width                     |
+| `android.targetCellHeight`   | `number`   | ❌ Optional | -                        | Target grid cell height                    |
+| `android.maxResizeWidth`     | `string`   | ❌ Optional | -                        | Maximum resize width                       |
+| `android.maxResizeHeight`    | `string`   | ❌ Optional | -                        | Maximum resize height                      |
+| `android.updatePeriodMillis` | `number`   | ❌ Optional | `1800000`                | Update interval (30 min minimum)           |
+| `android.resizeMode`         | `string`   | ❌ Optional | `"horizontal\|vertical"` | Widget resize behavior                     |
+| `android.widgetCategory`     | `string`   | ❌ Optional | `"home_screen"`          | Widget category                            |
+| `android.previewImage`       | `string`   | ❌ Optional | -                        | Preview image resource                     |
+| `android.description`        | `string`   | ❌ Optional | -                        | Widget description                         |
+| `android.useGlance`          | `boolean`  | ❌ Optional | `true` (API 33+)         | Use Glance API vs legacy AppWidget         |
+| `android.colors`             | `object`   | ❌ Optional | `{}`                     | Named colors (snake_case)                  |
+| `android.permissions`        | `string[]` | ❌ Optional | `[]`                     | Required Android permissions               |
 
 ### Basic Schema Example
 
@@ -152,8 +168,8 @@ Array of supported platforms.
 
 **Available platforms:**
 
-- `"ios"` - iOS (implemented)
-- `"android"` - Android (coming soon)
+- `"ios"` - iOS
+- `"android"` - Android (widgets only)
 
 ---
 
@@ -623,6 +639,156 @@ Path to icon for iMessage app icon (only for `type: "stickers"`).
 
 ---
 
+## Android Platform Configuration
+
+### `android.minSdkVersion`
+
+**Type:** `number`
+
+Minimum Android API level for the widget.
+
+```json
+{
+  "android": {
+    "minSdkVersion": 26
+  }
+}
+```
+
+**Default:** `26` (Android 8.0 - required for AppWidget)
+
+**Note:** API 33+ (Android 13) recommended for Glance support
+
+### `android.minWidth` / `android.minHeight`
+
+**Type:** `string` (e.g., `"180dp"`)
+
+Minimum widget dimensions. Android launcher uses these to determine widget size.
+
+```json
+{
+  "android": {
+    "minWidth": "180dp",
+    "minHeight": "110dp"
+  }
+}
+```
+
+**Defaults:** `"180dp"` x `"110dp"` (small widget size)
+
+### `android.updatePeriodMillis`
+
+**Type:** `number`
+
+Widget update interval in milliseconds. Minimum is 30 minutes (1800000ms).
+
+```json
+{
+  "android": {
+    "updatePeriodMillis": 1800000
+  }
+}
+```
+
+**Default:** `1800000` (30 minutes)
+
+**Note:** For more frequent updates, use manual refresh via `widget.refresh()` from your app.
+
+### `android.resizeMode`
+
+**Type:** `"none"` | `"horizontal"` | `"vertical"` | `"horizontal|vertical"`
+
+Specifies how the widget can be resized on the home screen.
+
+```json
+{
+  "android": {
+    "resizeMode": "horizontal|vertical"
+  }
+}
+```
+
+**Default:** `"horizontal|vertical"`
+
+### `android.widgetCategory`
+
+**Type:** `"home_screen"` | `"keyguard"` | `"searchbox"`
+
+Where the widget can be placed.
+
+```json
+{
+  "android": {
+    "widgetCategory": "home_screen"
+  }
+}
+```
+
+**Default:** `"home_screen"`
+
+### `android.useGlance`
+
+**Type:** `boolean`
+
+Use modern Glance API (Android 13+) instead of legacy AppWidget.
+
+```json
+{
+  "android": {
+    "useGlance": true
+  }
+}
+```
+
+**Default:** `true` if `minSdkVersion >= 33`, otherwise `false`
+
+**Glance benefits:**
+
+- Jetpack Compose declarative UI
+- Better performance
+- Modern Android patterns
+
+### `android.colors`
+
+**Type:** `Record<string, string | Color>`
+
+Named colors using snake_case (Android convention).
+
+```json
+{
+  "android": {
+    "colors": {
+      "accent_color": { "light": "#007AFF", "dark": "#0A84FF" },
+      "background_color": { "light": "#FFFFFF", "dark": "#1C1C1E" }
+    }
+  }
+}
+```
+
+**Note:** Use snake_case (not PascalCase like iOS). Generates `res/values/colors.xml` and `res/values-night/colors.xml`.
+
+### `android.permissions`
+
+**Type:** `string[]`
+
+Android permissions required by the widget.
+
+```json
+{
+  "android": {
+    "permissions": ["android.permission.INTERNET"]
+  }
+}
+```
+
+**Common permissions:**
+
+- `"android.permission.INTERNET"` - Network access
+- `"android.permission.ACCESS_FINE_LOCATION"` - GPS location
+- `"android.permission.ACCESS_COARSE_LOCATION"` - Network location
+
+---
+
 ## Complete Examples
 
 ### Basic Widget
@@ -778,6 +944,56 @@ Path to icon for iMessage app icon (only for `type: "stickers"`).
     "deploymentTarget": "13.0",
     "activationRules": [{ "type": "url" }, { "type": "webpage" }],
     "preprocessingFile": "./preprocessing.js"
+  }
+}
+```
+
+### Android Widget
+
+```json
+{
+  "type": "widget",
+  "name": "WeatherWidget",
+  "displayName": "Weather",
+  "platforms": ["android"],
+  "appGroup": "group.com.yourapp",
+  "android": {
+    "minSdkVersion": 26,
+    "minWidth": "180dp",
+    "minHeight": "110dp",
+    "updatePeriodMillis": 1800000,
+    "resizeMode": "horizontal|vertical",
+    "widgetCategory": "home_screen",
+    "useGlance": true,
+    "colors": {
+      "accent_color": { "light": "#007AFF", "dark": "#0A84FF" },
+      "background_color": { "light": "#FFFFFF", "dark": "#1C1C1E" }
+    },
+    "permissions": ["android.permission.INTERNET"]
+  }
+}
+```
+
+### Cross-Platform Widget
+
+```json
+{
+  "type": "widget",
+  "name": "WeatherWidget",
+  "displayName": "Weather",
+  "platforms": ["ios", "android"],
+  "appGroup": "group.com.yourapp",
+  "ios": {
+    "deploymentTarget": "14.0",
+    "colors": {
+      "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" }
+    }
+  },
+  "android": {
+    "minSdkVersion": 26,
+    "colors": {
+      "accent_color": { "light": "#007AFF", "dark": "#0A84FF" }
+    }
   }
 }
 ```

@@ -5,10 +5,13 @@ This guide walks you through creating your first iOS widget with expo-targets, f
 ## Prerequisites
 
 - **Expo SDK 50+** (tested with Expo 52+)
-- **iOS development environment**:
+- **iOS development environment** (for iOS widgets):
   - macOS with Xcode 14+
   - Xcode Command Line Tools installed
-- **Device/Simulator**: iOS 14+ for widgets
+  - Device/Simulator: iOS 14+ for widgets
+- **Android development environment** (for Android widgets):
+  - Android Studio
+  - Android SDK 26+ (Android 8.0+)
 - **Package manager**: Bun or npm
 
 ## Installation
@@ -68,7 +71,7 @@ Prompts:
 
 - **Type**: Widget
 - **Name**: hello-widget
-- **Platforms**: iOS
+- **Platforms**: iOS, Android (or both)
 
 ### Option B: Manual Creation
 
@@ -391,6 +394,89 @@ helloWidget.getData<T>(): T
 // Lifecycle
 helloWidget.refresh(): void
 ```
+
+## Android Setup (Optional)
+
+### Create Android Widget Implementation
+
+If your widget supports Android, create `targets/hello-widget/android/HelloWidget.kt`:
+
+```kotlin
+package YOUR_PACKAGE_NAME.widget
+
+import android.content.Context
+import android.appwidget.AppWidgetManager
+import android.appwidget.AppWidgetProvider
+import android.widget.RemoteViews
+import org.json.JSONObject
+
+class HelloWidget : AppWidgetProvider() {
+    override fun onUpdate(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetIds: IntArray
+    ) {
+        appWidgetIds.forEach { widgetId ->
+            val prefs = context.getSharedPreferences("expo_targets_HelloWidget", Context.MODE_PRIVATE)
+            val message = prefs.getString("message", "No message")
+            val count = prefs.getInt("count", 0)
+
+            val views = RemoteViews(context.packageName, R.layout.hello_widget)
+            views.setTextViewText(R.id.message, message)
+            views.setTextViewText(R.id.count, count.toString())
+
+            appWidgetManager.updateAppWidget(widgetId, views)
+        }
+    }
+}
+```
+
+Add widget layout at `targets/hello-widget/android/res/layout/hello_widget.xml`:
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="12sp" />
+</LinearLayout>
+```
+
+### Check Platform Capabilities
+
+```typescript
+import { ExpoTargets } from 'expo-targets';
+
+// Check Android version and Glance support
+const { supportsGlance, platformVersion } = ExpoTargets.capabilities;
+
+if (supportsGlance) {
+  console.log('Running on Android 13+ with Glance support');
+}
+console.log(`Android API level: ${platformVersion}`);
+```
+
+### Data Storage
+
+**Platform Differences:**
+
+- **iOS**: Uses App Groups (`UserDefaults`) for shared storage between app and widget
+- **Android**: Uses `SharedPreferences` (no special setup needed - widgets access app's storage automatically)
+
+The TypeScript API (`widget.set()`, `widget.get()`) works identically on both platforms.
 
 ## Step 6: Build and Deploy
 

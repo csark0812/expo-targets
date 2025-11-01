@@ -2,7 +2,7 @@
 
 Add iOS widgets, App Clips, iMessage stickers, share extensions, and other native extensions to your Expo app.
 
-> **Status**: Production-ready for iOS. Android support coming soon.
+> **Status**: Production-ready for iOS. Android widget support in beta.
 
 ## Features
 
@@ -58,7 +58,7 @@ Or manually create `targets/my-widget/expo-target.config.json`:
   "type": "widget",
   "name": "MyWidget",
   "displayName": "My Widget",
-  "platforms": ["ios"],
+  "platforms": ["ios", "android"],
   "appGroup": "group.com.yourcompany.yourapp",
   "ios": {
     "deploymentTarget": "14.0",
