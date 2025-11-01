@@ -8,19 +8,19 @@ class ExpoTargetsExtensionModule : Module() {
         Name("ExpoTargetsExtension")
         
         Constants {
-            mapOf(
-                "supportsGlance" to (android.os.Build.VERSION.SDK_INT >= 33),
-                "platformVersion" to android.os.Build.VERSION.SDK_INT
-            )
+            "supportsGlance" to (android.os.Build.VERSION.SDK_INT >= 33)
+            "platformVersion" to android.os.Build.VERSION.SDK_INT
         }
         
         AsyncFunction("refresh") { widgetName: String ->
-            try {
-                ExpoTargetsReceiver.refreshWidget(appContext.reactContext!!, widgetName)
-                return@AsyncFunction true
-            } catch (e: Exception) {
-                throw Exception("Failed to refresh widget: ${e.message}")
-            }
+            appContext.reactContext?.let { context ->
+                try {
+                    ExpoTargetsReceiver.refreshWidget(context, widgetName)
+                    return@AsyncFunction true
+                } catch (e: Exception) {
+                    throw Exception("Failed to refresh widget: ${e.message}")
+                }
+            } ?: throw Exception("React context not available")
         }
     }
 }

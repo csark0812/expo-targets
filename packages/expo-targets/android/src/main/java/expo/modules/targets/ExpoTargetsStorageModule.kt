@@ -61,7 +61,13 @@ class ExpoTargetsStorageModule : Module() {
         
         AsyncFunction("refreshTarget") { targetName: String? ->
             if (targetName != null) {
-                ExpoTargetsReceiver.refreshWidget(appContext.reactContext!!, targetName)
+                try {
+                    appContext.reactContext?.let { context ->
+                        ExpoTargetsReceiver.refreshWidget(context, targetName)
+                    }
+                } catch (e: Exception) {
+                    // Silently ignore - widget may not be added to home screen yet
+                }
             }
         }
         

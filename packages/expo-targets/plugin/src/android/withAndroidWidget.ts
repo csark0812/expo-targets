@@ -7,7 +7,7 @@ import {
 } from '@expo/config-plugins';
 import * as path from 'path';
 import * as fs from 'fs';
-import type { TargetConfig } from '../config';
+import type { TargetConfig, Color } from '../config';
 
 interface WidgetProps extends TargetConfig {
   directory: string;
