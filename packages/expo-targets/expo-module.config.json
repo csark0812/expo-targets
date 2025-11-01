@@ -4,6 +4,9 @@
     "modules": ["ExpoTargetsStorageModule", "ExpoTargetsExtensionModule"]
   },
   "android": {
-    "modules": []
+    "modules": [
+      "expo.modules.targets.ExpoTargetsExtensionModule",
+      "expo.modules.targets.ExpoTargetsStorageModule"
+    ]
   }
 }

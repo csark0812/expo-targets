@@ -4,6 +4,7 @@ import { globSync } from 'glob';
 import path from 'path';
 
 import { withIOSTarget } from './ios/config-plugins/withIOSTarget';
+import { withAndroidTarget } from './android/withAndroidTarget';
 
 export const withTargetsDir: ConfigPlugin<{
   targetsRoot?: string;
@@ -84,9 +85,10 @@ export const withTargetsDir: ConfigPlugin<{
     }
 
     if (supportsAndroid && evaluatedConfig.android) {
-      console.warn(
-        `[expo-targets] Android support not yet implemented for ${targetDirName}`
-      );
+      config = withAndroidTarget(config, {
+        ...evaluatedConfig,
+        directory: targetDirectory,
+      });
     }
 
     // Store full config for runtime access (with resolved appGroup)

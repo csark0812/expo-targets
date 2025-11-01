@@ -167,6 +167,21 @@ export type IOSTargetConfig =
 
 export interface AndroidTargetConfig {
   resourceName?: string;
+  minSdkVersion?: number;
+  minWidth?: `${number}dp`;
+  minHeight?: `${number}dp`;
+  targetCellWidth?: number;
+  targetCellHeight?: number;
+  maxResizeWidth?: `${number}dp`;
+  maxResizeHeight?: `${number}dp`;
+  updatePeriodMillis?: number;
+  resizeMode?: 'none' | 'horizontal' | 'vertical' | 'horizontal|vertical';
+  widgetCategory?: 'home_screen' | 'keyguard' | 'searchbox';
+  previewImage?: string;
+  description?: string;
+  useGlance?: boolean;
+  colors?: Record<string, string | Color>;
+  permissions?: string[];
 }
 
 // Base config shared by all targets
