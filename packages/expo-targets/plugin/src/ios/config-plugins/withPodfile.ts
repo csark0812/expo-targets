@@ -69,10 +69,8 @@ export const withTargetPodfile: ConfigPlugin<{
             deploymentTarget: props.deploymentTarget,
           });
 
-      props.logger.logSparse(
-        true,
-        `Updated Podfile`,
-        `${props.standalone ? 'standalone' : 'React Native'} target: ${props.targetName}`
+      props.logger.log(
+        `Updated Podfile for ${props.standalone ? 'standalone' : 'React Native'} target: ${props.targetName}`
       );
 
       // Insert target block into Podfile

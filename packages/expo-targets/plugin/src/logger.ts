@@ -1,10 +1,10 @@
+import chalk from 'chalk';
+
 // Module-level flag to prevent duplicate "Found X target(s)" logs
 let hasLoggedTargetCount = false;
 
 export class Logger {
   private debug: boolean;
-  private readonly GREEN = '\x1b[32m';
-  private readonly RESET = '\x1b[0m';
 
   constructor(debug: boolean = false) {
     this.debug = debug;
@@ -34,8 +34,9 @@ export class Logger {
     }
 
     if (!this.debug) {
-      const symbol = success ? `${this.GREEN}✔${this.RESET}` : '✖';
-      const detailStr = detail ? ` | ${detail}` : '';
+      // Match Expo's style: green checkmark + message + dimmed detail
+      const symbol = success ? chalk.green('✔') : '✖';
+      const detailStr = detail ? chalk.dim(` | ${detail}`) : '';
       console.log(`${symbol} ${message}${detailStr}`);
     } else {
       console.log(`[expo-targets] ${message}${detail ? ` - ${detail}` : ''}`);

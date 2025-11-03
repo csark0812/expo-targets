@@ -7,11 +7,6 @@ struct CounterEntry: TimelineEntry {
     let label: String?
 }
 
-struct CounterData: Codable {
-    let count: Int
-    let label: String?
-}
-
 struct Provider: TimelineProvider {
     let appGroup = "group.com.test.widgetshowcase"
 
@@ -32,13 +27,14 @@ struct Provider: TimelineProvider {
     }
 
     private func loadCounterEntry() -> CounterEntry {
-        guard let defaults = UserDefaults(suiteName: appGroup),
-              let jsonString = defaults.string(forKey: "CounterWidget:data"),
-              let jsonData = jsonString.data(using: .utf8),
-              let data = try? JSONDecoder().decode(CounterData.self, from: jsonData) else {
+        guard let defaults = UserDefaults(suiteName: appGroup) else {
             return CounterEntry(date: Date(), count: 0, label: nil)
         }
-        return CounterEntry(date: Date(), count: data.count, label: data.label)
+
+        let count = defaults.integer(forKey: "count")
+        let label = defaults.string(forKey: "label")
+
+        return CounterEntry(date: Date(), count: count, label: label)
     }
 }
 

@@ -38,11 +38,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     const targetProductName = Paths.sanitizeTargetName(targetName);
     const typeConfig = TYPE_CHARACTERISTICS[props.type];
 
-    props.logger.logSparse(
-      true,
-      `Adding Xcode target: ${targetName}`,
-      props.type
-    );
+    props.logger.log(`Adding Xcode target: ${targetName} (${props.type})`);
 
     const mainBundleId = config.ios?.bundleIdentifier;
     if (!mainBundleId) {
@@ -231,10 +227,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
           xcodeProject.hash.project.objects.PBXNativeTarget[existingTargetUuid],
       };
     } else {
-      props.logger.logSparse(
-        true,
-        `Created native target: ${targetProductName}`
-      );
+      props.logger.log(`Created native target: ${targetProductName}`);
 
       const targetType = typeConfig.targetType;
 
@@ -783,7 +776,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     }
     // 'none' embedType = no embedding configuration needed (e.g., watch apps)
 
-    props.logger.logSparse(true, `Configured ${targetName} target`);
+    props.logger.logSparse(true, `Configured target`, targetName);
 
     return config;
   });
