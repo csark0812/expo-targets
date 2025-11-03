@@ -76,6 +76,8 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       targetDirectory: props.directory,
     });
     if (!File.isFile(infoPlistPath)) {
+      props.logger.log(`Generating Info.plist for ${targetName}...`);
+
       // Extract URL schemes from expo config for auto-injection into extensions
       const mainAppSchemes: string[] = [];
       if (config.scheme) {
@@ -92,8 +94,22 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
         mainAppSchemes.push(config.ios.bundleIdentifier);
       }
 
+      if (mainAppSchemes.length > 0) {
+        props.logger.log(
+          `Extracted ${mainAppSchemes.length} URL scheme(s) from main app config`
+        );
+        props.logger.log(
+          `Auto-injecting LSApplicationQueriesSchemes: ${mainAppSchemes.join(', ')}`
+        );
+      }
+
       // Extract targets config to embed in Info.plist for runtime access
       const targetsConfig = config.extra?.targets as any[] | undefined;
+      if (targetsConfig && targetsConfig.length > 0) {
+        props.logger.log(
+          `Embedding ${targetsConfig.length} target(s) config in ${targetName} Info.plist`
+        );
+      }
 
       const infoPlistContent = getTargetInfoPlistForType(
         props.type,
@@ -109,7 +125,13 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
         targetsConfig
       );
       File.writeFileSafe(infoPlistPath, infoPlistContent);
-      props.logger.log(`Generated Info.plist in targets/ build directory`);
+      props.logger.log(
+        `Generated Info.plist at ${path.relative(projectRoot, infoPlistPath)}`
+      );
+    } else {
+      props.logger.log(
+        `Info.plist already exists, reusing: ${path.relative(projectRoot, infoPlistPath)}`
+      );
     }
 
     // Create iMessage App Icon for sticker pack targets

@@ -376,18 +376,14 @@ export function getTargetInfoPlistForType(
     const allSchemes = [...new Set([...mainAppSchemes, ...existingSchemes])];
 
     basePlist.LSApplicationQueriesSchemes = allSchemes;
-    console.log(
-      `[expo-targets] Auto-injected LSApplicationQueriesSchemes: ${allSchemes.join(', ')}`
-    );
+    // Note: Logged at caller level in withXcodeChanges for better context
   }
 
   // Embed targets config for runtime access via expo-constants
   // This makes Constants.expoConfig.extra.targets available in extensions
   if (targetsConfig && targetsConfig.length > 0) {
     basePlist.ExpoTargetsConfig = targetsConfig;
-    console.log(
-      `[expo-targets] Embedded ${targetsConfig.length} target(s) config in Info.plist`
-    );
+    // Note: Logged at caller level in withXcodeChanges for better context
   }
 
   if (customProperties) {

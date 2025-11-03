@@ -28,6 +28,9 @@ interface IOSTargetProps extends IOSTargetConfigWithReactNative {
 }
 
 export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
+  const targetName = props.displayName || props.name;
+  props.logger.log(`Configuring iOS target: ${targetName} (${props.type})`);
+
   // Validate React Native compatibility
   const REACT_NATIVE_COMPATIBLE_TYPES: ExtensionType[] = [
     'share',
@@ -116,7 +119,6 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
     props.logger.log(`Inherited accent color: ${mainAppAccentColor}`);
   }
 
-  const targetName = props.displayName || props.name;
   const targetProductName = Paths.sanitizeTargetName(targetName);
 
   // Pass resolved values to withXcodeChanges
