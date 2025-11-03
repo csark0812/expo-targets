@@ -15,28 +15,40 @@ let package = Package(
     dependencies: [],
     targets: [
         .target(
+            name: "ExpoTargetsStorage",
+            dependencies: [],
+            path: "../",
+            sources: ["ExpoTargetsStorageModule.swift"]
+        ),
+        .target(
+            name: "ExpoTargetsExtension",
+            dependencies: [],
+            path: "../",
+            sources: ["ExpoTargetsExtensionModule.swift"]
+        ),
+        .target(
             name: "ExpoTargetsTestHelpers",
             dependencies: [],
             path: "Helpers"
         ),
         .testTarget(
             name: "ExpoTargetsStorageModuleTests",
-            dependencies: ["ExpoTargetsTestHelpers"],
+            dependencies: ["ExpoTargetsTestHelpers", "ExpoTargetsStorage"],
             path: "Unit/Storage"
         ),
         .testTarget(
             name: "ExpoTargetsExtensionModuleTests",
-            dependencies: ["ExpoTargetsTestHelpers"],
+            dependencies: ["ExpoTargetsTestHelpers", "ExpoTargetsExtension"],
             path: "Unit/Extension"
         ),
         .testTarget(
             name: "ExpoTargetsIntegrationTests",
-            dependencies: ["ExpoTargetsTestHelpers"],
+            dependencies: ["ExpoTargetsTestHelpers", "ExpoTargetsStorage", "ExpoTargetsExtension"],
             path: "Integration"
         ),
         .testTarget(
             name: "ExpoTargetsPerformanceTests",
-            dependencies: ["ExpoTargetsTestHelpers"],
+            dependencies: ["ExpoTargetsTestHelpers", "ExpoTargetsStorage"],
             path: "Performance"
         ),
         .testTarget(
