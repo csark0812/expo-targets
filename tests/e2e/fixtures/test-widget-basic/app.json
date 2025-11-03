@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "test-widget-basic",
+    "slug": "test-widget-basic",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.test.widget",
+      "entitlements": {
+        "com.apple.security.application-groups": ["group.com.test.widget"]
+      }
+    },
+    "plugins": [
+      "expo-targets"
+    ]
+  }
+}
+

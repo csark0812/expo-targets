@@ -1,0 +1,38 @@
+{
+  "name": "@expo-targets/build-tests",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Build and E2E tests for expo-targets",
+  "scripts": {
+    "test": "bun test",
+    "test:workflows": "bun test workflows",
+    "test:target-types": "bun test target-types",
+    "test:metro": "bun test metro",
+    "test:api": "bun test api",
+    "test:multi-target": "bun test multi-target",
+    "test:config": "bun test config",
+    "test:prebuild": "bun test prebuild",
+    "test:compile": "bun test compilation",
+    "test:runtime": "bun test runtime",
+    "test:widget": "bun test runtime/widget",
+    "test:share": "bun test runtime/share",
+    "test:clip": "bun test runtime/clip",
+    "test:critical": "bun test workflows runtime/react-native-extensions.test.ts",
+    "test:all": "bash scripts/run-all-tests.sh"
+  },
+  "dependencies": {
+    "@expo/config": "^9.0.0",
+    "@expo/config-plugins": "^8.0.0",
+    "@expo/prebuild-config": "^7.0.0",
+    "chalk": "^5.3.0",
+    "execa": "^8.0.1",
+    "glob": "^10.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "bun-types": "^1.3.1",
+    "tsx": "^4.7.0",
+    "typescript": "~5.3.3"
+  }
+}

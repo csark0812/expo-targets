@@ -1,0 +1,87 @@
+{
+  "configurations" : [
+    {
+      "id" : "DEFAULT",
+      "name" : "Configuration 1",
+      "options" : {
+        "codeCoverage" : {
+          "targets" : [
+            {
+              "containerPath" : "container:ExpoTargets.xcodeproj",
+              "identifier" : "ExpoTargetsStorage",
+              "name" : "ExpoTargetsStorage"
+            },
+            {
+              "containerPath" : "container:ExpoTargets.xcodeproj",
+              "identifier" : "ExpoTargetsExtension",
+              "name" : "ExpoTargetsExtension"
+            }
+          ]
+        },
+        "environmentVariableEntries" : [
+          {
+            "key" : "DEBUG",
+            "value" : "expo-targets:*"
+          }
+        ],
+        "language" : "en",
+        "region" : "US",
+        "targetForVariableExpansion" : {
+          "containerPath" : "container:ExpoTargets.xcodeproj",
+          "identifier" : "ExpoTargetsTests",
+          "name" : "ExpoTargetsTests"
+        }
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : true,
+    "defaultTestExecutionTimeAllowance" : 60,
+    "maximumTestExecutionTimeAllowance" : 120,
+    "testExecutionOrdering" : "random",
+    "testTimeoutsEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:ExpoTargets.xcodeproj",
+        "identifier" : "ExpoTargetsStorageModuleTests",
+        "name" : "ExpoTargetsStorageModuleTests"
+      }
+    },
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:ExpoTargets.xcodeproj",
+        "identifier" : "ExpoTargetsExtensionModuleTests",
+        "name" : "ExpoTargetsExtensionModuleTests"
+      }
+    },
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:ExpoTargets.xcodeproj",
+        "identifier" : "TargetIntegrationTests",
+        "name" : "TargetIntegrationTests"
+      }
+    },
+    {
+      "parallelizable" : false,
+      "target" : {
+        "containerPath" : "container:ExpoTargets.xcodeproj",
+        "identifier" : "StoragePerformanceTests",
+        "name" : "StoragePerformanceTests"
+      }
+    },
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:ExpoTargets.xcodeproj",
+        "identifier" : "ShareExtensionTemplateTests",
+        "name" : "ShareExtensionTemplateTests"
+      }
+    }
+  ],
+  "version" : 1
+}

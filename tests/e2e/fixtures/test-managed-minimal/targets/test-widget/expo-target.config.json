@@ -1,0 +1,13 @@
+{
+  "type": "widget",
+  "name": "TestWidget",
+  "displayName": "Test Widget",
+  "platforms": ["ios"],
+  "appGroup": "group.com.test.managedminimal",
+  "ios": {
+    "deploymentTarget": "14.0",
+    "colors": {
+      "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" }
+    }
+  }
+}
