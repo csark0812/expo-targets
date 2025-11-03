@@ -3,14 +3,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { withTargetEntitlements } from './withEntitlements';
-import { withIosColorset } from './withIosColorset';
 import { withTargetPodfile } from './withPodfile';
 import { withXcodeChanges } from './withXcodeChanges';
 import {
   TYPE_MINIMUM_DEPLOYMENT_TARGETS,
   type ExtensionType,
   type IOSTargetConfigWithReactNative,
-  type Color,
 } from '../../config';
 import { Logger } from '../../logger';
 import { Paths } from '../utils';
@@ -156,33 +154,10 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
     logger: props.logger,
   });
 
-  if (colors && Object.keys(colors).length > 0) {
-    Object.entries(colors).forEach(([colorName, colorValue]) => {
-      if (typeof colorValue === 'string') {
-        config = withIosColorset(config, {
-          name: colorName,
-          color: colorValue,
-          targetName,
-        });
-      } else {
-        const colorObj = colorValue as Color;
-        const lightColor = colorObj.light || colorObj.color;
-        const darkColor = colorObj.dark || colorObj.darkColor;
-
-        if (lightColor) {
-          config = withIosColorset(config, {
-            name: colorName,
-            color: lightColor,
-            darkColor,
-            targetName,
-          });
-        }
-      }
-    });
-
-    // Note: Assets.xcassets is added in withXcodeChanges where we have direct access to target.uuid
-    // Note: Sticker packs are also created in withXcodeChanges for proper execution order
-  }
+  // Note: Color generation is handled in withXcodeChanges where colors are created
+  // in targets/[name]/ios/build/Assets.xcassets/ (not in ios/[TargetName]/)
+  // Note: Assets.xcassets is added in withXcodeChanges where we have direct access to target.uuid
+  // Note: Sticker packs are also created in withXcodeChanges for proper execution order
 
   return config;
 };
