@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "test-bare-rn-cli",
+    "slug": "test-bare-rn-cli",
+    "version": "1.0.0",
+    "ios": {
+      "bundleIdentifier": "com.test.barerncli",
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.test.barerncli"
+        ]
+      }
+    },
+    "plugins": ["expo-targets"]
+  }
+}
+

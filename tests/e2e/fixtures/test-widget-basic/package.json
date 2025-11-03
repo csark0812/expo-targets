@@ -1,0 +1,17 @@
+{
+  "name": "test-widget-basic",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start",
+    "ios": "expo run:ios",
+    "prebuild": "expo prebuild"
+  },
+  "dependencies": {
+    "expo": "~54.0.18",
+    "expo-targets": "workspace:*",
+    "react": "19.1.0",
+    "react-native": "0.81.5"
+  }
+}
