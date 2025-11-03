@@ -3,7 +3,7 @@
   "name": "ImageAction",
   "displayName": "Image Action",
   "platforms": ["ios"],
-  "entry": "./targets/image-action/src/index.tsx",
+  "entry": "./targets/image-action/index.tsx",
   "appGroup": "group.com.test.extensionsshowcase",
   "ios": {
     "bundleIdentifier": "com.test.extensionsshowcase.action",

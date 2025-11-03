@@ -3,7 +3,7 @@
   "name": "ShareContent",
   "displayName": "Share Content",
   "platforms": ["ios"],
-  "entry": "./targets/share-content/src/index.tsx",
+  "entry": "./targets/share-content/index.tsx",
   "appGroup": "group.com.test.extensionsshowcase",
   "ios": {
     "bundleIdentifier": "com.test.extensionsshowcase.share",
