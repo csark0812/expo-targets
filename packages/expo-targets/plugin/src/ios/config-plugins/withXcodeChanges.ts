@@ -58,17 +58,22 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       ...(props.frameworks || []),
     ];
 
-    // Create target directory in Xcode project
-    const targetGroupPath = Paths.getTargetGroupPath({
-      platformProjectRoot,
-      targetName,
-    });
-    File.ensureDirectoryExists(targetGroupPath);
+    // NEW APPROACH: Reference files in place, generate metadata in targets/*/ios/build/
 
-    // Generate Info.plist directly in target directory
-    const infoPlistPath = Paths.getInfoPlistPath({
-      platformProjectRoot,
-      targetName,
+    // Ensure build directory exists in targets/
+    const targetBuildPath = Paths.getTargetBuildPath({
+      projectRoot,
+      targetDirectory: props.directory,
+    });
+    File.ensureDirectoryExists(targetBuildPath);
+    console.log(
+      `[expo-targets] Build directory: ${path.relative(projectRoot, targetBuildPath)}`
+    );
+
+    // Generate Info.plist in targets/*/ios/build/
+    const infoPlistPath = Paths.getTargetInfoPlistPath({
+      projectRoot,
+      targetDirectory: props.directory,
     });
     if (!File.isFile(infoPlistPath)) {
       // Extract URL schemes from expo config for auto-injection into extensions
@@ -104,14 +109,16 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
         targetsConfig
       );
       File.writeFileSafe(infoPlistPath, infoPlistContent);
-      console.log(`[expo-targets] Generated Info.plist for ${targetName}`);
+      console.log(
+        `[expo-targets] Generated Info.plist in targets/ build directory`
+      );
     }
 
     // Create iMessage App Icon for sticker pack targets
     if (props.type === 'stickers') {
-      const assetsPath = Paths.getAssetsXcassetsPath({
-        platformProjectRoot,
-        targetName,
+      const assetsPath = Paths.getTargetAssetsPath({
+        projectRoot,
+        targetDirectory: props.directory,
         isStickers: true,
       });
 
@@ -281,19 +288,24 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       `[expo-targets] Main app SWIFT_VERSION: ${mainBuildSettings.SWIFT_VERSION || 'NOT SET'}`
     );
 
-    // Get the actual directory name used for target files (includes 'Target' suffix)
-    const targetDirName = path.basename(targetGroupPath);
-
     // Build settings that should be target-specific
     const targetSpecificSettings: Record<string, string> = {
       PRODUCT_NAME: `"${targetProductName}"`,
       PRODUCT_BUNDLE_IDENTIFIER: `"${bundleIdentifier}"`,
-      INFOPLIST_FILE: `"${targetDirName}/Info.plist"`,
+      // INFOPLIST_FILE will be set later to point to targets/*/ios/build/Info.plist
     };
 
-    // Only code-based targets need entitlements
+    // Only code-based targets need entitlements - generate in build directory
     if (typeConfig.requiresEntitlements) {
-      targetSpecificSettings.CODE_SIGN_ENTITLEMENTS = `"${targetDirName}/generated.entitlements"`;
+      const entitlementsPath = Paths.getTargetEntitlementsPath({
+        projectRoot,
+        targetDirectory: props.directory,
+      });
+      const relativeEntitlementsPath = path.relative(
+        platformProjectRoot,
+        entitlementsPath
+      );
+      targetSpecificSettings.CODE_SIGN_ENTITLEMENTS = `"${relativeEntitlementsPath}"`;
     }
 
     // Inherit essential build settings from main app if not already set
@@ -537,25 +549,12 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       );
 
       const moduleName = targetProductName;
-      const generatedSwift = ReactNativeSwift.generateReactNativeViewController(
-        {
-          type: props.type,
-          moduleName,
-          targetName: props.name,
-          preprocessingFile: props.preprocessingFile,
-          entry: props.entry,
-        }
-      );
-
-      const generatedFilePath = path.join(
-        targetGroupPath,
-        'ReactNativeViewController.swift'
-      );
-      File.writeFileSafe(generatedFilePath, generatedSwift);
+      // ReactNativeViewController will be generated in the build directory
+      // when processing Swift files below
       swiftFiles = ['ReactNativeViewController.swift'];
 
       console.log(
-        `[expo-targets] Generated ReactNativeViewController.swift for ${moduleName}`
+        `[expo-targets] Will generate ReactNativeViewController.swift for ${moduleName}`
       );
     } else if (props.entry && swiftFiles.length > 0) {
       console.log(
@@ -567,67 +566,165 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       `[expo-targets] Found ${swiftFiles.length} Swift file(s) in ${props.directory}/ios`
     );
 
-    // Ensure group exists for the target
-    Xcode.ensureGroupRecursively(xcodeProject, targetDirName);
-    console.log(`[expo-targets] Ensured group exists: ${targetDirName}`);
+    // Create virtual expo:targets group structure in Xcode
+    const virtualGroupUuid = Xcode.ensureExpoTargetsGroup({
+      project: xcodeProject,
+    });
+    const targetGroupUuid = Xcode.addTargetToVirtualGroup({
+      project: xcodeProject,
+      targetName,
+      virtualGroupUuid,
+    });
+    console.log(
+      `[expo-targets] Created virtual group: expo:targets/${targetName}`
+    );
 
-    // Copy and add Info.plist from build folder
-    const infoPlistDest = path.join(targetGroupPath, 'Info.plist');
-    if (File.isFile(infoPlistPath)) {
-      File.copyFileSafe(infoPlistPath, infoPlistDest);
-      console.log(`[expo-targets] Copied Info.plist to ${targetDirName}/`);
-
-      // Manually add Info.plist to avoid addResourceFile's "Resources" group requirement
-      // We use the build settings INFOPLIST_FILE instead of adding to Resources phase
-      console.log(`[expo-targets] Info.plist configured via build settings`);
-    }
-
-    // Add Swift files to project (either user-provided or generated)
+    // Reference Swift files in place (no copying)
     swiftFiles.forEach((file) => {
-      let sourceFile: string;
-      let destFile: string;
+      let sourceFilePath: string;
 
       if (
         props.entry &&
         file === 'ReactNativeViewController.swift' &&
-        !fs.existsSync(path.join(targetDirectory, file))
+        !fs.existsSync(path.join(projectRoot, props.directory, 'ios', file))
       ) {
-        // Generated file - already at destination
-        destFile = path.join(targetGroupPath, file);
-        sourceFile = destFile; // No need to copy, already written
+        // Generated file - write to build directory
+        sourceFilePath = path.join(targetBuildPath, file);
+        if (!File.isFile(sourceFilePath)) {
+          const moduleName = targetProductName.replace('Target', '');
+          const template = ReactNativeSwift.generateReactNativeViewController({
+            type: props.type,
+            moduleName,
+            targetName: props.name,
+            preprocessingFile: props.preprocessingFile,
+            entry: props.entry,
+          });
+          File.writeFileSafe(sourceFilePath, template);
+          console.log(`[expo-targets]   Generated: ${file} in build directory`);
+        }
       } else {
-        // User-provided file - copy it
-        sourceFile = path.join(targetDirectory, file);
-        destFile = path.join(targetGroupPath, path.basename(file));
-        File.copyFileSafe(sourceFile, destFile);
-        console.log(`[expo-targets]   Copied: ${file} -> ${targetDirName}/`);
+        // User file - reference in place
+        sourceFilePath = path.join(projectRoot, props.directory, 'ios', file);
+
+        if (!fs.existsSync(sourceFilePath)) {
+          throw new Error(
+            `Swift file not found: ${sourceFilePath}\n` +
+              `Expected at: ${path.relative(projectRoot, sourceFilePath)}`
+          );
+        }
       }
 
-      // Add the file to the target's Sources build phase
-      const relativePath = path.relative(platformProjectRoot, destFile);
-      Xcode.addBuildSourceFileToGroup({
-        filepath: relativePath,
-        groupName: targetDirName,
+      // Add file reference (not copy)
+      const relativePath = path.relative(platformProjectRoot, sourceFilePath);
+      const fileRefUuid = Xcode.addExternalFileReference({
         project: xcodeProject,
-        verbose: true,
-        targetUuid: target.uuid,
+        groupUuid: targetGroupUuid,
+        filePath: relativePath,
+        fileName: file,
       });
-      console.log(
-        `[expo-targets]   Added to build phase: ${path.basename(file)}`
-      );
+
+      // Add to Sources build phase
+      Xcode.addFileToBuildPhase({
+        project: xcodeProject,
+        targetUuid: target.uuid,
+        fileRefUuid,
+        phaseType: 'PBXSourcesBuildPhase',
+      });
+
+      console.log(`[expo-targets]   Referenced: ${file}`);
     });
 
-    // Add Assets.xcassets if it exists
-    Xcode.addTargetAssets({
-      platformProjectRoot,
-      targetName,
-      targetUuid: target.uuid,
-      xcodeProject,
+    // Handle Assets.xcassets - copy user assets to build directory, then reference
+    const userAssetsPath = path.join(
+      projectRoot,
+      props.directory,
+      'ios',
+      props.type === 'stickers' ? 'Stickers.xcassets' : 'Assets.xcassets'
+    );
+    const buildAssetsPath = Paths.getTargetAssetsPath({
+      projectRoot,
+      targetDirectory: props.directory,
       isStickers: props.type === 'stickers',
     });
 
-    // Add Info.plist reference via build settings
-    console.log(`[expo-targets] Info.plist configured via build settings`);
+    // Copy user assets to build directory if they exist
+    if (File.isDirectory(userAssetsPath)) {
+      File.copyDirectorySafe(userAssetsPath, buildAssetsPath);
+      console.log(`[expo-targets] Copied user assets to build directory`);
+    } else {
+      // Create empty assets directory
+      File.ensureDirectoryExists(buildAssetsPath);
+      Asset.createAssetsXcassetsRoot(buildAssetsPath);
+    }
+
+    // Generate colors in build assets if specified
+    if (props.colors && Object.keys(props.colors).length > 0) {
+      Object.entries(props.colors).forEach(([colorName, colorValue]) => {
+        const colorsetPath = Paths.getTargetColorsetPath({
+          projectRoot,
+          targetDirectory: props.directory,
+          colorName,
+        });
+        if (typeof colorValue === 'string') {
+          Asset.createColorset({
+            colorsetPath,
+            color: colorValue,
+          });
+        } else {
+          const lightColor =
+            (colorValue as any).light || (colorValue as any).color;
+          const darkColor =
+            (colorValue as any).dark || (colorValue as any).darkColor;
+          Asset.createColorset({
+            colorsetPath,
+            color: lightColor,
+            darkColor,
+          });
+        }
+      });
+      console.log(
+        `[expo-targets] Generated ${Object.keys(props.colors).length} color assets`
+      );
+    }
+
+    // Reference assets from build directory
+    if (File.isDirectory(buildAssetsPath)) {
+      const relativeAssetsPath = path.relative(
+        platformProjectRoot,
+        buildAssetsPath
+      );
+      const assetsFileRefUuid = Xcode.addExternalFileReference({
+        project: xcodeProject,
+        groupUuid: targetGroupUuid,
+        filePath: relativeAssetsPath,
+        fileName: path.basename(buildAssetsPath),
+        fileType: 'folder.assetcatalog',
+      });
+
+      Xcode.addFileToBuildPhase({
+        project: xcodeProject,
+        targetUuid: target.uuid,
+        fileRefUuid: assetsFileRefUuid,
+        phaseType: 'PBXResourcesBuildPhase',
+      });
+      console.log(`[expo-targets] Referenced assets from build directory`);
+    }
+
+    // Update INFOPLIST_FILE build setting to point to targets/
+    const relativeInfoPlistPath = path.relative(
+      platformProjectRoot,
+      infoPlistPath
+    );
+    Xcode.applyBuildSettings({
+      project: xcodeProject,
+      target,
+      buildSettings: {
+        INFOPLIST_FILE: `"${relativeInfoPlistPath}"`,
+      },
+    });
+    console.log(
+      `[expo-targets] Info.plist referenced from: ${relativeInfoPlistPath}`
+    );
 
     // Link frameworks (skip for asset-only targets)
     if (typeConfig.requiresCode && frameworks.length > 0) {

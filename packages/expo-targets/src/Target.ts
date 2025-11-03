@@ -118,10 +118,7 @@ export function createTarget<T extends ExtensionType = ExtensionType>(
       }
     }
 
-    AppRegistry.registerComponent(
-      targetName + 'Target',
-      () => qualifiedComponent
-    );
+    AppRegistry.registerComponent(targetName, () => qualifiedComponent);
   }
 
   const appGroup = getTargetAppGroup(targetName, config);

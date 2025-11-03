@@ -1,0 +1,40 @@
+{
+  "name": "@expo-targets/cli",
+  "version": "0.1.0",
+  "description": "CLI for syncing expo-targets in bare React Native projects",
+  "main": "./build/index.js",
+  "bin": {
+    "expo-targets": "./build/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf build"
+  },
+  "keywords": [
+    "expo",
+    "react-native",
+    "ios",
+    "widgets",
+    "app-clips",
+    "extensions",
+    "cli"
+  ],
+  "author": "expo-targets contributors",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^11.1.0",
+    "xcode": "3.0.1",
+    "glob": "^10.3.10",
+    "expo-targets": "workspace:*",
+    "@expo/config-plugins": "~8.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "~5.3.3"
+  },
+  "files": [
+    "build",
+    "README.md"
+  ]
+}

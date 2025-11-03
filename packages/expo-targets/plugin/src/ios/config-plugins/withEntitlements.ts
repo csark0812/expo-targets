@@ -1,4 +1,5 @@
 import { ConfigPlugin, withDangerousMod } from '@expo/config-plugins';
+import path from 'path';
 
 import type { ExtensionType } from '../../config';
 import { TYPE_CHARACTERISTICS } from '../target';
@@ -6,6 +7,7 @@ import { Plist, Paths } from '../utils';
 
 export const withTargetEntitlements: ConfigPlugin<{
   targetName: string;
+  targetDirectory: string;
   type: ExtensionType;
   entitlements?: Record<string, any>;
 }> = (config, props) => {
@@ -50,12 +52,16 @@ export const withTargetEntitlements: ConfigPlugin<{
         }
       }
 
-      const entitlementsPath = Paths.getGeneratedEntitlementsPath({
-        platformProjectRoot: config.modRequest.platformProjectRoot,
-        targetName: props.targetName,
+      // NEW: Generate entitlements in targets/TARGETNAME/ios/build/
+      const entitlementsPath = Paths.getTargetEntitlementsPath({
+        projectRoot: config.modRequest.projectRoot,
+        targetDirectory: props.targetDirectory,
       });
 
       Plist.writePlist(entitlementsPath, entitlements);
+      console.log(
+        `[expo-targets] Generated entitlements: ${path.relative(config.modRequest.projectRoot, entitlementsPath)}`
+      );
 
       return config;
     },

@@ -146,6 +146,7 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
 
   config = withTargetEntitlements(config, {
     targetName,
+    targetDirectory: props.directory,
     type: props.type,
     entitlements: props.entitlements,
   });
