@@ -78,7 +78,8 @@ ${frameworksLine}    platform :ios, '${deploymentTarget}'
 export function insertTargetBlock(
   podfileContent: string,
   targetBlock: string,
-  standalone: boolean = false
+  standalone: boolean = false,
+  logger?: { log: (message: string) => void }
 ): string {
   if (standalone) {
     // Standalone targets: insert as sibling AFTER main target's closing 'end'
@@ -94,9 +95,15 @@ export function insertTargetBlock(
 
     const mainTargetEndIndex = lastEndMatch.index! + lastEndMatch[0].length;
 
-    console.log(
-      `[expo-targets] Inserting standalone target after main target's closing 'end' at position ${mainTargetEndIndex}`
-    );
+    if (logger) {
+      logger.log(
+        `Inserting standalone target after main target's closing 'end' at position ${mainTargetEndIndex}`
+      );
+    } else {
+      console.log(
+        `[expo-targets] Inserting standalone target after main target's closing 'end' at position ${mainTargetEndIndex}`
+      );
+    }
 
     // Insert after main target's closing 'end'
     return (
@@ -107,9 +114,13 @@ export function insertTargetBlock(
     );
   }
 
-  console.log(
-    '[expo-targets] Inserting React Native target nested inside main target'
-  );
+  if (logger) {
+    logger.log('Inserting React Native target nested inside main target');
+  } else {
+    console.log(
+      '[expo-targets] Inserting React Native target nested inside main target'
+    );
+  }
 
   // React Native targets: nest inside main target before post_install
   const postInstallIndex = podfileContent.indexOf('post_install do');

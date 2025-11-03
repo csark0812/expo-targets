@@ -6,8 +6,11 @@ import { withTargetsDir } from './withTargetsDir';
 export type { TargetConfig, TargetConfigFunction } from './config';
 export type { ExpoConfig } from '@expo/config-types';
 
-const withExpoTargets: ConfigPlugin = (config) => {
-  config = withTargetsDir(config, {});
+const withExpoTargets: ConfigPlugin<{
+  debug?: boolean;
+  targetsRoot?: string;
+}> = (config, options) => {
+  config = withTargetsDir(config, options || {});
   return config;
 };
 

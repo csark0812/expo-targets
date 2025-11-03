@@ -12,6 +12,7 @@ import {
   type IOSTargetConfigWithReactNative,
   type Color,
 } from '../../config';
+import { Logger } from '../../logger';
 import { Paths } from '../utils';
 
 interface IOSTargetProps extends IOSTargetConfigWithReactNative {
@@ -23,6 +24,7 @@ interface IOSTargetProps extends IOSTargetConfigWithReactNative {
   excludedPackages?: string[];
   directory: string;
   configPath: string;
+  logger: Logger;
 }
 
 export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
@@ -55,8 +57,8 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
 
   // Validate excludedPackages
   if (props.excludedPackages && !props.entry) {
-    console.warn(
-      `[expo-targets] excludedPackages specified for ${props.name} but no 'entry' field provided. ` +
+    props.logger.warn(
+      `excludedPackages specified for ${props.name} but no 'entry' field provided. ` +
         `excludedPackages will be ignored.`
     );
   }
@@ -68,7 +70,7 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
       config.ios?.entitlements?.['com.apple.security.application-groups'];
     if (Array.isArray(mainAppGroups) && mainAppGroups.length > 0) {
       appGroup = mainAppGroups[0];
-      console.log(`[expo-targets] Inherited App Group: ${appGroup}`);
+      props.logger.log(`Inherited App Group: ${appGroup}`);
     }
   }
 
@@ -97,13 +99,11 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
   if (!deploymentTarget) {
     if (mainAppTarget && parseFloat(mainAppTarget) > parseFloat(typeMinimum)) {
       deploymentTarget = mainAppTarget;
-      console.log(
-        `[expo-targets] Inherited deployment target: ${deploymentTarget}`
-      );
+      props.logger.log(`Inherited deployment target: ${deploymentTarget}`);
     } else {
       deploymentTarget = typeMinimum;
-      console.log(
-        `[expo-targets] Using type minimum deployment target: ${deploymentTarget}`
+      props.logger.log(
+        `Using type minimum deployment target: ${deploymentTarget}`
       );
     }
   }
@@ -113,7 +113,7 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
   const mainAppAccentColor = (config.ios as any)?.accentColor;
   if (!colors.$accent && mainAppAccentColor) {
     colors.$accent = mainAppAccentColor;
-    console.log(`[expo-targets] Inherited accent color: ${mainAppAccentColor}`);
+    props.logger.log(`Inherited accent color: ${mainAppAccentColor}`);
   }
 
   const targetName = props.displayName || props.name;
@@ -124,6 +124,7 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
     ...props,
     deploymentTarget,
     colors: Object.keys(colors).length > 0 ? colors : undefined,
+    logger: props.logger,
   });
 
   // Add Podfile target only for code-based targets (skip asset-only like stickers)
@@ -137,10 +138,11 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
       deploymentTarget: deploymentTarget!, // Guaranteed to be set by resolution logic above
       excludedPackages: props.excludedPackages,
       standalone: !props.entry, // Standalone (no dependency inheritance) if not using React Native
+      logger: props.logger,
     });
   } else {
-    console.log(
-      `[expo-targets] Skipping Podfile for asset-only target: ${targetProductName}`
+    props.logger.log(
+      `Skipping Podfile for asset-only target: ${targetProductName}`
     );
   }
 
@@ -149,6 +151,7 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
     targetDirectory: props.directory,
     type: props.type,
     entitlements: props.entitlements,
+    logger: props.logger,
   });
 
   if (colors && Object.keys(colors).length > 0) {

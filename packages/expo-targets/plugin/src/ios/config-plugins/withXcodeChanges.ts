@@ -8,6 +8,7 @@ import type {
   IOSTargetConfigWithReactNative,
 } from '../../config';
 import { TYPE_BUNDLE_IDENTIFIER_SUFFIXES } from '../../config';
+import { Logger } from '../../logger';
 import {
   productTypeForType,
   getFrameworksForType,
@@ -23,6 +24,7 @@ interface IOSTargetProps extends IOSTargetConfigWithReactNative {
   excludedPackages?: string[];
   directory: string;
   configPath: string;
+  logger: Logger;
 }
 
 export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
@@ -36,8 +38,10 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     const targetProductName = Paths.sanitizeTargetName(targetName);
     const typeConfig = TYPE_CHARACTERISTICS[props.type];
 
-    console.log(
-      `[expo-targets] Adding Xcode target: ${targetName} (${props.type})`
+    props.logger.logSparse(
+      true,
+      `Adding Xcode target: ${targetName}`,
+      props.type
     );
 
     const mainBundleId = config.ios?.bundleIdentifier;
@@ -66,8 +70,8 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       targetDirectory: props.directory,
     });
     File.ensureDirectoryExists(targetBuildPath);
-    console.log(
-      `[expo-targets] Build directory: ${path.relative(projectRoot, targetBuildPath)}`
+    props.logger.log(
+      `Build directory: ${path.relative(projectRoot, targetBuildPath)}`
     );
 
     // Generate Info.plist in targets/*/ios/build/
@@ -109,9 +113,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
         targetsConfig
       );
       File.writeFileSafe(infoPlistPath, infoPlistContent);
-      console.log(
-        `[expo-targets] Generated Info.plist in targets/ build directory`
-      );
+      props.logger.log(`Generated Info.plist in targets/ build directory`);
     }
 
     // Create iMessage App Icon for sticker pack targets
@@ -141,9 +143,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
         iconsetPath,
         sourceIconPath,
       });
-      console.log(
-        `[expo-targets] Created iMessage App Icon set for ${targetName}`
-      );
+      props.logger.log(`Created iMessage App Icon set for ${targetName}`);
 
       // Create sticker packs
       if (props.stickerPacks && props.stickerPacks.length > 0) {
@@ -187,14 +187,14 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
               const destPath = path.join(stickerDirPath, filename);
               fs.copyFileSync(absoluteAssetPath, destPath);
             } else {
-              console.warn(
-                `[expo-targets] Sticker asset not found: ${absoluteAssetPath}`
+              props.logger.warn(
+                `Sticker asset not found: ${absoluteAssetPath}`
               );
             }
           });
 
-          console.log(
-            `[expo-targets] Created sticker pack "${stickerPack.name}" with ${stickerPack.assets.length} sticker(s)`
+          props.logger.log(
+            `Created sticker pack "${stickerPack.name}" with ${stickerPack.assets.length} sticker(s)`
           );
         });
       }
@@ -224,17 +224,16 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
 
     let target: any;
     if (existingTargetUuid) {
-      console.log(
-        `[expo-targets] Target ${targetProductName} already exists, reusing`
-      );
+      props.logger.log(`Target ${targetProductName} already exists, reusing`);
       target = {
         uuid: existingTargetUuid,
         target:
           xcodeProject.hash.project.objects.PBXNativeTarget[existingTargetUuid],
       };
     } else {
-      console.log(
-        `[expo-targets] Creating native target: ${targetProductName}`
+      props.logger.logSparse(
+        true,
+        `Created native target: ${targetProductName}`
       );
 
       const targetType = typeConfig.targetType;
@@ -257,14 +256,12 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
 
     // Always set product type for precision (all types have specific product types)
     Xcode.setProductType({ target, productType });
-    console.log(
-      `[expo-targets] Set product type to ${productType} for ${props.type}`
-    );
+    props.logger.log(`Set product type to ${productType} for ${props.type}`);
 
     // Remove auto-created build phases for asset-only targets
     if (!typeConfig.requiresCode && !existingTargetUuid) {
-      console.log(
-        `[expo-targets] Removing auto-created code build phases from asset-only target`
+      props.logger.log(
+        `Removing auto-created code build phases from asset-only target`
       );
       Xcode.removeBuildPhases({
         project: xcodeProject,
@@ -284,8 +281,8 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       mainTarget,
     });
 
-    console.log(
-      `[expo-targets] Main app SWIFT_VERSION: ${mainBuildSettings.SWIFT_VERSION || 'NOT SET'}`
+    props.logger.log(
+      `Main app SWIFT_VERSION: ${mainBuildSettings.SWIFT_VERSION || 'NOT SET'}`
     );
 
     // Build settings that should be target-specific
@@ -319,9 +316,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     essentialSettings.forEach((setting) => {
       if (mainBuildSettings[setting]) {
         targetSpecificSettings[setting] = mainBuildSettings[setting];
-        console.log(
-          `[expo-targets] Inherited ${setting}: ${mainBuildSettings[setting]}`
-        );
+        props.logger.log(`Inherited ${setting}: ${mainBuildSettings[setting]}`);
       }
     });
 
@@ -333,17 +328,15 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     // SWIFT_VERSION required even for asset-only targets
     if (props.swiftVersion !== undefined) {
       buildSettings.SWIFT_VERSION = String(props.swiftVersion);
-      console.log(
-        `[expo-targets] Using custom SWIFT_VERSION: ${props.swiftVersion}`
-      );
+      props.logger.log(`Using custom SWIFT_VERSION: ${props.swiftVersion}`);
     } else if (mainBuildSettings.SWIFT_VERSION) {
       buildSettings.SWIFT_VERSION = mainBuildSettings.SWIFT_VERSION;
-      console.log(
-        `[expo-targets] Inherited SWIFT_VERSION: ${mainBuildSettings.SWIFT_VERSION}`
+      props.logger.log(
+        `Inherited SWIFT_VERSION: ${mainBuildSettings.SWIFT_VERSION}`
       );
     } else {
       buildSettings.SWIFT_VERSION = '5.0';
-      console.log(`[expo-targets] Using fallback SWIFT_VERSION: 5.0`);
+      props.logger.log(`Using fallback SWIFT_VERSION: 5.0`);
     }
 
     // Code-based targets need additional build settings
@@ -369,27 +362,25 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       Object.entries(buildSettingsMap).forEach(([key, { prop, xcodeKey }]) => {
         if (props[prop] !== undefined) {
           buildSettings[xcodeKey] = String(props[prop]);
-          console.log(
-            `[expo-targets] Using custom ${xcodeKey}: ${props[prop]}`
-          );
+          props.logger.log(`Using custom ${xcodeKey}: ${props[prop]}`);
         } else if (mainBuildSettings[xcodeKey]) {
           buildSettings[xcodeKey] = mainBuildSettings[xcodeKey];
-          console.log(
-            `[expo-targets] Inherited ${xcodeKey}: ${mainBuildSettings[xcodeKey]}`
+          props.logger.log(
+            `Inherited ${xcodeKey}: ${mainBuildSettings[xcodeKey]}`
           );
         }
       });
     } else {
-      console.log(
-        `[expo-targets] Skipping code-related build settings for asset-only target`
+      props.logger.log(
+        `Skipping code-related build settings for asset-only target`
       );
 
       // Sticker packs need asset catalog compiler settings
       if (props.type === 'stickers') {
         buildSettings.ASSETCATALOG_COMPILER_APPICON_NAME =
           '"iMessage App Icon"';
-        console.log(
-          `[expo-targets] Set ASSETCATALOG_COMPILER_APPICON_NAME for sticker pack`
+        props.logger.log(
+          `Set ASSETCATALOG_COMPILER_APPICON_NAME for sticker pack`
         );
       }
     }
@@ -430,8 +421,8 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       buildSettings.ENABLE_PREVIEWS = 'YES';
     }
 
-    console.log(
-      `[expo-targets] Final SWIFT_VERSION for ${targetProductName}: ${buildSettings.SWIFT_VERSION}`
+    props.logger.log(
+      `Final SWIFT_VERSION for ${targetProductName}: ${buildSettings.SWIFT_VERSION}`
     );
 
     // Apply build settings to target
@@ -440,6 +431,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       target,
       buildSettings,
       verbose: true,
+      logger: props.logger,
     });
 
     // Standalone apps should not have SKIP_INSTALL
@@ -448,11 +440,10 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       target,
       settingKey: 'SKIP_INSTALL',
       verbose: true,
+      logger: props.logger,
     });
 
-    console.log(
-      `[expo-targets] Configured build settings for ${targetProductName}`
-    );
+    props.logger.log(`Configured build settings for ${targetProductName}`);
 
     // Only code-based targets need Sources and Frameworks build phases
     if (typeConfig.requiresCode) {
@@ -470,12 +461,12 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
           'Sources',
           target.uuid
         );
-        console.log(
-          `[expo-targets] Created Sources build phase for ${targetProductName}`
+        props.logger.log(
+          `Created Sources build phase for ${targetProductName}`
         );
       } else {
-        console.log(
-          `[expo-targets] Sources build phase already exists for ${targetProductName}`
+        props.logger.log(
+          `Sources build phase already exists for ${targetProductName}`
         );
       }
 
@@ -493,17 +484,17 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
           'Frameworks',
           target.uuid
         );
-        console.log(
-          `[expo-targets] Created Frameworks build phase for ${targetProductName}`
+        props.logger.log(
+          `Created Frameworks build phase for ${targetProductName}`
         );
       } else {
-        console.log(
-          `[expo-targets] Frameworks build phase already exists for ${targetProductName}`
+        props.logger.log(
+          `Frameworks build phase already exists for ${targetProductName}`
         );
       }
     } else {
-      console.log(
-        `[expo-targets] Skipping Sources and Frameworks build phases for asset-only target`
+      props.logger.log(
+        `Skipping Sources and Frameworks build phases for asset-only target`
       );
     }
 
@@ -521,12 +512,12 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
         'Resources',
         target.uuid
       );
-      console.log(
-        `[expo-targets] Created Resources build phase for ${targetProductName}`
+      props.logger.log(
+        `Created Resources build phase for ${targetProductName}`
       );
     } else {
-      console.log(
-        `[expo-targets] Resources build phase already exists for ${targetProductName}`
+      props.logger.log(
+        `Resources build phase already exists for ${targetProductName}`
       );
     }
 
@@ -539,13 +530,20 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       ? globSync('**/*.swift', {
           cwd: targetDirectory,
           absolute: false,
-        })
+          ignore: ['**/Tests/**', '**/*.test.swift', '**/*Tests.swift'],
+        }).filter(
+          (file) =>
+            !file.includes('Tests/') &&
+            !file.includes('/Tests') &&
+            !file.endsWith('.test.swift') &&
+            !file.endsWith('Tests.swift')
+        )
       : [];
 
     // Auto-generate ReactNativeViewController.swift if using React Native without user Swift files
     if (props.entry && swiftFiles.length === 0) {
-      console.log(
-        `[expo-targets] No Swift files found - generating ReactNativeViewController.swift for React Native`
+      props.logger.log(
+        `No Swift files found - generating ReactNativeViewController.swift for React Native`
       );
 
       const moduleName = targetProductName;
@@ -553,17 +551,17 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       // when processing Swift files below
       swiftFiles = ['ReactNativeViewController.swift'];
 
-      console.log(
-        `[expo-targets] Will generate ReactNativeViewController.swift for ${moduleName}`
+      props.logger.log(
+        `Will generate ReactNativeViewController.swift for ${moduleName}`
       );
     } else if (props.entry && swiftFiles.length > 0) {
-      console.log(
-        `[expo-targets] Using user-provided Swift files with React Native entry point`
+      props.logger.log(
+        `Using user-provided Swift files with React Native entry point`
       );
     }
 
-    console.log(
-      `[expo-targets] Found ${swiftFiles.length} Swift file(s) in ${props.directory}/ios`
+    props.logger.log(
+      `Found ${swiftFiles.length} Swift file(s) in ${props.directory}/ios`
     );
 
     // Create virtual expo:targets group structure in Xcode
@@ -575,9 +573,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       targetName,
       virtualGroupUuid,
     });
-    console.log(
-      `[expo-targets] Created virtual group: expo:targets/${targetName}`
-    );
+    props.logger.log(`Created virtual group: expo:targets/${targetName}`);
 
     // Reference Swift files in place (no copying)
     swiftFiles.forEach((file) => {
@@ -600,7 +596,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
             entry: props.entry,
           });
           File.writeFileSafe(sourceFilePath, template);
-          console.log(`[expo-targets]   Generated: ${file} in build directory`);
+          props.logger.log(`  Generated: ${file} in build directory`);
         }
       } else {
         // User file - reference in place
@@ -611,6 +607,29 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
             `Swift file not found: ${sourceFilePath}\n` +
               `Expected at: ${path.relative(projectRoot, sourceFilePath)}`
           );
+        }
+
+        // Validate that file is within the target directory (security check)
+        const targetDirPath = path.join(projectRoot, props.directory, 'ios');
+        const normalizedFilePath = path.normalize(sourceFilePath);
+        const normalizedTargetDir = path.normalize(targetDirPath);
+
+        if (!normalizedFilePath.startsWith(normalizedTargetDir)) {
+          throw new Error(
+            `Swift file is outside target directory: ${file}\n` +
+              `Expected in: ${path.relative(projectRoot, targetDirPath)}`
+          );
+        }
+
+        // Skip test files even if they weren't caught by glob ignore
+        if (
+          file.includes('Tests/') ||
+          file.includes('/Tests') ||
+          file.endsWith('.test.swift') ||
+          file.endsWith('Tests.swift')
+        ) {
+          props.logger.log(`  Skipping test file: ${file}`);
+          return;
         }
       }
 
@@ -631,7 +650,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
         phaseType: 'PBXSourcesBuildPhase',
       });
 
-      console.log(`[expo-targets]   Referenced: ${file}`);
+      props.logger.log(`  Referenced: ${file}`);
     });
 
     // Handle Assets.xcassets - copy user assets to build directory, then reference
@@ -650,7 +669,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     // Copy user assets to build directory if they exist
     if (File.isDirectory(userAssetsPath)) {
       File.copyDirectorySafe(userAssetsPath, buildAssetsPath);
-      console.log(`[expo-targets] Copied user assets to build directory`);
+      props.logger.log(`Copied user assets to build directory`);
     } else {
       // Create empty assets directory
       File.ensureDirectoryExists(buildAssetsPath);
@@ -682,8 +701,8 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
           });
         }
       });
-      console.log(
-        `[expo-targets] Generated ${Object.keys(props.colors).length} color assets`
+      props.logger.log(
+        `Generated ${Object.keys(props.colors).length} color assets`
       );
     }
 
@@ -707,7 +726,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
         fileRefUuid: assetsFileRefUuid,
         phaseType: 'PBXResourcesBuildPhase',
       });
-      console.log(`[expo-targets] Referenced assets from build directory`);
+      props.logger.log(`Referenced assets from build directory`);
     }
 
     // Update INFOPLIST_FILE build setting to point to targets/
@@ -722,27 +741,23 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
         INFOPLIST_FILE: `"${relativeInfoPlistPath}"`,
       },
     });
-    console.log(
-      `[expo-targets] Info.plist referenced from: ${relativeInfoPlistPath}`
-    );
+    props.logger.log(`Info.plist referenced from: ${relativeInfoPlistPath}`);
 
     // Link frameworks (skip for asset-only targets)
     if (typeConfig.requiresCode && frameworks.length > 0) {
       frameworks.forEach((framework) => {
-        console.log(`[expo-targets]   Linking framework: ${framework}`);
+        props.logger.log(`  Linking framework: ${framework}`);
         xcodeProject.addFramework(`${framework}.framework`, {
           target: target.uuid,
           link: true,
         });
       });
     } else if (!typeConfig.requiresCode) {
-      console.log(
-        `[expo-targets] Skipping framework linking for asset-only target`
-      );
+      props.logger.log(`Skipping framework linking for asset-only target`);
     }
 
     // Add target dependency for app extensions and clips
-    console.log(`[expo-targets] Adding target dependency to main app`);
+    props.logger.log(`Adding target dependency to main app`);
 
     Xcode.addTargetDependency({
       project: xcodeProject,
@@ -752,15 +767,13 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
 
     // Configure embedding based on extension embed type
     if (typeConfig.embedType === 'foundation-extension') {
-      console.log(
-        `[expo-targets] Configuring "Embed Foundation Extensions" build phase`
-      );
+      props.logger.log(`Configuring "Embed Foundation Extensions" build phase`);
       Xcode.configureAppExtensionEmbed({
         project: xcodeProject,
         targetProductName,
       });
     } else if (typeConfig.embedType === 'app-clip') {
-      console.log(`[expo-targets] Creating "Embed App Clips" build phase`);
+      props.logger.log(`Creating "Embed App Clips" build phase`);
       Xcode.configureAppClipEmbed({
         project: xcodeProject,
         mainTargetUuid: mainTarget.uuid,
@@ -770,7 +783,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     }
     // 'none' embedType = no embedding configuration needed (e.g., watch apps)
 
-    console.log(`[expo-targets] Successfully configured ${targetName} target`);
+    props.logger.logSparse(true, `Configured ${targetName} target`);
 
     return config;
   });

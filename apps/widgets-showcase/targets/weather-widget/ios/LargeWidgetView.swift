@@ -59,7 +59,7 @@ struct LargeWidgetView: View {
                 }
 
                 Divider()
-                    .background(.white.opacity(0.3))
+                    .background(Color.white.opacity(0.3))
 
                 // 5-day forecast timeline
                 VStack(alignment: .leading, spacing: 8) {
@@ -142,7 +142,7 @@ struct DetailCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding(12)
-        .background(.white.opacity(0.15))
+        .background(Color.white.opacity(0.15))
         .cornerRadius(12)
     }
 }
@@ -165,7 +165,7 @@ struct ForecastDay: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
-        .background(.white.opacity(0.1))
+        .background(Color.white.opacity(0.1))
         .cornerRadius(10)
     }
 }

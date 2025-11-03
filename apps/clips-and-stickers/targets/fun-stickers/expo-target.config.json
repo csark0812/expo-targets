@@ -8,7 +8,13 @@
     "stickerPacks": [
       {
         "name": "Sticker Pack",
-        "assets": ["stickers/excited.png", "stickers/happy.png"]
+        "assets": [
+          "stickers/brutus.png",
+          "stickers/cheburashka.png",
+          "stickers/excited.png",
+          "stickers/happy.png",
+          "stickers/woody-woodpecker.png"
+        ]
       }
     ]
   }

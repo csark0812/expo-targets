@@ -361,11 +361,13 @@ export function applyBuildSettings({
   target,
   buildSettings,
   verbose = false,
+  logger,
 }: {
   project: XcodeProject;
   target: XcodeTarget;
   buildSettings: Record<string, string | string[]>;
   verbose?: boolean;
+  logger?: { log: (message: string) => void };
 }): void {
   const xcodeProject = project as any;
 
@@ -377,7 +379,11 @@ export function applyBuildSettings({
     xcodeProject.pbxXCConfigurationList()[targetBuildConfigId];
 
   if (!buildConfigList?.buildConfigurations) {
-    console.warn(`[expo-targets] No build configurations found for target`);
+    if (logger) {
+      logger.log('No build configurations found for target');
+    } else {
+      console.warn(`[expo-targets] No build configurations found for target`);
+    }
     return;
   }
 
@@ -387,7 +393,13 @@ export function applyBuildSettings({
     const configName = configSection?.name;
 
     if (verbose) {
-      console.log(`[expo-targets]   Configuring ${configName} build settings`);
+      if (logger) {
+        logger.log(`  Configuring ${configName} build settings`);
+      } else {
+        console.log(
+          `[expo-targets]   Configuring ${configName} build settings`
+        );
+      }
     }
 
     if (configSection?.buildSettings) {
@@ -397,9 +409,13 @@ export function applyBuildSettings({
           verbose &&
           (key === 'SWIFT_VERSION' || key === 'IPHONEOS_DEPLOYMENT_TARGET')
         ) {
-          console.log(
-            `[expo-targets]     Set ${key}=${value} to ${configName}`
-          );
+          if (logger) {
+            logger.log(`    Set ${key}=${value} to ${configName}`);
+          } else {
+            console.log(
+              `[expo-targets]     Set ${key}=${value} to ${configName}`
+            );
+          }
         }
       });
     }
@@ -414,11 +430,13 @@ export function removeBuildSetting({
   target,
   settingKey,
   verbose = false,
+  logger,
 }: {
   project: XcodeProject;
   target: XcodeTarget;
   settingKey: string;
   verbose?: boolean;
+  logger?: { log: (message: string) => void };
 }): void {
   const xcodeProject = project as any;
 
@@ -438,9 +456,13 @@ export function removeBuildSetting({
     if (configSection?.buildSettings?.[settingKey]) {
       delete configSection.buildSettings[settingKey];
       if (verbose) {
-        console.log(
-          `[expo-targets]     Removed ${settingKey} from ${configSection.name}`
-        );
+        if (logger) {
+          logger.log(`    Removed ${settingKey} from ${configSection.name}`);
+        } else {
+          console.log(
+            `[expo-targets]     Removed ${settingKey} from ${configSection.name}`
+          );
+        }
       }
     }
   });

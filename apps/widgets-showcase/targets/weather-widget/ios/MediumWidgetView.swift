@@ -29,7 +29,7 @@ struct MediumWidgetView: View {
                 .frame(maxWidth: .infinity)
 
                 Divider()
-                    .background(.white.opacity(0.3))
+                    .background(Color.white.opacity(0.3))
 
                 // Right side: Details
                 VStack(alignment: .leading, spacing: 12) {

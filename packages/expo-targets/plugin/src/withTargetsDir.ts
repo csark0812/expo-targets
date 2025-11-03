@@ -4,11 +4,15 @@ import { globSync } from 'glob';
 import path from 'path';
 
 import { withIOSTarget } from './ios/config-plugins/withIOSTarget';
+import { Logger } from './logger';
 
 export const withTargetsDir: ConfigPlugin<{
   targetsRoot?: string;
+  debug?: boolean;
 }> = (config, options) => {
   const targetsRoot = options?.targetsRoot || './targets';
+  const debug = options?.debug ?? false;
+  const logger = new Logger(debug);
   const projectRoot = config._internal!.projectRoot;
 
   // Look for expo-target.config files (supports .js, .ts, or .json)
@@ -20,7 +24,9 @@ export const withTargetsDir: ConfigPlugin<{
     }
   );
 
-  console.log(`[expo-targets] Found ${targetConfigFiles.length} target(s)`);
+  if (targetConfigFiles.length > 0) {
+    logger.logSparse(true, `Found ${targetConfigFiles.length} target(s)`);
+  }
 
   // Collect target configs for runtime access
   const targetConfigs: any[] = [];
@@ -53,15 +59,15 @@ export const withTargetsDir: ConfigPlugin<{
 
     const targetName = evaluatedConfig.name;
 
-    console.log(
-      `[expo-targets] Processing ${targetDirName}: type=${evaluatedConfig.type}, name=${targetName}`
+    logger.log(
+      `Processing ${targetDirName}: type=${evaluatedConfig.type}, name=${targetName}`
     );
 
     const supportsIOS = evaluatedConfig.platforms.includes('ios');
     const supportsAndroid = evaluatedConfig.platforms.includes('android');
 
-    console.log(
-      `[expo-targets] ${targetDirName}: iOS=${supportsIOS}, Android=${supportsAndroid}`
+    logger.log(
+      `${targetDirName}: iOS=${supportsIOS}, Android=${supportsAndroid}`
     );
 
     // Resolve appGroup (inherit from main app if not specified)
@@ -85,13 +91,12 @@ export const withTargetsDir: ConfigPlugin<{
         excludedPackages: evaluatedConfig.excludedPackages,
         directory: targetDirectory,
         configPath: targetPath,
+        logger,
       });
     }
 
     if (supportsAndroid && evaluatedConfig.android) {
-      console.warn(
-        `[expo-targets] Android support not yet implemented for ${targetDirName}`
-      );
+      logger.warn(`Android support not yet implemented for ${targetDirName}`);
     }
 
     // Store full config for runtime access (with resolved appGroup)

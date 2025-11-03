@@ -7,9 +7,17 @@
     "stickerPacks": [
       {
         "name": "Demo Pack",
-        "assets": []
+        "assets": [
+          "stickers/brave.png",
+          "stickers/finn.png",
+          "stickers/genie.png",
+          "stickers/ice-king.png",
+          "stickers/jake.png",
+          "stickers/lumpy-space-princess.png",
+          "stickers/marceline.png",
+          "stickers/princess-bubblegum.png"
+        ]
       }
     ]
   }
 }
-

@@ -8,6 +8,8 @@ build/
 dist/
 *.tsbuildinfo
 
+# images
+Icons8/
 # Compiled files in src directories (should only be in build/)
 src/**/*.js
 src/**/*.d.ts
