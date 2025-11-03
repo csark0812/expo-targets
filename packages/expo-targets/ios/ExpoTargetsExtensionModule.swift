@@ -79,16 +79,21 @@ public class ExpoTargetsExtensionModule: Module {
   }
 
   private func findExtensionContext() -> NSExtensionContext? {
-    // Search for ReactNativeViewController which has the extension context
-    // Must be called on main thread
-    for window in UIApplication.shared.windows {
+    let windows: [UIWindow]
+    if #available(iOS 15.0, *) {
+      let scenes = UIApplication.shared.connectedScenes
+      let windowScenes = scenes.compactMap { $0 as? UIWindowScene }
+      windows = windowScenes.flatMap { $0.windows }
+    } else {
+      windows = UIApplication.shared.windows
+    }
+
+    for window in windows {
       if let rootVC = window.rootViewController {
-        // Check root VC first
         if let context = rootVC.extensionContext {
           return context
         }
 
-        // Check child VCs (ReactNativeViewController is a child of _UIViewServiceRootViewController)
         for childVC in rootVC.children {
           if let context = childVC.extensionContext {
             return context
