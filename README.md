@@ -382,13 +382,17 @@ storage.refresh(targetName?);
 
 ## Examples
 
-See [apps/](./apps/) for complete examples:
+See [apps/README.md](./apps/README.md) for complete examples organized by theme and workflow:
 
-- **clip-advanced**: App Clip with URL handling
-- **imessage-stickers**: iMessage sticker pack
-- **share-extension**: Share extension with React Native
-- **widget-interactive**: Advanced weather widget
-- **multi-target**: Multiple targets in one app
+### Quick Links
+
+- **🎯 Widgets**: [`widgets-showcase`](./apps/widgets-showcase) - Basic to advanced widget examples
+- **📤 Extensions**: [`extensions-showcase`](./apps/extensions-showcase) - React Native share/action extensions
+- **⚡ Native**: [`native-extensions-showcase`](./apps/native-extensions-showcase) - Pure Swift extensions with function configs
+- **🎪 All Types**: [`all-targets-demo`](./apps/all-targets-demo) - Comprehensive demo of all 10 target types
+- **🔧 Bare RN**: [`bare-rn-widgets`](./apps/bare-rn-widgets), [`bare-rn-share`](./apps/bare-rn-share) - Bare React Native workflow examples
+
+See [apps/README.md](./apps/README.md) for complete examples and learning paths.
 
 ## Documentation
 

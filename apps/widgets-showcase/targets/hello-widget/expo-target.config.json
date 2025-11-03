@@ -1,0 +1,16 @@
+{
+  "type": "widget",
+  "name": "HelloWidget",
+  "displayName": "Hello Widget",
+  "platforms": ["ios"],
+  "appGroup": "group.com.test.widgetshowcase",
+  "ios": {
+    "bundleIdentifier": "com.test.widgetshowcase.hello",
+    "displayName": "Hello Widget",
+    "colors": {
+      "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" },
+      "BackgroundColor": { "light": "#F2F2F7", "dark": "#1C1C1E" },
+      "TextPrimary": { "light": "#000000", "dark": "#FFFFFF" }
+    }
+  }
+}

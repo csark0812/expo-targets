@@ -1,0 +1,15 @@
+{
+  "type": "stickers",
+  "name": "DemoStickers",
+  "displayName": "Demo Stickers",
+  "platforms": ["ios"],
+  "ios": {
+    "stickerPacks": [
+      {
+        "name": "Demo Pack",
+        "assets": []
+      }
+    ]
+  }
+}
+

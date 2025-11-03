@@ -1,0 +1,16 @@
+{
+  "type": "share",
+  "name": "DemoShare",
+  "displayName": "Demo Share",
+  "platforms": ["ios"],
+  "entry": "./targets/demo-share/src/index.tsx",
+  "appGroup": "group.com.test.alltargetsdemo",
+  "ios": {
+    "activationRules": [
+      { "type": "text" },
+      { "type": "url" },
+      { "type": "image", "maxCount": 5 }
+    ]
+  }
+}
+

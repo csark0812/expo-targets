@@ -1,0 +1,14 @@
+{
+  "type": "widget",
+  "name": "DemoWidget",
+  "displayName": "Demo Widget",
+  "platforms": ["ios"],
+  "appGroup": "group.com.test.alltargetsdemo",
+  "ios": {
+    "colors": {
+      "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" },
+      "BackgroundColor": { "light": "#F2F2F7", "dark": "#1C1C1E" }
+    }
+  }
+}
+

@@ -13,6 +13,11 @@
       "import": "./metro/build/index.js",
       "require": "./metro/build/index.js"
     },
+    "./plugin": {
+      "import": "./plugin/build/index.js",
+      "require": "./plugin/build/index.js",
+      "types": "./plugin/build/index.d.ts"
+    },
     "./app.plugin.js": {
       "import": "./app.plugin.js",
       "require": "./app.plugin.js"

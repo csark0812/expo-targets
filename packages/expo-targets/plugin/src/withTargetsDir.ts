@@ -33,6 +33,11 @@ export const withTargetsDir: ConfigPlugin<{
       evaluatedConfig = evaluatedConfig.default;
     }
 
+    // Handle function exports (like app.config.js)
+    if (typeof evaluatedConfig === 'function') {
+      evaluatedConfig = evaluatedConfig(config);
+    }
+
     const targetDirName = path.basename(path.dirname(targetPath));
     const targetDirectory = path.relative(
       projectRoot,

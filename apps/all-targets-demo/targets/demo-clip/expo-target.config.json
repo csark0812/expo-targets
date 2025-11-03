@@ -1,0 +1,19 @@
+{
+  "type": "clip",
+  "name": "DemoClip",
+  "displayName": "Demo Clip",
+  "platforms": ["ios"],
+  "appGroup": "group.com.test.alltargetsdemo",
+  "ios": {
+    "colors": {
+      "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" },
+      "BackgroundColor": { "light": "#FFFFFF", "dark": "#000000" }
+    },
+    "entitlements": {
+      "com.apple.developer.associated-domains": [
+        "appclips:alltargetsdemo.example.com"
+      ]
+    }
+  }
+}
+

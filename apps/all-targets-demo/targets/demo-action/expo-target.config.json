@@ -1,0 +1,14 @@
+{
+  "type": "action",
+  "name": "DemoAction",
+  "displayName": "Demo Action",
+  "platforms": ["ios"],
+  "entry": "./targets/demo-action/src/index.tsx",
+  "appGroup": "group.com.test.alltargetsdemo",
+  "ios": {
+    "activationRules": [
+      { "type": "image", "maxCount": 1 }
+    ]
+  }
+}
+

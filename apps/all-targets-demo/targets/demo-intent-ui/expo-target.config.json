@@ -1,0 +1,15 @@
+{
+  "type": "intent-ui",
+  "name": "DemoIntentUI",
+  "displayName": "Demo Intent UI",
+  "platforms": ["ios"],
+  "ios": {
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPointIdentifier": "com.apple.intents-ui-service",
+        "NSExtensionPrincipalClass": "IntentViewController"
+      }
+    }
+  }
+}
+

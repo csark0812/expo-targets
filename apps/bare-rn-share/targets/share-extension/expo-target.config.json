@@ -1,0 +1,16 @@
+{
+  "type": "share",
+  "name": "ShareExtension",
+  "displayName": "Share Extension",
+  "platforms": ["ios"],
+  "entry": "./targets/share-extension/src/index.tsx",
+  "appGroup": "group.com.test.barernshare",
+  "ios": {
+    "activationRules": [
+      { "type": "text" },
+      { "type": "url" },
+      { "type": "image", "maxCount": 5 }
+    ]
+  }
+}
+
