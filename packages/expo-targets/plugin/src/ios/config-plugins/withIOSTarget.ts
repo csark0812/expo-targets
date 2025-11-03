@@ -109,6 +109,20 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
     }
   }
 
+  // React Native extensions require ExpoModulesCore, which has minimum iOS 15.1
+  // Ensure deployment target meets this requirement when using React Native (entry specified)
+  const EXPO_MODULES_MINIMUM = '15.1';
+  if (
+    props.entry &&
+    parseFloat(deploymentTarget!) < parseFloat(EXPO_MODULES_MINIMUM)
+  ) {
+    props.logger.log(
+      `React Native extension requires ExpoModulesCore (iOS ${EXPO_MODULES_MINIMUM}), ` +
+        `raising deployment target from ${deploymentTarget} to ${EXPO_MODULES_MINIMUM}`
+    );
+    deploymentTarget = EXPO_MODULES_MINIMUM;
+  }
+
   // Inherit accent color
   const colors = props.colors || {};
   const mainAppAccentColor = (config.ios as any)?.accentColor;

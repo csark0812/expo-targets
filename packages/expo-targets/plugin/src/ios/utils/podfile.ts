@@ -5,9 +5,8 @@
 
 /**
  * Generate a Podfile target block for a React Native extension.
- * Extension targets inherit React Native from main app to avoid duplicate XCFrameworks.
- * Framework search paths are configured in post_install hook since inherit! :complete
- * doesn't always propagate them for Swift imports.
+ * Extension targets only inherit search paths, then explicitly declare needed pods.
+ * This avoids linking incompatible modules like Expo that contain UIApplication APIs.
  */
 export function generateReactNativeTargetBlock({
   targetName,
@@ -19,7 +18,7 @@ export function generateReactNativeTargetBlock({
   return `
   target '${targetName}' do
     platform :ios, '${deploymentTarget}'
-    inherit! :complete
+    inherit! :search_paths
   end
 `;
 }

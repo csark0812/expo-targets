@@ -83,10 +83,10 @@ export const withTargetPodfile: ConfigPlugin<{
       );
 
       // For React Native targets, ensure framework search paths are configured
-      // inherit! :complete doesn't always propagate framework search paths for Swift imports
+      // inherit! :search_paths needs additional framework search paths for Swift imports
       if (!props.standalone) {
         // Find all React Native extension targets nested inside main target
-        // These targets use inherit! :complete to inherit pods from main app
+        // These targets use inherit! :search_paths to avoid inheriting incompatible pods like Expo
         const reactNativeTargets: {
           targetName: string;
           deploymentTarget: string;
@@ -145,8 +145,8 @@ export const withTargetPodfile: ConfigPlugin<{
                 if (nestedTargetDepth === 0) {
                   const targetBlock = currentTargetLines.join('\n');
 
-                  // Check if this target has inherit! :complete
-                  if (targetBlock.includes('inherit! :complete')) {
+                  // Check if this target has inherit! :search_paths (React Native extensions)
+                  if (targetBlock.includes('inherit! :search_paths')) {
                     // Extract deployment target
                     const platformMatch = targetBlock.match(
                       /platform\s+:ios,\s+'([^']+)'/
