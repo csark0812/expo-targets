@@ -7,24 +7,14 @@ public class ExpoTargetsExtensionModule: Module {
 
     Function("closeExtension") { () -> Void in
       DispatchQueue.main.async {
-        if let extensionContext = self.findExtensionContext() {
-          extensionContext.completeRequest(returningItems: nil, completionHandler: nil)
-        }
+        NotificationCenter.default.post(name: NSNotification.Name("ExpoTargetsCloseExtension"), object: nil)
       }
     }
 
     Function("openHostApp") { (path: String) -> Void in
-      guard let bundleIdentifier = Bundle.main.bundleIdentifier else { return }
-      // Remove common extension suffixes to get host app bundle ID
-      let extensionSuffixes = [".ShareExtension", ".share", ".action", ".clip"]
-      var appBundleId = bundleIdentifier
-
-      for suffix in extensionSuffixes {
-        appBundleId = appBundleId.replacingOccurrences(of: suffix, with: "")
-      }
-
-      if let url = URL(string: "\(appBundleId)://\(path)") {
-        self.openURL(url)
+      DispatchQueue.main.async {
+        let userInfo: [String: String] = ["path": path]
+        NotificationCenter.default.post(name: NSNotification.Name("ExpoTargetsOpenHostApp"), object: nil, userInfo: userInfo)
       }
     }
 
@@ -79,6 +69,7 @@ public class ExpoTargetsExtensionModule: Module {
   }
 
   private func findExtensionContext() -> NSExtensionContext? {
+    // First, try to find through window hierarchy
     let windows: [UIWindow]
     if #available(iOS 15.0, *) {
       let scenes = UIApplication.shared.connectedScenes
@@ -90,14 +81,70 @@ public class ExpoTargetsExtensionModule: Module {
 
     for window in windows {
       if let rootVC = window.rootViewController {
-        if let context = rootVC.extensionContext {
+        if let context = findExtensionContext(in: rootVC) {
           return context
         }
+      }
+    }
 
-        for childVC in rootVC.children {
-          if let context = childVC.extensionContext {
+    // Fallback: search through responder chain from any visible window
+    for window in windows {
+      var responder: UIResponder? = window.rootViewController
+      while responder != nil {
+        if let viewController = responder as? UIViewController {
+          if let context = viewController.extensionContext {
             return context
           }
+          // Also check nested view controllers
+          if let context = findExtensionContext(in: viewController) {
+            return context
+          }
+        }
+        responder = responder?.next
+      }
+    }
+
+    return nil
+  }
+
+  private func findExtensionContext(in viewController: UIViewController) -> NSExtensionContext? {
+    // Check the view controller itself
+    if let context = viewController.extensionContext {
+      return context
+    }
+
+    // Check presented view controllers
+    if let presented = viewController.presentedViewController {
+      if let context = findExtensionContext(in: presented) {
+        return context
+      }
+    }
+
+    // Check child view controllers
+    for childVC in viewController.children {
+      if let context = findExtensionContext(in: childVC) {
+        return context
+      }
+    }
+
+    // Check container view controllers
+    if let navController = viewController as? UINavigationController {
+      if let topVC = navController.topViewController {
+        if let context = findExtensionContext(in: topVC) {
+          return context
+        }
+      }
+      if let visibleVC = navController.visibleViewController {
+        if let context = findExtensionContext(in: visibleVC) {
+          return context
+        }
+      }
+    }
+
+    if let tabController = viewController as? UITabBarController {
+      if let selectedVC = tabController.selectedViewController {
+        if let context = findExtensionContext(in: selectedVC) {
+          return context
         }
       }
     }

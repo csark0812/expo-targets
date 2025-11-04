@@ -67,6 +67,7 @@ class ReactNativeViewController: UIViewController {
         self.view.contentScaleFactor = UIScreen.main.scale
         isCleanedUp = false
 
+        setupNotificationObservers()
         {{LOAD_EXTENSION_DATA}}
     }
 
@@ -122,6 +123,8 @@ class ReactNativeViewController: UIViewController {
         if isCleanedUp { return }
         isCleanedUp = true
 
+        NotificationCenter.default.removeObserver(self)
+
         // Remove React Native view and deallocate resources
         view.subviews.forEach { subview in
             if subview is RCTRootView {
@@ -133,6 +136,68 @@ class ReactNativeViewController: UIViewController {
         reactNativeFactoryDelegate = nil
 
         print("🧹 ReactNativeViewController cleaned up for {{TARGET_NAME}}")
+    }
+
+    // MARK: - Notification Handling
+
+    private func setupNotificationObservers() {
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("ExpoTargetsCloseExtension"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.closeExtension()
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("ExpoTargetsOpenHostApp"),
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            if let userInfo = notification.userInfo,
+               let path = userInfo["path"] as? String {
+                self?.openHostApp(path: path)
+            }
+        }
+    }
+
+    private func closeExtension() {
+        extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+        cleanupAfterClose()
+    }
+
+    private func openHostApp(path: String) {
+        guard let bundleIdentifier = Bundle.main.bundleIdentifier else { return }
+        // Remove common extension suffixes to get host app bundle ID
+        let extensionSuffixes = [".ShareExtension", ".share", ".action", ".clip"]
+        var appBundleId = bundleIdentifier
+
+        for suffix in extensionSuffixes {
+            appBundleId = appBundleId.replacingOccurrences(of: suffix, with: "")
+        }
+
+        guard let url = URL(string: "\(appBundleId)://\(path)") else { return }
+
+        var responder: UIResponder? = self
+        while responder != nil {
+            if let application = responder as? UIApplication {
+                application.open(url, options: [:], completionHandler: nil)
+                // Close extension after opening host app
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                    self?.closeExtension()
+                }
+                return
+            }
+            responder = responder?.next
+        }
+
+        // Fallback: try UIApplication.shared directly
+        if UIApplication.shared.canOpenURL(url) {
+            UIApplication.shared.open(url, options: [:], completionHandler: nil)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                self?.closeExtension()
+            }
+        }
     }
 
     // MARK: - Error Handling

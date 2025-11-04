@@ -124,9 +124,15 @@ function getExtensionDataForType(
 
       return {
         properties: properties.join('\n    '),
-        loadMethod: `loadActionContent()
-        let actionData = getActionDataProps()
-        setupReactNativeView(with: actionData)`,
+        loadMethod: `// Load action content before creating React Native view
+        Task {
+            await loadActionContent()
+            // Create React Native view with loaded content
+            await MainActor.run {
+                let actionData = getActionDataProps()
+                setupReactNativeView(with: actionData)
+            }
+        }`,
         propsMethod:
           loadMethodLines.join('\n') + '\n\n' + propsMethodLines.join('\n'),
       };
