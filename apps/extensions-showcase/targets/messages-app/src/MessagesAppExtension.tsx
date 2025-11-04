@@ -122,7 +122,7 @@ export default function MessagesAppExtension(props: MessagesAppProps) {
     });
 
     console.log('[MessagesApp] Calling messagesAppTarget.close()');
-    messagesAppTarget.close();
+    messagesAppTarget.requestPresentationStyle('compact');
     console.log('[MessagesApp] messagesAppTarget.close() returned');
   };
 
@@ -139,9 +139,13 @@ export default function MessagesAppExtension(props: MessagesAppProps) {
       url: `expo-targets://message?type=custom`,
     });
 
-    console.log('[MessagesApp] Calling messagesAppTarget.close()');
-    messagesAppTarget.close();
-    console.log('[MessagesApp] messagesAppTarget.close() returned');
+    console.log(
+      '[MessagesApp] Calling messagesAppTarget.requestPresentationStyle("compact")'
+    );
+    messagesAppTarget.requestPresentationStyle('compact');
+    console.log(
+      '[MessagesApp] messagesAppTarget.requestPresentationStyle("compact") returned'
+    );
   };
 
   // Compact mode - show condensed UI
@@ -229,7 +233,7 @@ export default function MessagesAppExtension(props: MessagesAppProps) {
           style={styles.cancelButton}
           onPress={() => {
             console.log('[MessagesApp] Cancel button pressed');
-            messagesAppTarget.close();
+            messagesAppTarget.requestPresentationStyle('compact');
           }}
         >
           <Text style={styles.cancelButtonText}>Cancel</Text>

@@ -33,7 +33,8 @@ export interface ExtensionTarget extends BaseTarget {
   getSharedData: () => SharedData | null;
 }
 
-export interface MessagesExtensionTarget extends ExtensionTarget {
+export interface MessagesExtensionTarget
+  extends Omit<ExtensionTarget, 'close'> {
   type: 'messages';
   getPresentationStyle: () => PresentationStyle | null;
   requestPresentationStyle: (style: PresentationStyle) => void;
@@ -200,7 +201,6 @@ export function createTarget<T extends ExtensionType = ExtensionType>(
       const messagesTarget: MessagesExtensionTarget = {
         ...baseTarget,
         type: 'messages',
-        close: () => extension.close(),
         openHostApp: (path?: string) => extension.openHostApp(path),
         getSharedData: () => extension.getSharedData(),
         getPresentationStyle: () => messages.getPresentationStyle(),
