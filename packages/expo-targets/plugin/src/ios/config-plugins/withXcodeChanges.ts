@@ -649,13 +649,19 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       ? globSync('**/*.swift', {
           cwd: targetDirectory,
           absolute: false,
-          ignore: ['**/Tests/**', '**/*.test.swift', '**/*Tests.swift'],
+          ignore: [
+            '**/Tests/**',
+            '**/*.test.swift',
+            '**/*Tests.swift',
+            '**/build/**', // Exclude build directory - those are generated files
+          ],
         }).filter(
           (file) =>
             !file.includes('Tests/') &&
             !file.includes('/Tests') &&
             !file.endsWith('.test.swift') &&
-            !file.endsWith('Tests.swift')
+            !file.endsWith('Tests.swift') &&
+            !file.startsWith('build/') // Also filter out build/ files that might slip through
         )
       : [];
 
@@ -698,14 +704,33 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     swiftFiles.forEach((file) => {
       let sourceFilePath: string;
 
-      if (
-        props.entry &&
-        file === 'ReactNativeViewController.swift' &&
-        !fs.existsSync(path.join(projectRoot, props.directory, 'ios', file))
-      ) {
-        // Generated file - write to build directory
-        sourceFilePath = path.join(targetBuildPath, file);
-        if (!File.isFile(sourceFilePath)) {
+      // Check if this is ReactNativeViewController.swift (could be in build/ or root)
+      const isReactNativeViewController =
+        file === 'ReactNativeViewController.swift' ||
+        file.endsWith('/ReactNativeViewController.swift') ||
+        file.endsWith('\\ReactNativeViewController.swift');
+
+      if (props.entry && isReactNativeViewController) {
+        // Generated file - always regenerate on every prebuild (no caching)
+        // Check if user has their own file in ios/ (not build/)
+        const userFilePath = path.join(
+          projectRoot,
+          props.directory,
+          'ios',
+          'ReactNativeViewController.swift'
+        );
+        if (fs.existsSync(userFilePath)) {
+          // User provided their own - reference it in place
+          sourceFilePath = userFilePath;
+          props.logger.log(
+            `  Using user-provided: ReactNativeViewController.swift`
+          );
+        } else {
+          // Generate fresh template file - always regenerate
+          sourceFilePath = path.join(
+            targetBuildPath,
+            'ReactNativeViewController.swift'
+          );
           const moduleName = targetProductName.replace('Target', '');
           const template = ReactNativeSwift.generateReactNativeViewController({
             type: props.type,
@@ -715,7 +740,9 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
             entry: props.entry,
           });
           File.writeFileSafe(sourceFilePath, template);
-          props.logger.log(`  Generated: ${file} in build directory`);
+          props.logger.log(
+            `  Generated: ReactNativeViewController.swift in build directory (regenerated)`
+          );
         }
       } else {
         // User file - reference in place
