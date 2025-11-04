@@ -34,6 +34,7 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
     'share',
     'action',
     'clip',
+    'messages',
   ];
 
   // Validate entry field

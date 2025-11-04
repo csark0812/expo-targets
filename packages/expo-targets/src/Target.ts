@@ -86,6 +86,7 @@ const EXTENSION_TYPES: Set<ReactNativeCompatibleType> = new Set([
   'share',
   'action',
   'clip',
+  'messages',
 ]);
 
 function isExtensionType(

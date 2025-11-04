@@ -1,0 +1,13 @@
+{
+  "type": "messages",
+  "name": "DemoMessages",
+  "displayName": "Demo Messages",
+  "platforms": ["ios"],
+  "appGroup": "group.com.test.alltargetsdemo",
+  "ios": {
+    "colors": {
+      "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" },
+      "BackgroundColor": { "light": "#FFFFFF", "dark": "#1C1C1E" }
+    }
+  }
+}

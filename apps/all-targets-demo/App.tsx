@@ -1,11 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  ScrollView,
-} from 'react-native';
+import { StyleSheet, Text, View, ScrollView } from 'react-native';
 
 export default function App() {
   const productionTargets = [
@@ -14,12 +9,21 @@ export default function App() {
     { type: 'share', name: 'DemoShare', status: '✅ Production Ready (RN)' },
     { type: 'action', name: 'DemoAction', status: '✅ Production Ready (RN)' },
     { type: 'stickers', name: 'DemoStickers', status: '✅ Production Ready' },
+    { type: 'messages', name: 'DemoMessages', status: '✅ Production Ready' },
   ];
 
   const configOnlyTargets = [
     { type: 'safari', name: 'DemoSafari', status: '📋 Config Only' },
-    { type: 'notification-content', name: 'DemoNotificationContent', status: '📋 Config Only' },
-    { type: 'notification-service', name: 'DemoNotificationService', status: '📋 Config Only' },
+    {
+      type: 'notification-content',
+      name: 'DemoNotificationContent',
+      status: '📋 Config Only',
+    },
+    {
+      type: 'notification-service',
+      name: 'DemoNotificationService',
+      status: '📋 Config Only',
+    },
     { type: 'intent', name: 'DemoIntent', status: '📋 Config Only' },
     { type: 'intent-ui', name: 'DemoIntentUI', status: '📋 Config Only' },
   ];
@@ -56,9 +60,9 @@ export default function App() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>📋 Config-Only Targets</Text>
           <Text style={styles.description}>
-            Targets with proper configuration and placeholder Swift code.
-            These demonstrate the config structure but require full
-            implementation for production use:
+            Targets with proper configuration and placeholder Swift code. These
+            demonstrate the config structure but require full implementation for
+            production use:
           </Text>
 
           {configOnlyTargets.map((target) => (
@@ -80,8 +84,8 @@ export default function App() {
             <Text style={styles.infoText}>
               This app demonstrates how to configure multiple targets in a
               single app. Each target can have its own configuration, Swift
-              code, and React Native entry points (where supported). All
-              targets share the same App Group for data synchronization.
+              code, and React Native entry points (where supported). All targets
+              share the same App Group for data synchronization.
             </Text>
           </View>
         </View>
@@ -199,4 +203,3 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 });
-

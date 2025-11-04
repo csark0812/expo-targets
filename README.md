@@ -250,6 +250,7 @@ Upgrading from pre-1.0 versions? See [Migration Guide](./docs/MIGRATION-REFERENC
 | `widget`               | ✅  | Home screen widgets        |
 | `clip`                 | ✅  | App Clips                  |
 | `stickers`             | ✅  | iMessage sticker packs     |
+| `messages`             | ✅  | iMessage apps              |
 | `share`                | ✅  | Share extensions           |
 | `action`               | ✅  | Action extensions          |
 | `intent`               | 📝  | Siri intents               |

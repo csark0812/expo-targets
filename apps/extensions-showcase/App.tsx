@@ -10,12 +10,20 @@ import {
 } from 'react-native';
 import { shareContentTarget } from './targets/share-content';
 import { imageActionTarget } from './targets/image-action';
+import { messagesAppTarget } from './targets/messages-app';
 import type { SharedItem } from './targets/share-content/src/ShareExtension';
 import type { ProcessedItem } from './targets/image-action/src/ImageActionExtension';
+
+interface SentMessage {
+  id: string;
+  caption: string;
+  sentAt: string;
+}
 
 export default function App() {
   const [sharedItems, setSharedItems] = useState<SharedItem[]>([]);
   const [processedItems, setProcessedItems] = useState<ProcessedItem[]>([]);
+  const [sentMessages, setSentMessages] = useState<SentMessage[]>([]);
 
   useEffect(() => {
     loadData();
@@ -31,6 +39,13 @@ export default function App() {
     if (actionData?.items) {
       setProcessedItems(actionData.items);
     }
+
+    const messagesData = messagesAppTarget.getData<{
+      messages: SentMessage[];
+    }>();
+    if (messagesData?.messages) {
+      setSentMessages(messagesData.messages);
+    }
   };
 
   const clearSharedItems = () => {
@@ -41,6 +56,11 @@ export default function App() {
   const clearProcessedItems = () => {
     imageActionTarget.setData({ items: [] });
     setProcessedItems([]);
+  };
+
+  const clearSentMessages = () => {
+    messagesAppTarget.setData({ messages: [] });
+    setSentMessages([]);
   };
 
   const formatDate = (dateString: string) => {
@@ -204,16 +224,68 @@ export default function App() {
           </View>
         )}
 
+        {/* Messages App Info */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>💬 Messages App</Text>
+          <Text style={styles.description}>
+            Interactive iMessage app built with React Native. Send message
+            templates directly from Messages app.
+          </Text>
+
+          <View style={styles.infoBox}>
+            <Text style={styles.infoTitle}>How to use:</Text>
+            <Text style={styles.infoText}>
+              1. Open Messages app{'\n'}
+              2. Tap the App Store icon in keyboard{'\n'}
+              3. Select "Messages App"{'\n'}
+              4. Choose a template and tap "Send"
+            </Text>
+          </View>
+
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{sentMessages.length}</Text>
+              <Text style={styles.statLabel}>Messages Sent</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.clearButton}
+              onPress={clearSentMessages}
+            >
+              <Text style={styles.clearButtonText}>Clear</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Sent Messages List */}
+        {sentMessages.length > 0 && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Sent Messages</Text>
+            {sentMessages
+              .slice()
+              .reverse()
+              .map((message) => (
+                <View key={message.id} style={styles.itemCard}>
+                  <View style={styles.itemHeader}>
+                    <Text style={styles.itemDate}>
+                      {formatDate(message.sentAt)}
+                    </Text>
+                  </View>
+                  <Text style={styles.itemText}>{message.caption}</Text>
+                </View>
+              ))}
+          </View>
+        )}
+
         {/* Learning Info */}
         <View style={styles.infoCard}>
           <Text style={styles.infoEmoji}>💡</Text>
           <View style={styles.infoContent}>
             <Text style={styles.infoTitle}>Extension Lifecycle</Text>
             <Text style={styles.infoText}>
-              Both extensions use React Native for UI. They can access shared
+              All extensions use React Native for UI. They can access shared
               data via `getSharedData()`, save data using `setData()`, and close
               using `close()`. The main app reads this data to display
-              shared/processed items.
+              shared/processed items and sent messages.
             </Text>
           </View>
         </View>

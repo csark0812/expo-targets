@@ -100,7 +100,24 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       supportsActivationRules: false,
       activationRulesLocation: 'none',
     },
-
+    messages: {
+      requiresCode: true,
+      targetType: 'app_extension',
+      embedType: 'foundation-extension',
+      frameworks: ['Messages'],
+      productType: 'com.apple.product-type.app-extension',
+      extensionPointIdentifier: 'com.apple.message-payload-provider',
+      defaultUsesAppGroups: true,
+      requiresEntitlements: true,
+      basePlist: {
+        NSExtension: {
+          NSExtensionPrincipalClass:
+            '$(PRODUCT_MODULE_NAME).MessagesViewController',
+        },
+      },
+      supportsActivationRules: false,
+      activationRulesLocation: 'none',
+    },
     share: {
       requiresCode: true,
       targetType: 'app_extension',
@@ -425,7 +442,13 @@ export function getTargetInfoPlistForType(
   }
 
   // Override NSExtensionPrincipalClass for React Native extensions
-  if (entry && (type === 'share' || type === 'action' || type === 'clip')) {
+  if (
+    entry &&
+    (type === 'share' ||
+      type === 'action' ||
+      type === 'clip' ||
+      type === 'messages')
+  ) {
     const nsExtension = { ...basePlist.NSExtension };
 
     // Remove NSExtensionMainStoryboard for action extensions using React Native

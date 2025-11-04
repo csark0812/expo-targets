@@ -1,0 +1,18 @@
+{
+  "type": "messages",
+  "name": "MessagesApp",
+  "displayName": "Messages App",
+  "platforms": ["ios"],
+  "entry": "./targets/messages-app/index.tsx",
+  "appGroup": "group.com.test.extensionsshowcase",
+  "ios": {
+    "bundleIdentifier": "com.test.extensionsshowcase.messages",
+    "displayName": "Messages App",
+    "colors": {
+      "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" },
+      "BackgroundColor": { "light": "#FFFFFF", "dark": "#1C1C1E" },
+      "TextPrimary": { "light": "#000000", "dark": "#FFFFFF" }
+    },
+    "excludedPackages": ["expo-updates", "expo-dev-client"]
+  }
+}
