@@ -179,6 +179,47 @@ function getExtensionDataForType(
       };
     }
 
+    case 'messages': {
+      const dataTemplate = readTemplate('messages-extension-data.swift');
+      const lines = dataTemplate.split('\n');
+      const properties: string[] = [];
+      const loadMethodLines: string[] = [];
+      const propsMethodLines: string[] = [];
+
+      let currentSection: 'properties' | 'load' | 'props' | null = null;
+
+      for (const line of lines) {
+        if (line.includes('private var ')) {
+          currentSection = 'properties';
+          properties.push(line);
+        } else if (line.includes('private func loadMessagesContent()')) {
+          currentSection = 'load';
+          loadMethodLines.push(line);
+        } else if (line.includes('private func getMessagesDataProps()')) {
+          currentSection = 'props';
+          propsMethodLines.push(line);
+        } else if (
+          currentSection === 'properties' &&
+          line.trim().startsWith('private')
+        ) {
+          properties.push(line);
+        } else if (currentSection === 'load') {
+          loadMethodLines.push(line);
+        } else if (currentSection === 'props') {
+          propsMethodLines.push(line);
+        }
+      }
+
+      return {
+        properties: properties.join('\n    '),
+        loadMethod: `loadMessagesContent()
+        let messagesData = getMessagesDataProps()
+        setupReactNativeView(with: messagesData)`,
+        propsMethod:
+          loadMethodLines.join('\n') + '\n\n' + propsMethodLines.join('\n'),
+      };
+    }
+
     default:
       // For other types, no extension-specific data
       return {
@@ -192,11 +233,19 @@ function getExtensionDataForType(
 export function generateReactNativeViewController(
   options: ReactNativeViewControllerOptions
 ): string {
-  const baseTemplate = readTemplate('ReactNativeViewController.swift');
+  let baseTemplate = readTemplate('ReactNativeViewController.swift');
   const extensionData = getExtensionDataForType(
     options.type,
     options.preprocessingFile
   );
+
+  // Add Messages import for messages type
+  if (options.type === 'messages') {
+    baseTemplate = baseTemplate.replace(
+      'import ReactAppDependencyProvider',
+      'import ReactAppDependencyProvider\nimport Messages'
+    );
+  }
 
   // Convert entry path to bundle root for Metro
   // e.g., "./targets/rn-share/index.tsx" -> "targets/rn-share/index"
