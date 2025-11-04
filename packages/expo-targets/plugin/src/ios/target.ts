@@ -384,9 +384,9 @@ export function getTargetInfoPlistForType(
     CFBundleIdentifier: '$(PRODUCT_BUNDLE_IDENTIFIER)',
     CFBundlePackageType: '$(PRODUCT_BUNDLE_PACKAGE_TYPE)',
     CFBundleDevelopmentRegion: '$(DEVELOPMENT_LANGUAGE)',
-    CFBundleShortVersionString: '1.0',
+    CFBundleShortVersionString: '$(MARKETING_VERSION)',
     CFBundleInfoDictionaryVersion: '6.0',
-    CFBundleVersion: '1',
+    CFBundleVersion: '$(CURRENT_PROJECT_VERSION)',
     CFBundleExecutable: '$(EXECUTABLE_NAME)',
   };
 

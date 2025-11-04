@@ -63,17 +63,27 @@ export default function MessagesAppExtension(props: MessagesAppProps) {
     props.presentationStyle
   );
   const [customMessage, setCustomMessage] = useState('');
-
   useEffect(() => {
+    console.log(
+      '[MessagesApp] Component mounted with initial style:',
+      props.presentationStyle
+    );
     // Listen for presentation style changes
     const subscription = messagesAppTarget.addEventListener(
       'onPresentationStyleChange',
       (style: PresentationStyle) => {
+        console.log(
+          '[MessagesApp] Received presentation style change event:',
+          style
+        );
         setPresentationStyle(style);
       }
     );
 
     return () => {
+      console.log(
+        '[MessagesApp] Component unmounting, removing event listener'
+      );
       subscription.remove();
     };
   }, []);
@@ -85,6 +95,10 @@ export default function MessagesAppExtension(props: MessagesAppProps) {
   };
 
   const handleSendTemplate = (template: MessageTemplate) => {
+    console.log(
+      '[MessagesApp] handleSendTemplate called for:',
+      template.caption
+    );
     messagesAppTarget.sendMessage({
       caption: template.caption,
       subcaption: template.subcaption,
@@ -94,12 +108,11 @@ export default function MessagesAppExtension(props: MessagesAppProps) {
     });
 
     // Store in App Group
-    const existing = messagesAppTarget.getData<{ messages: any[] }>() || {
-      messages: [],
-    };
+    const existing = messagesAppTarget.getData<{ messages: any[] }>();
+    const messages = existing.messages || [];
     messagesAppTarget.setData({
       messages: [
-        ...existing.messages,
+        ...messages,
         {
           id: Date.now().toString(),
           caption: template.caption,
@@ -108,19 +121,27 @@ export default function MessagesAppExtension(props: MessagesAppProps) {
       ],
     });
 
+    console.log('[MessagesApp] Calling messagesAppTarget.close()');
     messagesAppTarget.close();
+    console.log('[MessagesApp] messagesAppTarget.close() returned');
   };
 
   const handleSendCustom = () => {
     if (!customMessage.trim()) return;
 
+    console.log(
+      '[MessagesApp] handleSendCustom called with message:',
+      customMessage
+    );
     messagesAppTarget.sendMessage({
       caption: customMessage,
       subcaption: 'Custom message',
       url: `expo-targets://message?type=custom`,
     });
 
+    console.log('[MessagesApp] Calling messagesAppTarget.close()');
     messagesAppTarget.close();
+    console.log('[MessagesApp] messagesAppTarget.close() returned');
   };
 
   // Compact mode - show condensed UI
@@ -130,10 +151,23 @@ export default function MessagesAppExtension(props: MessagesAppProps) {
         <TouchableOpacity
           style={styles.expandButton}
           onPress={() => {
+            console.log(
+              '[MessagesApp] Button pressed - requesting expanded style'
+            );
+            console.log(
+              '[MessagesApp] Current presentation style:',
+              presentationStyle
+            );
             try {
               messagesAppTarget.requestPresentationStyle('expanded');
+              console.log(
+                '[MessagesApp] requestPresentationStyle called successfully'
+              );
             } catch (error) {
-              // Error handling
+              console.error(
+                '[MessagesApp] Error calling requestPresentationStyle:',
+                error
+              );
             }
           }}
         >
@@ -193,7 +227,10 @@ export default function MessagesAppExtension(props: MessagesAppProps) {
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.cancelButton}
-          onPress={() => messagesAppTarget.close()}
+          onPress={() => {
+            console.log('[MessagesApp] Cancel button pressed');
+            messagesAppTarget.close();
+          }}
         >
           <Text style={styles.cancelButtonText}>Cancel</Text>
         </TouchableOpacity>

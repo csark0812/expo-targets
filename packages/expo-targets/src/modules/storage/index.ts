@@ -68,6 +68,10 @@ export class AppGroupStorage {
   getData<T extends Record<string, any>>(): T {
     try {
       const rawData = ExpoTargetsStorageModule.getAllData(this.appGroup);
+      if (!rawData || typeof rawData !== 'object') {
+        return {} as T;
+      }
+
       const parsedData: Record<string, any> = {};
 
       Object.entries(rawData).forEach(([key, value]) => {

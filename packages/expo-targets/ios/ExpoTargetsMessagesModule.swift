@@ -42,6 +42,7 @@ public class ExpoTargetsMessagesModule: Module {
         guard let msViewController = self.findMessagesViewController() else {
           return
         }
+
         let presentationStyle: MSMessagesAppPresentationStyle =
           style == "compact" ? .compact : .expanded
         msViewController.requestPresentationStyle(presentationStyle)
@@ -169,7 +170,23 @@ public class ExpoTargetsMessagesModule: Module {
   }
 
   private func findMessagesViewController() -> MSMessagesAppViewController? {
-    // Get windows using modern API for iOS 15+ or legacy API for older versions
+    // First, try to get the shared instance from MessagesViewController
+    // Swift classes need module-qualified names for NSClassFromString
+    // Try common patterns: MessagesViewController, <ModuleName>.MessagesViewController
+    let classNames = [
+      "MessagesViewController",
+      "\(Bundle.main.infoDictionary?["CFBundleExecutable"] as? String ?? "").MessagesViewController"
+    ]
+
+    for className in classNames {
+      if let viewControllerClass = NSClassFromString(className) as? NSObject.Type {
+        if let sharedInstance = viewControllerClass.value(forKey: "shared") as? MSMessagesAppViewController {
+          return sharedInstance
+        }
+      }
+    }
+
+    // Fallback: Get windows using modern API for iOS 15+ or legacy API for older versions
     let windows: [UIWindow]
     if #available(iOS 15.0, *) {
       let scenes = UIApplication.shared.connectedScenes

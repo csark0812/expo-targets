@@ -325,7 +325,6 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     const essentialSettings = [
       'CLANG_ENABLE_MODULES',
       'TARGETED_DEVICE_FAMILY',
-      'MARKETING_VERSION',
       'CURRENT_PROJECT_VERSION',
     ];
 
@@ -335,6 +334,19 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
         props.logger.log(`Inherited ${setting}: ${mainBuildSettings[setting]}`);
       }
     });
+
+    // Set MARKETING_VERSION from Expo config to match main app's Info.plist value
+    // Expo prebuild may truncate version in build settings but keeps full version in Info.plist
+    if (config.version) {
+      targetSpecificSettings.MARKETING_VERSION = config.version;
+      props.logger.log(`Set MARKETING_VERSION from config: ${config.version}`);
+    } else if (mainBuildSettings.MARKETING_VERSION) {
+      targetSpecificSettings.MARKETING_VERSION =
+        mainBuildSettings.MARKETING_VERSION;
+      props.logger.log(
+        `Inherited MARKETING_VERSION: ${mainBuildSettings.MARKETING_VERSION}`
+      );
+    }
 
     // Build final settings: target-specific + inherited + deployment target + custom overrides
     const buildSettings: Record<string, string> = {

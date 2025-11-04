@@ -3,12 +3,20 @@ import Messages
 
 // Principal class for Messages extension - required by iMessage
 // This hosts the React Native view as a child view controller
+@objc(MessagesViewController)
 class MessagesViewController: MSMessagesAppViewController {
+    @objc static weak var shared: MSMessagesAppViewController?
     private var reactViewController: ReactNativeViewController?
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        MessagesViewController.shared = self
         setupReactViewController()
+        setupNotificationObservers()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     private func setupReactViewController() {
@@ -65,17 +73,48 @@ class MessagesViewController: MSMessagesAppViewController {
         return data
     }
 
+    // MARK: - Notification Handling
+
+    private func setupNotificationObservers() {
+        print("[MessagesViewController] Setting up notification observers")
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("ExpoTargetsCloseExtension"),
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            print("[MessagesViewController] Received ExpoTargetsCloseExtension notification")
+            print("[MessagesViewController] Current presentation style:", self?.presentationStyle == .compact ? "compact" : "expanded")
+            self?.closeExtension()
+        }
+        print("[MessagesViewController] Notification observer registered successfully")
+    }
+
+    private func closeExtension() {
+        print("[MessagesViewController] closeExtension() called")
+        print("[MessagesViewController] Current presentation style:", self.presentationStyle == .compact ? "compact" : "expanded")
+
+        // For Messages extensions, minimize to compact mode instead of dismissing
+        print("[MessagesViewController] Calling requestPresentationStyle(.compact)")
+        self.requestPresentationStyle(.compact)
+        print("[MessagesViewController] requestPresentationStyle(.compact) returned")
+    }
+
     // MARK: - Messages Lifecycle
 
     override func didTransition(to presentationStyle: MSMessagesAppPresentationStyle) {
         super.didTransition(to: presentationStyle)
 
+        let styleString = presentationStyle == .compact ? "compact" : "expanded"
+        print("[MessagesViewController] didTransition to:", styleString)
+
         // Notify React Native of presentation style change
+        print("[MessagesViewController] Posting MSMessagesAppPresentationStyleDidChange notification")
         NotificationCenter.default.post(
             name: NSNotification.Name("MSMessagesAppPresentationStyleDidChange"),
             object: nil,
-            userInfo: ["presentationStyle": presentationStyle == .compact ? "compact" : "expanded"]
+            userInfo: ["presentationStyle": styleString]
         )
+        print("[MessagesViewController] Notification posted successfully")
     }
 }
 

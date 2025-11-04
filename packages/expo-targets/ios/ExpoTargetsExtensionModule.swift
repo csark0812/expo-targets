@@ -6,8 +6,11 @@ public class ExpoTargetsExtensionModule: Module {
     Name("ExpoTargetsExtension")
 
     Function("closeExtension") { () -> Void in
+      NSLog("[ExpoTargetsExtension] closeExtension() called from JS")
       DispatchQueue.main.async {
+        NSLog("[ExpoTargetsExtension] Posting ExpoTargetsCloseExtension notification on main thread")
         NotificationCenter.default.post(name: NSNotification.Name("ExpoTargetsCloseExtension"), object: nil)
+        NSLog("[ExpoTargetsExtension] Notification posted successfully")
       }
     }
 
