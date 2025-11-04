@@ -5,6 +5,7 @@ import {
 } from '@expo/config-plugins';
 import path from 'path';
 
+import { type ExtensionType } from '../../config';
 import { Logger } from '../../logger';
 import { Podfile, File } from '../utils';
 
@@ -13,6 +14,7 @@ const { getProjectName } = IOSConfig.XcodeUtils;
 export const withTargetPodfile: ConfigPlugin<{
   targetName: string;
   deploymentTarget: string;
+  extensionType: ExtensionType;
   excludedPackages?: string[];
   standalone?: boolean;
   logger: Logger;
@@ -67,6 +69,7 @@ export const withTargetPodfile: ConfigPlugin<{
         : Podfile.generateReactNativeTargetBlock({
             targetName: props.targetName,
             deploymentTarget: props.deploymentTarget,
+            extensionType: props.extensionType,
           });
 
       props.logger.log(

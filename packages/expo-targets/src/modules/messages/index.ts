@@ -30,6 +30,54 @@ export interface SelectedMessage {
   trailingSubcaption?: string;
 }
 
+export class Messages {
+  getPresentationStyle(): PresentationStyle | null {
+    if (Platform.OS !== 'ios') return null;
+    return ExpoTargetsMessagesModule.getPresentationStyle();
+  }
+
+  requestPresentationStyle(style: PresentationStyle): void {
+    if (Platform.OS !== 'ios') return;
+    ExpoTargetsMessagesModule.requestPresentationStyle(style);
+  }
+
+  sendMessage(layout: MessageLayout): void {
+    if (Platform.OS !== 'ios') return;
+    ExpoTargetsMessagesModule.sendMessage(layout);
+  }
+
+  sendUpdate(layout: MessageLayout, sessionId: string): void {
+    if (Platform.OS !== 'ios') return;
+    ExpoTargetsMessagesModule.sendUpdate(layout, sessionId);
+  }
+
+  createSession(): string | null {
+    if (Platform.OS !== 'ios') return null;
+    return ExpoTargetsMessagesModule.createSession();
+  }
+
+  getConversationInfo(): ConversationInfo | null {
+    if (Platform.OS !== 'ios') return null;
+    return ExpoTargetsMessagesModule.getConversationInfo();
+  }
+
+  addEventListener(
+    eventName: 'onPresentationStyleChange',
+    listener: (style: PresentationStyle) => void
+  ) {
+    if (Platform.OS !== 'ios') {
+      return { remove: () => {} };
+    }
+    return ExpoTargetsMessagesModule.addListener(
+      eventName,
+      (event: { presentationStyle: PresentationStyle }) => {
+        listener(event.presentationStyle);
+      }
+    );
+  }
+}
+
+// Standalone functions for backwards compatibility
 export const getPresentationStyle = (): PresentationStyle | null => {
   if (Platform.OS !== 'ios') return null;
   return ExpoTargetsMessagesModule.getPresentationStyle();
@@ -67,5 +115,10 @@ export const addEventListener = (
   if (Platform.OS !== 'ios') {
     return { remove: () => {} };
   }
-  return ExpoTargetsMessagesModule.addListener(eventName, listener);
+  return ExpoTargetsMessagesModule.addListener(
+    eventName,
+    (event: { presentationStyle: PresentationStyle }) => {
+      listener(event.presentationStyle);
+    }
+  );
 };

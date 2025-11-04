@@ -1,5 +1,4 @@
 import { ConfigPlugin, withXcodeProject } from '@expo/config-plugins';
-import crypto from 'crypto';
 import fs from 'fs';
 import { globSync } from 'glob';
 import path from 'path';
@@ -26,76 +25,6 @@ interface IOSTargetProps extends IOSTargetConfigWithReactNative {
   directory: string;
   configPath: string;
   logger: Logger;
-}
-
-/**
- * Generate hash signature of Info.plist config inputs
- * Used to detect when configuration has changed and Info.plist needs regeneration
- */
-function generateInfoPlistSignature(inputs: {
-  type: ExtensionType;
-  entry?: string;
-  infoPlist?: Record<string, any>;
-  activationRules?: any[];
-  preprocessingFile?: string;
-  mainAppSchemes?: string[];
-  targetsConfig?: any[];
-  targetIcon?: string;
-}): string {
-  const normalized = JSON.stringify(inputs, Object.keys(inputs).sort());
-  return crypto
-    .createHash('sha256')
-    .update(normalized)
-    .digest('hex')
-    .substring(0, 16);
-}
-
-/**
- * Check if prebuild is running with --clean flag
- */
-function isCleanMode(): boolean {
-  return process.argv.includes('--clean');
-}
-
-/**
- * Check if Info.plist is stale and needs regeneration
- */
-function isInfoPlistStale(
-  infoPlistPath: string,
-  currentSignature: string
-): boolean {
-  if (!fs.existsSync(infoPlistPath)) {
-    return true; // Doesn't exist, needs generation
-  }
-
-  const metadataPath = infoPlistPath.replace(
-    'Info.plist',
-    '.infoplist-signature'
-  );
-  if (!fs.existsSync(metadataPath)) {
-    return true; // No signature file, consider stale
-  }
-
-  try {
-    const storedSignature = fs.readFileSync(metadataPath, 'utf8').trim();
-    return storedSignature !== currentSignature;
-  } catch {
-    return true; // Error reading signature, consider stale
-  }
-}
-
-/**
- * Store Info.plist signature for future staleness detection
- */
-function storeInfoPlistSignature(
-  infoPlistPath: string,
-  signature: string
-): void {
-  const metadataPath = infoPlistPath.replace(
-    'Info.plist',
-    '.infoplist-signature'
-  );
-  fs.writeFileSync(metadataPath, signature, 'utf8');
 }
 
 export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
@@ -166,80 +95,45 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     // Extract targets config to embed in Info.plist for runtime access
     const targetsConfig = config.extra?.targets as any[] | undefined;
 
-    // Generate signature from all config inputs
-    const configSignature = generateInfoPlistSignature({
-      type: props.type,
-      entry: props.entry,
-      infoPlist: props.infoPlist,
-      activationRules: props.activationRules,
-      preprocessingFile: props.preprocessingFile,
-      mainAppSchemes: mainAppSchemes.length > 0 ? mainAppSchemes : undefined,
-      targetsConfig,
-      targetIcon: props.targetIcon,
-    });
+    props.logger.log(`Generating Info.plist for ${targetName}...`);
 
-    const cleanMode = isCleanMode();
-    const stale = isInfoPlistStale(infoPlistPath, configSignature);
-
-    // Determine if we need to generate Info.plist
-    const shouldGenerate = !File.isFile(infoPlistPath) || (!cleanMode && stale);
-
-    if (shouldGenerate) {
-      if (stale && File.isFile(infoPlistPath)) {
-        props.logger.log(
-          `Info.plist configuration changed, regenerating for ${targetName}...`
-        );
-      } else {
-        props.logger.log(`Generating Info.plist for ${targetName}...`);
-      }
-
-      if (mainAppSchemes.length > 0) {
-        props.logger.log(
-          `Extracted ${mainAppSchemes.length} URL scheme(s) from main app config`
-        );
-        props.logger.log(
-          `Auto-injecting LSApplicationQueriesSchemes: ${mainAppSchemes.join(', ')}`
-        );
-      }
-
-      if (targetsConfig && targetsConfig.length > 0) {
-        props.logger.log(
-          `Embedding ${targetsConfig.length} target(s) config in ${targetName} Info.plist`
-        );
-      }
-
-      // Check if activationRules or preprocessingFile exist
-      // activationRules can be an array (even empty) or undefined
-      const hasActivationRules =
-        Array.isArray(props.activationRules) &&
-        props.activationRules.length > 0;
-      const hasPreprocessingFile = !!props.preprocessingFile;
-
-      const infoPlistContent = getTargetInfoPlistForType(
-        props.type,
-        props.infoPlist,
-        hasActivationRules || hasPreprocessingFile
-          ? {
-              activationRules: props.activationRules,
-              preprocessingFile: props.preprocessingFile,
-            }
-          : undefined,
-        props.entry,
-        mainAppSchemes.length > 0 ? mainAppSchemes : undefined,
-        targetsConfig,
-        props.targetIcon
-      );
-      File.writeFileSafe(infoPlistPath, infoPlistContent);
-      storeInfoPlistSignature(infoPlistPath, configSignature);
+    if (mainAppSchemes.length > 0) {
       props.logger.log(
-        `Generated Info.plist at ${path.relative(projectRoot, infoPlistPath)}`
+        `Extracted ${mainAppSchemes.length} URL scheme(s) from main app config`
       );
-    } else {
-      const reason = cleanMode ? '--clean mode' : 'unchanged configuration';
       props.logger.log(
-        `Info.plist reused (${reason}): ${path.relative(projectRoot, infoPlistPath)}`
+        `Auto-injecting LSApplicationQueriesSchemes: ${mainAppSchemes.join(', ')}`
       );
     }
+
+    if (targetsConfig && targetsConfig.length > 0) {
+      props.logger.log(
+        `Embedding ${targetsConfig.length} target(s) config in ${targetName} Info.plist`
+      );
+    }
+
+    const hasActivationRules =
+      Array.isArray(props.activationRules) && props.activationRules.length > 0;
+    const hasPreprocessingFile = !!props.preprocessingFile;
+
+    const infoPlistContent = getTargetInfoPlistForType(
+      props.type,
+      props.infoPlist,
+      hasActivationRules || hasPreprocessingFile
+        ? {
+            activationRules: props.activationRules,
+            preprocessingFile: props.preprocessingFile,
+          }
+        : undefined,
+      props.entry,
+      mainAppSchemes.length > 0 ? mainAppSchemes : undefined,
+      targetsConfig,
+      props.targetIcon
+    );
+    File.writeFileSafe(infoPlistPath, infoPlistContent);
+    props.logger.log(
+      `Generated Info.plist at ${path.relative(projectRoot, infoPlistPath)}`
+    );
 
     // Create iMessage App Icon for sticker pack targets
     if (props.type === 'stickers') {
@@ -671,17 +565,29 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     // Auto-generate ReactNativeViewController.swift if using React Native without user Swift files
     if (props.entry && swiftFiles.length === 0) {
       props.logger.log(
-        `No Swift files found - generating ReactNativeViewController.swift for React Native`
+        `No Swift files found - generating view controllers for React Native`
       );
 
       const moduleName = targetProductName;
       // ReactNativeViewController will be generated in the build directory
       // when processing Swift files below
-      swiftFiles = ['ReactNativeViewController.swift'];
 
-      props.logger.log(
-        `Will generate ReactNativeViewController.swift for ${moduleName}`
-      );
+      if (props.type === 'messages') {
+        // Messages extensions need BOTH MessagesViewController (MSMessagesAppViewController)
+        // and ReactNativeViewController (child)
+        swiftFiles = [
+          'MessagesViewController.swift',
+          'ReactNativeViewController.swift',
+        ];
+        props.logger.log(
+          `Will generate MessagesViewController.swift and ReactNativeViewController.swift for ${moduleName}`
+        );
+      } else {
+        swiftFiles = ['ReactNativeViewController.swift'];
+        props.logger.log(
+          `Will generate ReactNativeViewController.swift for ${moduleName}`
+        );
+      }
     } else if (props.entry && swiftFiles.length > 0) {
       props.logger.log(
         `Using user-provided Swift files with React Native entry point`
@@ -713,7 +619,41 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
         file.endsWith('/ReactNativeViewController.swift') ||
         file.endsWith('\\ReactNativeViewController.swift');
 
-      if (props.entry && isReactNativeViewController) {
+      // Check if this is MessagesViewController.swift
+      const isMessagesViewController =
+        file === 'MessagesViewController.swift' ||
+        file.endsWith('/MessagesViewController.swift') ||
+        file.endsWith('\\MessagesViewController.swift');
+
+      if (
+        props.entry &&
+        props.type === 'messages' &&
+        isMessagesViewController
+      ) {
+        // Generate MessagesViewController for messages extensions
+        const userFilePath = path.join(
+          projectRoot,
+          props.directory,
+          'ios',
+          'MessagesViewController.swift'
+        );
+        if (fs.existsSync(userFilePath)) {
+          sourceFilePath = userFilePath;
+          props.logger.log(
+            `  Using user-provided: MessagesViewController.swift`
+          );
+        } else {
+          sourceFilePath = path.join(
+            targetBuildPath,
+            'MessagesViewController.swift'
+          );
+          const template = ReactNativeSwift.generateMessagesViewController();
+          File.writeFileSafe(sourceFilePath, template);
+          props.logger.log(
+            `  Generated: MessagesViewController.swift in build directory`
+          );
+        }
+      } else if (props.entry && isReactNativeViewController) {
         // Generated file - always regenerate on every prebuild (no caching)
         // Check if user has their own file in ios/ (not build/)
         const userFilePath = path.join(

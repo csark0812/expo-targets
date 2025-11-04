@@ -48,6 +48,7 @@ class ReactNativeViewController: UIViewController {
     private var reactNativeFactoryDelegate: RCTReactNativeFactoryDelegate?
     private var rootView: UIView?
     private var isCleanedUp = false
+    private var initialExtensionData: [String: Any]?
 
     // MARK: - Extension Data
 
@@ -55,8 +56,13 @@ class ReactNativeViewController: UIViewController {
 
     // MARK: - Lifecycle
 
+    // For messages extensions: accept data from parent MessagesViewController
+    convenience init(messagesData: [String: Any]) {
+        self.init(nibName: nil, bundle: nil)
+        self.initialExtensionData = messagesData
+    }
+
     deinit {
-        print("🧹 ReactNativeViewController deinit for {{TARGET_NAME}}")
         cleanupAfterClose()
     }
 
@@ -68,7 +74,18 @@ class ReactNativeViewController: UIViewController {
         isCleanedUp = false
 
         setupNotificationObservers()
-        {{LOAD_EXTENSION_DATA}}
+
+        // If data was passed from parent (messages), use it directly
+        if let extensionData = self.initialExtensionData {
+            setupReactNativeView(with: extensionData)
+        } else {
+            // Otherwise load it ourselves (share, action, etc.)
+            {{LOAD_EXTENSION_DATA}}
+        }
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesBegan(touches, with: event)
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -115,6 +132,10 @@ class ReactNativeViewController: UIViewController {
         rootView.frame = view.bounds
         rootView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
 
+        // Explicitly enable user interaction
+        rootView.isUserInteractionEnabled = true
+        self.view.isUserInteractionEnabled = true
+
         view.addSubview(rootView)
         self.rootView = rootView
     }
@@ -134,8 +155,6 @@ class ReactNativeViewController: UIViewController {
 
         reactNativeFactory = nil
         reactNativeFactoryDelegate = nil
-
-        print("🧹 ReactNativeViewController cleaned up for {{TARGET_NAME}}")
     }
 
     // MARK: - Notification Handling

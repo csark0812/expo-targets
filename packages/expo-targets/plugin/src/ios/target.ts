@@ -442,13 +442,8 @@ export function getTargetInfoPlistForType(
   }
 
   // Override NSExtensionPrincipalClass for React Native extensions
-  if (
-    entry &&
-    (type === 'share' ||
-      type === 'action' ||
-      type === 'clip' ||
-      type === 'messages')
-  ) {
+  // Note: Messages extensions keep MessagesViewController as it MUST extend MSMessagesAppViewController
+  if (entry && (type === 'share' || type === 'action' || type === 'clip')) {
     const nsExtension = { ...basePlist.NSExtension };
 
     // Remove NSExtensionMainStoryboard for action extensions using React Native

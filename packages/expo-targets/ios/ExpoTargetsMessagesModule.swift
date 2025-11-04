@@ -1,9 +1,32 @@
 import ExpoModulesCore
 import Messages
+import UIKit
 
 public class ExpoTargetsMessagesModule: Module {
+  private var notificationObserver: NSObjectProtocol?
+
+  deinit {
+    if let observer = notificationObserver {
+      NotificationCenter.default.removeObserver(observer)
+    }
+  }
+
   public func definition() -> ModuleDefinition {
     Name("ExpoTargetsMessages")
+
+    OnCreate {
+      self.notificationObserver = NotificationCenter.default.addObserver(
+        forName: NSNotification.Name("MSMessagesAppPresentationStyleDidChange"),
+        object: nil,
+        queue: .main
+      ) { [weak self] notification in
+        if let style = notification.userInfo?["presentationStyle"] as? String {
+          self?.sendEvent("onPresentationStyleChange", [
+            "presentationStyle": style
+          ])
+        }
+      }
+    }
 
     // Get current presentation style
     Function("getPresentationStyle") { () -> String? in
@@ -16,7 +39,9 @@ public class ExpoTargetsMessagesModule: Module {
     // Request presentation style change
     Function("requestPresentationStyle") { (style: String) -> Void in
       DispatchQueue.main.async {
-        guard let msViewController = self.findMessagesViewController() else { return }
+        guard let msViewController = self.findMessagesViewController() else {
+          return
+        }
         let presentationStyle: MSMessagesAppPresentationStyle =
           style == "compact" ? .compact : .expanded
         msViewController.requestPresentationStyle(presentationStyle)
@@ -64,8 +89,8 @@ public class ExpoTargetsMessagesModule: Module {
         message.layout = messageLayout
 
         conversation.insert(message) { error in
-          if let error = error {
-            print("Error sending message: \(error.localizedDescription)")
+          if error != nil {
+            // Error handling
           }
         }
       }
@@ -111,8 +136,8 @@ public class ExpoTargetsMessagesModule: Module {
         message.layout = messageLayout
 
         conversation.insert(message) { error in
-          if let error = error {
-            print("Error updating message: \(error.localizedDescription)")
+          if error != nil {
+            // Error handling
           }
         }
       }
@@ -144,21 +169,81 @@ public class ExpoTargetsMessagesModule: Module {
   }
 
   private func findMessagesViewController() -> MSMessagesAppViewController? {
-    // In extensions, search through view controller hierarchy
-    // UIApplication.shared is not available in app extensions
-    // Note: This approach may have limitations - consider getting reference during initialization
-    return nil // TODO: Implement proper view controller discovery
-  }
-
-  private func findMessagesVC(in vc: UIViewController) -> MSMessagesAppViewController? {
-    if let msVC = vc as? MSMessagesAppViewController {
-      return msVC
+    // Get windows using modern API for iOS 15+ or legacy API for older versions
+    let windows: [UIWindow]
+    if #available(iOS 15.0, *) {
+      let scenes = UIApplication.shared.connectedScenes
+      let windowScenes = scenes.compactMap { $0 as? UIWindowScene }
+      windows = windowScenes.flatMap { $0.windows }
+    } else {
+      windows = UIApplication.shared.windows
     }
-    for child in vc.children {
-      if let found = findMessagesVC(in: child) {
-        return found
+
+    // Try key window first
+    if let keyWindow = windows.first(where: { $0.isKeyWindow }),
+       let rootVC = keyWindow.rootViewController {
+      if let msViewController = findMessagesViewController(in: rootVC) {
+        return msViewController
       }
     }
+
+    // Fallback: search all windows
+    for window in windows {
+      if let rootVC = window.rootViewController {
+        if let msViewController = findMessagesViewController(in: rootVC) {
+          return msViewController
+        }
+      }
+    }
+
+    return nil
+  }
+
+  private func findMessagesViewController(in viewController: UIViewController) -> MSMessagesAppViewController? {
+    // Check if this view controller is MSMessagesAppViewController
+    if let msViewController = viewController as? MSMessagesAppViewController {
+      return msViewController
+    }
+
+    // Check parent first (React Native runs inside Messages extension as a child)
+    if let parent = viewController.parent {
+      if let msViewController = findMessagesViewController(in: parent) {
+        return msViewController
+      }
+    }
+
+    // Then check children
+    for childVC in viewController.children {
+      if let msViewController = findMessagesViewController(in: childVC) {
+        return msViewController
+      }
+    }
+
+    // Check presented view controllers
+    if let presented = viewController.presentedViewController {
+      if let msViewController = findMessagesViewController(in: presented) {
+        return msViewController
+      }
+    }
+
+    // Check navigation controller
+    if let navController = viewController as? UINavigationController {
+      if let topVC = navController.topViewController {
+        if let msViewController = findMessagesViewController(in: topVC) {
+          return msViewController
+        }
+      }
+    }
+
+    // Check tab controller
+    if let tabController = viewController as? UITabBarController {
+      if let selectedVC = tabController.selectedViewController {
+        if let msViewController = findMessagesViewController(in: selectedVC) {
+          return msViewController
+        }
+      }
+    }
+
     return nil
   }
 }

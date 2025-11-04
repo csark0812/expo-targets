@@ -5,15 +5,20 @@
 
 /**
  * Generate a Podfile target block for a React Native extension.
- * Extension targets only inherit search paths, then explicitly declare needed pods.
+ * Extension targets only inherit search paths, with no explicit pod dependencies.
  * This avoids linking incompatible modules like Expo that contain UIApplication APIs.
+ *
+ * Note: ExpoTargetsMessages is accessed via the main app's autolinking through shared
+ * registry defined in generated code, so no direct pod dependency is needed.
  */
 export function generateReactNativeTargetBlock({
   targetName,
   deploymentTarget,
+  extensionType,
 }: {
   targetName: string;
   deploymentTarget: string;
+  extensionType: string;
 }): string {
   return `
   target '${targetName}' do

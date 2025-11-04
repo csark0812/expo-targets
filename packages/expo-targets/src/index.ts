@@ -3,6 +3,7 @@ export { createTarget } from './Target';
 export type {
   Target,
   ExtensionTarget,
+  MessagesExtensionTarget,
   NonExtensionTarget,
   BaseTarget,
 } from './Target';

@@ -151,6 +151,7 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
     config = withTargetPodfile(config, {
       targetName: targetProductName, // Use sanitized name to match Xcode target
       deploymentTarget: deploymentTarget!, // Guaranteed to be set by resolution logic above
+      extensionType: props.type,
       excludedPackages: props.excludedPackages,
       standalone: !props.entry, // Standalone (no dependency inheritance) if not using React Native
       logger: props.logger,

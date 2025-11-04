@@ -7,15 +7,8 @@ import {
   TextInput,
   ScrollView,
 } from 'react-native';
-import {
-  createTarget,
-  sendMessage,
-  requestPresentationStyle,
-  addMessagesEventListener,
-  close,
-  type PresentationStyle,
-  type SelectedMessage,
-} from 'expo-targets';
+import type { PresentationStyle, SelectedMessage } from 'expo-targets';
+import { messagesAppTarget } from '..';
 
 interface MessagesAppProps {
   presentationStyle: PresentationStyle;
@@ -25,8 +18,6 @@ interface MessagesAppProps {
   selectedMessage?: SelectedMessage;
   remoteParticipantIds: string[];
 }
-
-const messagesTarget = createTarget('MessagesApp');
 
 interface MessageTemplate {
   id: string;
@@ -75,24 +66,26 @@ export default function MessagesAppExtension(props: MessagesAppProps) {
 
   useEffect(() => {
     // Listen for presentation style changes
-    const subscription = addMessagesEventListener(
+    const subscription = messagesAppTarget.addEventListener(
       'onPresentationStyleChange',
       (style: PresentationStyle) => {
         setPresentationStyle(style);
       }
     );
 
-    return () => subscription.remove();
+    return () => {
+      subscription.remove();
+    };
   }, []);
 
   const handleTextFocus = () => {
     if (presentationStyle === 'compact') {
-      requestPresentationStyle('expanded');
+      messagesAppTarget.requestPresentationStyle('expanded');
     }
   };
 
   const handleSendTemplate = (template: MessageTemplate) => {
-    sendMessage({
+    messagesAppTarget.sendMessage({
       caption: template.caption,
       subcaption: template.subcaption,
       trailingSubcaption: `To ${props.participantCount} people`,
@@ -101,10 +94,10 @@ export default function MessagesAppExtension(props: MessagesAppProps) {
     });
 
     // Store in App Group
-    const existing = messagesTarget.getData<{ messages: any[] }>() || {
+    const existing = messagesAppTarget.getData<{ messages: any[] }>() || {
       messages: [],
     };
-    messagesTarget.setData({
+    messagesAppTarget.setData({
       messages: [
         ...existing.messages,
         {
@@ -115,19 +108,19 @@ export default function MessagesAppExtension(props: MessagesAppProps) {
       ],
     });
 
-    close();
+    messagesAppTarget.close();
   };
 
   const handleSendCustom = () => {
     if (!customMessage.trim()) return;
 
-    sendMessage({
+    messagesAppTarget.sendMessage({
       caption: customMessage,
       subcaption: 'Custom message',
       url: `expo-targets://message?type=custom`,
     });
 
-    close();
+    messagesAppTarget.close();
   };
 
   // Compact mode - show condensed UI
@@ -136,7 +129,13 @@ export default function MessagesAppExtension(props: MessagesAppProps) {
       <View style={styles.compactContainer}>
         <TouchableOpacity
           style={styles.expandButton}
-          onPress={() => requestPresentationStyle('expanded')}
+          onPress={() => {
+            try {
+              messagesAppTarget.requestPresentationStyle('expanded');
+            } catch (error) {
+              // Error handling
+            }
+          }}
         >
           <Text style={styles.expandButtonText}>Tap to compose message ✨</Text>
         </TouchableOpacity>
@@ -192,7 +191,10 @@ export default function MessagesAppExtension(props: MessagesAppProps) {
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.cancelButton} onPress={() => close()}>
+        <TouchableOpacity
+          style={styles.cancelButton}
+          onPress={() => messagesAppTarget.close()}
+        >
           <Text style={styles.cancelButtonText}>Cancel</Text>
         </TouchableOpacity>
         <TouchableOpacity

@@ -1,6 +1,7 @@
 // Messages Extension Data Loading
-
-import Messages
+// Note: This is embedded in ReactNativeViewController, but for messages extensions,
+// the MessagesViewController (MSMessagesAppViewController) is the parent and passes
+// data down. This code provides default values.
 
 private var presentationStyle: String = "compact"
 private var conversationId: String?
@@ -9,78 +10,19 @@ private var hasSelectedMessage: Bool = false
 private var selectedMessageData: [String: Any]?
 
 private func loadMessagesContent() {
-    guard let msViewController = findMessagesViewController() else { return }
-
-    // Load presentation style
-    presentationStyle = msViewController.presentationStyle == .compact ? "compact" : "expanded"
-
-    // Load conversation data
-    if let conversation = msViewController.activeConversation {
-        conversationId = conversation.localParticipantIdentifier.uuidString
-        remoteParticipantIds = conversation.remoteParticipantIdentifiers.map { $0.uuidString }
-
-        // Load selected message if present
-        if let message = conversation.selectedMessage {
-            hasSelectedMessage = true
-            var msgData: [String: Any] = [:]
-
-            if let url = message.url?.absoluteString {
-                msgData["url"] = url
-            }
-
-            if let layout = message.layout as? MSMessageTemplateLayout {
-                if let caption = layout.caption { msgData["caption"] = caption }
-                if let subcaption = layout.subcaption { msgData["subcaption"] = subcaption }
-                if let trailing = layout.trailingCaption { msgData["trailingCaption"] = trailing }
-                if let trailingSub = layout.trailingSubcaption { msgData["trailingSubcaption"] = trailingSub }
-            }
-
-            selectedMessageData = msgData
-        }
-    }
+    // For messages extensions, the parent MessagesViewController handles
+    // the MSMessagesAppViewController and passes data as initialProps.
+    // This method is a no-op to maintain compatibility with the template structure.
 }
 
 private func getMessagesDataProps() -> [String: Any] {
+    // Return default data - the actual data comes from parent MessagesViewController
+    // via initialProps in viewDidLoad
     var data: [String: Any] = [:]
     data["presentationStyle"] = presentationStyle
-
-    if let convId = conversationId {
-        data["conversationId"] = convId
-    }
-
+    data["participantCount"] = 1
     data["remoteParticipantIds"] = remoteParticipantIds
-    data["participantCount"] = remoteParticipantIds.count + 1
-    data["hasSelectedMessage"] = hasSelectedMessage
-
-    if let selected = selectedMessageData {
-        data["selectedMessage"] = selected
-    }
-
+    data["hasSelectedMessage"] = false
     return data
-}
-
-private func findMessagesViewController() -> MSMessagesAppViewController? {
-    // In extensions, walk up the view controller hierarchy from self
-    // UIApplication.shared is not available in app extensions
-    var current: UIViewController? = self
-    while let vc = current {
-        if let msVC = vc as? MSMessagesAppViewController {
-            return msVC
-        }
-        current = vc.parent
-    }
-    return nil
-}
-
-private func findMessagesVC(in vc: UIViewController) -> MSMessagesAppViewController? {
-    if let msVC = vc as? MSMessagesAppViewController {
-        return msVC
-    }
-    for child in vc.children {
-        if let found = findMessagesVC(in: child) {
-            return found
-        }
-    }
-    return nil
 }
 
