@@ -178,24 +178,28 @@ class ReactNativeViewController: UIViewController {
 
         guard let url = URL(string: "\(appBundleId)://\(path)") else { return }
 
-        var responder: UIResponder? = self
-        while responder != nil {
-            if let application = responder as? UIApplication {
-                application.open(url, options: [:], completionHandler: nil)
-                // Close extension after opening host app
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-                    self?.closeExtension()
+        // Use extensionContext.open() which is the proper way to open URLs in extensions
+        if let context = extensionContext {
+            context.open(url, completionHandler: { success in
+                if success {
+                    // Close extension after opening host app
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                        self?.closeExtension()
+                    }
                 }
-                return
-            }
-            responder = responder?.next
-        }
-
-        // Fallback: try UIApplication.shared directly
-        if UIApplication.shared.canOpenURL(url) {
-            UIApplication.shared.open(url, options: [:], completionHandler: nil)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-                self?.closeExtension()
+            })
+        } else {
+            // Fallback: try responder chain (shouldn't normally be needed)
+            var responder: UIResponder? = self
+            while responder != nil {
+                if let application = responder as? UIApplication {
+                    application.open(url, options: [:], completionHandler: nil)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                        self?.closeExtension()
+                    }
+                    return
+                }
+                responder = responder?.next
             }
         }
     }
