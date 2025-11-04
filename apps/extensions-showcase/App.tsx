@@ -190,7 +190,7 @@ export default function App() {
                     </Text>
                     <View style={styles.filterBadge}>
                       <Text style={styles.filterBadgeText}>
-                        {item.filter.toUpperCase()}
+                        {item.filter?.toUpperCase()}
                       </Text>
                     </View>
                   </View>

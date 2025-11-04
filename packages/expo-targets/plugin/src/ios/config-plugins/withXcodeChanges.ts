@@ -1,4 +1,5 @@
 import { ConfigPlugin, withXcodeProject } from '@expo/config-plugins';
+import crypto from 'crypto';
 import fs from 'fs';
 import { globSync } from 'glob';
 import path from 'path';
@@ -25,6 +26,75 @@ interface IOSTargetProps extends IOSTargetConfigWithReactNative {
   directory: string;
   configPath: string;
   logger: Logger;
+}
+
+/**
+ * Generate hash signature of Info.plist config inputs
+ * Used to detect when configuration has changed and Info.plist needs regeneration
+ */
+function generateInfoPlistSignature(inputs: {
+  type: ExtensionType;
+  entry?: string;
+  infoPlist?: Record<string, any>;
+  activationRules?: any[];
+  preprocessingFile?: string;
+  mainAppSchemes?: string[];
+  targetsConfig?: any[];
+}): string {
+  const normalized = JSON.stringify(inputs, Object.keys(inputs).sort());
+  return crypto
+    .createHash('sha256')
+    .update(normalized)
+    .digest('hex')
+    .substring(0, 16);
+}
+
+/**
+ * Check if prebuild is running with --clean flag
+ */
+function isCleanMode(): boolean {
+  return process.argv.includes('--clean');
+}
+
+/**
+ * Check if Info.plist is stale and needs regeneration
+ */
+function isInfoPlistStale(
+  infoPlistPath: string,
+  currentSignature: string
+): boolean {
+  if (!fs.existsSync(infoPlistPath)) {
+    return true; // Doesn't exist, needs generation
+  }
+
+  const metadataPath = infoPlistPath.replace(
+    'Info.plist',
+    '.infoplist-signature'
+  );
+  if (!fs.existsSync(metadataPath)) {
+    return true; // No signature file, consider stale
+  }
+
+  try {
+    const storedSignature = fs.readFileSync(metadataPath, 'utf8').trim();
+    return storedSignature !== currentSignature;
+  } catch {
+    return true; // Error reading signature, consider stale
+  }
+}
+
+/**
+ * Store Info.plist signature for future staleness detection
+ */
+function storeInfoPlistSignature(
+  infoPlistPath: string,
+  signature: string
+): void {
+  const metadataPath = infoPlistPath.replace(
+    'Info.plist',
+    '.infoplist-signature'
+  );
+  fs.writeFileSync(metadataPath, signature, 'utf8');
 }
 
 export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
@@ -75,23 +145,50 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       projectRoot,
       targetDirectory: props.directory,
     });
-    if (!File.isFile(infoPlistPath)) {
-      props.logger.log(`Generating Info.plist for ${targetName}...`);
 
-      // Extract URL schemes from expo config for auto-injection into extensions
-      const mainAppSchemes: string[] = [];
-      if (config.scheme) {
-        if (typeof config.scheme === 'string') {
-          mainAppSchemes.push(config.scheme);
-        } else if (Array.isArray(config.scheme)) {
-          mainAppSchemes.push(...config.scheme);
-        }
+    // Extract URL schemes from expo config for auto-injection into extensions
+    const mainAppSchemes: string[] = [];
+    if (config.scheme) {
+      if (typeof config.scheme === 'string') {
+        mainAppSchemes.push(config.scheme);
+      } else if (Array.isArray(config.scheme)) {
+        mainAppSchemes.push(...config.scheme);
       }
+    }
 
-      // Also include the bundle ID as a URL scheme
-      // Expo automatically registers it, and openHostApp() uses it
-      if (config.ios?.bundleIdentifier) {
-        mainAppSchemes.push(config.ios.bundleIdentifier);
+    // Also include the bundle ID as a URL scheme
+    // Expo automatically registers it, and openHostApp() uses it
+    if (config.ios?.bundleIdentifier) {
+      mainAppSchemes.push(config.ios.bundleIdentifier);
+    }
+
+    // Extract targets config to embed in Info.plist for runtime access
+    const targetsConfig = config.extra?.targets as any[] | undefined;
+
+    // Generate signature from all config inputs
+    const configSignature = generateInfoPlistSignature({
+      type: props.type,
+      entry: props.entry,
+      infoPlist: props.infoPlist,
+      activationRules: props.activationRules,
+      preprocessingFile: props.preprocessingFile,
+      mainAppSchemes: mainAppSchemes.length > 0 ? mainAppSchemes : undefined,
+      targetsConfig,
+    });
+
+    const cleanMode = isCleanMode();
+    const stale = isInfoPlistStale(infoPlistPath, configSignature);
+
+    // Determine if we need to generate Info.plist
+    const shouldGenerate = !File.isFile(infoPlistPath) || (!cleanMode && stale);
+
+    if (shouldGenerate) {
+      if (stale && File.isFile(infoPlistPath)) {
+        props.logger.log(
+          `Info.plist configuration changed, regenerating for ${targetName}...`
+        );
+      } else {
+        props.logger.log(`Generating Info.plist for ${targetName}...`);
       }
 
       if (mainAppSchemes.length > 0) {
@@ -103,8 +200,6 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
         );
       }
 
-      // Extract targets config to embed in Info.plist for runtime access
-      const targetsConfig = config.extra?.targets as any[] | undefined;
       if (targetsConfig && targetsConfig.length > 0) {
         props.logger.log(
           `Embedding ${targetsConfig.length} target(s) config in ${targetName} Info.plist`
@@ -125,12 +220,14 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
         targetsConfig
       );
       File.writeFileSafe(infoPlistPath, infoPlistContent);
+      storeInfoPlistSignature(infoPlistPath, configSignature);
       props.logger.log(
         `Generated Info.plist at ${path.relative(projectRoot, infoPlistPath)}`
       );
     } else {
+      const reason = cleanMode ? '--clean mode' : 'unchanged configuration';
       props.logger.log(
-        `Info.plist already exists, reusing: ${path.relative(projectRoot, infoPlistPath)}`
+        `Info.plist reused (${reason}): ${path.relative(projectRoot, infoPlistPath)}`
       );
     }
 
