@@ -168,7 +168,7 @@ export function addTargetDependency({
 
 /**
  * Configure embed settings for app extension.
- * Adds RemoveHeadersOnCopy attribute and renames Copy Files phase.
+ * Consolidates all app extensions into a SINGLE "Embed App Extensions" phase.
  */
 export function configureAppExtensionEmbed({
   project,
@@ -219,35 +219,113 @@ export function configureAppExtensionEmbed({
     );
   }
 
-  // Rename Copy Files phase to "Embed App Extensions" and ensure attributes inside the phase
+  // Find or create a SINGLE "Embed App Extensions" phase
   const copyFilesPhases =
     xcodeProject.hash.project.objects.PBXCopyFilesBuildPhase;
 
+  // Step 1: Find existing "Embed App Extensions" phase (with proper name)
+  let primaryPhaseKey: string | null = null;
+  let primaryPhase: any = null;
+
   for (const phaseKey in copyFilesPhases) {
     if (phaseKey.endsWith('_comment')) continue;
-
     const phase = copyFilesPhases[phaseKey];
+    if (
+      phase?.dstSubfolderSpec === 13 &&
+      (phase.name === '"Embed App Extensions"' ||
+        copyFilesPhases[`${phaseKey}_comment`] === 'Embed App Extensions')
+    ) {
+      primaryPhaseKey = phaseKey;
+      primaryPhase = phase;
+      break;
+    }
+  }
+
+  // Step 2: Consolidate - find all extension embedding phases and merge into primary
+  const phasesToMerge: string[] = [];
+  const extensionBuildFiles: Set<string> = new Set();
+
+  for (const phaseKey in copyFilesPhases) {
+    if (phaseKey.endsWith('_comment') || phaseKey === primaryPhaseKey) continue;
+    const phase = copyFilesPhases[phaseKey];
+
     if (phase?.dstSubfolderSpec === 13 && phase.files) {
-      let hasOurExtension = false;
-      // Ensure each matching build file has desired attributes
+      // Check if this phase contains any .appex files
+      let hasAppExtension = false;
       phase.files.forEach((file: any) => {
         const buildFileKey = file.value;
         const buildFile = buildFileSection?.[buildFileKey];
-        if (!buildFile) return;
+        if (!buildFile?.fileRef) return;
         const fileRef = fileRefSection?.[buildFile.fileRef];
         const refPath = fileRef?.path?.replace(/"/g, '');
         const refName = fileRef?.name?.replace(/"/g, '');
-        if (refPath === targetFileName || refName === targetFileName) {
-          hasOurExtension = true;
+        if (refPath?.endsWith('.appex') || refName?.endsWith('.appex')) {
+          hasAppExtension = true;
+          extensionBuildFiles.add(buildFileKey);
           ensureAttributes(buildFile);
         }
       });
 
-      if (hasOurExtension) {
-        const commentKey = `${phaseKey}_comment`;
-        copyFilesPhases[commentKey] = 'Embed App Extensions';
-        phase.name = '"Embed App Extensions"';
-        break;
+      if (hasAppExtension) {
+        if (primaryPhaseKey) {
+          phasesToMerge.push(phaseKey);
+        } else {
+          // Use this as the primary phase
+          primaryPhaseKey = phaseKey;
+          primaryPhase = phase;
+        }
+      }
+    }
+  }
+
+  // Step 3: If we found a primary phase, merge all extensions into it
+  if (primaryPhaseKey && primaryPhase) {
+    // Rename to standard name
+    primaryPhase.name = '"Embed App Extensions"';
+    copyFilesPhases[`${primaryPhaseKey}_comment`] = 'Embed App Extensions';
+
+    // Merge build files from other phases
+    if (!primaryPhase.files) {
+      primaryPhase.files = [];
+    }
+
+    const existingFiles = new Set(primaryPhase.files.map((f: any) => f.value));
+
+    phasesToMerge.forEach((phaseKey) => {
+      const phase = copyFilesPhases[phaseKey];
+      if (phase?.files) {
+        phase.files.forEach((file: any) => {
+          const buildFileKey = file.value;
+          if (
+            extensionBuildFiles.has(buildFileKey) &&
+            !existingFiles.has(buildFileKey)
+          ) {
+            primaryPhase.files.push(file);
+            existingFiles.add(buildFileKey);
+          }
+        });
+      }
+    });
+
+    // Step 4: Remove duplicate phases (mark for deletion by removing from main app build phases)
+    if (phasesToMerge.length > 0) {
+      // Get the main app target by finding the first application target
+      const nativeTargets = xcodeProject.hash.project.objects.PBXNativeTarget;
+      let mainAppTarget: any = null;
+
+      for (const targetKey in nativeTargets) {
+        if (targetKey.endsWith('_comment')) continue;
+        const target = nativeTargets[targetKey];
+        if (target?.productType === '"com.apple.product-type.application"') {
+          mainAppTarget = target;
+          break;
+        }
+      }
+
+      if (mainAppTarget?.buildPhases) {
+        mainAppTarget.buildPhases = mainAppTarget.buildPhases.filter(
+          (phase: any) => !phasesToMerge.includes(phase.value)
+        );
       }
     }
   }

@@ -114,7 +114,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       const infoPlistContent = getTargetInfoPlistForType(
         props.type,
         props.infoPlist,
-        props.type === 'share'
+        props.activationRules || props.preprocessingFile
           ? {
               activationRules: props.activationRules,
               preprocessingFile: props.preprocessingFile,

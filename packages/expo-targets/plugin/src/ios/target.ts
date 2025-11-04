@@ -40,6 +40,8 @@ interface TypeCharacteristics {
   defaultUsesAppGroups: boolean; // Should use app groups by default
   requiresEntitlements: boolean; // Needs entitlements file
   basePlist: Record<string, any>; // Base Info.plist structure for this type
+  supportsActivationRules: boolean; // Can use activationRules config
+  activationRulesLocation: 'direct' | 'attributes' | 'none'; // Where to place NSExtensionActivationRule
 }
 
 export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
@@ -54,6 +56,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       defaultUsesAppGroups: true,
       requiresEntitlements: true,
       basePlist: {},
+      supportsActivationRules: false,
+      activationRulesLocation: 'none',
     },
     clip: {
       requiresCode: true,
@@ -75,6 +79,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
         UILaunchStoryboardName: 'SplashScreen',
         UIUserInterfaceStyle: 'Automatic',
       },
+      supportsActivationRules: false,
+      activationRulesLocation: 'none',
     },
     stickers: {
       requiresCode: false, // Asset-only
@@ -91,6 +97,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
           NSExtensionPrincipalClass: 'StickerBrowserViewController',
         },
       },
+      supportsActivationRules: false,
+      activationRulesLocation: 'none',
     },
 
     share: {
@@ -114,6 +122,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
           },
         },
       },
+      supportsActivationRules: true,
+      activationRulesLocation: 'attributes',
     },
     action: {
       requiresCode: true,
@@ -121,15 +131,17 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       embedType: 'foundation-extension',
       frameworks: [],
       productType: 'com.apple.product-type.app-extension',
-      extensionPointIdentifier: 'com.apple.services',
+      extensionPointIdentifier: 'com.apple.ui-services',
       defaultUsesAppGroups: false,
       requiresEntitlements: true,
       basePlist: {
         NSExtension: {
-          NSExtensionMainStoryboard: 'MainInterface',
-          NSExtensionActivationRule: 'TRUEPREDICATE',
+          // NSExtensionMainStoryboard or NSExtensionPrincipalClass set conditionally
+          // NSExtensionActivationRule set from activationRules config
         },
       },
+      supportsActivationRules: true,
+      activationRulesLocation: 'direct',
     },
     safari: {
       requiresCode: true,
@@ -141,6 +153,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       defaultUsesAppGroups: false,
       requiresEntitlements: true,
       basePlist: {},
+      supportsActivationRules: false,
+      activationRulesLocation: 'none',
     },
     'notification-content': {
       requiresCode: true,
@@ -152,6 +166,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       defaultUsesAppGroups: false,
       requiresEntitlements: true,
       basePlist: {},
+      supportsActivationRules: false,
+      activationRulesLocation: 'none',
     },
     'notification-service': {
       requiresCode: true,
@@ -163,6 +179,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       defaultUsesAppGroups: false,
       requiresEntitlements: true,
       basePlist: {},
+      supportsActivationRules: false,
+      activationRulesLocation: 'none',
     },
     intent: {
       requiresCode: true,
@@ -174,6 +192,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       defaultUsesAppGroups: false,
       requiresEntitlements: true,
       basePlist: {},
+      supportsActivationRules: false,
+      activationRulesLocation: 'none',
     },
     'intent-ui': {
       requiresCode: true,
@@ -185,6 +205,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       defaultUsesAppGroups: false,
       requiresEntitlements: true,
       basePlist: {},
+      supportsActivationRules: false,
+      activationRulesLocation: 'none',
     },
     spotlight: {
       requiresCode: true,
@@ -196,6 +218,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       defaultUsesAppGroups: false,
       requiresEntitlements: true,
       basePlist: {},
+      supportsActivationRules: false,
+      activationRulesLocation: 'none',
     },
     'bg-download': {
       requiresCode: true,
@@ -208,6 +232,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       defaultUsesAppGroups: true,
       requiresEntitlements: true,
       basePlist: {},
+      supportsActivationRules: false,
+      activationRulesLocation: 'none',
     },
     'quicklook-thumbnail': {
       requiresCode: true,
@@ -219,6 +245,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       defaultUsesAppGroups: false,
       requiresEntitlements: true,
       basePlist: {},
+      supportsActivationRules: false,
+      activationRulesLocation: 'none',
     },
     'location-push': {
       requiresCode: true,
@@ -230,6 +258,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       defaultUsesAppGroups: false,
       requiresEntitlements: true,
       basePlist: {},
+      supportsActivationRules: false,
+      activationRulesLocation: 'none',
     },
     'credentials-provider': {
       requiresCode: true,
@@ -242,6 +272,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       defaultUsesAppGroups: false,
       requiresEntitlements: true,
       basePlist: {},
+      supportsActivationRules: false,
+      activationRulesLocation: 'none',
     },
     'account-auth': {
       requiresCode: true,
@@ -254,6 +286,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       defaultUsesAppGroups: false,
       requiresEntitlements: true,
       basePlist: {},
+      supportsActivationRules: false,
+      activationRulesLocation: 'none',
     },
     'app-intent': {
       requiresCode: true,
@@ -265,6 +299,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       defaultUsesAppGroups: false,
       requiresEntitlements: true,
       basePlist: {},
+      supportsActivationRules: false,
+      activationRulesLocation: 'none',
     },
     'device-activity-monitor': {
       requiresCode: true,
@@ -276,6 +312,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       defaultUsesAppGroups: false,
       requiresEntitlements: true,
       basePlist: {},
+      supportsActivationRules: false,
+      activationRulesLocation: 'none',
     },
     matter: {
       requiresCode: true,
@@ -288,6 +326,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       defaultUsesAppGroups: false,
       requiresEntitlements: true,
       basePlist: {},
+      supportsActivationRules: false,
+      activationRulesLocation: 'none',
     },
     watch: {
       requiresCode: true,
@@ -299,6 +339,8 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       defaultUsesAppGroups: false,
       requiresEntitlements: true,
       basePlist: {},
+      supportsActivationRules: false,
+      activationRulesLocation: 'none',
     },
   };
 
@@ -341,31 +383,71 @@ export function getTargetInfoPlistForType(
     };
   }
 
-  // Handle share extension activation rules
-  if (type === 'share' && shareExtensionConfig) {
-    const activationRules = buildShareExtensionActivationRules(
-      shareExtensionConfig.activationRules,
-      shareExtensionConfig.preprocessingFile
-    );
+  // Handle activation rules for types that support them
+  if (typeCharacteristics.supportsActivationRules) {
+    const activationRules = shareExtensionConfig
+      ? buildShareExtensionActivationRules(
+          shareExtensionConfig.activationRules,
+          shareExtensionConfig.preprocessingFile
+        )
+      : typeCharacteristics.activationRulesLocation === 'direct'
+        ? { TRUEPREDICATE: true } // Default for action extensions
+        : {
+            // Default for share extensions
+            NSExtensionActivationSupportsText: true,
+            NSExtensionActivationSupportsWebURLWithMaxCount: 1,
+          };
 
-    basePlist.NSExtension = {
-      ...basePlist.NSExtension,
-      NSExtensionAttributes: {
-        NSExtensionActivationRule: activationRules,
-        ...(shareExtensionConfig.preprocessingFile && {
-          NSExtensionJavaScriptPreprocessingFile:
-            shareExtensionConfig.preprocessingFile.replace(/\.[^/.]+$/, ''), // Remove extension
-        }),
-      },
-    };
+    if (typeCharacteristics.activationRulesLocation === 'attributes') {
+      // Share extensions use NSExtensionAttributes
+      basePlist.NSExtension = {
+        ...basePlist.NSExtension,
+        NSExtensionAttributes: {
+          NSExtensionActivationRule: activationRules,
+          ...(shareExtensionConfig?.preprocessingFile && {
+            NSExtensionJavaScriptPreprocessingFile:
+              shareExtensionConfig.preprocessingFile.replace(/\.[^/.]+$/, ''), // Remove extension
+          }),
+        },
+      };
+    } else if (typeCharacteristics.activationRulesLocation === 'direct') {
+      // Action extensions use NSExtensionActivationRule directly
+      basePlist.NSExtension = {
+        ...basePlist.NSExtension,
+        NSExtensionActivationRule:
+          Object.keys(activationRules).length === 1 &&
+          'TRUEPREDICATE' in activationRules
+            ? 'TRUEPREDICATE'
+            : activationRules,
+      };
+    }
   }
 
   // Override NSExtensionPrincipalClass for React Native extensions
   if (entry && (type === 'share' || type === 'action' || type === 'clip')) {
+    const nsExtension = { ...basePlist.NSExtension };
+
+    // Remove NSExtensionMainStoryboard for action extensions using React Native
+    if (
+      typeCharacteristics.activationRulesLocation === 'direct' &&
+      nsExtension.NSExtensionMainStoryboard
+    ) {
+      delete nsExtension.NSExtensionMainStoryboard;
+    }
+
     basePlist.NSExtension = {
-      ...basePlist.NSExtension,
+      ...nsExtension,
       NSExtensionPrincipalClass:
         '$(PRODUCT_MODULE_NAME).ReactNativeViewController',
+    };
+  } else if (
+    typeCharacteristics.activationRulesLocation === 'direct' &&
+    !entry
+  ) {
+    // Native action extension needs NSExtensionMainStoryboard
+    basePlist.NSExtension = {
+      ...basePlist.NSExtension,
+      NSExtensionMainStoryboard: 'MainInterface',
     };
   }
 
@@ -398,7 +480,8 @@ export function getFrameworksForType(type: ExtensionType): string[] {
 }
 
 /**
- * Build NSExtensionActivationRule from share extension config
+ * Build NSExtensionActivationRule from share/action extension config
+ * Used for both share extensions (with NSExtensionAttributes) and action extensions
  * @see https://developer.apple.com/library/archive/documentation/General/Conceptual/ExtensibilityPG/ExtensionScenarios.html
  */
 export function buildShareExtensionActivationRules(
@@ -462,7 +545,7 @@ export function buildShareExtensionActivationRules(
           };
         default:
           console.warn(
-            `[expo-targets] Unknown share extension content type: ${rule.type}`
+            `[expo-targets] Unknown share/action extension content type: ${rule.type}`
           );
           return acc;
       }
