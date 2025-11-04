@@ -996,7 +996,7 @@ export interface IOSTargetConfig {
   activationRules?: ShareExtensionActivationRule[];
   preprocessingFile?: string;
   stickerPacks?: StickerPack[];
-  imessageAppIcon?: string;
+  targetIcon?: string;
 }
 
 // Target configuration

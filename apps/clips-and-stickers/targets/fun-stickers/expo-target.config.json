@@ -4,7 +4,7 @@
   "displayName": "Fun Stickers",
   "platforms": ["ios"],
   "ios": {
-    "imessageAppIcon": "./assets/icon-iphone-60x45@3x.png",
+    "targetIcon": "./assets/icon-iphone-60x45@3x.png",
     "stickerPacks": [
       {
         "name": "Sticker Pack",

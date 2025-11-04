@@ -353,7 +353,8 @@ export function getTargetInfoPlistForType(
   },
   entry?: string,
   mainAppSchemes?: string[],
-  targetsConfig?: any[]
+  targetsConfig?: any[],
+  targetIcon?: string
 ): string {
   const typeCharacteristics = TYPE_CHARACTERISTICS[type];
   if (!typeCharacteristics) {
@@ -436,18 +437,41 @@ export function getTargetInfoPlistForType(
     }
 
     // For action extensions, ensure NSExtensionActivationRule stays directly under NSExtension
-    // and remove NSExtensionAttributes if it was accidentally added
+    // but preserve NSExtensionAttributes if it contains other keys like NSExtensionIcon
     if (typeCharacteristics.activationRulesLocation === 'direct') {
       const activationRule = nsExtension.NSExtensionActivationRule;
-      // Remove NSExtensionAttributes if it exists (shouldn't for action extensions)
-      delete nsExtension.NSExtensionAttributes;
+      const existingAttributes = nsExtension.NSExtensionAttributes || {};
 
-      basePlist.NSExtension = {
+      // Build NSExtensionAttributes with icon if provided, preserving other attributes
+      const finalAttributes: Record<string, any> = { ...existingAttributes };
+
+      // Remove NSExtensionActivationRule from attributes if it exists (should be direct)
+      if (finalAttributes.NSExtensionActivationRule) {
+        delete finalAttributes.NSExtensionActivationRule;
+      }
+
+      // Add NSExtensionIcon if targetIcon is provided (for action extensions)
+      if (targetIcon && type === 'action') {
+        finalAttributes.NSExtensionIcon = {
+          // NSExtensionIconName can be an SF Symbol name (e.g., "photo.fill")
+          // or an image asset name. iOS automatically detects SF Symbols vs image assets.
+          NSExtensionIconName: targetIcon,
+        };
+      }
+
+      // Only include NSExtensionAttributes if there are remaining attributes
+      const extensionDict: Record<string, any> = {
         ...nsExtension,
         NSExtensionActivationRule: activationRule,
         NSExtensionPrincipalClass:
           '$(PRODUCT_MODULE_NAME).ReactNativeViewController',
       };
+
+      if (Object.keys(finalAttributes).length > 0) {
+        extensionDict.NSExtensionAttributes = finalAttributes;
+      }
+
+      basePlist.NSExtension = extensionDict;
     } else {
       basePlist.NSExtension = {
         ...nsExtension,
@@ -487,7 +511,8 @@ export function getTargetInfoPlistForType(
     basePlist = deepMerge(basePlist, customProperties);
 
     // For action extensions, ensure NSExtensionActivationRule structure is correct
-    // Custom properties might have added NSExtensionAttributes, which is wrong for action extensions
+    // Custom properties might have added NSExtensionAttributes with NSExtensionActivationRule
+    // Move it to direct level, but preserve other attributes like NSExtensionIcon
     if (
       typeCharacteristics.activationRulesLocation === 'direct' &&
       basePlist.NSExtension?.NSExtensionAttributes?.NSExtensionActivationRule
@@ -498,7 +523,7 @@ export function getTargetInfoPlistForType(
       delete basePlist.NSExtension.NSExtensionAttributes
         .NSExtensionActivationRule;
 
-      // Remove NSExtensionAttributes if it's now empty
+      // Only remove NSExtensionAttributes if it's now empty (preserve other attributes like NSExtensionIcon)
       if (
         Object.keys(basePlist.NSExtension.NSExtensionAttributes).length === 0
       ) {
@@ -506,6 +531,19 @@ export function getTargetInfoPlistForType(
       }
 
       basePlist.NSExtension.NSExtensionActivationRule = activationRule;
+    }
+
+    // Merge actionIcon from customProperties if provided (allows override via infoPlist)
+    if (
+      typeCharacteristics.activationRulesLocation === 'direct' &&
+      customProperties.NSExtension?.NSExtensionAttributes?.NSExtensionIcon
+    ) {
+      // Custom icon already set via infoPlist, use it
+      if (!basePlist.NSExtension.NSExtensionAttributes) {
+        basePlist.NSExtension.NSExtensionAttributes = {};
+      }
+      basePlist.NSExtension.NSExtensionAttributes.NSExtensionIcon =
+        customProperties.NSExtension.NSExtensionAttributes.NSExtensionIcon;
     }
   }
 

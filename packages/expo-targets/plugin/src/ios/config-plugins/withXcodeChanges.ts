@@ -40,6 +40,7 @@ function generateInfoPlistSignature(inputs: {
   preprocessingFile?: string;
   mainAppSchemes?: string[];
   targetsConfig?: any[];
+  targetIcon?: string;
 }): string {
   const normalized = JSON.stringify(inputs, Object.keys(inputs).sort());
   return crypto
@@ -174,6 +175,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       preprocessingFile: props.preprocessingFile,
       mainAppSchemes: mainAppSchemes.length > 0 ? mainAppSchemes : undefined,
       targetsConfig,
+      targetIcon: props.targetIcon,
     });
 
     const cleanMode = isCleanMode();
@@ -224,7 +226,8 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
           : undefined,
         props.entry,
         mainAppSchemes.length > 0 ? mainAppSchemes : undefined,
-        targetsConfig
+        targetsConfig,
+        props.targetIcon
       );
       File.writeFileSafe(infoPlistPath, infoPlistContent);
       storeInfoPlistSignature(infoPlistPath, configSignature);
@@ -255,10 +258,10 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       );
 
       // Resolve source icon path if provided
-      const sourceIconPath = props.imessageAppIcon
-        ? path.isAbsolute(props.imessageAppIcon)
-          ? props.imessageAppIcon
-          : path.join(projectRoot, props.imessageAppIcon)
+      const sourceIconPath = props.targetIcon
+        ? path.isAbsolute(props.targetIcon)
+          ? props.targetIcon
+          : path.join(projectRoot, props.targetIcon)
         : undefined;
 
       Asset.createIMessageAppIcon({

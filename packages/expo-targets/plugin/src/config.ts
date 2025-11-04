@@ -116,7 +116,16 @@ interface BaseIOSTargetConfig {
   colors?: Record<string, string | Color>;
   images?: Record<string, string>;
   stickerPacks?: StickerPack[];
-  imessageAppIcon?: string; // Path to source icon for iMessage App Icon (sticker packs)
+  /**
+   * Icon for extension target
+   * - For stickers: Path to source image file (e.g., "./assets/imessage-icon.png")
+   * - For action extensions: SF Symbol name (e.g., "photo.fill") or image asset name
+   * @example
+   * targetIcon: "./assets/icon.png" // Sticker pack icon file path
+   * targetIcon: "photo.fill" // Action extension SF Symbol
+   * targetIcon: "MyActionIcon" // Action extension image asset name
+   */
+  targetIcon?: string;
   frameworks?: string[];
   entitlements?: Record<string, any>;
   infoPlist?: Record<string, any>;

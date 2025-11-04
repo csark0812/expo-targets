@@ -60,7 +60,7 @@ your-app/
 | `ios.activationRules`   | `array`    | ❌ Optional | -                  | Share extension activation rules           |
 | `ios.preprocessingFile` | `string`   | ❌ Optional | -                  | Preprocessing JS for web content           |
 | `ios.stickerPacks`      | `array`    | ❌ Optional | -                  | iMessage sticker pack configuration        |
-| `ios.imessageAppIcon`   | `string`   | ❌ Optional | -                  | iMessage app icon path                     |
+| `ios.targetIcon`        | `string`   | ❌ Optional | -                  | Icon for extension (path for stickers, SF Symbol/asset name for actions) |
 
 ### Basic Schema Example
 
@@ -606,17 +606,29 @@ Sticker pack configuration (only for `type: "stickers"`).
 }
 ```
 
-### `ios.imessageAppIcon`
+### `ios.targetIcon`
 
 **Type:** `string`
 
-Path to icon for iMessage app icon (only for `type: "stickers"`).
+Icon for extension target. Usage depends on extension type:
+
+- **For stickers**: Path to source image file for iMessage app icon
+- **For action extensions**: SF Symbol name (e.g., `"photo.fill"`) or image asset name
 
 ```json
 {
   "type": "stickers",
   "ios": {
-    "imessageAppIcon": "./assets/imessage-icon.png"
+    "targetIcon": "./assets/imessage-icon.png"
+  }
+}
+```
+
+```json
+{
+  "type": "action",
+  "ios": {
+    "targetIcon": "photo.fill"
   }
 }
 ```
@@ -716,7 +728,7 @@ Path to icon for iMessage app icon (only for `type: "stickers"`).
   "ios": {
     "deploymentTarget": "10.0",
     "bundleIdentifier": ".stickers",
-    "imessageAppIcon": "./assets/imessage-icon.png",
+    "targetIcon": "./assets/imessage-icon.png",
     "stickerPacks": [
       {
         "name": "Animals",
