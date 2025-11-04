@@ -206,10 +206,17 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
         );
       }
 
+      // Check if activationRules or preprocessingFile exist
+      // activationRules can be an array (even empty) or undefined
+      const hasActivationRules =
+        Array.isArray(props.activationRules) &&
+        props.activationRules.length > 0;
+      const hasPreprocessingFile = !!props.preprocessingFile;
+
       const infoPlistContent = getTargetInfoPlistForType(
         props.type,
         props.infoPlist,
-        props.activationRules || props.preprocessingFile
+        hasActivationRules || hasPreprocessingFile
           ? {
               activationRules: props.activationRules,
               preprocessingFile: props.preprocessingFile,

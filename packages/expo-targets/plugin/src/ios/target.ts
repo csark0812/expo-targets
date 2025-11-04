@@ -435,11 +435,26 @@ export function getTargetInfoPlistForType(
       delete nsExtension.NSExtensionMainStoryboard;
     }
 
-    basePlist.NSExtension = {
-      ...nsExtension,
-      NSExtensionPrincipalClass:
-        '$(PRODUCT_MODULE_NAME).ReactNativeViewController',
-    };
+    // For action extensions, ensure NSExtensionActivationRule stays directly under NSExtension
+    // and remove NSExtensionAttributes if it was accidentally added
+    if (typeCharacteristics.activationRulesLocation === 'direct') {
+      const activationRule = nsExtension.NSExtensionActivationRule;
+      // Remove NSExtensionAttributes if it exists (shouldn't for action extensions)
+      delete nsExtension.NSExtensionAttributes;
+
+      basePlist.NSExtension = {
+        ...nsExtension,
+        NSExtensionActivationRule: activationRule,
+        NSExtensionPrincipalClass:
+          '$(PRODUCT_MODULE_NAME).ReactNativeViewController',
+      };
+    } else {
+      basePlist.NSExtension = {
+        ...nsExtension,
+        NSExtensionPrincipalClass:
+          '$(PRODUCT_MODULE_NAME).ReactNativeViewController',
+      };
+    }
   } else if (
     typeCharacteristics.activationRulesLocation === 'direct' &&
     !entry
@@ -470,6 +485,28 @@ export function getTargetInfoPlistForType(
 
   if (customProperties) {
     basePlist = deepMerge(basePlist, customProperties);
+
+    // For action extensions, ensure NSExtensionActivationRule structure is correct
+    // Custom properties might have added NSExtensionAttributes, which is wrong for action extensions
+    if (
+      typeCharacteristics.activationRulesLocation === 'direct' &&
+      basePlist.NSExtension?.NSExtensionAttributes?.NSExtensionActivationRule
+    ) {
+      // Move NSExtensionActivationRule from NSExtensionAttributes to directly under NSExtension
+      const activationRule =
+        basePlist.NSExtension.NSExtensionAttributes.NSExtensionActivationRule;
+      delete basePlist.NSExtension.NSExtensionAttributes
+        .NSExtensionActivationRule;
+
+      // Remove NSExtensionAttributes if it's now empty
+      if (
+        Object.keys(basePlist.NSExtension.NSExtensionAttributes).length === 0
+      ) {
+        delete basePlist.NSExtension.NSExtensionAttributes;
+      }
+
+      basePlist.NSExtension.NSExtensionActivationRule = activationRule;
+    }
   }
 
   return plist.build(basePlist);
