@@ -183,6 +183,20 @@ export type IOSTargetConfig =
 
 export interface AndroidTargetConfig {
   resourceName?: string;
+  // Widget-specific configuration
+  minWidth?: string;
+  minHeight?: string;
+  resizeMode?: string;
+  updatePeriodMillis?: number;
+  widgetCategory?: string;
+  previewImage?: string;
+  description?: string;
+  maxResizeWidth?: string;
+  maxResizeHeight?: string;
+  targetCellWidth?: number;
+  targetCellHeight?: number;
+  initialLayout?: string;
+  colors?: Record<string, string | Color>;
 }
 
 // Base config shared by all targets

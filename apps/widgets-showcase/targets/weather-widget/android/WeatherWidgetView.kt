@@ -1,8 +1,11 @@
 package com.test.widgetshowcase.weather
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceModifier
 import androidx.glance.LocalSize
+import androidx.glance.appwidget.cornerRadius
 import androidx.glance.background
 import androidx.glance.layout.*
 import androidx.glance.text.FontWeight
@@ -10,6 +13,7 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
+import com.test.widgetshowcase.R
 
 /**
  * Main composable for Weather Widget
@@ -51,10 +55,10 @@ fun WeatherWidgetView(data: WeatherData?) {
 @Composable
 private fun getBackgroundColor(data: WeatherData?): ColorProvider {
     return when (data?.condition?.lowercase()) {
-        "sunny", "clear" -> ColorProvider(R.color.sunny_color)
-        "cloudy", "overcast" -> ColorProvider(R.color.cloudy_color)
-        "rainy", "rain" -> ColorProvider(R.color.rainy_color)
-        else -> ColorProvider(R.color.background_color)
+        "sunny", "clear" -> ColorProvider(R.color.weatherwidget_sunny_color)
+        "cloudy", "overcast" -> ColorProvider(R.color.weatherwidget_cloudy_color)
+        "rainy", "rain" -> ColorProvider(R.color.weatherwidget_rainy_color)
+        else -> ColorProvider(R.color.weatherwidget_background_color)
     }
 }
 
@@ -78,7 +82,7 @@ fun PlaceholderView() {
             style = TextStyle(
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
-                color = ColorProvider(R.color.text_primary)
+                color = ColorProvider(R.color.weatherwidget_text_primary)
             )
         )
         Spacer(modifier = GlanceModifier.height(4.dp))
@@ -86,7 +90,7 @@ fun PlaceholderView() {
             text = "No data available",
             style = TextStyle(
                 fontSize = 12.sp,
-                color = ColorProvider(R.color.text_secondary)
+                color = ColorProvider(R.color.weatherwidget_text_secondary)
             )
         )
     }
@@ -336,7 +340,7 @@ fun LargeWeatherView(data: WeatherData) {
         // Details grid
         Row(
             modifier = GlanceModifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.SpaceAround
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Humidity
             DetailCard(
@@ -365,7 +369,6 @@ fun LargeWeatherView(data: WeatherData) {
 fun DetailCard(icon: String, label: String, value: String) {
     Row(
         modifier = GlanceModifier
-            .defaultWeight()
             .background(ColorProvider(android.R.color.white))
             .padding(12.dp)
             .cornerRadius(12.dp),
@@ -386,7 +389,7 @@ fun DetailCard(icon: String, label: String, value: String) {
                 style = TextStyle(
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Medium,
-                    color = ColorProvider(R.color.text_secondary)
+                    color = ColorProvider(R.color.weatherwidget_text_secondary)
                 )
             )
             Spacer(modifier = GlanceModifier.height(2.dp))
@@ -395,7 +398,7 @@ fun DetailCard(icon: String, label: String, value: String) {
                 style = TextStyle(
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
-                    color = ColorProvider(R.color.text_primary)
+                    color = ColorProvider(R.color.weatherwidget_text_primary)
                 )
             )
         }

@@ -1,8 +1,11 @@
 package com.test.widgetshowcase.counter
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceModifier
 import androidx.glance.LocalSize
+import androidx.glance.appwidget.cornerRadius
 import androidx.glance.background
 import androidx.glance.layout.*
 import androidx.glance.text.FontWeight
@@ -10,6 +13,7 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
+import com.test.widgetshowcase.R
 
 /**
  * Main composable for Counter Widget
@@ -23,7 +27,7 @@ fun CounterWidgetView(data: CounterData) {
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(ColorProvider(R.color.background_color))
+            .background(ColorProvider(R.color.counterwidget_background_color))
             .padding(16.dp)
             .cornerRadius(16.dp),
         contentAlignment = Alignment.Center
@@ -55,7 +59,7 @@ fun SmallCounterView(data: CounterData) {
             style = TextStyle(
                 fontSize = 48.sp,
                 fontWeight = FontWeight.Bold,
-                color = ColorProvider(R.color.accent_color)
+                color = ColorProvider(R.color.counterwidget_accent_color)
             )
         )
 
@@ -66,7 +70,7 @@ fun SmallCounterView(data: CounterData) {
             text = data.label?.takeIf { it.isNotEmpty() } ?: "Count",
             style = TextStyle(
                 fontSize = 12.sp,
-                color = ColorProvider(R.color.text_secondary)
+                color = ColorProvider(R.color.counterwidget_text_secondary)
             ),
             maxLines = 1
         )
@@ -101,7 +105,7 @@ fun MediumCounterView(data: CounterData) {
                 style = TextStyle(
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = ColorProvider(R.color.text_primary)
+                    color = ColorProvider(R.color.counterwidget_text_primary)
                 )
             )
         }
@@ -114,7 +118,7 @@ fun MediumCounterView(data: CounterData) {
             style = TextStyle(
                 fontSize = 56.sp,
                 fontWeight = FontWeight.Bold,
-                color = ColorProvider(R.color.accent_color)
+                color = ColorProvider(R.color.counterwidget_accent_color)
             )
         )
 
@@ -125,7 +129,7 @@ fun MediumCounterView(data: CounterData) {
             text = data.label?.takeIf { it.isNotEmpty() } ?: "No label set",
             style = TextStyle(
                 fontSize = 14.sp,
-                color = ColorProvider(R.color.text_secondary)
+                color = ColorProvider(R.color.counterwidget_text_secondary)
             )
         )
     }

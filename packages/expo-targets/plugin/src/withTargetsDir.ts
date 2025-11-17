@@ -3,7 +3,7 @@ import fs from 'fs';
 import { globSync } from 'glob';
 import path from 'path';
 
-import { withAndroidTarget } from './android/config-plugins/withAndroidTarget';
+import { withAndroidTarget } from './android/withAndroidTarget';
 import { withIOSTarget } from './ios/config-plugins/withIOSTarget';
 import { Logger } from './logger';
 
@@ -96,15 +96,10 @@ export const withTargetsDir: ConfigPlugin<{
       });
     }
 
-    if (supportsAndroid && evaluatedConfig.android) {
+    if (supportsAndroid) {
       config = withAndroidTarget(config, {
-        ...evaluatedConfig.android,
-        type: evaluatedConfig.type,
-        name: targetName,
-        displayName: evaluatedConfig.displayName,
+        ...evaluatedConfig,
         directory: targetDirectory,
-        configPath: targetPath,
-        logger,
       });
     }
 
