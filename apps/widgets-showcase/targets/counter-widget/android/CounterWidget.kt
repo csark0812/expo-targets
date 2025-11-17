@@ -50,5 +50,21 @@ data class CounterData(
  */
 class CounterWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = CounterWidget()
+
+    override fun onUpdate(
+        context: Context,
+        appWidgetManager: android.appwidget.AppWidgetManager,
+        appWidgetIds: IntArray
+    ) {
+        super.onUpdate(context, appWidgetManager, appWidgetIds)
+        // Explicitly update each widget instance to render content
+        appWidgetIds.forEach { appWidgetId ->
+            val glanceId = androidx.glance.appwidget.GlanceAppWidgetManager(context)
+                .getGlanceIdBy(appWidgetId)
+            kotlinx.coroutines.runBlocking {
+                glanceAppWidget.update(context, glanceId)
+            }
+        }
+    }
 }
 

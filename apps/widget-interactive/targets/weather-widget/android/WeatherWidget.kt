@@ -11,7 +11,7 @@ import kotlinx.serialization.decodeFromString
 
 /**
  * Weather Widget using Glance API (modern approach for Android 13+)
- * 
+ *
  * This widget displays weather information shared from the main app via SharedPreferences.
  * It mirrors the iOS WidgetKit implementation structure.
  */
@@ -19,13 +19,13 @@ class WeatherWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         // Load weather data from SharedPreferences
         val weatherData = loadWeatherData(context)
-        
+
         provideContent {
             // Render the widget UI using Compose
             WeatherWidgetView(weatherData)
         }
     }
-    
+
     /**
      * Load weather data from SharedPreferences
      * Mirrors iOS UserDefaults loading in Widget.swift
@@ -33,10 +33,10 @@ class WeatherWidget : GlanceAppWidget() {
     private fun loadWeatherData(context: Context): WeatherData? {
         // Use the same SharedPreferences name as the main app
         val prefs = context.getSharedPreferences("expo_targets", Context.MODE_PRIVATE)
-        
+
         // Get the JSON string for the "weather" key
         val jsonString = prefs.getString("weather", null) ?: return null
-        
+
         return try {
             // Deserialize JSON to WeatherData
             Json.decodeFromString<WeatherData>(jsonString)
@@ -54,4 +54,20 @@ class WeatherWidget : GlanceAppWidget() {
  */
 class WeatherWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = WeatherWidget()
+
+    override fun onUpdate(
+        context: Context,
+        appWidgetManager: android.appwidget.AppWidgetManager,
+        appWidgetIds: IntArray
+    ) {
+        super.onUpdate(context, appWidgetManager, appWidgetIds)
+        // Explicitly update each widget instance to render content
+        appWidgetIds.forEach { appWidgetId ->
+            val glanceId = androidx.glance.appwidget.GlanceAppWidgetManager(context)
+                .getGlanceIdBy(appWidgetId)
+            kotlinx.coroutines.runBlocking {
+                glanceAppWidget.update(context, glanceId)
+            }
+        }
+    }
 }
