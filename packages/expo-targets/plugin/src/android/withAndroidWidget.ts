@@ -5,6 +5,7 @@ import {
   withDangerousMod,
   withStringsXml,
   withAppBuildGradle,
+  withProjectBuildGradle,
 } from '@expo/config-plugins';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -23,7 +24,22 @@ interface WidgetProps {
 export const withAndroidWidget: ConfigPlugin<WidgetProps> = (config, props) => {
   const androidConfig = props.android || {};
 
-  // 1. Register ExpoTargetsReceiver in manifest (for refresh functionality)
+  // 1. Add Compose Compiler Plugin to root build.gradle (required for Kotlin 2.0+)
+  config = withProjectBuildGradle(config, (buildGradleConfig) => {
+    addComposeCompilerPlugin(buildGradleConfig);
+    return buildGradleConfig;
+  });
+
+  // 2. Apply Compose plugin and configure in app build.gradle
+  config = withAppBuildGradle(config, (buildGradleConfig) => {
+    applyComposePlugin(buildGradleConfig);
+    enableComposeFeatures(buildGradleConfig);
+    addGlanceDependencies(buildGradleConfig);
+    addWidgetSourceSets(buildGradleConfig, config, props);
+    return buildGradleConfig;
+  });
+
+  // 3. Register ExpoTargetsReceiver in manifest (for refresh functionality)
   config = withAndroidManifest(config, (manifestConfig) => {
     const mainApplication = AndroidConfig.Manifest.getMainApplicationOrThrow(
       manifestConfig.modResults
@@ -33,7 +49,7 @@ export const withAndroidWidget: ConfigPlugin<WidgetProps> = (config, props) => {
     return manifestConfig;
   });
 
-  // 2. Add description string if provided
+  // 4. Add description string if provided
   if (androidConfig?.description) {
     const description = androidConfig.description;
     config = withStringsXml(config, (stringsConfig) => {
@@ -53,14 +69,7 @@ export const withAndroidWidget: ConfigPlugin<WidgetProps> = (config, props) => {
     });
   }
 
-  // 3. Add Glance dependencies and reference widget code/resources in place
-  config = withAppBuildGradle(config, (buildGradleConfig) => {
-    addGlanceDependencies(buildGradleConfig);
-    addWidgetSourceSets(buildGradleConfig, config, props);
-    return buildGradleConfig;
-  });
-
-  // 4. Generate widget resources (XML, colors, default layout if needed)
+  // 5. Generate widget resources (XML, colors, default layout if needed)
   config = withDangerousMod(config, [
     'android',
     (dangerousConfig) => {
@@ -76,6 +85,51 @@ export const withAndroidWidget: ConfigPlugin<WidgetProps> = (config, props) => {
 
   return config;
 };
+
+function addComposeCompilerPlugin(buildGradleConfig: any) {
+  const { modResults } = buildGradleConfig;
+  let contents = modResults.contents;
+
+  // Check if Compose Compiler Plugin already added
+  if (contents.includes('compose-compiler-gradle-plugin')) {
+    return;
+  }
+
+  // Find buildscript dependencies block and add Compose Compiler Plugin
+  const dependenciesMatch = contents.match(
+    /(dependencies\s*\{[^}]*classpath\([^)]*kotlin-gradle-plugin[^)]*\))/
+  );
+  if (dependenciesMatch) {
+    const composePlugin = `\n    classpath('org.jetbrains.kotlin:compose-compiler-gradle-plugin')`;
+    contents = contents.replace(
+      dependenciesMatch[1],
+      dependenciesMatch[1] + composePlugin
+    );
+    modResults.contents = contents;
+  }
+}
+
+function applyComposePlugin(buildGradleConfig: any) {
+  const { modResults } = buildGradleConfig;
+  let contents = modResults.contents;
+
+  // Check if Compose plugin already applied
+  if (contents.includes('org.jetbrains.kotlin.plugin.compose')) {
+    return;
+  }
+
+  // Find the kotlin.android plugin line and add compose plugin after it
+  const kotlinPluginMatch = contents.match(
+    /(apply plugin:\s*["']org\.jetbrains\.kotlin\.android["'])/
+  );
+  if (kotlinPluginMatch) {
+    contents = contents.replace(
+      kotlinPluginMatch[1],
+      `${kotlinPluginMatch[1]}\napply plugin: "org.jetbrains.kotlin.plugin.compose"`
+    );
+    modResults.contents = contents;
+  }
+}
 
 function addExpoTargetsReceiver(mainApplication: any, config: any) {
   const packageName = config.android?.package;
@@ -106,6 +160,37 @@ function addExpoTargetsReceiver(mainApplication: any, config: any) {
   });
 }
 
+function enableComposeFeatures(buildGradleConfig: any) {
+  const { modResults } = buildGradleConfig;
+  let contents = modResults.contents;
+
+  // Check if Compose already enabled
+  if (contents.includes('buildFeatures') && contents.includes('compose')) {
+    return;
+  }
+
+  // Find android block and add buildFeatures
+  // With Kotlin 2.0+, we use the Compose Compiler Plugin, so no composeOptions needed
+  const androidBlockMatch = contents.match(/(android\s*\{[\s\S]*?)(^\})/m);
+  if (androidBlockMatch) {
+    const buildFeaturesBlock = `
+    buildFeatures {
+        compose true
+    }
+
+    kotlin {
+        jvmToolchain(17)
+    }
+`;
+    // Insert before the closing brace of android block
+    contents = contents.replace(
+      androidBlockMatch[0],
+      androidBlockMatch[1] + buildFeaturesBlock + '\n}'
+    );
+    modResults.contents = contents;
+  }
+}
+
 function addGlanceDependencies(buildGradleConfig: any) {
   const { modResults } = buildGradleConfig;
   let contents = modResults.contents;
@@ -115,16 +200,29 @@ function addGlanceDependencies(buildGradleConfig: any) {
     return;
   }
 
-  // Find dependencies block and add Glance + Compose dependencies
+  // Find dependencies block and add Compose BOM + Glance dependencies
   const dependenciesMatch = contents.match(/dependencies\s*\{/);
   if (dependenciesMatch) {
     const glanceDeps = `
-    // Glance + Compose dependencies for widgets (added by expo-targets)
-    implementation("androidx.glance:glance-appwidget:1.1.1")
-    implementation("androidx.glance:glance-material3:1.1.1")
-    implementation("androidx.compose.ui:ui:1.6.8")
-    implementation("androidx.compose.runtime:runtime:1.6.8")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")`;
+    // Compose BOM - ensures all Compose libraries are compatible
+    // Using latest stable BOM which is tested with Kotlin 2.1.x
+    def composeBom = platform('androidx.compose:compose-bom:2025.01.00')
+    implementation composeBom
+    androidTestImplementation composeBom
+
+    // Compose dependencies (versions managed by BOM)
+    implementation 'androidx.compose.ui:ui'
+    implementation 'androidx.compose.runtime:runtime'
+    implementation 'androidx.compose.foundation:foundation'
+    implementation 'androidx.compose.material3:material3'
+
+    // Glance dependencies for widgets (added by expo-targets)
+    // Using latest stable 1.1.1 which works with Compose BOM
+    implementation 'androidx.glance:glance-appwidget:1.1.1'
+    implementation 'androidx.glance:glance-material3:1.1.1'
+
+    // Kotlinx serialization
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3'`;
 
     contents = contents.replace(/(dependencies\s*\{)/, `$1${glanceDeps}`);
 
