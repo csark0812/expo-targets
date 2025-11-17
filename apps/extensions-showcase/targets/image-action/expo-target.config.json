@@ -1,0 +1,18 @@
+{
+  "type": "action",
+  "name": "ImageAction",
+  "displayName": "Image Action",
+  "platforms": ["ios"],
+  "entry": "./targets/image-action/index.tsx",
+  "appGroup": "group.com.test.extensionsshowcase",
+  "ios": {
+    "bundleIdentifier": "com.test.extensionsshowcase.action",
+    "displayName": "Image Action",
+    "colors": {
+      "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" },
+      "BackgroundColor": { "light": "#FFFFFF", "dark": "#1C1C1E" },
+      "TextPrimary": { "light": "#000000", "dark": "#FFFFFF" }
+    },
+    "activationRules": [{ "type": "image", "maxCount": 1 }]
+  }
+}

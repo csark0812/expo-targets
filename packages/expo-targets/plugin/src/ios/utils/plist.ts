@@ -79,6 +79,7 @@ export function shouldUseAppGroups(type: ExtensionType): boolean {
     share: true,
     'bg-download': true,
     stickers: false,
+    messages: true,
     action: false,
     safari: false,
     'notification-content': false,

@@ -138,3 +138,116 @@ export function getStickerPackPath({
     `${stickerPackName}.stickerpack`
   );
 }
+
+/**
+ * ============================================================================
+ * NEW: Reference-in-Place Path Utilities
+ * ============================================================================
+ * The following functions return paths within targets/ directory where files
+ * are referenced in place rather than copied to ios/. Generated files (Info.plist,
+ * Assets.xcassets, entitlements) go in targets/TARGETNAME/ios/build/, while user Swift
+ * files remain in targets/TARGETNAME/ios/.
+ */
+
+/**
+ * Get build output directory in targets/ folder.
+ * This is where generated files (Info.plist, Assets, entitlements) are placed.
+ */
+export function getTargetBuildPath({
+  projectRoot,
+  targetDirectory,
+}: {
+  projectRoot: string;
+  targetDirectory: string;
+}): string {
+  return path.join(projectRoot, targetDirectory, 'ios', 'build');
+}
+
+/**
+ * Get path to Info.plist in targets/TARGETNAME/ios/build/.
+ * New approach: Info.plist generated in targets/, referenced from Xcode.
+ */
+export function getTargetInfoPlistPath({
+  projectRoot,
+  targetDirectory,
+}: {
+  projectRoot: string;
+  targetDirectory: string;
+}): string {
+  return path.join(
+    getTargetBuildPath({ projectRoot, targetDirectory }),
+    'Info.plist'
+  );
+}
+
+/**
+ * Get path to entitlements file in targets/TARGETNAME/ios/build/.
+ * New approach: Entitlements generated in targets/, referenced from Xcode.
+ */
+export function getTargetEntitlementsPath({
+  projectRoot,
+  targetDirectory,
+}: {
+  projectRoot: string;
+  targetDirectory: string;
+}): string {
+  return path.join(
+    getTargetBuildPath({ projectRoot, targetDirectory }),
+    'generated.entitlements'
+  );
+}
+
+/**
+ * Get path to Assets.xcassets in targets/TARGETNAME/ios/build/.
+ * New approach: Assets generated/copied to targets/, referenced from Xcode.
+ * For sticker targets, returns Stickers.xcassets instead.
+ */
+export function getTargetAssetsPath({
+  projectRoot,
+  targetDirectory,
+  isStickers,
+}: {
+  projectRoot: string;
+  targetDirectory: string;
+  isStickers?: boolean;
+}): string {
+  const assetsFolderName = isStickers ? 'Stickers.xcassets' : 'Assets.xcassets';
+  return path.join(
+    getTargetBuildPath({ projectRoot, targetDirectory }),
+    assetsFolderName
+  );
+}
+
+/**
+ * Get path to a specific colorset in targets/TARGETNAME/ios/build/Assets.xcassets/.
+ */
+export function getTargetColorsetPath({
+  projectRoot,
+  targetDirectory,
+  colorName,
+}: {
+  projectRoot: string;
+  targetDirectory: string;
+  colorName: string;
+}): string {
+  return path.join(
+    getTargetAssetsPath({ projectRoot, targetDirectory }),
+    `${colorName}.colorset`
+  );
+}
+
+/**
+ * Get path to user's Swift source files in targets/TARGETNAME/ios/.
+ * These are referenced in place, not copied.
+ */
+export function getTargetSourcePath({
+  projectRoot,
+  targetDirectory,
+  fileName,
+}: {
+  projectRoot: string;
+  targetDirectory: string;
+  fileName: string;
+}): string {
+  return path.join(projectRoot, targetDirectory, 'ios', fileName);
+}

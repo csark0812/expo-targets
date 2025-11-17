@@ -1,0 +1,15 @@
+{
+  "name": "TestWidget",
+  "type": "widget",
+  "platform": "ios",
+  "appGroup": "group.com.test.widget",
+  "bundleIdentifier": "com.test.widget.TestWidget",
+  "displayName": "Test Widget",
+  "colors": {
+    "primary": "#007AFF",
+    "background": "#FFFFFF"
+  },
+  "entitlements": {
+    "com.apple.security.application-groups": ["group.com.test.widget"]
+  }
+}

@@ -153,10 +153,95 @@ function updateWidget() {
 
 ### 4. Build Your App
 
+**Expo Managed Workflow (CNG)**:
+
 ```bash
 npx expo prebuild -p ios --clean
 npx expo run:ios
 ```
+
+**Bare React Native**:
+
+```bash
+npx expo-targets sync
+cd ios && pod install
+npx react-native run-ios
+```
+
+## Workflows
+
+### Expo Managed (Recommended)
+
+Uses Continuous Native Generation (CNG) - `ios/` directory is generated from config:
+
+```bash
+npm install expo-targets
+npx create-target          # Create a new target
+npx expo prebuild --clean  # Generate native projects
+npx expo run:ios           # Build and run
+```
+
+**Best for**: New projects, teams preferring declarative config, EAS Build users
+
+### Bare React Native
+
+Keep your manually-managed `ios/` directory and sync targets into it:
+
+```bash
+npm install expo-targets
+npx create-target          # Create a new target
+npx expo-targets sync      # Sync targets to Xcode
+cd ios && pod install      # Install dependencies
+npx react-native run-ios   # Build and run
+```
+
+**Best for**: Existing bare RN projects, teams needing manual Xcode control
+
+## Architecture: Reference-in-Place
+
+expo-targets uses a **reference-in-place** architecture for native code:
+
+### File Structure
+
+```
+targets/my-widget/
+├── expo-target.config.json   [Target configuration]
+├── index.ts                  [JS/TS runtime code]
+├── ios/
+│   └── Widget.swift          [Swift source - referenced in place]
+└── ios/build/                [Generated artifacts - git ignored]
+    ├── Info.plist            [Generated from config]
+    ├── Assets.xcassets/      [Generated colors & assets]
+    └── *.entitlements        [Generated entitlements]
+```
+
+### Key Benefits
+
+1. **Single Source of Truth**: Swift files live in `targets/`, not copied to `ios/`
+2. **Edit Anywhere**: Change files in Xcode or VS Code - same location
+3. **Clean Git History**: Only track source files, not generated copies
+4. **Bare RN Compatible**: Sync CLI enables usage without full CNG workflow
+
+### Xcode Integration
+
+Files appear in virtual `expo:targets` group in Xcode navigator:
+
+```
+Xcode Project
+├── YourApp
+├── YourAppTests
+└── expo:targets/              [Virtual group]
+    ├── MyWidget/
+    │   ├── Widget.swift       [→ targets/my-widget/ios/Widget.swift]
+    │   ├── Info.plist         [→ targets/my-widget/ios/build/Info.plist]
+    │   └── Assets.xcassets/   [→ targets/my-widget/ios/build/Assets.xcassets]
+    └── MyClip/
+        └── ...
+```
+
+### Migration
+
+Upgrading from pre-1.0 versions? See [Migration Guide](./docs/MIGRATION-REFERENCE-IN-PLACE.md).
 
 ## Supported Target Types
 
@@ -165,6 +250,7 @@ npx expo run:ios
 | `widget`               | ✅  | Home screen widgets        |
 | `clip`                 | ✅  | App Clips                  |
 | `stickers`             | ✅  | iMessage sticker packs     |
+| `messages`             | ✅  | iMessage apps              |
 | `share`                | ✅  | Share extensions           |
 | `action`               | ✅  | Action extensions          |
 | `intent`               | 📝  | Siri intents               |
@@ -297,13 +383,17 @@ storage.refresh(targetName?);
 
 ## Examples
 
-See [apps/](./apps/) for complete examples:
+See [apps/README.md](./apps/README.md) for complete examples organized by theme and workflow:
 
-- **clip-advanced**: App Clip with URL handling
-- **imessage-stickers**: iMessage sticker pack
-- **share-extension**: Share extension with React Native
-- **widget-interactive**: Advanced weather widget
-- **multi-target**: Multiple targets in one app
+### Quick Links
+
+- **🎯 Widgets**: [`widgets-showcase`](./apps/widgets-showcase) - Basic to advanced widget examples
+- **📤 Extensions**: [`extensions-showcase`](./apps/extensions-showcase) - React Native share/action extensions
+- **⚡ Native**: [`native-extensions-showcase`](./apps/native-extensions-showcase) - Pure Swift extensions with function configs
+- **🎪 All Types**: [`all-targets-demo`](./apps/all-targets-demo) - Comprehensive demo of all 10 target types
+- **🔧 Bare RN**: [`bare-rn-widgets`](./apps/bare-rn-widgets), [`bare-rn-share`](./apps/bare-rn-share) - Bare React Native workflow examples
+
+See [apps/README.md](./apps/README.md) for complete examples and learning paths.
 
 ## Documentation
 

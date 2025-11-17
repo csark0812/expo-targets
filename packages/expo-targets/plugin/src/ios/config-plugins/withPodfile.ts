@@ -5,6 +5,8 @@ import {
 } from '@expo/config-plugins';
 import path from 'path';
 
+import { type ExtensionType } from '../../config';
+import { Logger } from '../../logger';
 import { Podfile, File } from '../utils';
 
 const { getProjectName } = IOSConfig.XcodeUtils;
@@ -12,8 +14,10 @@ const { getProjectName } = IOSConfig.XcodeUtils;
 export const withTargetPodfile: ConfigPlugin<{
   targetName: string;
   deploymentTarget: string;
+  extensionType: ExtensionType;
   excludedPackages?: string[];
   standalone?: boolean;
+  logger: Logger;
 }> = (config, props) => {
   return withDangerousMod(config, [
     'ios',
@@ -30,8 +34,8 @@ export const withTargetPodfile: ConfigPlugin<{
 
       // Remove existing target block if present (ensures correct placement on rebuild)
       if (Podfile.hasTargetBlock(podfile, props.targetName)) {
-        console.log(
-          `[expo-targets] Removing existing '${props.targetName}' target to ensure correct placement`
+        props.logger.log(
+          `Removing existing '${props.targetName}' target to ensure correct placement`
         );
         podfile = Podfile.removeTargetBlock(podfile, props.targetName);
       }
@@ -65,12 +69,11 @@ export const withTargetPodfile: ConfigPlugin<{
         : Podfile.generateReactNativeTargetBlock({
             targetName: props.targetName,
             deploymentTarget: props.deploymentTarget,
+            extensionType: props.extensionType,
           });
 
-      console.log(
-        `[expo-targets] Podfile: ${
-          props.standalone ? 'standalone (sibling)' : 'React Native (nested)'
-        } target: ${props.targetName}`
+      props.logger.log(
+        `Updated Podfile for ${props.standalone ? 'standalone' : 'React Native'} target: ${props.targetName}`
       );
 
       // Insert target block into Podfile
@@ -78,14 +81,15 @@ export const withTargetPodfile: ConfigPlugin<{
       podfile = Podfile.insertTargetBlock(
         podfile,
         targetBlock,
-        props.standalone
+        props.standalone,
+        props.logger
       );
 
       // For React Native targets, ensure framework search paths are configured
-      // inherit! :complete doesn't always propagate framework search paths for Swift imports
+      // inherit! :search_paths needs additional framework search paths for Swift imports
       if (!props.standalone) {
         // Find all React Native extension targets nested inside main target
-        // These targets use inherit! :complete to inherit pods from main app
+        // These targets use inherit! :search_paths to avoid inheriting incompatible pods like Expo
         const reactNativeTargets: {
           targetName: string;
           deploymentTarget: string;
@@ -144,8 +148,8 @@ export const withTargetPodfile: ConfigPlugin<{
                 if (nestedTargetDepth === 0) {
                   const targetBlock = currentTargetLines.join('\n');
 
-                  // Check if this target has inherit! :complete
-                  if (targetBlock.includes('inherit! :complete')) {
+                  // Check if this target has inherit! :search_paths (React Native extensions)
+                  if (targetBlock.includes('inherit! :search_paths')) {
                     // Extract deployment target
                     const platformMatch = targetBlock.match(
                       /platform\s+:ios,\s+'([^']+)'/

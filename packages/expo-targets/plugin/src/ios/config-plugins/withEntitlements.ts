@@ -1,13 +1,17 @@
 import { ConfigPlugin, withDangerousMod } from '@expo/config-plugins';
+import path from 'path';
 
 import type { ExtensionType } from '../../config';
+import { Logger } from '../../logger';
 import { TYPE_CHARACTERISTICS } from '../target';
 import { Plist, Paths } from '../utils';
 
 export const withTargetEntitlements: ConfigPlugin<{
   targetName: string;
+  targetDirectory: string;
   type: ExtensionType;
   entitlements?: Record<string, any>;
+  logger: Logger;
 }> = (config, props) => {
   return withDangerousMod(config, [
     'ios',
@@ -16,8 +20,8 @@ export const withTargetEntitlements: ConfigPlugin<{
 
       // Asset-only targets don't need entitlements
       if (!typeConfig.requiresEntitlements) {
-        console.log(
-          `[expo-targets] Skipping entitlements for asset-only target ${props.targetName}`
+        props.logger.log(
+          `Skipping entitlements for asset-only target ${props.targetName}`
         );
         return config;
       }
@@ -44,18 +48,20 @@ export const withTargetEntitlements: ConfigPlugin<{
         });
 
         if (mainAppGroups && mainAppGroups.length > 0) {
-          console.log(
-            `[expo-targets] Syncing app groups to ${props.targetName}`
-          );
+          props.logger.log(`Syncing app groups to ${props.targetName}`);
         }
       }
 
-      const entitlementsPath = Paths.getGeneratedEntitlementsPath({
-        platformProjectRoot: config.modRequest.platformProjectRoot,
-        targetName: props.targetName,
+      // NEW: Generate entitlements in targets/TARGETNAME/ios/build/
+      const entitlementsPath = Paths.getTargetEntitlementsPath({
+        projectRoot: config.modRequest.projectRoot,
+        targetDirectory: props.targetDirectory,
       });
 
       Plist.writePlist(entitlementsPath, entitlements);
+      props.logger.log(
+        `Generated entitlements: ${path.relative(config.modRequest.projectRoot, entitlementsPath)}`
+      );
 
       return config;
     },

@@ -5,21 +5,25 @@
 
 /**
  * Generate a Podfile target block for a React Native extension.
- * Extension targets inherit React Native from main app to avoid duplicate XCFrameworks.
- * Framework search paths are configured in post_install hook since inherit! :complete
- * doesn't always propagate them for Swift imports.
+ * Extension targets only inherit search paths, with no explicit pod dependencies.
+ * This avoids linking incompatible modules like Expo that contain UIApplication APIs.
+ *
+ * Note: ExpoTargetsMessages is accessed via the main app's autolinking through shared
+ * registry defined in generated code, so no direct pod dependency is needed.
  */
 export function generateReactNativeTargetBlock({
   targetName,
   deploymentTarget,
+  extensionType,
 }: {
   targetName: string;
   deploymentTarget: string;
+  extensionType: string;
 }): string {
   return `
   target '${targetName}' do
     platform :ios, '${deploymentTarget}'
-    inherit! :complete
+    inherit! :search_paths
   end
 `;
 }
@@ -78,7 +82,8 @@ ${frameworksLine}    platform :ios, '${deploymentTarget}'
 export function insertTargetBlock(
   podfileContent: string,
   targetBlock: string,
-  standalone: boolean = false
+  standalone: boolean = false,
+  logger?: { log: (message: string) => void }
 ): string {
   if (standalone) {
     // Standalone targets: insert as sibling AFTER main target's closing 'end'
@@ -94,9 +99,15 @@ export function insertTargetBlock(
 
     const mainTargetEndIndex = lastEndMatch.index! + lastEndMatch[0].length;
 
-    console.log(
-      `[expo-targets] Inserting standalone target after main target's closing 'end' at position ${mainTargetEndIndex}`
-    );
+    if (logger) {
+      logger.log(
+        `Inserting standalone target after main target's closing 'end' at position ${mainTargetEndIndex}`
+      );
+    } else {
+      console.log(
+        `[expo-targets] Inserting standalone target after main target's closing 'end' at position ${mainTargetEndIndex}`
+      );
+    }
 
     // Insert after main target's closing 'end'
     return (
@@ -107,9 +118,13 @@ export function insertTargetBlock(
     );
   }
 
-  console.log(
-    '[expo-targets] Inserting React Native target nested inside main target'
-  );
+  if (logger) {
+    logger.log('Inserting React Native target nested inside main target');
+  } else {
+    console.log(
+      '[expo-targets] Inserting React Native target nested inside main target'
+    );
+  }
 
   // React Native targets: nest inside main target before post_install
   const postInstallIndex = podfileContent.indexOf('post_install do');
@@ -365,8 +380,7 @@ ${extensions
 
 /**
  * Ensure React Native extension targets have proper framework search paths.
- * inherit! :complete inherits dependencies but doesn't always propagate framework search paths
- * for Swift imports, so we need to explicitly copy them from the main app target.
+ * Uses START/END markers for reliable, idempotent injection.
  */
 export function ensureReactNativeExtensionFrameworkPaths(
   podfileContent: string,
@@ -377,23 +391,24 @@ export function ensureReactNativeExtensionFrameworkPaths(
     return podfileContent;
   }
 
-  // Remove any existing framework paths fix code
-  if (
-    podfileContent.includes(
-      '# [expo-targets] Fix React Native extension framework search paths'
-    )
-  ) {
-    const fixRegex =
-      /\s*# \[expo-targets\] Fix React Native extension framework search paths[\s\S]*?(?=\n\s{4}\w|\n\s{2}end)/;
-    podfileContent = podfileContent.replace(fixRegex, '');
+  const START_MARKER = '    # [expo-targets-start]';
+  const END_MARKER = '    # [expo-targets-end]';
+
+  // Remove any existing block between markers (idempotent)
+  const startIndex = podfileContent.indexOf(START_MARKER);
+  if (startIndex !== -1) {
+    const endIndex = podfileContent.indexOf(END_MARKER, startIndex);
+    if (endIndex !== -1) {
+      const beforeBlock = podfileContent.substring(0, startIndex);
+      const afterBlock = podfileContent.substring(endIndex + END_MARKER.length);
+      podfileContent = beforeBlock.trimEnd() + '\n' + afterBlock.trimStart();
+    }
   }
 
-  // Generate the framework search paths fix code
+  // Generate fresh code with markers
   const mainPodsTarget = `Pods-${mainTargetName}`;
-  const extensionTargetNames = extensions.map((e) => e.targetName);
-  const fixCode = `
-    # [expo-targets] Fix React Native extension framework search paths
-    # inherit! :complete doesn't always propagate framework search paths for Swift imports
+  const fixCode = `${START_MARKER}
+    # Fix React Native extension framework search paths
     installer.pods_project.targets.each do |target|
 ${extensions
   .map(
@@ -461,21 +476,59 @@ ${extensions
   )
   .join('\n')}
     end
-`;
+${END_MARKER}`;
 
-  // Find the main app's post_install hook and inject our code before the closing 'end'
-  const postInstallRegex =
-    /(post_install do \|installer\|[\s\S]*?react_native_post_install\([\s\S]*?\)[\s\S]*?)(\n\s{2}end)/;
+  // Find where to inject (after react_native_post_install closing paren)
+  // Use line-by-line approach to find the closing paren properly
+  const lines = podfileContent.split('\n');
+  let reactNativeStartLine = -1;
+  let reactNativeEndLine = -1;
+  let parenDepth = 0;
 
-  const match = podfileContent.match(postInstallRegex);
-  if (match) {
-    // Inject our code before the closing 'end' of post_install
-    return podfileContent.replace(postInstallRegex, `$1${fixCode}$2`);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.includes('react_native_post_install(')) {
+      reactNativeStartLine = i;
+      parenDepth =
+        (line.match(/\(/g) || []).length - (line.match(/\)/g) || []).length;
+      continue;
+    }
+    if (reactNativeStartLine !== -1) {
+      const openParens = (line.match(/\(/g) || []).length;
+      const closeParens = (line.match(/\)/g) || []).length;
+      parenDepth += openParens - closeParens;
+      if (parenDepth === 0 && closeParens > 0) {
+        reactNativeEndLine = i;
+        break;
+      }
+    }
   }
 
-  // Fallback: couldn't find the post_install hook, skip modification
-  console.warn(
-    '[expo-targets] Could not find post_install hook to inject framework search paths'
+  if (reactNativeStartLine === -1 || reactNativeEndLine === -1) {
+    console.warn('[expo-targets] Could not find react_native_post_install');
+    return podfileContent;
+  }
+
+  // Find the position after the closing paren
+  const beforeLines = lines.slice(0, reactNativeEndLine + 1).join('\n');
+  const insertPosition = beforeLines.length;
+  const beforeInsert = podfileContent.substring(0, insertPosition);
+  const afterInsert = podfileContent.substring(insertPosition);
+
+  // Insert our code with proper newlines
+  // Ensure newline before our code
+  const needsNewlineBefore = !beforeInsert.endsWith('\n');
+
+  // Check what comes after - preserve any existing closing 'end' for post_install
+  const afterTrimmed = afterInsert.trimStart();
+  const hasPostInstallEnd = afterTrimmed.startsWith('end');
+
+  // Insert: newline + our code + newline (preserve existing post_install end if present)
+  return (
+    beforeInsert.trimEnd() +
+    (needsNewlineBefore ? '\n' : '') +
+    fixCode +
+    '\n' +
+    afterInsert.trimStart()
   );
-  return podfileContent;
 }

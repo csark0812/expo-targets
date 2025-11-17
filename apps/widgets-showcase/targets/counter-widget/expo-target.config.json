@@ -1,0 +1,17 @@
+{
+  "type": "widget",
+  "name": "CounterWidget",
+  "displayName": "Counter Widget",
+  "platforms": ["ios"],
+  "appGroup": "group.com.test.widgetshowcase",
+  "ios": {
+    "bundleIdentifier": "com.test.widgetshowcase.counter",
+    "displayName": "Counter Widget",
+    "colors": {
+      "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" },
+      "BackgroundColor": { "light": "#FFFFFF", "dark": "#1C1C1E" },
+      "TextPrimary": { "light": "#000000", "dark": "#FFFFFF" },
+      "TextSecondary": { "light": "#666666", "dark": "#98989D" }
+    }
+  }
+}

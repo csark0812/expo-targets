@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "jsx": "react-native",
+    "moduleResolution": "node16",
+    "module": "Node16"
+  },
+  "include": ["**/*.ts", "**/*.tsx"]
+}

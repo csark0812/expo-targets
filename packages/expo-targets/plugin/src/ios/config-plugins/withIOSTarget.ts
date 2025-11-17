@@ -3,15 +3,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { withTargetEntitlements } from './withEntitlements';
-import { withIosColorset } from './withIosColorset';
 import { withTargetPodfile } from './withPodfile';
 import { withXcodeChanges } from './withXcodeChanges';
 import {
   TYPE_MINIMUM_DEPLOYMENT_TARGETS,
   type ExtensionType,
   type IOSTargetConfigWithReactNative,
-  type Color,
 } from '../../config';
+import { Logger } from '../../logger';
 import { Paths } from '../utils';
 
 interface IOSTargetProps extends IOSTargetConfigWithReactNative {
@@ -23,14 +22,19 @@ interface IOSTargetProps extends IOSTargetConfigWithReactNative {
   excludedPackages?: string[];
   directory: string;
   configPath: string;
+  logger: Logger;
 }
 
 export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
+  const targetName = props.displayName || props.name;
+  props.logger.log(`Configuring iOS target: ${targetName} (${props.type})`);
+
   // Validate React Native compatibility
   const REACT_NATIVE_COMPATIBLE_TYPES: ExtensionType[] = [
     'share',
     'action',
     'clip',
+    'messages',
   ];
 
   // Validate entry field
@@ -55,8 +59,8 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
 
   // Validate excludedPackages
   if (props.excludedPackages && !props.entry) {
-    console.warn(
-      `[expo-targets] excludedPackages specified for ${props.name} but no 'entry' field provided. ` +
+    props.logger.warn(
+      `excludedPackages specified for ${props.name} but no 'entry' field provided. ` +
         `excludedPackages will be ignored.`
     );
   }
@@ -68,7 +72,7 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
       config.ios?.entitlements?.['com.apple.security.application-groups'];
     if (Array.isArray(mainAppGroups) && mainAppGroups.length > 0) {
       appGroup = mainAppGroups[0];
-      console.log(`[expo-targets] Inherited App Group: ${appGroup}`);
+      props.logger.log(`Inherited App Group: ${appGroup}`);
     }
   }
 
@@ -97,15 +101,27 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
   if (!deploymentTarget) {
     if (mainAppTarget && parseFloat(mainAppTarget) > parseFloat(typeMinimum)) {
       deploymentTarget = mainAppTarget;
-      console.log(
-        `[expo-targets] Inherited deployment target: ${deploymentTarget}`
-      );
+      props.logger.log(`Inherited deployment target: ${deploymentTarget}`);
     } else {
       deploymentTarget = typeMinimum;
-      console.log(
-        `[expo-targets] Using type minimum deployment target: ${deploymentTarget}`
+      props.logger.log(
+        `Using type minimum deployment target: ${deploymentTarget}`
       );
     }
+  }
+
+  // React Native extensions require ExpoModulesCore, which has minimum iOS 15.1
+  // Ensure deployment target meets this requirement when using React Native (entry specified)
+  const EXPO_MODULES_MINIMUM = '15.1';
+  if (
+    props.entry &&
+    parseFloat(deploymentTarget!) < parseFloat(EXPO_MODULES_MINIMUM)
+  ) {
+    props.logger.log(
+      `React Native extension requires ExpoModulesCore (iOS ${EXPO_MODULES_MINIMUM}), ` +
+        `raising deployment target from ${deploymentTarget} to ${EXPO_MODULES_MINIMUM}`
+    );
+    deploymentTarget = EXPO_MODULES_MINIMUM;
   }
 
   // Inherit accent color
@@ -113,10 +129,9 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
   const mainAppAccentColor = (config.ios as any)?.accentColor;
   if (!colors.$accent && mainAppAccentColor) {
     colors.$accent = mainAppAccentColor;
-    console.log(`[expo-targets] Inherited accent color: ${mainAppAccentColor}`);
+    props.logger.log(`Inherited accent color: ${mainAppAccentColor}`);
   }
 
-  const targetName = props.displayName || props.name;
   const targetProductName = Paths.sanitizeTargetName(targetName);
 
   // Pass resolved values to withXcodeChanges
@@ -124,6 +139,7 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
     ...props,
     deploymentTarget,
     colors: Object.keys(colors).length > 0 ? colors : undefined,
+    logger: props.logger,
   });
 
   // Add Podfile target only for code-based targets (skip asset-only like stickers)
@@ -135,48 +151,29 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
     config = withTargetPodfile(config, {
       targetName: targetProductName, // Use sanitized name to match Xcode target
       deploymentTarget: deploymentTarget!, // Guaranteed to be set by resolution logic above
+      extensionType: props.type,
       excludedPackages: props.excludedPackages,
       standalone: !props.entry, // Standalone (no dependency inheritance) if not using React Native
+      logger: props.logger,
     });
   } else {
-    console.log(
-      `[expo-targets] Skipping Podfile for asset-only target: ${targetProductName}`
+    props.logger.log(
+      `Skipping Podfile for asset-only target: ${targetProductName}`
     );
   }
 
   config = withTargetEntitlements(config, {
     targetName,
+    targetDirectory: props.directory,
     type: props.type,
     entitlements: props.entitlements,
+    logger: props.logger,
   });
 
-  if (colors && Object.keys(colors).length > 0) {
-    Object.entries(colors).forEach(([colorName, colorValue]) => {
-      if (typeof colorValue === 'string') {
-        config = withIosColorset(config, {
-          name: colorName,
-          color: colorValue,
-          targetName,
-        });
-      } else {
-        const colorObj = colorValue as Color;
-        const lightColor = colorObj.light || colorObj.color;
-        const darkColor = colorObj.dark || colorObj.darkColor;
-
-        if (lightColor) {
-          config = withIosColorset(config, {
-            name: colorName,
-            color: lightColor,
-            darkColor,
-            targetName,
-          });
-        }
-      }
-    });
-
-    // Note: Assets.xcassets is added in withXcodeChanges where we have direct access to target.uuid
-    // Note: Sticker packs are also created in withXcodeChanges for proper execution order
-  }
+  // Note: Color generation is handled in withXcodeChanges where colors are created
+  // in targets/[name]/ios/build/Assets.xcassets/ (not in ios/[TargetName]/)
+  // Note: Assets.xcassets is added in withXcodeChanges where we have direct access to target.uuid
+  // Note: Sticker packs are also created in withXcodeChanges for proper execution order
 
   return config;
 };

@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "jsx": "react-native",
+    "moduleResolution": "bundler",
+    "module": "ESNext"
+  },
+  "include": ["**/*.ts", "**/*.tsx"]
+}

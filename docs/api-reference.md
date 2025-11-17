@@ -36,6 +36,71 @@ export const myWidget = createTarget('MyWidget');
 
 ---
 
+## CLI Commands
+
+### `expo-targets sync`
+
+Synchronize targets from `targets/` directory to your Xcode project. For bare React Native projects only.
+
+**Usage:**
+
+```bash
+npx expo-targets sync [options]
+```
+
+**Options:**
+
+- `--clean` - Remove orphaned targets from Xcode project
+- `--dry-run` - Show what would change without writing files
+- `-v, --verbose` - Enable verbose logging
+- `--targets-root <path>` - Custom targets directory (default: `./targets`)
+
+**Examples:**
+
+```bash
+# Basic sync
+npx expo-targets sync
+
+# Preview changes without applying
+npx expo-targets sync --dry-run
+
+# Clean up orphaned targets
+npx expo-targets sync --clean
+
+# Verbose output for debugging
+npx expo-targets sync -v
+
+# Custom targets directory
+npx expo-targets sync --targets-root ./my-targets
+```
+
+**Workflow:**
+
+1. Reads target configurations from `targets/*/expo-target.config.json`
+2. Updates Xcode project to reference files in place
+3. Creates virtual `expo:targets` folder structure in Xcode
+4. Updates Podfile with target-specific configurations
+5. Generates build artifacts in `targets/*/ios/build/`
+
+**When to Use:**
+
+- After creating new targets
+- After modifying target configurations
+- After changing target names or types
+- After adding/removing Swift files
+- When switching branches with different targets
+
+**After Syncing:**
+
+```bash
+cd ios && pod install
+npx react-native run-ios
+```
+
+**Note:** For Expo managed workflow (CNG), use `npx expo prebuild` instead.
+
+---
+
 ## Target Instance
 
 The object returned by `createTarget()` with methods for data storage and lifecycle control.

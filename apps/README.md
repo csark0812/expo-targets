@@ -1,6 +1,6 @@
 # Example Apps
 
-This directory contains example applications demonstrating different target types and complex behaviors with expo-targets.
+This directory contains example applications demonstrating `expo-targets` features, organized by theme and workflow type.
 
 ## Quick Start
 
@@ -9,239 +9,336 @@ To run any example:
 ```bash
 cd apps/<example-name>
 bun install
-npx expo prebuild
+npx expo prebuild  # For managed workflow
+# OR
+npx expo-targets sync  # For bare RN workflow (see app README)
 npx expo run:ios
 ```
 
 ---
 
-## 📱 Example Apps
+## 📱 Example Apps Overview
 
-### 1. widget-basic (Original)
+### 🎯 Thematic Examples
 
-**Target Type:** Widget
-**Complexity:** Basic
+#### 1. **widgets-showcase** - Widget Examples
 
-Simple widget demonstrating core functionality:
+**Workflow:** Managed (Expo)
+**Target Types:** Widget
+**Complexity:** Basic → Advanced
 
-- Basic widget with data sharing
-- Type-safe data operations
-- Color assets
-- Widget refresh from main app
+Demonstrates three widget implementations:
 
-**Features:**
+- **Hello Widget**: Basic widget with simple data sharing
+- **Counter Widget**: Interactive counter with increment/decrement
+- **Weather Widget**: Advanced timeline-based weather widget with multiple sizes
 
-- Small, medium, and large widget sizes
-- App Group communication
-- Real-time updates
-
-**Use Case:** First-time widget setup
+**Best for:** Learning widget development patterns
 
 ---
 
-### 2. clip-advanced
+#### 2. **extensions-showcase** - React Native Extensions
 
-**Target Type:** App Clip
-**Complexity:** Advanced
-
-Advanced App Clip with invocation URL handling:
-
-- URL parameter parsing
-- Location-based features
-- NFC/QR code launching
-- Seamless full app upgrade
-
-**Features:**
-
-- Invocation URL handling
-- Location permissions demo
-- Deep linking
-- Lightweight experience
-
-**Use Case:** Quick checkout, event check-in, restaurant menus
-
-**Try It:**
-
-1. Launch via URL scheme with parameters
-2. Scan NFC tag or QR code
-3. Grant location permissions
-4. Upgrade to full app
-
----
-
-### 3. imessage-stickers
-
-**Target Type:** iMessage Extension
+**Workflow:** Managed (Expo)
+**Target Types:** Share Extension, Action Extension
 **Complexity:** Intermediate
 
-iMessage sticker pack with multiple categories:
+React Native-based extensions with custom UI:
 
-- Static sticker support
-- Multiple sticker packs
-- Sticker usage tracking
-- Stats in main app
+- **Share Extension**: Share content from other apps with RN UI
+- **Action Extension**: Process images with RN UI
 
-**Features:**
-
-- Multiple sticker categories (Emojis, Animals, Food, Activities)
-- iMessage keyboard integration
-- Asset catalog structure
-- Usage analytics
-
-**Use Case:** Custom stickers, branded messaging, creative expression
-
-**Try It:**
-
-1. Open iMessage
-2. Tap App Store icon
-3. Select sticker pack
-4. Send stickers
+**Best for:** Building extensions with React Native UI
 
 ---
 
-### 4. share-extension
+#### 3. **native-extensions-showcase** - Native Swift Extensions
 
+**Workflow:** Managed (Expo)
+**Target Types:** Share Extension, Action Extension, App Clip
+**Complexity:** Advanced
+
+Native Swift/SwiftUI implementations with function-based configs:
+
+- **Native Share**: Swift share extension
+- **Native Action**: Swift action extension
+- **Native Clip**: SwiftUI App Clip
+
+**Features:**
+
+- Function-based config files (`.ts`/`.js`)
+- Pure native implementations
+- Production-ready patterns
+
+**Best for:** Learning native extension development
+
+---
+
+#### 4. **clips-and-stickers** - App Clips & iMessage
+
+**Workflow:** Managed (Expo)
+**Target Types:** App Clip, iMessage Stickers
+**Complexity:** Intermediate
+
+Combined examples:
+
+- **Quick Checkout Clip**: App Clip with data sharing
+- **Fun Stickers**: iMessage sticker pack
+
+**Best for:** App Clips and iMessage extensions
+
+---
+
+### 🔧 Workflow Examples
+
+#### 5. **bare-rn-widgets** - Bare React Native Widget
+
+**Workflow:** Bare React Native
+**Target Type:** Widget
+**Complexity:** Intermediate
+
+Demonstrates adding a widget to an existing bare RN project:
+
+- Uses `expo-targets sync` instead of `expo prebuild`
+- Manual Xcode project management
+- Widget with data sharing
+
+**Best for:** Integrating widgets into existing bare RN apps
+
+---
+
+#### 6. **bare-rn-share** - Bare React Native Share Extension
+
+**Workflow:** Bare React Native
 **Target Type:** Share Extension
 **Complexity:** Advanced
 
-Share extension for capturing content from other apps:
+Share extension in bare RN workflow:
 
-- Text, URL, and image sharing
-- Content processing
-- Shared item history
-- Multi-type support
+- React Native UI in extension
+- Metro configuration for extensions
+- Release mode requirements
 
-**Features:**
-
-- Handle text content
-- Process URLs
-- Image metadata extraction
-- App Group storage
-- History view in main app
-
-**Use Case:** Bookmarking, article saving, content collection
-
-**Try It:**
-
-1. Open Safari or Photos
-2. Tap Share button
-3. Select "Share Extension"
-4. View shared items in main app
+**Best for:** Adding share extensions to bare RN apps
 
 ---
 
-### 5. widget-interactive
+### 🎪 Comprehensive Examples
 
-**Target Type:** Widget
-**Complexity:** Advanced
+#### 7. **all-targets-demo** - Kitchen Sink
 
-Interactive weather widget with timeline updates:
+**Workflow:** Managed (Expo)
+**Target Types:** All 10 types
+**Complexity:** Reference
 
-- Multiple widget sizes (small, medium, large)
-- Timeline entries
-- Dynamic color schemes
-- Auto-refresh
+Complete example demonstrating all target types:
 
-**Features:**
+- **Production-ready**: Widget, Clip, Share, Action, Stickers
+- **Config-only**: Safari, Notification Content/Service, Intent, Intent UI
 
-- Small: Temperature & condition
-- Medium: + Humidity & wind details
-- Large: + 5-day forecast timeline
-- Dynamic backgrounds based on weather
-- Location switching
-- Auto-update every 30s
-- Timeline-based content
-
-**Use Case:** Real-time data display, dashboard widgets
-
-**Try It:**
-
-1. Add widget to home screen (all sizes)
-2. Change location in app
-3. Watch auto-updates
-4. Compare different widget sizes
-
----
-
-### 6. multi-target
-
-**Target Types:** Widget + App Clip
-**Complexity:** Advanced
-
-Task manager with multiple targets sharing data:
-
-- Task widget showing active tasks
-- Quick Task App Clip for fast entry
-- Shared App Group storage
-- Synchronized updates
-
-**Features:**
-
-- **Main App:** Full task management
-- **Widget:** Quick glance at active tasks (small & medium)
-- **App Clip:** Fast task creation
-- Shared data across all targets
-- Real-time synchronization
-
-**Use Case:** Demonstrates multi-target architecture
-
-**Try It:**
-
-1. Add widget to home screen
-2. Launch App Clip via URL
-3. Add task from any target
-4. See updates everywhere instantly
+**Best for:** Reference implementation, understanding all target types
 
 ---
 
 ## 🎯 Feature Comparison
 
-| App                | Target Type(s) | Data Sharing | Timeline | Multi-Size | Complex UI |
-| ------------------ | -------------- | ------------ | -------- | ---------- | ---------- |
-| widget-basic       | Widget         | ✅           | ❌       | ✅         | ❌         |
-| clip-advanced      | Clip           | ✅           | ❌       | N/A        | ✅         |
-| imessage-stickers  | iMessage       | ✅           | ❌       | N/A        | ⚠️         |
-| share-extension    | Share          | ✅           | ❌       | N/A        | ✅         |
-| widget-interactive | Widget         | ✅           | ✅       | ✅         | ✅         |
-| multi-target       | Widget + Clip  | ✅           | ❌       | ✅         | ✅         |
+| App                            | Workflow | Target Types        | UI Type      | Config Type        | Data Sharing |
+| ------------------------------ | -------- | ------------------- | ------------ | ------------------ | ------------ |
+| **widgets-showcase**           | Managed  | Widget              | Native Swift | JSON               | ✅           |
+| **extensions-showcase**        | Managed  | Share, Action       | React Native | JSON               | ✅           |
+| **native-extensions-showcase** | Managed  | Share, Action, Clip | Native Swift | Function (.ts/.js) | ✅           |
+| **clips-and-stickers**         | Managed  | Clip, Stickers      | Native Swift | JSON               | ✅           |
+| **bare-rn-widgets**            | Bare RN  | Widget              | Native Swift | JSON               | ✅           |
+| **bare-rn-share**              | Bare RN  | Share               | React Native | JSON               | ✅           |
+| **all-targets-demo**           | Managed  | All 10 types        | Mixed        | JSON               | ✅           |
 
 ---
 
 ## 📚 Learning Path
 
-### Beginner
+### 🟢 Beginner - Start Here
 
-Start with **widget-basic** to understand:
+**1. widgets-showcase** → **Hello Widget**
 
-- Basic target configuration
-- Data sharing via App Groups
+- Basic widget setup
+- Data sharing fundamentals
 - Widget refresh mechanism
 
-### Intermediate
+**Key concepts:**
 
-Try **imessage-stickers** or **clip-advanced** to learn:
+- `createTarget()` API
+- `setData()` / `getData()`
+- Widget refresh
+- App Groups
 
-- Different target types
-- Platform-specific features
-- URL handling
+---
 
-### Advanced
+### 🟡 Intermediate - Build Extensions
 
-Explore **widget-interactive** and **share-extension** for:
+**2. extensions-showcase** → **Share Extension**
 
-- Timeline entries
-- Complex data processing
-- Multiple widget sizes
-- Extension UI design
+- React Native extension UI
+- Content type handling
+- Extension lifecycle
 
-### Expert
+**3. clips-and-stickers** → **Quick Checkout Clip**
 
-Build with **multi-target** to master:
+- App Clip URL handling
+- Native SwiftUI in extensions
+- Data synchronization
 
-- Multiple targets in one app
-- Shared data architecture
-- Cross-target communication
+**Key concepts:**
+
+- Extension entry points
+- Metro configuration
+- Native-Swift communication
+- Extension constraints
+
+---
+
+### 🟠 Advanced - Native Development
+
+**4. native-extensions-showcase** → **Native Share**
+
+- Pure Swift implementations
+- Function-based configs
+- Advanced SwiftUI patterns
+
+**5. bare-rn-widgets** → **Bare RN Integration**
+
+- Existing project integration
+- `expo-targets sync` workflow
+- Manual Xcode setup
+
+**Key concepts:**
+
+- Native-only extensions
+- Config file functions
+- Bare workflow differences
+- Release mode requirements
+
+---
+
+### 🔴 Expert - Production Patterns
+
+**6. all-targets-demo** → **Complete Reference**
+
+- All target types
 - Production patterns
+- Config-only targets
+
+**7. bare-rn-share** → **Bare RN Extensions**
+
+- React Native in extensions
+- Metro bundling
+- Extension memory limits
+
+**Key concepts:**
+
+- Multi-target architecture
+- Extension best practices
+- Performance optimization
+- Production deployment
+
+---
+
+## 🔄 Workflow Comparison
+
+### Managed Workflow (Expo)
+
+**Apps:** `widgets-showcase`, `extensions-showcase`, `native-extensions-showcase`, `clips-and-stickers`, `all-targets-demo`
+
+**Setup:**
+
+```bash
+cd apps/<app-name>
+bun install
+npx expo prebuild
+npx expo run:ios
+```
+
+**Characteristics:**
+
+- ✅ `ios/` directory auto-generated
+- ✅ Full project regeneration
+- ✅ Works out of the box
+- ✅ Metro auto-configured
+
+---
+
+### Bare React Native Workflow
+
+**Apps:** `bare-rn-widgets`, `bare-rn-share`
+
+**Setup:**
+
+```bash
+cd apps/<app-name>
+bun install
+npx expo-targets sync  # Adds targets to existing Xcode project
+cd ios && pod install
+# Build in Xcode (Release mode for RN extensions)
+```
+
+**Characteristics:**
+
+- ✅ Incremental target addition
+- ✅ Manual Xcode project management
+- ✅ Existing project integration
+- ⚠️ Requires Metro config for RN extensions
+- ⚠️ Release mode required for RN extensions
+
+**See each app's README for detailed setup instructions.**
+
+---
+
+## 🎨 Configuration Patterns
+
+### JSON Config
+
+```json
+// expo-target.config.json
+{
+  "type": "widget",
+  "name": "MyWidget",
+  "platforms": ["ios"],
+  "appGroup": "group.com.example.app"
+}
+```
+
+**Used in:** Most examples
+
+---
+
+### Function-Based Config (TypeScript)
+
+```typescript
+// expo-target.config.ts
+import type { ExpoConfig, TargetConfig } from 'expo-targets/plugin';
+
+export default function (config: ExpoConfig): TargetConfig {
+  const bundleId = config.ios?.bundleIdentifier || 'com.example.app';
+
+  return {
+    type: 'share',
+    name: 'MyShare',
+    platforms: ['ios'],
+    appGroup: `group.${bundleId}`,
+    ios: {
+      bundleIdentifier: `${bundleId}.share`,
+    },
+  };
+}
+```
+
+**Used in:** `native-extensions-showcase`
+
+**Benefits:**
+
+- Dynamic configuration
+- Access to Expo config
+- Type safety
+- Similar to `app.config.js`
 
 ---
 
@@ -251,12 +348,13 @@ Build with **multi-target** to master:
 
 ```
 app/
-  App.tsx              # Main app
+  App.tsx
   targets/
     my-widget/
-      index.ts         # defineTarget + data helpers
+      expo-target.config.json
+      index.ts              # createTarget + helpers
       ios/
-        Widget.swift   # Widget implementation
+        Widget.swift        # Swift implementation
 ```
 
 ### Multiple Targets (Shared Data)
@@ -265,149 +363,78 @@ app/
 app/
   App.tsx
   targets/
-    shared.ts          # Shared data functions
     widget/
-      index.ts         # Re-exports shared
-      ios/
-        Widget.swift
+      expo-target.config.json
+      index.ts
+      ios/Widget.swift
     clip/
-      index.ts         # Re-exports shared
-      ios/
-        ClipView.swift
+      expo-target.config.json
+      index.ts
+      ios/ClipView.swift
+```
+
+### React Native Extension
+
+```
+app/
+  App.tsx
+  metro.config.js           # Required for RN extensions
+  targets/
+    share-extension/
+      expo-target.config.json
+      index.tsx             # Entry point (registers RN component)
+      src/
+        ShareExtension.tsx  # React Native UI
 ```
 
 ---
 
-## 🎨 Design Patterns
+## 🚀 Quick Reference
 
 ### Data Sharing
 
-All examples use App Groups for secure data sharing:
-
 ```typescript
-export const myTarget = defineTarget({
-  type: 'widget',
-  name: 'MyWidget',
-  appGroup: 'group.com.example.app',
-  // ...
-});
+import { createTarget } from 'expo-targets';
 
-// Store data
-await myTarget.setData('key', { value: 'data' });
+const myWidget = createTarget('MyWidget');
 
-// Retrieve data
-const data = await myTarget.getData('key');
+// Set data
+myWidget.setData({ message: 'Hello' });
+
+// Get data
+const data = myWidget.getData<{ message: string }>();
+
+// Refresh widget
+myWidget.refresh();
 ```
 
 ### Widget Refresh
 
-Refresh widgets after data changes:
+```typescript
+// After updating data
+myWidget.setData({ count: 5 });
+myWidget.refresh(); // Updates widget immediately
+```
+
+### Extension Close
 
 ```typescript
-await myTarget.set('counter', count.toString());
-await myTarget.refresh(); // Updates widget
+import { createTarget } from 'expo-targets';
+
+const shareTarget = createTarget<'share'>('ShareExtension', ShareComponent);
+
+// In extension component
+shareTarget.close(); // Closes extension
 ```
-
-### Multiple Sizes
-
-Handle different widget families in SwiftUI:
-
-```swift
-struct MyWidgetView: View {
-    @Environment(\.widgetFamily) var family
-
-    var body: some View {
-        switch family {
-        case .systemSmall:
-            SmallView()
-        case .systemMedium:
-            MediumView()
-        case .systemLarge:
-            LargeView()
-        default:
-            SmallView()
-        }
-    }
-}
-```
-
-### Timeline Entries
-
-Generate timeline for periodic updates:
-
-```swift
-func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> ()) {
-    var entries: [Entry] = []
-
-    // Create entries for next 24 hours
-    for hourOffset in 0..<24 {
-        let date = Calendar.current.date(byAdding: .hour, value: hourOffset, to: Date())!
-        let entry = Entry(date: date, data: loadData())
-        entries.append(entry)
-    }
-
-    let timeline = Timeline(entries: entries, policy: .atEnd)
-    completion(timeline)
-}
-```
-
----
-
-## 🚀 Production Checklist
-
-Before shipping:
-
-- [ ] Test all widget sizes
-- [ ] Verify App Group entitlements
-- [ ] Test data synchronization
-- [ ] Check memory usage
-- [ ] Optimize Swift view performance
-- [ ] Add error handling
-- [ ] Test on multiple iOS versions
-- [ ] Verify dark mode support
-- [ ] Test background updates
-- [ ] Profile widget timeline
-
----
-
-## 🐛 Troubleshooting
-
-### Widget not showing data
-
-1. Check App Group identifier matches everywhere
-2. Verify entitlements in app.json
-3. Run `npx expo prebuild --clean`
-4. Check UserDefaults suite name
-
-### App Clip not launching
-
-1. Verify associated domains entitlement
-2. Check URL format
-3. Ensure parent app identifier is correct
-4. Test with App Clip testing tools
-
-### iMessage stickers not appearing
-
-1. Verify sticker assets exist
-2. Check Info.plist configuration
-3. Ensure proper extension point identifier
-4. Rebuild project
-
-### Share extension crashes
-
-1. Check memory limits (extensions have strict limits)
-2. Verify content type handling
-3. Add error handling for malformed data
-4. Test with various content types
 
 ---
 
 ## 📖 Additional Resources
 
-- [Main Documentation](../docs/getting-started.md)
+- [Getting Started Guide](../docs/getting-started.md)
 - [API Reference](../docs/api-reference.md)
-- [Configuration Guide](../docs/config-reference.md)
-- [TypeScript Guide](../docs/typescript-config-guide.md)
+- [Configuration Reference](../docs/config-reference.md)
+- [Architecture Overview](../docs/ARCHITECTURE.md)
 
 ---
 
@@ -416,9 +443,10 @@ Before shipping:
 Have an interesting example? Submit a PR with:
 
 - Complete working app
-- Clear documentation
+- Clear README
 - Unique demonstration of features
 - Production-quality code
+- Appropriate workflow type (managed vs bare RN)
 
 ---
 

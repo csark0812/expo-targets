@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "test-managed-minimal",
+    "slug": "test-managed-minimal",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.test.managedminimal",
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.test.managedminimal"
+        ]
+      }
+    },
+    "plugins": ["expo-targets"]
+  }
+}
+

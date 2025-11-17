@@ -35,32 +35,32 @@ your-app/
 
 ### Complete Property Table
 
-| Property                | Type       | Required    | Default            | Description                                |
-| ----------------------- | ---------- | ----------- | ------------------ | ------------------------------------------ |
+| Property                | Type       | Required    | Default            | Description                                                              |
+| ----------------------- | ---------- | ----------- | ------------------ | ------------------------------------------------------------------------ |
 | **Root Level**          |
-| `type`                  | `string`   | ✅ Yes      | -                  | Extension type (widget, clip, share, etc.) |
-| `name`                  | `string`   | ✅ Yes      | -                  | Target identifier (PascalCase)             |
-| `platforms`             | `string[]` | ✅ Yes      | -                  | Supported platforms (["ios"])              |
-| `displayName`           | `string`   | ❌ Optional | `name` value       | Human-readable name for UI                 |
-| `appGroup`              | `string`   | ❌ Optional | Auto-inherited     | App Group for data sharing                 |
-| `entry`                 | `string`   | ❌ Optional | -                  | React Native entry file path               |
-| `excludedPackages`      | `string[]` | ❌ Optional | `[]`               | Packages to exclude from RN bundle         |
-| `ios`                   | `object`   | ❌ Optional | `{}`               | iOS-specific configuration                 |
-| `android`               | `object`   | ❌ Optional | `{}`               | Android-specific configuration             |
+| `type`                  | `string`   | ✅ Yes      | -                  | Extension type (widget, clip, share, etc.)                               |
+| `name`                  | `string`   | ✅ Yes      | -                  | Target identifier (PascalCase)                                           |
+| `platforms`             | `string[]` | ✅ Yes      | -                  | Supported platforms (["ios"])                                            |
+| `displayName`           | `string`   | ❌ Optional | `name` value       | Human-readable name for UI                                               |
+| `appGroup`              | `string`   | ❌ Optional | Auto-inherited     | App Group for data sharing                                               |
+| `entry`                 | `string`   | ❌ Optional | -                  | React Native entry file path                                             |
+| `excludedPackages`      | `string[]` | ❌ Optional | `[]`               | Packages to exclude from RN bundle                                       |
+| `ios`                   | `object`   | ❌ Optional | `{}`               | iOS-specific configuration                                               |
+| `android`               | `object`   | ❌ Optional | `{}`               | Android-specific configuration                                           |
 | **iOS Platform**        |
-| `ios.deploymentTarget`  | `string`   | ❌ Optional | `"18.0"`           | Minimum iOS version                        |
-| `ios.bundleIdentifier`  | `string`   | ❌ Optional | Auto-generated     | Bundle ID (absolute or relative)           |
-| `ios.displayName`       | `string`   | ❌ Optional | Root `displayName` | Platform-specific display name             |
-| `ios.icon`              | `string`   | ❌ Optional | -                  | Path to icon file                          |
-| `ios.colors`            | `object`   | ❌ Optional | `{}`               | Named colors for Assets.xcassets           |
-| `ios.images`            | `object`   | ❌ Optional | `{}`               | Named images for Assets.xcassets           |
-| `ios.frameworks`        | `string[]` | ❌ Optional | Type defaults      | Additional frameworks to link              |
-| `ios.entitlements`      | `object`   | ❌ Optional | Type defaults      | Custom entitlements                        |
-| `ios.infoPlist`         | `object`   | ❌ Optional | Type defaults      | Custom Info.plist entries                  |
-| `ios.activationRules`   | `array`    | ❌ Optional | -                  | Share extension activation rules           |
-| `ios.preprocessingFile` | `string`   | ❌ Optional | -                  | Preprocessing JS for web content           |
-| `ios.stickerPacks`      | `array`    | ❌ Optional | -                  | iMessage sticker pack configuration        |
-| `ios.imessageAppIcon`   | `string`   | ❌ Optional | -                  | iMessage app icon path                     |
+| `ios.deploymentTarget`  | `string`   | ❌ Optional | `"18.0"`           | Minimum iOS version                                                      |
+| `ios.bundleIdentifier`  | `string`   | ❌ Optional | Auto-generated     | Bundle ID (absolute or relative)                                         |
+| `ios.displayName`       | `string`   | ❌ Optional | Root `displayName` | Platform-specific display name                                           |
+| `ios.icon`              | `string`   | ❌ Optional | -                  | Path to icon file                                                        |
+| `ios.colors`            | `object`   | ❌ Optional | `{}`               | Named colors for Assets.xcassets                                         |
+| `ios.images`            | `object`   | ❌ Optional | `{}`               | Named images for Assets.xcassets                                         |
+| `ios.frameworks`        | `string[]` | ❌ Optional | Type defaults      | Additional frameworks to link                                            |
+| `ios.entitlements`      | `object`   | ❌ Optional | Type defaults      | Custom entitlements                                                      |
+| `ios.infoPlist`         | `object`   | ❌ Optional | Type defaults      | Custom Info.plist entries                                                |
+| `ios.activationRules`   | `array`    | ❌ Optional | -                  | Share extension activation rules                                         |
+| `ios.preprocessingFile` | `string`   | ❌ Optional | -                  | Preprocessing JS for web content                                         |
+| `ios.stickerPacks`      | `array`    | ❌ Optional | -                  | iMessage sticker pack configuration                                      |
+| `ios.targetIcon`        | `string`   | ❌ Optional | -                  | Icon for extension (path for stickers, SF Symbol/asset name for actions) |
 
 ### Basic Schema Example
 
@@ -100,6 +100,7 @@ Extension type. Determines product type, frameworks, and Info.plist configuratio
 | `widget`                  | iOS 14+     | Home screen widgets                |
 | `clip`                    | iOS 14+     | App Clips                          |
 | `stickers`                | iOS 10+     | iMessage sticker packs             |
+| `messages`                | iOS 10+     | iMessage apps                      |
 | `share`                   | iOS 8+      | Share extensions                   |
 | `action`                  | iOS 8+      | Action extensions                  |
 | `safari`                  | iOS 15+     | Safari web extensions              |
@@ -606,17 +607,29 @@ Sticker pack configuration (only for `type: "stickers"`).
 }
 ```
 
-### `ios.imessageAppIcon`
+### `ios.targetIcon`
 
 **Type:** `string`
 
-Path to icon for iMessage app icon (only for `type: "stickers"`).
+Icon for extension target. Usage depends on extension type:
+
+- **For stickers**: Path to source image file for iMessage app icon
+- **For action extensions**: SF Symbol name (e.g., `"photo.fill"`) or image asset name
 
 ```json
 {
   "type": "stickers",
   "ios": {
-    "imessageAppIcon": "./assets/imessage-icon.png"
+    "targetIcon": "./assets/imessage-icon.png"
+  }
+}
+```
+
+```json
+{
+  "type": "action",
+  "ios": {
+    "targetIcon": "photo.fill"
   }
 }
 ```
@@ -716,7 +729,7 @@ Path to icon for iMessage app icon (only for `type: "stickers"`).
   "ios": {
     "deploymentTarget": "10.0",
     "bundleIdentifier": ".stickers",
-    "imessageAppIcon": "./assets/imessage-icon.png",
+    "targetIcon": "./assets/imessage-icon.png",
     "stickerPacks": [
       {
         "name": "Animals",
@@ -732,6 +745,45 @@ Path to icon for iMessage app icon (only for `type: "stickers"`).
       }
     ]
   }
+}
+```
+
+### Messages App (iMessage App)
+
+```json
+{
+  "type": "messages",
+  "name": "MyMessagesApp",
+  "displayName": "My Messages App",
+  "platforms": ["ios"],
+  "appGroup": "group.com.yourapp",
+  "ios": {
+    "deploymentTarget": "10.0",
+    "bundleIdentifier": ".messages",
+    "colors": {
+      "AccentColor": "#007AFF",
+      "BackgroundColor": { "light": "#FFFFFF", "dark": "#1C1C1E" }
+    }
+  }
+}
+```
+
+Create `targets/my-messages-app/ios/MessagesViewController.swift`:
+
+```swift
+import UIKit
+import Messages
+
+class MessagesViewController: MSMessagesAppViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // Your implementation
+    }
+
+    override func didBecomeActive(with conversation: MSConversation) {
+        super.didBecomeActive(with: conversation)
+        // Handle when extension becomes active
+    }
 }
 ```
 

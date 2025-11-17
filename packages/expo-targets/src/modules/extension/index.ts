@@ -14,8 +14,11 @@ export interface SharedData {
 
 export class Extension {
   close() {
+    console.log('[Extension] close() called, platform:', Platform.OS);
     if (Platform.OS === 'ios') {
+      console.log('[Extension] Calling native closeExtension()');
       ExpoTargetsExtensionModule.closeExtension();
+      console.log('[Extension] Native closeExtension() returned');
     }
   }
 

@@ -1,0 +1,15 @@
+{
+  "type": "safari",
+  "name": "DemoSafari",
+  "displayName": "Demo Safari Extension",
+  "platforms": ["ios"],
+  "ios": {
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPointIdentifier": "com.apple.Safari.web-extension",
+        "NSExtensionPrincipalClass": "SafariWebExtensionHandler"
+      }
+    }
+  }
+}
+

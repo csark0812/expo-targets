@@ -76,8 +76,7 @@ private func loadSharedContent() async {
 private func loadAttachmentItem(_ attachment: NSItemProvider, typeIdentifier: String) async -> NSSecureCoding? {
     await withCheckedContinuation { continuation in
         attachment.loadItem(forTypeIdentifier: typeIdentifier, options: nil) { data, error in
-            if let error = error {
-                print("Error loading \(typeIdentifier): \(error)")
+            if error != nil {
                 continuation.resume(returning: nil)
             } else {
                 continuation.resume(returning: data)

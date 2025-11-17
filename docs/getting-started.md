@@ -526,6 +526,12 @@ Try other target types:
 
 - [API Reference](./api-reference.md)
 - [Config Reference](./config-reference.md)
-- [Example Apps](../apps/)
+- [Example Apps](../apps/README.md) - Complete examples organized by theme and workflow
+
+**Recommended Examples:**
+- **Getting Started**: [`widgets-showcase`](../apps/widgets-showcase) - Start with Hello Widget
+- **Extensions**: [`extensions-showcase`](../apps/extensions-showcase) - React Native extensions
+- **Native Code**: [`native-extensions-showcase`](../apps/native-extensions-showcase) - Pure Swift examples
+- **Bare RN**: [`bare-rn-widgets`](../apps/bare-rn-widgets) - Adding to existing projects
 
 Congratulations! You've successfully created an iOS widget with expo-targets. 🎉

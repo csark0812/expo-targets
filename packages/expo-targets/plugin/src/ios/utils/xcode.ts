@@ -168,7 +168,7 @@ export function addTargetDependency({
 
 /**
  * Configure embed settings for app extension.
- * Adds RemoveHeadersOnCopy attribute and renames Copy Files phase.
+ * Consolidates all app extensions into a SINGLE "Embed App Extensions" phase.
  */
 export function configureAppExtensionEmbed({
   project,
@@ -219,35 +219,113 @@ export function configureAppExtensionEmbed({
     );
   }
 
-  // Rename Copy Files phase to "Embed App Extensions" and ensure attributes inside the phase
+  // Find or create a SINGLE "Embed App Extensions" phase
   const copyFilesPhases =
     xcodeProject.hash.project.objects.PBXCopyFilesBuildPhase;
 
+  // Step 1: Find existing "Embed App Extensions" phase (with proper name)
+  let primaryPhaseKey: string | null = null;
+  let primaryPhase: any = null;
+
   for (const phaseKey in copyFilesPhases) {
     if (phaseKey.endsWith('_comment')) continue;
-
     const phase = copyFilesPhases[phaseKey];
+    if (
+      phase?.dstSubfolderSpec === 13 &&
+      (phase.name === '"Embed App Extensions"' ||
+        copyFilesPhases[`${phaseKey}_comment`] === 'Embed App Extensions')
+    ) {
+      primaryPhaseKey = phaseKey;
+      primaryPhase = phase;
+      break;
+    }
+  }
+
+  // Step 2: Consolidate - find all extension embedding phases and merge into primary
+  const phasesToMerge: string[] = [];
+  const extensionBuildFiles: Set<string> = new Set();
+
+  for (const phaseKey in copyFilesPhases) {
+    if (phaseKey.endsWith('_comment') || phaseKey === primaryPhaseKey) continue;
+    const phase = copyFilesPhases[phaseKey];
+
     if (phase?.dstSubfolderSpec === 13 && phase.files) {
-      let hasOurExtension = false;
-      // Ensure each matching build file has desired attributes
+      // Check if this phase contains any .appex files
+      let hasAppExtension = false;
       phase.files.forEach((file: any) => {
         const buildFileKey = file.value;
         const buildFile = buildFileSection?.[buildFileKey];
-        if (!buildFile) return;
+        if (!buildFile?.fileRef) return;
         const fileRef = fileRefSection?.[buildFile.fileRef];
         const refPath = fileRef?.path?.replace(/"/g, '');
         const refName = fileRef?.name?.replace(/"/g, '');
-        if (refPath === targetFileName || refName === targetFileName) {
-          hasOurExtension = true;
+        if (refPath?.endsWith('.appex') || refName?.endsWith('.appex')) {
+          hasAppExtension = true;
+          extensionBuildFiles.add(buildFileKey);
           ensureAttributes(buildFile);
         }
       });
 
-      if (hasOurExtension) {
-        const commentKey = `${phaseKey}_comment`;
-        copyFilesPhases[commentKey] = 'Embed App Extensions';
-        phase.name = '"Embed App Extensions"';
-        break;
+      if (hasAppExtension) {
+        if (primaryPhaseKey) {
+          phasesToMerge.push(phaseKey);
+        } else {
+          // Use this as the primary phase
+          primaryPhaseKey = phaseKey;
+          primaryPhase = phase;
+        }
+      }
+    }
+  }
+
+  // Step 3: If we found a primary phase, merge all extensions into it
+  if (primaryPhaseKey && primaryPhase) {
+    // Rename to standard name
+    primaryPhase.name = '"Embed App Extensions"';
+    copyFilesPhases[`${primaryPhaseKey}_comment`] = 'Embed App Extensions';
+
+    // Merge build files from other phases
+    if (!primaryPhase.files) {
+      primaryPhase.files = [];
+    }
+
+    const existingFiles = new Set(primaryPhase.files.map((f: any) => f.value));
+
+    phasesToMerge.forEach((phaseKey) => {
+      const phase = copyFilesPhases[phaseKey];
+      if (phase?.files) {
+        phase.files.forEach((file: any) => {
+          const buildFileKey = file.value;
+          if (
+            extensionBuildFiles.has(buildFileKey) &&
+            !existingFiles.has(buildFileKey)
+          ) {
+            primaryPhase.files.push(file);
+            existingFiles.add(buildFileKey);
+          }
+        });
+      }
+    });
+
+    // Step 4: Remove duplicate phases (mark for deletion by removing from main app build phases)
+    if (phasesToMerge.length > 0) {
+      // Get the main app target by finding the first application target
+      const nativeTargets = xcodeProject.hash.project.objects.PBXNativeTarget;
+      let mainAppTarget: any = null;
+
+      for (const targetKey in nativeTargets) {
+        if (targetKey.endsWith('_comment')) continue;
+        const target = nativeTargets[targetKey];
+        if (target?.productType === '"com.apple.product-type.application"') {
+          mainAppTarget = target;
+          break;
+        }
+      }
+
+      if (mainAppTarget?.buildPhases) {
+        mainAppTarget.buildPhases = mainAppTarget.buildPhases.filter(
+          (phase: any) => !phasesToMerge.includes(phase.value)
+        );
       }
     }
   }
@@ -361,11 +439,13 @@ export function applyBuildSettings({
   target,
   buildSettings,
   verbose = false,
+  logger,
 }: {
   project: XcodeProject;
   target: XcodeTarget;
   buildSettings: Record<string, string | string[]>;
   verbose?: boolean;
+  logger?: { log: (message: string) => void };
 }): void {
   const xcodeProject = project as any;
 
@@ -377,7 +457,11 @@ export function applyBuildSettings({
     xcodeProject.pbxXCConfigurationList()[targetBuildConfigId];
 
   if (!buildConfigList?.buildConfigurations) {
-    console.warn(`[expo-targets] No build configurations found for target`);
+    if (logger) {
+      logger.log('No build configurations found for target');
+    } else {
+      console.warn(`[expo-targets] No build configurations found for target`);
+    }
     return;
   }
 
@@ -387,7 +471,13 @@ export function applyBuildSettings({
     const configName = configSection?.name;
 
     if (verbose) {
-      console.log(`[expo-targets]   Configuring ${configName} build settings`);
+      if (logger) {
+        logger.log(`  Configuring ${configName} build settings`);
+      } else {
+        console.log(
+          `[expo-targets]   Configuring ${configName} build settings`
+        );
+      }
     }
 
     if (configSection?.buildSettings) {
@@ -397,9 +487,13 @@ export function applyBuildSettings({
           verbose &&
           (key === 'SWIFT_VERSION' || key === 'IPHONEOS_DEPLOYMENT_TARGET')
         ) {
-          console.log(
-            `[expo-targets]     Set ${key}=${value} to ${configName}`
-          );
+          if (logger) {
+            logger.log(`    Set ${key}=${value} to ${configName}`);
+          } else {
+            console.log(
+              `[expo-targets]     Set ${key}=${value} to ${configName}`
+            );
+          }
         }
       });
     }
@@ -414,11 +508,13 @@ export function removeBuildSetting({
   target,
   settingKey,
   verbose = false,
+  logger,
 }: {
   project: XcodeProject;
   target: XcodeTarget;
   settingKey: string;
   verbose?: boolean;
+  logger?: { log: (message: string) => void };
 }): void {
   const xcodeProject = project as any;
 
@@ -438,9 +534,13 @@ export function removeBuildSetting({
     if (configSection?.buildSettings?.[settingKey]) {
       delete configSection.buildSettings[settingKey];
       if (verbose) {
-        console.log(
-          `[expo-targets]     Removed ${settingKey} from ${configSection.name}`
-        );
+        if (logger) {
+          logger.log(`    Removed ${settingKey} from ${configSection.name}`);
+        } else {
+          console.log(
+            `[expo-targets]     Removed ${settingKey} from ${configSection.name}`
+          );
+        }
       }
     }
   });
@@ -643,4 +743,247 @@ export function addTargetAssets({
       `[expo-targets] ${assetsFolderName} directory not found at: ${assetsPath}`
     );
   }
+}
+
+/**
+ * ============================================================================
+ * NEW: Virtual Group Helpers for Reference-in-Place
+ * ============================================================================
+ * These functions create and manage the "expo:targets" virtual group in Xcode,
+ * which contains references to files outside the ios/ directory.
+ */
+
+/**
+ * Ensure the virtual "expo:targets" group exists in Xcode.
+ * This group contains references to files outside ios/ directory.
+ * Returns the UUID of the expo:targets group.
+ */
+export function ensureExpoTargetsGroup({
+  project,
+}: {
+  project: XcodeProject;
+}): string {
+  const xcodeProject = project as any;
+
+  // Get the root project object
+  const rootObject = xcodeProject.hash.project.rootObject;
+  const projectObject =
+    xcodeProject.hash.project.objects.PBXProject[rootObject];
+
+  // Get the main group UUID from the project object
+  const mainGroupUuid = projectObject.mainGroup;
+  const mainGroup = xcodeProject.hash.project.objects.PBXGroup[mainGroupUuid];
+
+  // Check if expo:targets already exists
+  const existingGroup = Object.entries(
+    xcodeProject.hash.project.objects.PBXGroup
+  ).find(([_, group]: [string, any]) => group.name === '"expo:targets"');
+
+  if (existingGroup) {
+    return existingGroup[0];
+  }
+
+  // Create new virtual group
+  const groupUuid = xcodeProject.generateUuid();
+  xcodeProject.hash.project.objects.PBXGroup[groupUuid] = {
+    isa: 'PBXGroup',
+    children: [],
+    name: '"expo:targets"',
+    sourceTree: '"<group>"',
+  };
+  xcodeProject.hash.project.objects.PBXGroup[`${groupUuid}_comment`] =
+    'expo:targets';
+
+  // Add to main group
+  if (!mainGroup.children) {
+    mainGroup.children = [];
+  }
+  mainGroup.children.push({
+    value: groupUuid,
+    comment: 'expo:targets',
+  });
+
+  return groupUuid;
+}
+
+/**
+ * Add target subfolder to expo:targets virtual group.
+ * Returns the group UUID for the target.
+ */
+export function addTargetToVirtualGroup({
+  project,
+  targetName,
+  virtualGroupUuid,
+}: {
+  project: XcodeProject;
+  targetName: string;
+  virtualGroupUuid: string;
+}): string {
+  const xcodeProject = project as any;
+
+  // Check if target group already exists
+  const virtualGroup =
+    xcodeProject.hash.project.objects.PBXGroup[virtualGroupUuid];
+  if (virtualGroup && virtualGroup.children) {
+    const existingTarget = virtualGroup.children.find(
+      (child: any) => child.comment === targetName
+    );
+    if (existingTarget) {
+      return existingTarget.value;
+    }
+  }
+
+  const targetGroupUuid = xcodeProject.generateUuid();
+
+  xcodeProject.hash.project.objects.PBXGroup[targetGroupUuid] = {
+    isa: 'PBXGroup',
+    children: [],
+    name: `"${targetName}"`,
+    sourceTree: '"<group>"',
+  };
+  xcodeProject.hash.project.objects.PBXGroup[`${targetGroupUuid}_comment`] =
+    targetName;
+
+  // Add to virtual group
+  if (!virtualGroup.children) {
+    virtualGroup.children = [];
+  }
+  virtualGroup.children.push({
+    value: targetGroupUuid,
+    comment: targetName,
+  });
+
+  return targetGroupUuid;
+}
+
+/**
+ * Add file reference to group, pointing to external path.
+ * Returns the file reference UUID.
+ */
+export function addExternalFileReference({
+  project,
+  groupUuid,
+  filePath,
+  fileName,
+  fileType,
+}: {
+  project: XcodeProject;
+  groupUuid: string;
+  filePath: string;
+  fileName: string;
+  fileType?: string;
+}): string {
+  const xcodeProject = project as any;
+
+  // Determine file type
+  let lastKnownFileType = fileType || 'sourcecode.swift';
+  if (fileName.endsWith('.xcassets')) {
+    lastKnownFileType = 'folder.assetcatalog';
+  } else if (fileName.endsWith('.swift')) {
+    lastKnownFileType = 'sourcecode.swift';
+  } else if (fileName.endsWith('.h')) {
+    lastKnownFileType = 'sourcecode.c.h';
+  } else if (fileName.endsWith('.m')) {
+    lastKnownFileType = 'sourcecode.c.objc';
+  }
+
+  const fileRefUuid = xcodeProject.generateUuid();
+
+  xcodeProject.hash.project.objects.PBXFileReference[fileRefUuid] = {
+    isa: 'PBXFileReference',
+    lastKnownFileType,
+    name: `"${fileName}"`,
+    path: `"${filePath}"`,
+    sourceTree: '"<group>"',
+  };
+  xcodeProject.hash.project.objects.PBXFileReference[`${fileRefUuid}_comment`] =
+    fileName;
+
+  // Add to group
+  const group = xcodeProject.hash.project.objects.PBXGroup[groupUuid];
+  if (!group.children) {
+    group.children = [];
+  }
+
+  // Check if file already exists in group
+  const existingFile = group.children.find(
+    (child: any) => child.comment === fileName
+  );
+  if (!existingFile) {
+    group.children.push({
+      value: fileRefUuid,
+      comment: fileName,
+    });
+  }
+
+  return fileRefUuid;
+}
+
+/**
+ * Add file to specific build phase by file reference UUID.
+ */
+export function addFileToBuildPhase({
+  project,
+  targetUuid,
+  fileRefUuid,
+  phaseType,
+}: {
+  project: XcodeProject;
+  targetUuid: string;
+  fileRefUuid: string;
+  phaseType:
+    | 'PBXSourcesBuildPhase'
+    | 'PBXResourcesBuildPhase'
+    | 'PBXFrameworksBuildPhase';
+}): void {
+  const xcodeProject = project as any;
+  const target = xcodeProject.hash.project.objects.PBXNativeTarget[targetUuid];
+
+  if (!target || !target.buildPhases) {
+    throw new Error(`Target ${targetUuid} not found or has no build phases`);
+  }
+
+  // Find the build phase
+  const phaseUuid = target.buildPhases.find((phase: any) => {
+    const phaseObj = xcodeProject.hash.project.objects[phaseType][phase.value];
+    return phaseObj !== undefined;
+  })?.value;
+
+  if (!phaseUuid) {
+    throw new Error(
+      `Build phase ${phaseType} not found for target ${targetUuid}`
+    );
+  }
+
+  const phase = xcodeProject.hash.project.objects[phaseType][phaseUuid];
+
+  // Check if file already exists in build phase
+  if (phase.files) {
+    const existingFile = phase.files.find((file: any) => {
+      const buildFile =
+        xcodeProject.hash.project.objects.PBXBuildFile[file.value];
+      return buildFile && buildFile.fileRef === fileRefUuid;
+    });
+    if (existingFile) {
+      return; // Already added
+    }
+  }
+
+  // Create PBXBuildFile
+  const buildFileUuid = xcodeProject.generateUuid();
+  xcodeProject.hash.project.objects.PBXBuildFile[buildFileUuid] = {
+    isa: 'PBXBuildFile',
+    fileRef: fileRefUuid,
+  };
+  xcodeProject.hash.project.objects.PBXBuildFile[`${buildFileUuid}_comment`] =
+    `Referenced file in ${phaseType}`;
+
+  // Add to phase
+  if (!phase.files) {
+    phase.files = [];
+  }
+  phase.files.push({
+    value: buildFileUuid,
+    comment: `Referenced file`,
+  });
 }

@@ -1,0 +1,19 @@
+{
+  "type": "clip",
+  "name": "QuickCheckout",
+  "displayName": "Quick Checkout",
+  "platforms": ["ios"],
+  "appGroup": "group.com.test.clipsandstickers",
+  "ios": {
+    "colors": {
+      "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" },
+      "BackgroundColor": { "light": "#FFFFFF", "dark": "#000000" },
+      "PrimaryText": { "light": "#000000", "dark": "#FFFFFF" }
+    },
+    "entitlements": {
+      "com.apple.developer.associated-domains": [
+        "appclips:clipsandstickers.example.com"
+      ]
+    }
+  }
+}

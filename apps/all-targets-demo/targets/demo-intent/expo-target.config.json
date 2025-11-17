@@ -1,0 +1,15 @@
+{
+  "type": "intent",
+  "name": "DemoIntent",
+  "displayName": "Demo Intent",
+  "platforms": ["ios"],
+  "ios": {
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPointIdentifier": "com.apple.intents-service",
+        "NSExtensionPrincipalClass": "IntentHandler"
+      }
+    }
+  }
+}
+

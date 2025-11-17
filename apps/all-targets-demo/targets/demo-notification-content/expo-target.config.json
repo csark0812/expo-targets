@@ -1,0 +1,15 @@
+{
+  "type": "notification-content",
+  "name": "DemoNotificationContent",
+  "displayName": "Demo Notification Content",
+  "platforms": ["ios"],
+  "ios": {
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPointIdentifier": "com.apple.usernotifications.content",
+        "NSExtensionPrincipalClass": "NotificationViewController"
+      }
+    }
+  }
+}
+

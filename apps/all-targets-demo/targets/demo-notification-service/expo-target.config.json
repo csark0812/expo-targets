@@ -1,0 +1,15 @@
+{
+  "type": "notification-service",
+  "name": "DemoNotificationService",
+  "displayName": "Demo Notification Service",
+  "platforms": ["ios"],
+  "ios": {
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPointIdentifier": "com.apple.usernotifications.service",
+        "NSExtensionPrincipalClass": "NotificationService"
+      }
+    }
+  }
+}
+

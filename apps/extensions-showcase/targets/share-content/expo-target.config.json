@@ -1,0 +1,22 @@
+{
+  "type": "share",
+  "name": "ShareContent",
+  "displayName": "Share Content",
+  "platforms": ["ios"],
+  "entry": "./targets/share-content/index.tsx",
+  "appGroup": "group.com.test.extensionsshowcase",
+  "ios": {
+    "bundleIdentifier": "com.test.extensionsshowcase.share",
+    "displayName": "Share Content",
+    "colors": {
+      "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" },
+      "BackgroundColor": { "light": "#FFFFFF", "dark": "#1C1C1E" },
+      "TextPrimary": { "light": "#000000", "dark": "#FFFFFF" }
+    },
+    "activationRules": [
+      { "type": "text" },
+      { "type": "url" },
+      { "type": "image", "maxCount": 5 }
+    ]
+  }
+}

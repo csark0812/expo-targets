@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "extensions-showcase",
+    "slug": "extensions-showcase",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.test.extensionsshowcase",
+      "deploymentTarget": "14.0",
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.test.extensionsshowcase"
+        ]
+      }
+    },
+    "plugins": [
+      ["../../packages/expo-targets/app.plugin.js", { "debug": true }]
+    ],
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.test.extensionsshowcase"
+    }
+  }
+}

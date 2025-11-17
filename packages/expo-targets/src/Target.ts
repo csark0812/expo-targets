@@ -2,6 +2,12 @@ import Constants from 'expo-constants';
 import { AppRegistry, ComponentProvider } from 'react-native';
 
 import { Extension, type SharedData } from './modules/extension';
+import {
+  Messages,
+  type PresentationStyle,
+  type MessageLayout,
+  type ConversationInfo,
+} from './modules/messages';
 import { AppGroupStorage, getTargetsConfigFromBundle } from './modules/storage';
 import type {
   TargetConfig,
@@ -27,13 +33,31 @@ export interface ExtensionTarget extends BaseTarget {
   getSharedData: () => SharedData | null;
 }
 
+export interface MessagesExtensionTarget
+  extends Omit<ExtensionTarget, 'close'> {
+  type: 'messages';
+  getPresentationStyle: () => PresentationStyle | null;
+  requestPresentationStyle: (style: PresentationStyle) => void;
+  sendMessage: (layout: MessageLayout) => void;
+  sendUpdate: (layout: MessageLayout, sessionId: string) => void;
+  createSession: () => string | null;
+  getConversationInfo: () => ConversationInfo | null;
+  addEventListener: (
+    eventName: 'onPresentationStyleChange',
+    listener: (style: PresentationStyle) => void
+  ) => { remove: () => void };
+}
+
 export interface NonExtensionTarget extends BaseTarget {
   close?: undefined;
   openHostApp?: undefined;
   getSharedData?: undefined;
 }
 
-export type Target = ExtensionTarget | NonExtensionTarget;
+export type Target =
+  | ExtensionTarget
+  | MessagesExtensionTarget
+  | NonExtensionTarget;
 
 function getTargetConfig(targetName: string): TargetConfig | null {
   const expoConfig = Constants.expoConfig;
@@ -86,6 +110,7 @@ const EXTENSION_TYPES: Set<ReactNativeCompatibleType> = new Set([
   'share',
   'action',
   'clip',
+  'messages',
 ]);
 
 function isExtensionType(
@@ -93,10 +118,32 @@ function isExtensionType(
 ): type is ReactNativeCompatibleType {
   return EXTENSION_TYPES.has(type as ReactNativeCompatibleType);
 }
+
+// Function overloads for better type inference
+export function createTarget<T extends 'messages'>(
+  targetName: string,
+  componentFunc?: React.ComponentType<any>
+): MessagesExtensionTarget;
+export function createTarget<
+  T extends Exclude<ReactNativeCompatibleType, 'messages'>,
+>(
+  targetName: string,
+  componentFunc?: React.ComponentType<any>
+): ExtensionTarget;
+export function createTarget<
+  T extends Exclude<ExtensionType, ReactNativeCompatibleType>,
+>(
+  targetName: string,
+  componentFunc?: React.ComponentType<any>
+): NonExtensionTarget;
+export function createTarget(
+  targetName: string,
+  componentFunc?: React.ComponentType<any>
+): Target;
 export function createTarget<T extends ExtensionType = ExtensionType>(
   targetName: string,
   componentFunc?: React.ComponentType<any>
-): T extends ReactNativeCompatibleType ? ExtensionTarget : Target {
+): Target {
   const config = getTargetConfig(targetName);
   if (!config) {
     throw new Error(
@@ -118,10 +165,7 @@ export function createTarget<T extends ExtensionType = ExtensionType>(
       }
     }
 
-    AppRegistry.registerComponent(
-      targetName + 'Target',
-      () => qualifiedComponent
-    );
+    AppRegistry.registerComponent(targetName, () => qualifiedComponent);
   }
 
   const appGroup = getTargetAppGroup(targetName, config);
@@ -151,6 +195,30 @@ export function createTarget<T extends ExtensionType = ExtensionType>(
 
   if (isExtensionType(config.type)) {
     const extension = new Extension();
+
+    if (config.type === 'messages') {
+      const messages = new Messages();
+      const messagesTarget: MessagesExtensionTarget = {
+        ...baseTarget,
+        type: 'messages',
+        openHostApp: (path?: string) => extension.openHostApp(path),
+        getSharedData: () => extension.getSharedData(),
+        getPresentationStyle: () => messages.getPresentationStyle(),
+        requestPresentationStyle: (style: PresentationStyle) =>
+          messages.requestPresentationStyle(style),
+        sendMessage: (layout: MessageLayout) => messages.sendMessage(layout),
+        sendUpdate: (layout: MessageLayout, sessionId: string) =>
+          messages.sendUpdate(layout, sessionId),
+        createSession: () => messages.createSession(),
+        getConversationInfo: () => messages.getConversationInfo(),
+        addEventListener: (
+          eventName: 'onPresentationStyleChange',
+          listener: (style: PresentationStyle) => void
+        ) => messages.addEventListener(eventName, listener),
+      };
+      return messagesTarget as any;
+    }
+
     const extensionTarget: ExtensionTarget = {
       ...baseTarget,
       type: config.type as ReactNativeCompatibleType,

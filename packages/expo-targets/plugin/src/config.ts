@@ -4,6 +4,7 @@ export type ExtensionType =
   | 'widget'
   | 'clip'
   | 'stickers'
+  | 'messages'
   | 'share'
   | 'action'
   | 'safari'
@@ -65,6 +66,7 @@ export const TYPE_MINIMUM_DEPLOYMENT_TARGETS: Record<ExtensionType, string> = {
   widget: '14.0',
   clip: '14.0',
   stickers: '10.0',
+  messages: '10.0',
   share: '8.0',
   action: '8.0',
   'notification-content': '10.0',
@@ -88,6 +90,7 @@ export const TYPE_BUNDLE_IDENTIFIER_SUFFIXES: Record<ExtensionType, string> = {
   widget: 'widget',
   clip: 'clip',
   stickers: 'stickers',
+  messages: 'messages',
   share: 'share',
   action: 'action',
   safari: 'safari',
@@ -116,7 +119,16 @@ interface BaseIOSTargetConfig {
   colors?: Record<string, string | Color>;
   images?: Record<string, string>;
   stickerPacks?: StickerPack[];
-  imessageAppIcon?: string; // Path to source icon for iMessage App Icon (sticker packs)
+  /**
+   * Icon for extension target
+   * - For stickers: Path to source image file (e.g., "./assets/imessage-icon.png")
+   * - For action extensions: SF Symbol name (e.g., "photo.fill") or image asset name
+   * @example
+   * targetIcon: "./assets/icon.png" // Sticker pack icon file path
+   * targetIcon: "photo.fill" // Action extension SF Symbol
+   * targetIcon: "MyActionIcon" // Action extension image asset name
+   */
+  targetIcon?: string;
   frameworks?: string[];
   entitlements?: Record<string, any>;
   infoPlist?: Record<string, any>;
@@ -149,7 +161,11 @@ interface BaseIOSTargetConfig {
 }
 
 // Types that support React Native rendering
-export type ReactNativeCompatibleType = 'share' | 'action' | 'clip';
+export type ReactNativeCompatibleType =
+  | 'share'
+  | 'action'
+  | 'clip'
+  | 'messages';
 
 // Types that do NOT support React Native (use native rendering)
 export type NativeOnlyType = Exclude<ExtensionType, ReactNativeCompatibleType>;
