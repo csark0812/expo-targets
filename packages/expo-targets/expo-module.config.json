@@ -8,6 +8,10 @@
     ]
   },
   "android": {
-    "modules": []
+    "modules": [
+      "expo.modules.targets.storage.ExpoTargetsStorageModule",
+      "expo.modules.targets.extension.ExpoTargetsExtensionModule",
+      "expo.modules.targets.messages.ExpoTargetsMessagesModule"
+    ]
   }
 }
