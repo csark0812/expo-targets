@@ -241,17 +241,16 @@ function addWidgetReceiver(
 
   mainApplication.receiver = mainApplication.receiver || [];
 
-  // Widget receiver class name pattern: {package}.widget.{widgetname}.{WidgetName}Receiver
-  // Users should follow the convention: package {package}.widget.{widgetname}
-  // with class {WidgetName}Receiver extending ExpoTargetsWidgetProvider or GlanceAppWidgetReceiver
-  // For now, we'll construct the expected class name based on convention
+  // Widget receiver class name pattern: {package}.{widgetname}.{WidgetName}Receiver
+  // Users should follow the convention: package {package}.{widgetname}
+  // with class {WidgetName}Receiver extending GlanceAppWidgetReceiver
   const widgetNameLower = props.name.toLowerCase();
   const widgetNamePascal =
     props.name.charAt(0).toUpperCase() +
     props.name
       .slice(1)
       .replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
-  const widgetClassName = `${packageName}.widget.${widgetNameLower}.${widgetNamePascal}WidgetReceiver`;
+  const widgetClassName = `${packageName}.${widgetNameLower}.${widgetNamePascal}Receiver`;
 
   const alreadyAdded = mainApplication.receiver.some(
     (r: any) => r.$['android:name'] === widgetClassName
@@ -432,9 +431,14 @@ function generateWidgetResources(
     android:widgetCategory="${widgetCategory}"
     android:initialLayout="@layout/${layoutName}"`;
 
-  // Add optional attributes if provided
+  // Add preview image if configured
+  // Note: Glance widgets need static preview images since previewLayout doesn't work with Compose
   if (androidConfig.previewImage) {
-    widgetInfo += `\n    android:previewImage="@drawable/${props.name.toLowerCase()}_preview"`;
+    const previewImageName =
+      typeof androidConfig.previewImage === 'string'
+        ? androidConfig.previewImage
+        : `${props.name.toLowerCase()}_preview`;
+    widgetInfo += `\n    android:previewImage="@drawable/${previewImageName}"`;
   }
 
   if (androidConfig.description) {
