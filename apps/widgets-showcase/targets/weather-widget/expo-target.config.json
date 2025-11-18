@@ -1,8 +1,8 @@
 {
   "type": "widget",
   "name": "WeatherWidget",
-  "displayName": "Weather Widget",
-  "platforms": ["ios"],
+  "displayName": "Weather",
+  "platforms": ["ios", "android"],
   "appGroup": "group.com.test.widgetshowcase",
   "ios": {
     "bundleIdentifier": "com.test.widgetshowcase.weather",
@@ -15,6 +15,17 @@
       "BackgroundColor": { "light": "#FFFFFF", "dark": "#1C1C1E" },
       "TextPrimary": { "light": "#000000", "dark": "#FFFFFF" },
       "TextSecondary": { "light": "#666666", "dark": "#98989D" }
+    }
+  },
+  "android": {
+    "packageName": "com.test.widgetshowcase.weather",
+    "colors": {
+      "sunny_color": { "light": "#FFB800", "dark": "#FFD60A" },
+      "cloudy_color": { "light": "#8E8E93", "dark": "#98989D" },
+      "rainy_color": { "light": "#5AC8FA", "dark": "#64D2FF" },
+      "background_color": { "light": "#FFFFFF", "dark": "#1C1C1E" },
+      "text_primary": { "light": "#000000", "dark": "#FFFFFF" },
+      "text_secondary": { "light": "#666666", "dark": "#98989D" }
     }
   }
 }
