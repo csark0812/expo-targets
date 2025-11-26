@@ -24,7 +24,15 @@
     "expo",
     "cli",
     "widget",
-    "app-clip"
+    "app-clip",
+    "expo-targets"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/csark0812/expo-targets",
+    "directory": "packages/create-target"
+  },
+  "author": "Christopher Sarkissian",
+  "homepage": "https://github.com/csark0812/expo-targets#readme",
   "license": "MIT"
 }

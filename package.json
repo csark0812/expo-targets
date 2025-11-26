@@ -9,6 +9,9 @@
     "build": "bun run --filter './packages/*' build",
     "lint": "eslint .",
     "format": "prettier --write .",
+    "test": "cd tests/e2e && bun test",
+    "test:prebuild": "cd tests/e2e && bun test prebuild",
+    "test:runtime": "cd tests/e2e && bun test runtime",
     "android": "expo run:android",
     "ios": "expo run:ios"
   },
