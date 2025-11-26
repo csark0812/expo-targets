@@ -14,6 +14,7 @@ jobs:
 
     permissions:
       contents: write
+      id-token: write # Required for OIDC trusted publishing
 
     steps:
       - name: Checkout code
@@ -32,6 +33,9 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
+
+      - name: Update npm for trusted publishing
+        run: npm install -g npm@latest
 
       - name: Install dependencies
         run: bun install
@@ -113,14 +117,10 @@ jobs:
       - name: Publish expo-targets to npm
         working-directory: packages/expo-targets
         run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish create-target to npm
         working-directory: packages/create-target
         run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         continue-on-error: true # May not need to publish every time
 
       - name: Create GitHub Release
