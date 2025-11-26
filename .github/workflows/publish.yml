@@ -79,13 +79,10 @@ jobs:
           # Manual dispatch with explicit version
           if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ -n "${{ inputs.version }}" ]; then
             NEW_VERSION="${{ inputs.version }}"
-            npm version $NEW_VERSION --no-git-tag-version --allow-same-version
             echo "BUMP_TYPE=manual" >> $GITHUB_OUTPUT
           # Manual dispatch with bump type
           elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             BUMP_TYPE="${{ inputs.bump_type }}"
-            npm version $BUMP_TYPE --no-git-tag-version
-            NEW_VERSION=$(node -p "require('./package.json').version")
             echo "BUMP_TYPE=$BUMP_TYPE" >> $GITHUB_OUTPUT
           # PR merge - detect from labels
           else
@@ -97,9 +94,29 @@ jobs:
             else
               BUMP_TYPE=patch
             fi
-            npm version $BUMP_TYPE --no-git-tag-version
-            NEW_VERSION=$(node -p "require('./package.json').version")
             echo "BUMP_TYPE=$BUMP_TYPE" >> $GITHUB_OUTPUT
+          fi
+
+          # Bump version using node (avoids npm workspace resolution)
+          if [ -z "$NEW_VERSION" ]; then
+            NEW_VERSION=$(node -e "
+              const fs = require('fs');
+              const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+              const [major, minor, patch] = pkg.version.split('.').map(Number);
+              const bump = '$BUMP_TYPE';
+              if (bump === 'major') pkg.version = \`\${major + 1}.0.0\`;
+              else if (bump === 'minor') pkg.version = \`\${major}.\${minor + 1}.0\`;
+              else pkg.version = \`\${major}.\${minor}.\${patch + 1}\`;
+              fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+              console.log(pkg.version);
+            ")
+          else
+            node -e "
+              const fs = require('fs');
+              const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+              pkg.version = '$NEW_VERSION';
+              fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+            "
           fi
 
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
