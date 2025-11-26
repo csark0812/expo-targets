@@ -130,12 +130,26 @@ jobs:
           git push origin main --follow-tags
 
       - name: Publish expo-targets to npm
-        working-directory: packages/expo-targets
-        run: npm publish --access public
+        run: |
+          cd packages/expo-targets
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          TARBALL="${PACKAGE_NAME}-${PACKAGE_VERSION}.tgz"
+
+          npm pack --ignore-scripts || npm pack
+          npm publish "$TARBALL" --access public
+          rm -f "$TARBALL"
 
       - name: Publish create-expo-target to npm
-        working-directory: packages/create-target
-        run: npm publish --access public
+        run: |
+          cd packages/create-target
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          TARBALL="${PACKAGE_NAME}-${PACKAGE_VERSION}.tgz"
+
+          npm pack --ignore-scripts || npm pack
+          npm publish "$TARBALL" --access public
+          rm -f "$TARBALL"
         continue-on-error: true
 
       - name: Create GitHub Release
