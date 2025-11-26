@@ -65,22 +65,69 @@ open class ExpoTargetsReceiver : BroadcastReceiver() {
         }
 
         try {
-            // Send directly to the widget's UpdateReceiver which bypasses
-            // Android widget system and calls GlanceAppWidget.update() directly.
-            // Pattern: {packageName}.widget.{widgetnamelower}.{WidgetName}UpdateReceiver
-            val widgetNameLower = widgetName.lowercase()
-            val updateReceiverClass = "${context.packageName}.widget.${widgetNameLower}.${widgetName}UpdateReceiver"
-            val componentName = ComponentName(context.packageName, updateReceiverClass)
+            // Sanitize widget name same way as plugin does (replace non-alphanumeric with underscore)
+            val widgetNameSanitized = widgetName.lowercase().replace(Regex("[^a-z0-9_]"), "_")
+            // Convert to PascalCase for class name
+            val widgetNamePascal = widgetName.split(Regex("[-_]"))
+                .joinToString("") { it.replaceFirstChar { c -> c.uppercaseChar() } }
 
-            val updateIntent = Intent().apply {
-                component = componentName
-                action = "expo.modules.targets.UPDATE_WIDGET"
+            ExpoTargetsLogger.d(TAG, "Widget name transformations: original=$widgetName, sanitized=$widgetNameSanitized, pascal=$widgetNamePascal")
+
+            // Try Glance UpdateReceiver first (pattern: {packageName}.widget.{widgetnamelower}.{WidgetName}UpdateReceiver)
+            val updateReceiverClass = "${context.packageName}.widget.${widgetNameSanitized}.${widgetNamePascal}UpdateReceiver"
+            val updateComponentName = ComponentName(context.packageName, updateReceiverClass)
+
+            // Check if Glance UpdateReceiver exists
+            val packageManager = context.packageManager
+            val updateReceiverInfo = try {
+                packageManager.getReceiverInfo(updateComponentName, 0)
+                true
+            } catch (e: Exception) {
+                ExpoTargetsLogger.d(TAG, "Glance UpdateReceiver not found: $updateReceiverClass (${e.message})")
+                false
             }
 
-            ExpoTargetsLogger.d(TAG, "Sending direct update to: $updateReceiverClass")
-            context.sendBroadcast(updateIntent)
+            if (updateReceiverInfo) {
+                // Glance widget - send direct update
+                val updateIntent = Intent().apply {
+                    component = updateComponentName
+                    action = "expo.modules.targets.UPDATE_WIDGET"
+                }
+                ExpoTargetsLogger.d(TAG, "Sending direct update to Glance widget: $updateReceiverClass")
+                context.sendBroadcast(updateIntent)
+            } else {
+                // Try RemoteViews Provider (pattern: {packageName}.widget.{widgetnamelower}.{WidgetName}Provider)
+                val providerClass = "${context.packageName}.widget.${widgetNameSanitized}.${widgetNamePascal}Provider"
+                val providerComponentName = ComponentName(context.packageName, providerClass)
 
-            ExpoTargetsLogger.i(TAG, "Successfully triggered direct refresh for $widgetName")
+                ExpoTargetsLogger.d(TAG, "Looking for RemoteViews Provider: $providerClass")
+
+                val providerInfo = try {
+                    packageManager.getReceiverInfo(providerComponentName, 0)
+                    true
+                } catch (e: Exception) {
+                    ExpoTargetsLogger.d(TAG, "RemoteViews Provider not found: $providerClass (${e.message})")
+                    false
+                }
+
+                if (providerInfo) {
+                    ExpoTargetsLogger.d(TAG, "Found RemoteViews Provider: $providerClass")
+
+                    // RemoteViews widget - send direct intent to provider to trigger onReceive -> onUpdate
+                    val refreshIntent = Intent(WIDGET_EVENT_ACTION).apply {
+                        component = providerComponentName
+                        putExtra("EVENT_TYPE", "REFRESH")
+                        putExtra("WIDGET_NAME", widgetName)
+                    }
+                    ExpoTargetsLogger.d(TAG, "Sending direct refresh intent to RemoteViews provider: $providerClass")
+                    context.sendBroadcast(refreshIntent)
+                } else {
+                    ExpoTargetsLogger.w(TAG, "Neither Glance UpdateReceiver nor RemoteViews Provider found for widget: $widgetName")
+                    ExpoTargetsLogger.w(TAG, "Tried: Glance=$updateReceiverClass, RemoteViews=$providerClass")
+                }
+            }
+
+            ExpoTargetsLogger.i(TAG, "Successfully triggered refresh for $widgetName")
         } catch (e: Exception) {
             ExpoTargetsLogger.e(TAG, "Failed to refresh widget $widgetName", e)
         }

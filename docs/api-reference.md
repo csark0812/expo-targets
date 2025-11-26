@@ -311,7 +311,7 @@ const keys = storage.getKeys();
 
 ### Extension-Specific Methods
 
-For targets with `type: 'share' | 'action' | 'clip'`, additional methods are available:
+For targets with `type: 'share' | 'action' | 'clip' | 'messages'`, additional methods are available:
 
 #### `Target.close()`
 
@@ -385,6 +385,145 @@ const data = shareExtension.getSharedData();
 if (data?.url) {
   console.log('Shared URL:', data.url);
 }
+```
+
+### Messages Extension Methods
+
+For targets with `type: 'messages'`, these additional methods are available:
+
+#### `Target.getPresentationStyle()`
+
+Gets the current iMessage extension presentation style.
+
+**Signature:**
+
+```typescript
+getPresentationStyle(): PresentationStyle | null
+```
+
+**Returns:** `'compact' | 'expanded' | null`
+
+**Platform:** iOS
+
+#### `Target.requestPresentationStyle(style)`
+
+Requests a change to the extension's presentation style.
+
+**Signature:**
+
+```typescript
+requestPresentationStyle(style: PresentationStyle): void
+```
+
+**Parameters:**
+
+- `style`: `'compact' | 'expanded'`
+
+**Platform:** iOS
+
+#### `Target.sendMessage(layout)`
+
+Sends a message to the conversation with the specified layout.
+
+**Signature:**
+
+```typescript
+sendMessage(layout: MessageLayout): void
+```
+
+**Parameters:**
+
+```typescript
+interface MessageLayout {
+  caption: string;
+  subcaption?: string;
+  trailingCaption?: string;
+  trailingSubcaption?: string;
+  imageUrl?: string;
+  mediaFileUrl?: string;
+  url?: string;
+}
+```
+
+**Platform:** iOS
+
+#### `Target.sendUpdate(layout, sessionId)`
+
+Sends an update to an existing message.
+
+**Signature:**
+
+```typescript
+sendUpdate(layout: MessageLayout, sessionId: string): void
+```
+
+**Platform:** iOS
+
+#### `Target.createSession()`
+
+Creates a new message session for updates.
+
+**Signature:**
+
+```typescript
+createSession(): string | null
+```
+
+**Returns:** Session ID string or `null`
+
+**Platform:** iOS
+
+#### `Target.getConversationInfo()`
+
+Gets information about the current conversation.
+
+**Signature:**
+
+```typescript
+getConversationInfo(): ConversationInfo | null
+```
+
+**Returns:**
+
+```typescript
+interface ConversationInfo {
+  conversationId: string;
+  remoteParticipantIds: string[];
+  participantCount: number;
+  hasSelectedMessage: boolean;
+}
+```
+
+**Platform:** iOS
+
+#### `Target.addEventListener(eventName, listener)`
+
+Listens for presentation style changes.
+
+**Signature:**
+
+```typescript
+addEventListener(
+  eventName: 'onPresentationStyleChange',
+  listener: (style: PresentationStyle) => void
+): { remove: () => void }
+```
+
+**Platform:** iOS
+
+**Example:**
+
+```typescript
+const messagesTarget = createTarget<'messages'>('MyMessagesApp');
+
+const subscription = messagesTarget.addEventListener(
+  'onPresentationStyleChange',
+  (style) => {
+    console.log('Style changed to:', style);
+  }
+);
+
+// Later: subscription.remove();
 ```
 
 ---
@@ -591,10 +730,22 @@ interface Target {
 
   refresh(): void;
 
-  // Extension-specific (share, action, clip only)
+  // Extension-specific (share, action, clip)
   close?(): void;
   openHostApp?(path?: string): void;
   getSharedData?(): SharedData | null;
+
+  // Messages-specific
+  getPresentationStyle?(): PresentationStyle | null;
+  requestPresentationStyle?(style: PresentationStyle): void;
+  sendMessage?(layout: MessageLayout): void;
+  sendUpdate?(layout: MessageLayout, sessionId: string): void;
+  createSession?(): string | null;
+  getConversationInfo?(): ConversationInfo | null;
+  addEventListener?(
+    eventName: 'onPresentationStyleChange',
+    listener: (style: PresentationStyle) => void
+  ): { remove: () => void };
 }
 ```
 
@@ -605,6 +756,7 @@ type ExtensionType =
   | 'widget'
   | 'clip'
   | 'stickers'
+  | 'messages'
   | 'share'
   | 'action'
   | 'safari'
@@ -634,6 +786,37 @@ interface SharedData {
   webpageUrl?: string;
   webpageTitle?: string;
   preprocessedData?: any;
+}
+```
+
+### `PresentationStyle`
+
+```typescript
+type PresentationStyle = 'compact' | 'expanded';
+```
+
+### `MessageLayout`
+
+```typescript
+interface MessageLayout {
+  caption: string;
+  subcaption?: string;
+  trailingCaption?: string;
+  trailingSubcaption?: string;
+  imageUrl?: string;
+  mediaFileUrl?: string;
+  url?: string;
+}
+```
+
+### `ConversationInfo`
+
+```typescript
+interface ConversationInfo {
+  conversationId: string;
+  remoteParticipantIds: string[];
+  participantCount: number;
+  hasSelectedMessage: boolean;
 }
 ```
 
@@ -746,19 +929,19 @@ function handleShare() {
 
 ## Platform Support
 
-| API                   | iOS        | Android   |
-| --------------------- | ---------- | --------- |
-| `createTarget()`      | ✅ iOS 13+ | 🔜 Coming |
-| `Target.set()`        | ✅ iOS 13+ | 🔜 Coming |
-| `Target.get()`        | ✅ iOS 13+ | 🔜 Coming |
-| `Target.setData()`    | ✅ iOS 13+ | 🔜 Coming |
-| `Target.getData()`    | ✅ iOS 13+ | 🔜 Coming |
-| `Target.refresh()`    | ✅ iOS 14+ | 🔜 Coming |
-| `refreshAllTargets()` | ✅ iOS 14+ | 🔜 Coming |
-| `clearSharedData()`   | ✅ iOS 13+ | 🔜 Coming |
-| `close()`             | ✅ iOS 13+ | 🔜 Coming |
-| `openHostApp()`       | ✅ iOS 13+ | 🔜 Coming |
-| `getSharedData()`     | ✅ iOS 13+ | 🔜 Coming |
+| API                   | iOS        | Android (Widgets) |
+| --------------------- | ---------- | ----------------- |
+| `createTarget()`      | ✅ iOS 13+ | ✅ API 26+        |
+| `Target.set()`        | ✅ iOS 13+ | ✅ API 26+        |
+| `Target.get()`        | ✅ iOS 13+ | ✅ API 26+        |
+| `Target.setData()`    | ✅ iOS 13+ | ✅ API 26+        |
+| `Target.getData()`    | ✅ iOS 13+ | ✅ API 26+        |
+| `Target.refresh()`    | ✅ iOS 14+ | ✅ API 26+        |
+| `refreshAllTargets()` | ✅ iOS 14+ | ✅ API 26+        |
+| `clearSharedData()`   | ✅ iOS 13+ | ✅ API 26+        |
+| `close()`             | ✅ iOS 13+ | 📝 Planned        |
+| `openHostApp()`       | ✅ iOS 13+ | 📝 Planned        |
+| `getSharedData()`     | ✅ iOS 13+ | 📝 Planned        |
 
 ---
 

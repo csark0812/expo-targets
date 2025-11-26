@@ -183,6 +183,12 @@ export type IOSTargetConfig =
 
 export interface AndroidTargetConfig {
   resourceName?: string;
+  /**
+   * Widget rendering approach (default: 'glance')
+   * - 'glance': Modern Jetpack Compose-based widgets using Glance API
+   * - 'remoteviews': Traditional XML layout-based widgets using RemoteViews
+   */
+  widgetType?: 'glance' | 'remoteviews';
   // Widget-specific configuration
   minWidth?: string;
   minHeight?: string;
