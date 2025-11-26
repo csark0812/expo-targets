@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
+import expo.modules.targets.ExpoTargetsReceiver
 
 class ExpoTargetsStorageModule : Module() {
   override fun definition() = ModuleDefinition {
@@ -61,9 +62,10 @@ class ExpoTargetsStorageModule : Module() {
     }
 
     Function("refreshTarget") { name: String? ->
-      // Android: Request widget update
-      // Will use AppWidgetManager to update widgets
-      // Implementation depends on widget IDs and provider classes
+      val context = appContext.reactContext ?: return@Function
+      if (name != null) {
+        ExpoTargetsReceiver.refreshWidget(context, name)
+      }
     }
 
     Function("getTargetsConfig") {

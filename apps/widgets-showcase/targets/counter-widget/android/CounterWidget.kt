@@ -1,4 +1,4 @@
-package com.test.widgetshowcase.counter
+package com.test.widgetshowcase.widget.counterwidget
 
 import android.content.Context
 import androidx.glance.GlanceId
@@ -26,9 +26,15 @@ class CounterWidget : GlanceAppWidget() {
     /**
      * Load counter data from SharedPreferences
      * Mirrors iOS UserDefaults loading
+     *
+     * IMPORTANT: The SharedPreferences name must match the appGroup
+     * used by the main app's storage module (ExpoTargetsStorageModule).
      */
     private fun loadCounterData(context: Context): CounterData {
-        val prefs = context.getSharedPreferences("expo_targets", Context.MODE_PRIVATE)
+        // Use the appGroup from expo-target.config.json as the SharedPreferences name
+        val prefs = context.getSharedPreferences("group.com.test.widgetshowcase", Context.MODE_PRIVATE)
+
+        // The main app stores count as an Int directly
         val count = prefs.getInt("count", 0)
         val label = prefs.getString("label", null)
 
@@ -48,7 +54,7 @@ data class CounterData(
  * Receiver for the Counter Widget
  * Required by Android to register the widget with the system
  */
-class CounterWidgetReceiver : GlanceAppWidgetReceiver() {
+class CounterWidgetWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = CounterWidget()
 
     override fun onUpdate(

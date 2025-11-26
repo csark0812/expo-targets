@@ -1,4 +1,4 @@
-package com.test.widgetshowcase.counter
+package com.test.widgetshowcase.widget.counterwidget
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp

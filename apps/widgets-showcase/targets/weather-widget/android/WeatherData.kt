@@ -1,4 +1,4 @@
-package com.test.widgetshowcase.weather
+package com.test.widgetshowcase.widget.weatherwidget
 
 import kotlinx.serialization.Serializable
 

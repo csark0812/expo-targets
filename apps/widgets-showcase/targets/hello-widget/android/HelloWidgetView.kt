@@ -1,4 +1,4 @@
-package com.test.widgetshowcase.hello
+package com.test.widgetshowcase.widget.hellowidget
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp

@@ -1,4 +1,4 @@
-package com.test.widgetshowcase.weather
+package com.test.widgetshowcase.widget.weatherwidget
 
 import android.content.Context
 import androidx.glance.GlanceId
@@ -28,9 +28,13 @@ class WeatherWidget : GlanceAppWidget() {
     /**
      * Load weather data from SharedPreferences
      * Mirrors iOS UserDefaults loading in Widget.swift
+     *
+     * IMPORTANT: The SharedPreferences name must match the appGroup
+     * used by the main app's storage module (ExpoTargetsStorageModule).
      */
     private fun loadWeatherData(context: Context): WeatherData? {
-        val prefs = context.getSharedPreferences("expo_targets", Context.MODE_PRIVATE)
+        // Use the appGroup from expo-target.config.json as the SharedPreferences name
+        val prefs = context.getSharedPreferences("group.com.test.widgetshowcase", Context.MODE_PRIVATE)
 
         // Get the JSON string for the "weather" key
         val jsonString = prefs.getString("weather", null) ?: return null
@@ -50,7 +54,7 @@ class WeatherWidget : GlanceAppWidget() {
  * Receiver for the Weather Widget
  * Required by Android to register the widget with the system
  */
-class WeatherWidgetReceiver : GlanceAppWidgetReceiver() {
+class WeatherWidgetWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = WeatherWidget()
 
     override fun onUpdate(

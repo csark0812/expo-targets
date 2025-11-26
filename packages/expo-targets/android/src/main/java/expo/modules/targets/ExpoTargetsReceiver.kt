@@ -49,9 +49,12 @@ open class ExpoTargetsReceiver : BroadcastReceiver() {
 
         try {
             val appWidgetManager = AppWidgetManager.getInstance(context)
+            // Build component name matching the manifest registration pattern:
+            // {packageName}.widget.{widgetnamelower}.{WidgetName}WidgetReceiver
+            val widgetNameLower = widgetName.lowercase()
             val componentName = ComponentName(
                 context.packageName,
-                "${context.packageName}.widget.${widgetName}"
+                "${context.packageName}.widget.${widgetNameLower}.${widgetName}WidgetReceiver"
             )
 
             val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)

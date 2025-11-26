@@ -1,4 +1,4 @@
-package com.test.widgetshowcase.hello
+package com.test.widgetshowcase.widget.hellowidget
 
 import android.content.Context
 import androidx.glance.GlanceId
@@ -26,9 +26,13 @@ class HelloWidget : GlanceAppWidget() {
     /**
      * Load message from SharedPreferences
      * Mirrors iOS UserDefaults loading
+     *
+     * IMPORTANT: The SharedPreferences name must match the appGroup
+     * used by the main app's storage module (ExpoTargetsStorageModule).
      */
     private fun loadMessage(context: Context): String {
-        val prefs = context.getSharedPreferences("expo_targets", Context.MODE_PRIVATE)
+        // Use the appGroup from expo-target.config.json as the SharedPreferences name
+        val prefs = context.getSharedPreferences("group.com.test.widgetshowcase", Context.MODE_PRIVATE)
         return prefs.getString("message", null) ?: "No message yet"
     }
 }
@@ -37,7 +41,7 @@ class HelloWidget : GlanceAppWidget() {
  * Receiver for the Hello Widget
  * Required by Android to register the widget with the system
  */
-class HelloWidgetReceiver : GlanceAppWidgetReceiver() {
+class HelloWidgetWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = HelloWidget()
 
     override fun onUpdate(

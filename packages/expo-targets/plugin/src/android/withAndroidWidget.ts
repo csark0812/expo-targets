@@ -241,16 +241,16 @@ function addWidgetReceiver(
 
   mainApplication.receiver = mainApplication.receiver || [];
 
-  // Widget receiver class name pattern: {package}.{widgetname}.{WidgetName}Receiver
-  // Users should follow the convention: package {package}.{widgetname}
-  // with class {WidgetName}Receiver extending GlanceAppWidgetReceiver
+  // Widget receiver class name pattern: {package}.widget.{widgetname}.{WidgetName}WidgetReceiver
+  // Users should follow the convention: package {package}.widget.{widgetname}
+  // with class {WidgetName}WidgetReceiver extending GlanceAppWidgetReceiver
   const widgetNameLower = props.name.toLowerCase();
   const widgetNamePascal =
     props.name.charAt(0).toUpperCase() +
     props.name
       .slice(1)
       .replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
-  const widgetClassName = `${packageName}.${widgetNameLower}.${widgetNamePascal}Receiver`;
+  const widgetClassName = `${packageName}.widget.${widgetNameLower}.${widgetNamePascal}WidgetReceiver`;
 
   const alreadyAdded = mainApplication.receiver.some(
     (r: any) => r.$['android:name'] === widgetClassName
