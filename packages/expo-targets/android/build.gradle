@@ -14,3 +14,9 @@ android {
   }
 }
 
+dependencies {
+  // Glance dependencies for widget sync utilities
+  implementation "androidx.glance:glance-appwidget:1.1.1"
+  implementation "androidx.datastore:datastore-preferences:1.1.1"
+}
+

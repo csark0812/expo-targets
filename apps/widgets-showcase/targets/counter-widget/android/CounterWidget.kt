@@ -1,76 +1,40 @@
 package com.test.widgetshowcase.widget.counterwidget
 
 import android.content.Context
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.glance.GlanceId
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.provideContent
+import androidx.glance.currentState
+import androidx.glance.state.PreferencesGlanceStateDefinition
+import expo.modules.targets.ExpoTargetsWidgetUpdateReceiver
 
-/**
- * Counter Widget using Glance API
- *
- * Displays a counter with optional label from SharedPreferences.
- * Mirrors the iOS WidgetKit CounterWidget implementation.
- */
+private val COUNT_KEY = intPreferencesKey("count")
+private val LABEL_KEY = stringPreferencesKey("label")
+
 class CounterWidget : GlanceAppWidget() {
+    override val stateDefinition = PreferencesGlanceStateDefinition
+
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        // Load counter data from SharedPreferences
-        val counterData = loadCounterData(context)
-
         provideContent {
-            // Render the widget UI using Compose
-            CounterWidgetView(counterData)
+            val prefs = currentState<androidx.datastore.preferences.core.Preferences>()
+            val count = prefs[COUNT_KEY] ?: 0
+            val label = prefs[LABEL_KEY]
+            CounterWidgetView(CounterData(count, label))
         }
-    }
-
-    /**
-     * Load counter data from SharedPreferences
-     * Mirrors iOS UserDefaults loading
-     *
-     * IMPORTANT: The SharedPreferences name must match the appGroup
-     * used by the main app's storage module (ExpoTargetsStorageModule).
-     */
-    private fun loadCounterData(context: Context): CounterData {
-        // Use the appGroup from expo-target.config.json as the SharedPreferences name
-        val prefs = context.getSharedPreferences("group.com.test.widgetshowcase", Context.MODE_PRIVATE)
-
-        // The main app stores count as an Int directly
-        val count = prefs.getInt("count", 0)
-        val label = prefs.getString("label", null)
-
-        return CounterData(count, label)
     }
 }
 
-/**
- * Counter data model matching the TypeScript interface
- */
-data class CounterData(
-    val count: Int,
-    val label: String?
+data class CounterData(val count: Int, val label: String?)
+
+class CounterWidgetUpdateReceiver : ExpoTargetsWidgetUpdateReceiver<CounterWidget>(
+    CounterWidget::class,
+    "group.com.test.widgetshowcase"
 )
 
-/**
- * Receiver for the Counter Widget
- * Required by Android to register the widget with the system
- */
 class CounterWidgetWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = CounterWidget()
-
-    override fun onUpdate(
-        context: Context,
-        appWidgetManager: android.appwidget.AppWidgetManager,
-        appWidgetIds: IntArray
-    ) {
-        super.onUpdate(context, appWidgetManager, appWidgetIds)
-        // Explicitly update each widget instance to render content
-        appWidgetIds.forEach { appWidgetId ->
-            val glanceId = androidx.glance.appwidget.GlanceAppWidgetManager(context)
-                .getGlanceIdBy(appWidgetId)
-            kotlinx.coroutines.runBlocking {
-                glanceAppWidget.update(context, glanceId)
-            }
-        }
-    }
 }
 

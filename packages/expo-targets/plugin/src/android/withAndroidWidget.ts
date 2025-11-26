@@ -282,6 +282,32 @@ function addWidgetReceiver(
       },
     ],
   });
+
+  // Also register the UpdateReceiver for direct Glance updates
+  // Pattern: {package}.widget.{widgetname}.{WidgetName}UpdateReceiver
+  const updateReceiverClassName = `${packageName}.widget.${widgetNameLower}.${widgetNamePascal}UpdateReceiver`;
+
+  const updateReceiverAdded = mainApplication.receiver.some(
+    (r: any) => r.$['android:name'] === updateReceiverClassName
+  );
+
+  if (!updateReceiverAdded) {
+    mainApplication.receiver.push({
+      $: {
+        'android:name': updateReceiverClassName,
+        'android:exported': 'false',
+      },
+      'intent-filter': [
+        {
+          action: [
+            {
+              $: { 'android:name': 'expo.modules.targets.UPDATE_WIDGET' },
+            },
+          ],
+        },
+      ],
+    });
+  }
 }
 
 function addWidgetSourceSets(

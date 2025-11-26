@@ -1,63 +1,35 @@
 package com.test.widgetshowcase.widget.hellowidget
 
 import android.content.Context
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.glance.GlanceId
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.provideContent
+import androidx.glance.currentState
+import androidx.glance.state.PreferencesGlanceStateDefinition
+import expo.modules.targets.ExpoTargetsWidgetUpdateReceiver
 
-/**
- * Hello Widget using Glance API
- *
- * Displays a simple message shared from the main app via SharedPreferences.
- * Mirrors the iOS WidgetKit HelloWidget implementation.
- */
+private val MESSAGE_KEY = stringPreferencesKey("message")
+
 class HelloWidget : GlanceAppWidget() {
-    override suspend fun provideGlance(context: Context, id: GlanceId) {
-        // Load message from SharedPreferences
-        val message = loadMessage(context)
+    override val stateDefinition = PreferencesGlanceStateDefinition
 
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
-            // Render the widget UI using Compose
+            val prefs = currentState<androidx.datastore.preferences.core.Preferences>()
+            val message = prefs[MESSAGE_KEY] ?: "No message yet"
             HelloWidgetView(message)
         }
     }
-
-    /**
-     * Load message from SharedPreferences
-     * Mirrors iOS UserDefaults loading
-     *
-     * IMPORTANT: The SharedPreferences name must match the appGroup
-     * used by the main app's storage module (ExpoTargetsStorageModule).
-     */
-    private fun loadMessage(context: Context): String {
-        // Use the appGroup from expo-target.config.json as the SharedPreferences name
-        val prefs = context.getSharedPreferences("group.com.test.widgetshowcase", Context.MODE_PRIVATE)
-        return prefs.getString("message", null) ?: "No message yet"
-    }
 }
 
-/**
- * Receiver for the Hello Widget
- * Required by Android to register the widget with the system
- */
+class HelloWidgetUpdateReceiver : ExpoTargetsWidgetUpdateReceiver<HelloWidget>(
+    HelloWidget::class,
+    "group.com.test.widgetshowcase"
+)
+
 class HelloWidgetWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = HelloWidget()
-
-    override fun onUpdate(
-        context: Context,
-        appWidgetManager: android.appwidget.AppWidgetManager,
-        appWidgetIds: IntArray
-    ) {
-        super.onUpdate(context, appWidgetManager, appWidgetIds)
-        // Explicitly update each widget instance to render content
-        appWidgetIds.forEach { appWidgetId ->
-            val glanceId = androidx.glance.appwidget.GlanceAppWidgetManager(context)
-                .getGlanceIdBy(appWidgetId)
-            kotlinx.coroutines.runBlocking {
-                glanceAppWidget.update(context, glanceId)
-            }
-        }
-    }
 }
 
