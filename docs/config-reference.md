@@ -35,32 +35,47 @@ your-app/
 
 ### Complete Property Table
 
-| Property                | Type       | Required    | Default            | Description                                                              |
-| ----------------------- | ---------- | ----------- | ------------------ | ------------------------------------------------------------------------ |
-| **Root Level**          |
-| `type`                  | `string`   | ✅ Yes      | -                  | Extension type (widget, clip, share, etc.)                               |
-| `name`                  | `string`   | ✅ Yes      | -                  | Target identifier (PascalCase)                                           |
-| `platforms`             | `string[]` | ✅ Yes      | -                  | Supported platforms (["ios"])                                            |
-| `displayName`           | `string`   | ❌ Optional | `name` value       | Human-readable name for UI                                               |
-| `appGroup`              | `string`   | ❌ Optional | Auto-inherited     | App Group for data sharing                                               |
-| `entry`                 | `string`   | ❌ Optional | -                  | React Native entry file path                                             |
-| `excludedPackages`      | `string[]` | ❌ Optional | `[]`               | Packages to exclude from RN bundle                                       |
-| `ios`                   | `object`   | ❌ Optional | `{}`               | iOS-specific configuration                                               |
-| `android`               | `object`   | ❌ Optional | `{}`               | Android-specific configuration                                           |
-| **iOS Platform**        |
-| `ios.deploymentTarget`  | `string`   | ❌ Optional | `"18.0"`           | Minimum iOS version                                                      |
-| `ios.bundleIdentifier`  | `string`   | ❌ Optional | Auto-generated     | Bundle ID (absolute or relative)                                         |
-| `ios.displayName`       | `string`   | ❌ Optional | Root `displayName` | Platform-specific display name                                           |
-| `ios.icon`              | `string`   | ❌ Optional | -                  | Path to icon file                                                        |
-| `ios.colors`            | `object`   | ❌ Optional | `{}`               | Named colors for Assets.xcassets                                         |
-| `ios.images`            | `object`   | ❌ Optional | `{}`               | Named images for Assets.xcassets                                         |
-| `ios.frameworks`        | `string[]` | ❌ Optional | Type defaults      | Additional frameworks to link                                            |
-| `ios.entitlements`      | `object`   | ❌ Optional | Type defaults      | Custom entitlements                                                      |
-| `ios.infoPlist`         | `object`   | ❌ Optional | Type defaults      | Custom Info.plist entries                                                |
-| `ios.activationRules`   | `array`    | ❌ Optional | -                  | Share extension activation rules                                         |
-| `ios.preprocessingFile` | `string`   | ❌ Optional | -                  | Preprocessing JS for web content                                         |
-| `ios.stickerPacks`      | `array`    | ❌ Optional | -                  | iMessage sticker pack configuration                                      |
-| `ios.targetIcon`        | `string`   | ❌ Optional | -                  | Icon for extension (path for stickers, SF Symbol/asset name for actions) |
+| Property                     | Type       | Required    | Default                  | Description                                                                                   |
+| ---------------------------- | ---------- | ----------- | ------------------------ | --------------------------------------------------------------------------------------------- |
+| **Root Level**               |
+| `type`                       | `string`   | ✅ Yes      | -                        | Extension type (widget, clip, share, etc.)                                                    |
+| `name`                       | `string`   | ✅ Yes      | -                        | Target identifier (PascalCase)                                                                |
+| `platforms`                  | `string[]` | ✅ Yes      | -                        | Supported platforms (["ios"])                                                                 |
+| `displayName`                | `string`   | ❌ Optional | `name` value             | Human-readable name for UI                                                                    |
+| `appGroup`                   | `string`   | ❌ Optional | Auto-inherited           | App Group for data sharing                                                                    |
+| `entry`                      | `string`   | ❌ Optional | -                        | React Native entry file path                                                                  |
+| `excludedPackages`           | `string[]` | ❌ Optional | `[]`                     | Packages to exclude from RN bundle                                                            |
+| `ios`                        | `object`   | ❌ Optional | `{}`                     | iOS-specific configuration                                                                    |
+| `android`                    | `object`   | ❌ Optional | `{}`                     | Android-specific configuration                                                                |
+| **iOS Platform**             |
+| `ios.deploymentTarget`       | `string`   | ❌ Optional | `"18.0"`                 | Minimum iOS version                                                                           |
+| `ios.bundleIdentifier`       | `string`   | ❌ Optional | Auto-generated           | Bundle ID (absolute or relative)                                                              |
+| `ios.displayName`            | `string`   | ❌ Optional | Root `displayName`       | Platform-specific display name                                                                |
+| `ios.icon`                   | `string`   | ❌ Optional | -                        | Path to icon file                                                                             |
+| `ios.colors`                 | `object`   | ❌ Optional | `{}`                     | Named colors for Assets.xcassets                                                              |
+| `ios.images`                 | `object`   | ❌ Optional | `{}`                     | Named images for Assets.xcassets                                                              |
+| `ios.frameworks`             | `string[]` | ❌ Optional | Type defaults            | Additional frameworks to link                                                                 |
+| `ios.entitlements`           | `object`   | ❌ Optional | Type defaults            | Custom entitlements                                                                           |
+| `ios.infoPlist`              | `object`   | ❌ Optional | Type defaults            | Custom Info.plist entries                                                                     |
+| `ios.activationRules`        | `array`    | ❌ Optional | -                        | Share extension activation rules                                                              |
+| `ios.preprocessingFile`      | `string`   | ❌ Optional | -                        | Preprocessing JS for web content                                                              |
+| `ios.stickerPacks`           | `array`    | ❌ Optional | -                        | iMessage sticker pack configuration                                                           |
+| `ios.targetIcon`             | `string`   | ❌ Optional | -                        | Icon for extension (path for stickers, SF Symbol/asset name for actions)                      |
+| **Android Platform**         |
+| `android.widgetType`         | `string`   | ❌ Optional | `"glance"`               | Widget rendering approach (`"glance"` or `"remoteviews"`)                                     |
+| `android.minWidth`           | `string`   | ❌ Optional | `"180dp"`                | Minimum widget width                                                                          |
+| `android.minHeight`          | `string`   | ❌ Optional | `"110dp"`                | Minimum widget height                                                                         |
+| `android.resizeMode`         | `string`   | ❌ Optional | `"horizontal\|vertical"` | Widget resize capabilities (`"none"`, `"horizontal"`, `"vertical"`, `"horizontal\|vertical"`) |
+| `android.updatePeriodMillis` | `number`   | ❌ Optional | `0`                      | Automatic update interval in milliseconds (0 = disabled)                                      |
+| `android.widgetCategory`     | `string`   | ❌ Optional | `"home_screen"`          | Widget category (`"home_screen"` or `"keyguard"`)                                             |
+| `android.previewImage`       | `string`   | ❌ Optional | -                        | Preview image drawable name                                                                   |
+| `android.description`        | `string`   | ❌ Optional | -                        | Widget description string                                                                     |
+| `android.maxResizeWidth`     | `string`   | ❌ Optional | -                        | Maximum resize width                                                                          |
+| `android.maxResizeHeight`    | `string`   | ❌ Optional | -                        | Maximum resize height                                                                         |
+| `android.targetCellWidth`    | `number`   | ❌ Optional | -                        | Target cell width for Material You widgets                                                    |
+| `android.targetCellHeight`   | `number`   | ❌ Optional | -                        | Target cell height for Material You widgets                                                   |
+| `android.initialLayout`      | `string`   | ❌ Optional | Auto-generated           | Layout resource name (for RemoteViews widgets)                                                |
+| `android.colors`             | `object`   | ❌ Optional | `{}`                     | Named colors for Android resources                                                            |
 
 ### Basic Schema Example
 
@@ -100,7 +115,7 @@ Extension type. Determines product type, frameworks, and Info.plist configuratio
 | `widget`                  | iOS 14+     | Home screen widgets                |
 | `clip`                    | iOS 14+     | App Clips                          |
 | `stickers`                | iOS 10+     | iMessage sticker packs             |
-| `messages`                | iOS 10+     | iMessage apps                      |
+| `messages`                | iOS 10+     | iMessage apps (React Native UI)    |
 | `share`                   | iOS 8+      | Share extensions                   |
 | `action`                  | iOS 8+      | Action extensions                  |
 | `safari`                  | iOS 15+     | Safari web extensions              |
@@ -153,8 +168,8 @@ Array of supported platforms.
 
 **Available platforms:**
 
-- `"ios"` - iOS (implemented)
-- `"android"` - Android (coming soon)
+- `"ios"` - iOS (fully implemented)
+- `"android"` - Android (widgets implemented)
 
 ---
 
@@ -636,6 +651,226 @@ Icon for extension target. Usage depends on extension type:
 
 ---
 
+## Android Platform Configuration
+
+### `android.widgetType`
+
+**Type:** `'glance' | 'remoteviews'`
+**Default:** `'glance'`
+**Applies to:** `widget` type only
+
+Widget rendering approach for Android.
+
+```json
+{
+  "type": "widget",
+  "platforms": ["android"],
+  "android": {
+    "widgetType": "glance"
+  }
+}
+```
+
+**Options:**
+
+- **`'glance'`** (default): Modern Jetpack Compose-based widgets using Glance API
+  - Requires Android 13+ (API 33+) for full features
+  - Uses Compose UI with full Material 3 support
+  - Larger bundle size (~3-5MB Compose dependencies)
+  - Recommended for new widgets
+
+- **`'remoteviews'`**: Traditional XML layout-based widgets using RemoteViews
+  - Works on Android 8+ (API 26+)
+  - Minimal dependencies (~200KB)
+  - Limited UI capabilities (no LazyColumn, basic views only)
+  - Use for older device support or simpler widgets
+
+**Example:**
+
+```json
+{
+  "type": "widget",
+  "name": "SimpleWidget",
+  "platforms": ["android"],
+  "android": {
+    "widgetType": "remoteviews",
+    "minWidth": "180dp",
+    "minHeight": "110dp"
+  }
+}
+```
+
+### `android.minWidth`
+
+**Type:** `string`
+**Default:** `"180dp"`
+
+Minimum widget width in density-independent pixels.
+
+```json
+{
+  "android": {
+    "minWidth": "180dp"
+  }
+}
+```
+
+### `android.minHeight`
+
+**Type:** `string`
+**Default:** `"110dp"`
+
+Minimum widget height in density-independent pixels.
+
+```json
+{
+  "android": {
+    "minHeight": "110dp"
+  }
+}
+```
+
+### `android.resizeMode`
+
+**Type:** `string`
+**Default:** `"horizontal|vertical"`
+
+Widget resize capabilities. Options:
+
+- `"none"` - Not resizable
+- `"horizontal"` - Horizontally resizable
+- `"vertical"` - Vertically resizable
+- `"horizontal|vertical"` - Resizable in both directions
+
+```json
+{
+  "android": {
+    "resizeMode": "horizontal|vertical"
+  }
+}
+```
+
+### `android.updatePeriodMillis`
+
+**Type:** `number`
+**Default:** `0`
+
+Automatic update interval in milliseconds. Set to `0` to disable automatic updates (recommended - use manual refresh instead).
+
+```json
+{
+  "android": {
+    "updatePeriodMillis": 0
+  }
+}
+```
+
+**Note:** Automatic updates consume battery. Prefer manual refresh via `widget.refresh()`.
+
+### `android.widgetCategory`
+
+**Type:** `string`
+**Default:** `"home_screen"`
+
+Widget category. Options:
+
+- `"home_screen"` - Home screen widgets
+- `"keyguard"` - Lock screen widgets (Android 5.0+)
+
+```json
+{
+  "android": {
+    "widgetCategory": "home_screen"
+  }
+}
+```
+
+### `android.previewImage`
+
+**Type:** `string`
+**Default:** Auto-generated
+
+Preview image drawable name shown in widget picker.
+
+```json
+{
+  "android": {
+    "previewImage": "widget_preview"
+  }
+}
+```
+
+### `android.description`
+
+**Type:** `string`
+**Default:** None
+
+Widget description shown in widget picker.
+
+```json
+{
+  "android": {
+    "description": "Shows current weather conditions"
+  }
+}
+```
+
+### `android.initialLayout`
+
+**Type:** `string`
+**Default:** Auto-generated (`widget_{name}`)
+
+Layout resource name for RemoteViews widgets. The layout XML file should be placed in `targets/{name}/android/layouts/` directory (not in `res/layout/`). The plugin automatically copies or symlinks it to `res/layout/` during prebuild.
+
+```json
+{
+  "android": {
+    "widgetType": "remoteviews",
+    "initialLayout": "widget_mywidget"
+  }
+}
+```
+
+**File Structure:**
+
+```
+targets/my-widget/
+├── android/
+│   ├── layouts/              ← Put your XML layouts here (tracked in git)
+│   │   └── layout/           ← Must match Android resource structure
+│   │       └── widget_mywidget.xml
+│   └── res/                 ← Generated directory (gitignored)
+│       └── layout/           ← Generated resources
+└── MyWidgetProvider.kt
+```
+
+**Note:** The `layouts/` directory is not gitignored and is referenced directly via Gradle sourceSets (similar to how iOS references Swift files in place). The directory structure must match Android resource conventions (`layouts/layout/`, `layouts/values/`, etc.). The `res/` directory contains generated resources and is gitignored.
+
+### `android.colors`
+
+**Type:** `Record<string, string | Color>`
+
+Named colors for Android resources. Supports light/dark mode.
+
+```json
+{
+  "android": {
+    "colors": {
+      "accent_color": { "light": "#007AFF", "dark": "#0A84FF" },
+      "background_color": { "light": "#FFFFFF", "dark": "#1C1C1E" },
+      "text_primary": "#000000"
+    }
+  }
+}
+```
+
+**Format:**
+
+- Single string: Same color for light/dark mode
+- Object with `light`/`dark`: Different colors per theme
+
+---
+
 ## Complete Examples
 
 ### Basic Widget
@@ -750,6 +985,8 @@ Icon for extension target. Usage depends on extension type:
 
 ### Messages App (iMessage App)
 
+Messages extensions support React Native UI for building interactive iMessage apps.
+
 ```json
 {
   "type": "messages",
@@ -757,8 +994,9 @@ Icon for extension target. Usage depends on extension type:
   "displayName": "My Messages App",
   "platforms": ["ios"],
   "appGroup": "group.com.yourapp",
+  "entry": "./targets/my-messages-app/index.tsx",
   "ios": {
-    "deploymentTarget": "10.0",
+    "deploymentTarget": "14.0",
     "bundleIdentifier": ".messages",
     "colors": {
       "AccentColor": "#007AFF",
@@ -768,24 +1006,54 @@ Icon for extension target. Usage depends on extension type:
 }
 ```
 
-Create `targets/my-messages-app/ios/MessagesViewController.swift`:
+Create `targets/my-messages-app/index.tsx`:
 
-```swift
-import UIKit
-import Messages
+```typescript
+import { AppRegistry } from 'react-native';
+import { createTarget } from 'expo-targets';
+import MessagesApp from './src/MessagesApp';
 
-class MessagesViewController: MSMessagesAppViewController {
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        // Your implementation
-    }
+export const messagesApp = createTarget<'messages'>(
+  'MyMessagesApp',
+  MessagesApp
+);
+```
 
-    override func didBecomeActive(with conversation: MSConversation) {
-        super.didBecomeActive(with: conversation)
-        // Handle when extension becomes active
-    }
+Create `targets/my-messages-app/src/MessagesApp.tsx`:
+
+```typescript
+import React from 'react';
+import { View, Text, Button } from 'react-native';
+import { createTarget } from 'expo-targets';
+
+const messagesTarget = createTarget<'messages'>('MyMessagesApp');
+
+export default function MessagesApp() {
+  const handleSend = () => {
+    messagesTarget.sendMessage({
+      caption: 'Check this out!',
+      subcaption: 'Sent from MyMessagesApp',
+    });
+  };
+
+  return (
+    <View style={{ flex: 1, padding: 20 }}>
+      <Text>My Messages App</Text>
+      <Button title="Send Message" onPress={handleSend} />
+    </View>
+  );
 }
 ```
+
+**Messages-specific APIs:**
+
+- `getPresentationStyle()` - Get compact/expanded state
+- `requestPresentationStyle(style)` - Request style change
+- `sendMessage(layout)` - Send message to conversation
+- `sendUpdate(layout, sessionId)` - Update existing message
+- `createSession()` - Create session for updates
+- `getConversationInfo()` - Get conversation metadata
+- `addEventListener('onPresentationStyleChange', listener)` - Listen for style changes
 
 ### Share Extension with React Native
 

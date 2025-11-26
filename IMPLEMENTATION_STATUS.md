@@ -83,13 +83,15 @@ expo-targets is production-ready for iOS development with comprehensive support 
 - **Template Generation**: Swift templates for various types
 - **Config Creation**: Generates `expo-target.config.json`
 
-### ✅ Example Apps (5 Total)
+### ✅ Example Apps (7 Total)
 
-- **clip-advanced**: App Clip + share extension
-- **imessage-stickers**: iMessage sticker pack
-- **share-extension**: Share extension with React Native
-- **widget-interactive**: Weather widget
-- **multi-target**: Multiple targets (widget + clip + share)
+- **widgets-showcase**: Hello, Counter, and Weather widgets with Android support
+- **extensions-showcase**: React Native share, action, and messages extensions
+- **native-extensions-showcase**: Pure Swift share, action, and clip extensions
+- **clips-and-stickers**: App Clip + iMessage sticker pack
+- **all-targets-demo**: All 10 target types demonstration
+- **bare-rn-widgets**: Bare React Native widget integration
+- **bare-rn-share**: Bare React Native share extension
 
 ---
 
@@ -101,7 +103,8 @@ expo-targets is production-ready for iOS development with comprehensive support 
 | `clip`                 | ✅ Production | ✅     | ✅            | ✅   | ✅      |
 | `stickers`             | ✅ Production | ✅     | ✅            | ✅   | ✅      |
 | `share`                | ✅ Production | ✅     | ✅            | ✅   | ✅      |
-| `action`               | ✅ Ready      | ✅     | ✅            | ✅   | ❌      |
+| `messages`             | ✅ Production | ✅     | ✅            | ✅   | ✅      |
+| `action`               | ✅ Ready      | ✅     | ✅            | ✅   | ✅      |
 | `safari`               | 📋 Config     | ✅     | ❌            | ⚠️   | ❌      |
 | `notification-content` | 📋 Config     | ✅     | ❌            | ⚠️   | ❌      |
 | `notification-service` | 📋 Config     | ✅     | ❌            | ⚠️   | ❌      |
@@ -149,18 +152,22 @@ expo-targets is production-ready for iOS development with comprehensive support 
 - 📋 Siri intents
 - 📋 Other extension types
 
-### Android (Coming Soon)
+### Android (Widget Support)
 
-**Architecture Ready:**
+**Implemented:**
 
-- 📋 Config type system prepared
-- 📋 Plugin hooks defined
+- ✅ Gradle manipulation and Compose integration
+- ✅ Native storage module (SharedPreferences)
+- ✅ Widget refresh via ExpoTargetsReceiver
+- ✅ Glance API widgets (Jetpack Compose)
+- ✅ RemoteViews widgets (traditional XML)
+- ✅ Color resource generation
+- ✅ Widget info XML generation
 
 **Not Yet Implemented:**
 
-- ❌ Gradle manipulation
-- ❌ Native module
-- ❌ Asset generation
+- ❌ Share extensions
+- ❌ Action extensions
 
 ---
 
@@ -168,10 +175,10 @@ expo-targets is production-ready for iOS development with comprehensive support 
 
 ### Current
 
-1. **iOS Only**: Android not yet implemented
-2. **Swift Required**: Widget views must be written in Swift/SwiftUI
+1. **Android Widgets Only**: Android share/action extensions not yet implemented
+2. **Native UI Required**: Widget views require Swift/SwiftUI (iOS) or Kotlin/Compose (Android)
 3. **Release Only**: React Native extensions only work in Release builds
-4. **App Groups Required**: Data sharing requires proper App Group configuration
+4. **App Groups Required**: iOS data sharing requires proper App Group configuration
 
 ### By Design
 
@@ -209,7 +216,7 @@ expo-targets is production-ready for iOS development with comprehensive support 
 - [x] Share extension examples work
 - [x] iMessage sticker examples work
 - [x] Multiple test apps
-- [ ] Action extension example app
+- [x] Action extension example app
 - [ ] Unit test suite
 - [ ] Automated integration tests
 - [ ] CI/CD pipeline
@@ -227,9 +234,9 @@ expo-targets is production-ready for iOS development with comprehensive support 
 
 ## Roadmap
 
-### Phase 1: Complete Example Coverage
+### Phase 1: Testing & Publishing
 
-- [ ] Action extension example app
+- [x] Action extension example app
 - [ ] Test all extension types in production
 - [ ] Add unit tests for critical components
 - [ ] CI/CD setup
@@ -242,14 +249,15 @@ expo-targets is production-ready for iOS development with comprehensive support 
 - [ ] Live Activities support (iOS 16+)
 - [ ] App Intents integration (iOS 16+)
 
-### Phase 3: Android Implementation
+### Phase 3: Android Extensions
 
-- [ ] Android plugin infrastructure
-- [ ] Gradle manipulation
-- [ ] Widget implementation
-- [ ] Glance support
-- [ ] Asset generation
-- [ ] Data sharing
+- [x] Android plugin infrastructure
+- [x] Gradle manipulation
+- [x] Widget implementation (Glance + RemoteViews)
+- [x] Asset generation
+- [x] Data sharing (SharedPreferences)
+- [ ] Share extension implementation
+- [ ] Action extension implementation
 
 ### Phase 4: Advanced Features
 
@@ -299,7 +307,6 @@ expo-targets is production-ready for iOS development with comprehensive support 
 
 ### 🎯 Next Priority
 
-- Action extension example app
 - Unit and integration tests
 - npm package publishing
 - CI/CD automation
@@ -308,24 +315,19 @@ expo-targets is production-ready for iOS development with comprehensive support 
 
 ## Next Steps (Priority Order)
 
-1. **Action Extension Example**
-   - [ ] Create action extension demo app
-   - [ ] Test React Native in action extension
-   - [ ] Document action extension patterns
-
-2. **Testing Infrastructure**
+1. **Testing Infrastructure**
    - [ ] Unit tests for config parsing
    - [ ] Integration tests for Xcode manipulation
    - [ ] E2E tests for data sharing
 
-3. **Publishing Preparation**
+2. **Publishing Preparation**
    - [ ] npm organization setup
    - [ ] Release automation scripts
    - [ ] GitHub Actions CI/CD
    - [ ] Issue and PR templates
    - [ ] Version 1.0.0 release
 
-4. **Community Readiness**
+3. **Community Readiness**
    - [ ] Contributing guide
    - [ ] Code of conduct
    - [ ] Video tutorials
@@ -351,27 +353,28 @@ expo-targets has achieved its **primary goal**: enabling iOS extension developme
 **Ready for:**
 
 - ✅ Production iOS extension development
+- ✅ Production Android widget development
 - ✅ npm package publishing
 - ✅ Community adoption
 - ✅ Real-world usage
 
 **Needs work:**
 
-- Action extension example app
-- Android implementation
+- Android share/action extensions
 - Automated testing infrastructure
 
-The foundation is solid with 5 comprehensive example apps demonstrating production patterns.
+The foundation is solid with 7 comprehensive example apps demonstrating production patterns.
 
 ---
 
 ## Version History
 
 - **v0.1.0** (January 2025): Initial production-ready release
-  - Complete iOS extension support (widget, clip, stickers, share, action)
+  - Complete iOS extension support (widget, clip, stickers, share, action, messages)
+  - Android widget support (Glance + RemoteViews)
   - JSON config system
   - createTarget() API
-  - Xcode project manipulation
+  - Xcode and Gradle project manipulation
   - Type-safe data sharing
   - Comprehensive documentation
-  - 5 example apps
+  - 7 example apps

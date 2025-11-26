@@ -1,10 +1,10 @@
 {
-  "name": "create-target",
+  "name": "create-expo-target",
   "version": "0.1.0",
   "description": "CLI tool for scaffolding expo-targets extensions",
   "main": "build/index.js",
   "bin": {
-    "create-target": "./build/index.js"
+    "create-expo-target": "./build/index.js"
   },
   "scripts": {
     "build": "tsc",
@@ -24,7 +24,15 @@
     "expo",
     "cli",
     "widget",
-    "app-clip"
+    "app-clip",
+    "expo-targets"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/csark0812/expo-targets",
+    "directory": "packages/create-target"
+  },
+  "author": "Christopher Sarkissian",
+  "homepage": "https://github.com/csark0812/expo-targets#readme",
   "license": "MIT"
 }

@@ -26,11 +26,11 @@ Complete technical overview of expo-targets architecture, design decisions, and 
 
 ## Overview
 
-expo-targets is a monorepo providing iOS/Android extension development for Expo apps. The architecture consists of four main components:
+expo-targets is a monorepo providing iOS/Android extension development for Expo apps. The architecture consists of:
 
 1. **TypeScript API** (`packages/expo-targets/src/`): Runtime API for data sharing
-2. **Config Plugin** (`packages/expo-targets/plugin/`): Build-time Xcode manipulation
-3. **Native Module** (`packages/expo-targets/ios/`): Swift module for system integration
+2. **Config Plugin** (`packages/expo-targets/plugin/`): Build-time Xcode/Gradle manipulation
+3. **Native Modules** (`packages/expo-targets/ios/`, `packages/expo-targets/android/`): Platform-specific system integration
 4. **Metro Wrapper** (`packages/expo-targets/metro/`): Metro bundler configuration
 
 ### Key Principles
@@ -389,7 +389,7 @@ For projects upgrading from pre-1.0:
 4. Verify `expo:targets` group in Xcode
 5. Test builds
 
-See [Migration Guide](./MIGRATION-REFERENCE-IN-PLACE.md) for details.
+For projects upgrading from pre-1.0, delete old `ios/TargetName/` directories and run `npx expo prebuild --clean`.
 
 ---
 
@@ -1386,7 +1386,7 @@ export const withIOSTarget: ConfigPlugin<Props> = (config, props) => {
 **Typical prebuild with one widget:**
 
 - Plugin execution: ~100-200ms
-- AST parsing: ~50ms per target
+- Config loading: ~10ms per target
 - Xcode manipulation: ~100ms per target
 - Color generation: ~10ms per color
 - **Total overhead: ~200-400ms** (negligible compared to Xcode build)
@@ -1407,8 +1407,8 @@ export const withIOSTarget: ConfigPlugin<Props> = (config, props) => {
 ### Optimizations
 
 1. **Parallel color generation**: Each color processed independently
-2. **Lazy evaluation**: Config only parsed when needed
-3. **Efficient AST traversal**: Single pass with early termination
+2. **Lazy evaluation**: Config only loaded when needed
+3. **Direct require()**: Node's native module loading, no parsing overhead
 4. **Native storage**: Direct UserDefaults (no serialization overhead)
 
 ---
@@ -1417,12 +1417,12 @@ export const withIOSTarget: ConfigPlugin<Props> = (config, props) => {
 
 ### Build-Time Security
 
-**AST Parsing:**
+**Config Loading:**
 
-- No code execution (static analysis only)
-- Cannot access filesystem or network
-- Cannot run arbitrary computations
-- Limited to literal values
+- Standard Node.js `require()` mechanism
+- Runs during prebuild process only
+- Config files are trusted (part of user's codebase)
+- Dynamic configs (.js/.ts) execute at build time
 
 **File Access:**
 
@@ -1455,26 +1455,36 @@ export const withIOSTarget: ConfigPlugin<Props> = (config, props) => {
 
 ---
 
-## Future Architecture
+## Android Architecture
 
-### Android Support
+### Current Implementation
 
-**Planned architecture:**
+Android widget support uses a similar pattern to iOS with platform-specific adaptations:
 
 ```
 packages/expo-targets/plugin/src/android/
 ├── withAndroidTarget.ts        # Orchestrator
-├── withGradleChanges.ts        # build.gradle manipulation
-├── withAndroidManifest.ts      # AndroidManifest.xml
-└── withAndroidResources.ts     # res/ generation
+├── withAndroidWidget.ts        # Widget-specific config
+└── withAndroidAppBuildGradle.ts # build.gradle manipulation
 ```
 
-**Key differences from iOS:**
+```
+packages/expo-targets/android/src/main/java/expo/modules/targets/
+├── storage/ExpoTargetsStorageModule.kt  # SharedPreferences storage
+├── ExpoTargetsReceiver.kt               # Widget refresh broadcast
+├── ExpoTargetsWidgetUpdateReceiver.kt   # Glance widget updates
+└── ExpoTargetsRemoteViewsProvider.kt    # RemoteViews support
+```
 
-- Gradle instead of Xcode
-- XML manifests instead of Info.plist
-- Glance instead of WidgetKit
-- SharedPreferences instead of UserDefaults
+**Key platform differences:**
+
+| Aspect | iOS | Android |
+|--------|-----|---------|
+| Project manipulation | Xcode (xcode npm) | Gradle (text injection) |
+| Metadata | Info.plist | AndroidManifest.xml |
+| Widget API | WidgetKit | Glance or RemoteViews |
+| Data sharing | UserDefaults + App Groups | SharedPreferences |
+| Refresh mechanism | WidgetCenter.reloadTimelines | BroadcastReceiver |
 
 ### Roadmap Features
 

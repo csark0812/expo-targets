@@ -24,10 +24,15 @@ import {
   getWeatherData,
   type WeatherData,
 } from './targets/weather-widget';
+import {
+  updateWidget,
+  getWidgetData,
+  type SimpleRemoteviewsData,
+} from './targets/simple-remoteviews';
 
 export default function App() {
   const [selectedWidget, setSelectedWidget] = useState<
-    'hello' | 'counter' | 'weather'
+    'hello' | 'counter' | 'weather' | 'simple-remoteviews'
   >('hello');
 
   // Hello Widget State
@@ -47,6 +52,13 @@ export default function App() {
     lastUpdated: new Date().toLocaleTimeString(),
   });
   const [autoUpdate, setAutoUpdate] = useState(false);
+
+  // Simple RemoteViews Widget State
+  const [simpleRemoteviewsData, setSimpleRemoteviewsData] =
+    useState<SimpleRemoteviewsData>({
+      title: 'Hello',
+      message: 'This is a RemoteViews widget',
+    });
 
   useEffect(() => {
     loadAllWidgetData();
@@ -72,6 +84,11 @@ export default function App() {
     const weatherData = getWeatherData();
     if (weatherData) {
       setWeather(weatherData);
+    }
+
+    const remoteviewsData = getWidgetData();
+    if (remoteviewsData) {
+      setSimpleRemoteviewsData(remoteviewsData);
     }
   };
 
@@ -136,6 +153,18 @@ export default function App() {
     updateWeather(newWeather);
   };
 
+  const handleSimpleRemoteviewsUpdate = () => {
+    if (
+      !simpleRemoteviewsData.title.trim() ||
+      !simpleRemoteviewsData.message.trim()
+    ) {
+      Alert.alert('Error', 'Please enter both title and message');
+      return;
+    }
+    updateWidget(simpleRemoteviewsData);
+    Alert.alert('Success', 'Simple RemoteViews Widget updated!');
+  };
+
   const locations = ['San Francisco', 'New York', 'London', 'Tokyo', 'Sydney'];
 
   return (
@@ -198,6 +227,24 @@ export default function App() {
                 ]}
               >
                 Weather
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.widgetButton,
+                selectedWidget === 'simple-remoteviews' &&
+                  styles.widgetButtonActive,
+              ]}
+              onPress={() => setSelectedWidget('simple-remoteviews')}
+            >
+              <Text
+                style={[
+                  styles.widgetButtonText,
+                  selectedWidget === 'simple-remoteviews' &&
+                    styles.widgetButtonTextActive,
+                ]}
+              >
+                RemoteViews
               </Text>
             </TouchableOpacity>
           </View>
@@ -384,6 +431,71 @@ export default function App() {
               </Text>
             </View>
           </>
+        )}
+
+        {/* Simple RemoteViews Widget Controls */}
+        {selectedWidget === 'simple-remoteviews' && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>📱 Simple RemoteViews Widget</Text>
+            <Text style={styles.description}>
+              Android RemoteViews-based widget displaying title and message.
+              Demonstrates the RemoteViews widget type for Android.
+            </Text>
+
+            <View style={styles.section}>
+              <Text style={styles.label}>Title:</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter widget title"
+                value={simpleRemoteviewsData.title}
+                onChangeText={(text) =>
+                  setSimpleRemoteviewsData({
+                    ...simpleRemoteviewsData,
+                    title: text,
+                  })
+                }
+              />
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.label}>Message:</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter widget message"
+                value={simpleRemoteviewsData.message}
+                onChangeText={(text) =>
+                  setSimpleRemoteviewsData({
+                    ...simpleRemoteviewsData,
+                    message: text,
+                  })
+                }
+                multiline
+                numberOfLines={3}
+              />
+            </View>
+
+            <TouchableOpacity
+              style={styles.updateButton}
+              onPress={handleSimpleRemoteviewsUpdate}
+            >
+              <Text style={styles.updateButtonText}>
+                Update RemoteViews Widget
+              </Text>
+            </TouchableOpacity>
+
+            <View style={styles.infoBox}>
+              <Text style={styles.infoTitle}>Widget Info:</Text>
+              <Text style={styles.infoText}>
+                • Android-only widget using RemoteViews
+              </Text>
+              <Text style={styles.infoText}>
+                • Displays title and message fields
+              </Text>
+              <Text style={styles.infoText}>
+                • Size: 180dp × 110dp (minimum)
+              </Text>
+            </View>
+          </View>
         )}
 
         {/* Learning Path Info */}

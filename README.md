@@ -2,7 +2,7 @@
 
 Add iOS widgets, App Clips, iMessage stickers, share extensions, and other native extensions to your Expo app.
 
-> **Status**: Production-ready for iOS. Android support coming soon.
+> **Status**: Production-ready for iOS. Android widgets available (Glance + RemoteViews).
 
 ## Features
 
@@ -239,27 +239,23 @@ Xcode Project
         └── ...
 ```
 
-### Migration
-
-Upgrading from pre-1.0 versions? See [Migration Guide](./docs/MIGRATION-REFERENCE-IN-PLACE.md).
 
 ## Supported Target Types
 
-| Type                   | iOS | Description                |
-| ---------------------- | --- | -------------------------- |
-| `widget`               | ✅  | Home screen widgets        |
-| `clip`                 | ✅  | App Clips                  |
-| `stickers`             | ✅  | iMessage sticker packs     |
-| `messages`             | ✅  | iMessage apps              |
-| `share`                | ✅  | Share extensions           |
-| `action`               | ✅  | Action extensions          |
-| `intent`               | 📝  | Siri intents               |
-| `notification-content` | 📝  | Notification content       |
-| `notification-service` | 📝  | Notification service       |
-| `safari`               | 📝  | Safari extensions          |
-| _...and more_          | 📝  | Full iOS extension support |
+| Type                   | iOS | Android | Description            |
+| ---------------------- | --- | ------- | ---------------------- |
+| `widget`               | ✅  | ✅      | Home screen widgets    |
+| `clip`                 | ✅  | —       | App Clips              |
+| `stickers`             | ✅  | —       | iMessage sticker packs |
+| `messages`             | ✅  | —       | iMessage apps          |
+| `share`                | ✅  | 📝      | Share extensions       |
+| `action`               | ✅  | 📝      | Action extensions      |
+| `intent`               | 📋  | —       | Siri intents           |
+| `notification-content` | 📋  | 📝      | Notification content   |
+| `notification-service` | 📋  | 📝      | Notification service   |
+| `safari`               | 📋  | —       | Safari extensions      |
 
-✅ Implemented | 📝 Planned
+✅ Production | 📋 Config-only | 📝 Planned | — Not applicable
 
 ## API Reference
 

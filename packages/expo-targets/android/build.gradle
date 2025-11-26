@@ -1,0 +1,22 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'expo.modules.targets'
+version = '0.1.0'
+
+android {
+  namespace "expo.modules.targets"
+  defaultConfig {
+    versionCode 1
+    versionName "0.1.0"
+  }
+}
+
+dependencies {
+  // Glance dependencies for widget sync utilities
+  implementation "androidx.glance:glance-appwidget:1.1.1"
+  implementation "androidx.datastore:datastore-preferences:1.1.1"
+}
+

@@ -3,6 +3,7 @@ import fs from 'fs';
 import { globSync } from 'glob';
 import path from 'path';
 
+import { withAndroidTarget } from './android/withAndroidTarget';
 import { withIOSTarget } from './ios/config-plugins/withIOSTarget';
 import { Logger } from './logger';
 
@@ -95,8 +96,11 @@ export const withTargetsDir: ConfigPlugin<{
       });
     }
 
-    if (supportsAndroid && evaluatedConfig.android) {
-      logger.warn(`Android support not yet implemented for ${targetDirName}`);
+    if (supportsAndroid) {
+      config = withAndroidTarget(config, {
+        ...evaluatedConfig,
+        directory: targetDirectory,
+      });
     }
 
     // Store full config for runtime access (with resolved appGroup)

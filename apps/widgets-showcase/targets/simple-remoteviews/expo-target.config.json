@@ -1,0 +1,13 @@
+{
+  "type": "widget",
+  "name": "simple-remoteviews",
+  "displayName": "Simple RemoteViews",
+  "platforms": ["android"],
+  "appGroup": "group.com.test.widgetshowcase",
+  "android": {
+    "widgetType": "remoteviews",
+    "minWidth": "180dp",
+    "minHeight": "110dp",
+    "description": "A simple RemoteViews-based widget"
+  }
+}

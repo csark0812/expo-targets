@@ -1,0 +1,168 @@
+name: Publish
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 0.2.0). Leave empty for auto-bump.'
+        required: false
+      bump_type:
+        description: 'Version bump type (ignored if version is specified)'
+        required: false
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  publish:
+    # Run if: PR was merged OR manually triggered
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      id-token: write # Required for OIDC trusted publishing
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup Node.js (for npm publish)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Update npm for trusted publishing
+        run: npm install -g npm@latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build all packages
+        run: bun run build
+
+      - name: Run tests
+        run: |
+          cd tests/e2e
+          bun install
+          bun test
+        continue-on-error: true
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Determine version
+        id: version
+        working-directory: packages/expo-targets
+        run: |
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "Current version: $CURRENT_VERSION"
+
+          # Manual dispatch with explicit version
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ -n "${{ inputs.version }}" ]; then
+            NEW_VERSION="${{ inputs.version }}"
+            npm version $NEW_VERSION --no-git-tag-version --allow-same-version
+            echo "BUMP_TYPE=manual" >> $GITHUB_OUTPUT
+          # Manual dispatch with bump type
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            BUMP_TYPE="${{ inputs.bump_type }}"
+            npm version $BUMP_TYPE --no-git-tag-version
+            NEW_VERSION=$(node -p "require('./package.json').version")
+            echo "BUMP_TYPE=$BUMP_TYPE" >> $GITHUB_OUTPUT
+          # PR merge - detect from labels
+          else
+            LABELS='${{ toJson(github.event.pull_request.labels.*.name) }}'
+            if echo "$LABELS" | grep -q "major"; then
+              BUMP_TYPE=major
+            elif echo "$LABELS" | grep -q "minor"; then
+              BUMP_TYPE=minor
+            else
+              BUMP_TYPE=patch
+            fi
+            npm version $BUMP_TYPE --no-git-tag-version
+            NEW_VERSION=$(node -p "require('./package.json').version")
+            echo "BUMP_TYPE=$BUMP_TYPE" >> $GITHUB_OUTPUT
+          fi
+
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+
+      - name: Sync version to root package.json
+        run: |
+          NEW_VERSION="${{ steps.version.outputs.NEW_VERSION }}"
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            pkg.version = '$NEW_VERSION';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+
+      - name: Rebuild with new version
+        run: bun run build
+
+      - name: Commit and tag
+        run: |
+          NEW_VERSION="${{ steps.version.outputs.NEW_VERSION }}"
+          git add -A
+          git commit -m "chore: release v$NEW_VERSION [skip ci]"
+          git tag "v$NEW_VERSION"
+
+      - name: Push changes and tags
+        run: |
+          git push origin main --follow-tags
+
+      - name: Publish expo-targets to npm
+        working-directory: packages/expo-targets
+        run: npm publish --access public
+
+      - name: Publish create-expo-target to npm
+        working-directory: packages/create-target
+        run: npm publish --access public
+        continue-on-error: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.NEW_VERSION }}
+          name: Release ${{ steps.version.outputs.NEW_VERSION }}
+          body: |
+            ## expo-targets v${{ steps.version.outputs.NEW_VERSION }}
+
+            **Release Type**: `${{ steps.version.outputs.BUMP_TYPE }}`
+
+            ### Installation
+            ```bash
+            bun add expo-targets@${{ steps.version.outputs.NEW_VERSION }}
+            # or
+            npm install expo-targets@${{ steps.version.outputs.NEW_VERSION }}
+            ```
+
+            ### Scaffold a new target
+            ```bash
+            npx create-expo-target
+            ```
+
+            ### Changes
+            See the [CHANGELOG](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

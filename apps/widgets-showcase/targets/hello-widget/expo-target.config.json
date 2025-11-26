@@ -2,7 +2,7 @@
   "type": "widget",
   "name": "HelloWidget",
   "displayName": "Hello Widget",
-  "platforms": ["ios"],
+  "platforms": ["ios", "android"],
   "appGroup": "group.com.test.widgetshowcase",
   "ios": {
     "bundleIdentifier": "com.test.widgetshowcase.hello",
@@ -11,6 +11,14 @@
       "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" },
       "BackgroundColor": { "light": "#F2F2F7", "dark": "#1C1C1E" },
       "TextPrimary": { "light": "#000000", "dark": "#FFFFFF" }
+    }
+  },
+  "android": {
+    "packageName": "com.test.widgetshowcase.hello",
+    "colors": {
+      "accent_color": { "light": "#007AFF", "dark": "#0A84FF" },
+      "background_color": { "light": "#F2F2F7", "dark": "#1C1C1E" },
+      "text_primary": { "light": "#000000", "dark": "#FFFFFF" }
     }
   }
 }

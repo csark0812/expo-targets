@@ -1,5 +1,6 @@
 import { ConfigPlugin } from '@expo/config-plugins';
 
+import { withAndroidAppBuildGradle } from './android/withAndroidAppBuildGradle';
 import { withTargetsDir } from './withTargetsDir';
 
 // Export types for use in config files
@@ -11,6 +12,7 @@ const withExpoTargets: ConfigPlugin<{
   targetsRoot?: string;
 }> = (config, options) => {
   config = withTargetsDir(config, options || {});
+  config = withAndroidAppBuildGradle(config);
   return config;
 };
 

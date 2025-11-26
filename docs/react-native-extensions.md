@@ -8,13 +8,14 @@ expo-targets supports React Native rendering in extensions that have UI componen
 
 ### Supported Extension Types
 
-| Type     | React Native Support | Status     |
-| -------- | -------------------- | ---------- |
-| `share`  | ✅ Full support      | Production |
-| `action` | ✅ Full support      | Production |
-| `clip`   | ✅ Full support      | Production |
-| `widget` | ❌ Not supported     | SwiftUI only |
-| `stickers` | ❌ Not supported   | Native only |
+| Type       | React Native Support | Status       |
+| ---------- | -------------------- | ------------ |
+| `share`    | ✅ Full support      | Production   |
+| `action`   | ✅ Full support      | Production   |
+| `clip`     | ✅ Full support      | Production   |
+| `messages` | ✅ Full support      | Production   |
+| `widget`   | ❌ Not supported     | SwiftUI only |
+| `stickers` | ❌ Not supported     | Native only  |
 
 ## Quick Start
 
@@ -29,10 +30,7 @@ In `targets/share-ext/expo-target.config.json`:
   "platforms": ["ios"],
   "appGroup": "group.com.yourapp",
   "entry": "./targets/share-ext/index.tsx",
-  "excludedPackages": [
-    "expo-updates",
-    "expo-dev-client"
-  ],
+  "excludedPackages": ["expo-updates", "expo-dev-client"],
   "ios": {
     "deploymentTarget": "13.0"
   }
@@ -40,6 +38,7 @@ In `targets/share-ext/expo-target.config.json`:
 ```
 
 **Key fields:**
+
 - `entry`: Path to React Native entry file
 - `excludedPackages`: Packages to exclude from bundle (reduces size)
 
@@ -173,12 +172,14 @@ Path to React Native entry point file.
 ```
 
 **Requirements:**
+
 - Must be a valid path relative to project root
 - File must exist at prebuild time
 - File must register a component with `AppRegistry`
 - Component name must match target `name`
 
 **Supported formats:**
+
 - `.tsx`, `.ts`, `.jsx`, `.js`
 
 ### `excludedPackages` Field
@@ -200,15 +201,16 @@ Expo/React Native packages to exclude from extension bundle.
 
 **Common exclusions:**
 
-| Package | Why Exclude | Size Savings |
-| ------- | ----------- | ------------ |
-| `expo-updates` | OTA updates not needed in extensions | ~500KB |
-| `expo-dev-client` | Development tools not needed in production | ~800KB |
-| `@react-native-community/netinfo` | Network monitoring not needed | ~100KB |
-| `react-native-reanimated` | Animations library if not used | ~1.5MB |
-| `@react-native-async-storage/async-storage` | Use App Groups instead | ~200KB |
+| Package                                     | Why Exclude                                | Size Savings |
+| ------------------------------------------- | ------------------------------------------ | ------------ |
+| `expo-updates`                              | OTA updates not needed in extensions       | ~500KB       |
+| `expo-dev-client`                           | Development tools not needed in production | ~800KB       |
+| `@react-native-community/netinfo`           | Network monitoring not needed              | ~100KB       |
+| `react-native-reanimated`                   | Animations library if not used             | ~1.5MB       |
+| `@react-native-async-storage/async-storage` | Use App Groups instead                     | ~200KB       |
 
 **Tips:**
+
 - Start with minimal exclusions
 - Add packages you don't use in the extension
 - Monitor bundle size with Metro output
@@ -226,10 +228,10 @@ const data = getSharedData();
 
 // SharedData interface:
 interface SharedData {
-  text?: string;        // Plain text content
-  url?: string;         // URL string
-  images?: string[];    // Array of image file URLs
-  webpageUrl?: string;  // Webpage URL (if shared from Safari)
+  text?: string; // Plain text content
+  url?: string; // URL string
+  images?: string[]; // Array of image file URLs
+  webpageUrl?: string; // Webpage URL (if shared from Safari)
   webpageTitle?: string; // Webpage title
   preprocessedData?: any; // Custom preprocessed data
 }
@@ -258,6 +260,7 @@ function handleOpenApp() {
 ```
 
 **Requirements:**
+
 - Configure deep linking in main app
 - Use URL scheme: `{bundleId}://{path}`
 
@@ -268,6 +271,7 @@ function handleOpenApp() {
 Extensions have memory and size constraints.
 
 **Good:**
+
 ```json
 {
   "excludedPackages": [
@@ -279,6 +283,7 @@ Extensions have memory and size constraints.
 ```
 
 **Avoid:**
+
 - Large dependencies (chart libraries, etc.)
 - Unused UI component libraries
 - Heavy animation libraries
@@ -388,13 +393,13 @@ Create `targets/share-ext/preprocessing.js`:
 
 ```javascript
 var ExtensionPreprocessingJS = {
-  run: function(arguments) {
+  run: function (arguments) {
     arguments.completionFunction({
-      'url': document.URL,
-      'title': document.title,
-      'selection': window.getSelection().toString()
+      url: document.URL,
+      title: document.title,
+      selection: window.getSelection().toString(),
     });
-  }
+  },
 };
 ```
 
@@ -404,9 +409,7 @@ var ExtensionPreprocessingJS = {
 {
   "type": "share",
   "ios": {
-    "activationRules": [
-      { "type": "webpage" }
-    ],
+    "activationRules": [{ "type": "webpage" }],
     "preprocessingFile": "./targets/share-ext/preprocessing.js"
   }
 }
@@ -463,11 +466,13 @@ export default function ShareExtension() {
 ### Extension crashes on launch
 
 **Causes:**
+
 - Built in Debug mode
 - Missing `AppRegistry.registerComponent`
 - Component name mismatch
 
 **Solution:**
+
 ```bash
 # Rebuild in Release
 npx expo run:ios --configuration Release
@@ -476,10 +481,12 @@ npx expo run:ios --configuration Release
 ### Bundle size too large
 
 **Causes:**
+
 - Too many dependencies
 - Not excluding unnecessary packages
 
 **Solution:**
+
 ```json
 {
   "excludedPackages": [
@@ -494,11 +501,13 @@ npx expo run:ios --configuration Release
 ### Extension UI not rendering
 
 **Causes:**
+
 - Metro config not wrapped
 - Entry file not found
 - Wrong component name
 
 **Solution:**
+
 ```javascript
 // metro.config.js
 const { withTargetsMetro } = require('expo-targets/metro');
@@ -508,11 +517,13 @@ module.exports = withTargetsMetro(getDefaultConfig(__dirname));
 ### Shared data returns null
 
 **Causes:**
+
 - Extension doesn't have proper activation rules
 - Content type not supported
 - iOS permissions not granted
 
 **Solution:**
+
 ```json
 {
   "ios": {
@@ -528,12 +539,13 @@ module.exports = withTargetsMetro(getDefaultConfig(__dirname));
 ## Examples
 
 See working examples:
-- [share-extension](../apps/share-extension/) - React Native share extension
-- [clip-advanced](../apps/clip-advanced/) - App Clip with React Native
+
+- [extensions-showcase](../apps/extensions-showcase/) - React Native share, action, and messages extensions
+- [clips-and-stickers](../apps/clips-and-stickers/) - App Clip with data sharing
+- [bare-rn-share](../apps/bare-rn-share/) - Bare React Native share extension
 
 ## See Also
 
 - [API Reference](./api-reference.md)
 - [Config Reference](./config-reference.md)
 - [Share Extension Config](./SHARE_EXTENSION_CONFIG.md)
-
