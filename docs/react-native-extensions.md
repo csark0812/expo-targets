@@ -1,115 +1,85 @@
 # React Native in Extensions
 
-Guide to using React Native rendering in share extensions, action extensions, and App Clips.
+Build share extensions, action extensions, App Clips, and iMessage apps using React Native instead of native Swift/Kotlin.
 
-## Overview
+## Supported Types
 
-expo-targets supports React Native rendering in extensions that have UI components. This allows you to reuse your React Native components and logic in extensions.
+| Type       | React Native Support | Notes                    |
+| ---------- | -------------------- | ------------------------ |
+| `share`    | ✅ Full support      | Custom UI for sharing    |
+| `action`   | ✅ Full support      | Process content in place |
+| `clip`     | ✅ Full support      | Lightweight app preview  |
+| `messages` | ✅ Full support      | iMessage app with RN UI  |
+| `widget`   | ❌ SwiftUI only      | iOS uses WidgetKit       |
+| `stickers` | ❌ Native only       | Static image assets      |
 
-### Supported Extension Types
+---
 
-| Type       | React Native Support | Status       |
-| ---------- | -------------------- | ------------ |
-| `share`    | ✅ Full support      | Production   |
-| `action`   | ✅ Full support      | Production   |
-| `clip`     | ✅ Full support      | Production   |
-| `messages` | ✅ Full support      | Production   |
-| `widget`   | ❌ Not supported     | SwiftUI only |
-| `stickers` | ❌ Not supported     | Native only  |
+## Quick Setup
 
-## Quick Start
+### 1. Create the Target
 
-### 1. Configure Target for React Native
+```bash
+npx create-target
+# Choose: Share Extension → share-ext → iOS → Yes (Use React Native)
+```
 
-In `targets/share-ext/expo-target.config.json`:
+Or manually configure `expo-target.config.json`:
 
 ```json
 {
   "type": "share",
   "name": "ShareExt",
   "platforms": ["ios"],
-  "appGroup": "group.com.yourapp",
+  "appGroup": "group.com.yourcompany.yourapp",
   "entry": "./targets/share-ext/index.tsx",
-  "excludedPackages": ["expo-updates", "expo-dev-client"],
-  "ios": {
-    "deploymentTarget": "13.0"
-  }
+  "excludedPackages": ["expo-updates", "expo-dev-client"]
 }
 ```
 
-**Key fields:**
+Key fields:
 
-- `entry`: Path to React Native entry file
-- `excludedPackages`: Packages to exclude from bundle (reduces size)
+- `entry`: Path to your React Native entry file **(relative to project root)**
+- `excludedPackages`: Packages to exclude from the extension bundle (reduces size)
 
-### 2. Create Extension Entry Point
-
-Create `targets/share-ext/index.tsx`:
+### 2. Create the Entry Point
 
 ```typescript
-import { AppRegistry } from 'react-native';
+// targets/share-ext/index.tsx
+import { createTarget } from 'expo-targets';
 import ShareExtension from './src/ShareExtension';
 
-AppRegistry.registerComponent('ShareExt', () => ShareExtension);
+// Pass the component as the second argument - handles registration automatically
+export const shareTarget = createTarget<'share'>('ShareExt', ShareExtension);
 ```
 
-**Important:** Component name must match the target `name` field.
+The second parameter to `createTarget` automatically calls `AppRegistry.registerComponent()` for you. The name must match the `name` field in your config exactly.
 
-### 3. Create React Native Component
-
-Create `targets/share-ext/src/ShareExtension.tsx`:
+### 3. Build Your Component
 
 ```typescript
+// targets/share-ext/ShareExtension.tsx
 import React, { useEffect, useState } from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
-import { createTarget, getSharedData, close, openHostApp } from 'expo-targets';
-import type { SharedData } from 'expo-targets';
-
-const shareTarget = createTarget('ShareExt');
+import { getSharedData, close, openHostApp, SharedData } from 'expo-targets';
 
 export default function ShareExtension() {
-  const [sharedData, setSharedData] = useState<SharedData | null>(null);
+  const [data, setData] = useState<SharedData | null>(null);
 
   useEffect(() => {
-    const data = getSharedData();
-    setSharedData(data);
+    // Get the content that was shared to this extension
+    setData(getSharedData());
   }, []);
-
-  const handleSave = () => {
-    if (sharedData?.url) {
-      shareTarget.set('lastShared', sharedData.url);
-      shareTarget.set('timestamp', Date.now());
-    }
-    close();
-  };
-
-  const handleOpenApp = () => {
-    openHostApp('/shared-content');
-  };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Share to MyApp</Text>
+      <Text style={styles.title}>Share to My App</Text>
 
-      {sharedData?.text && (
-        <Text style={styles.data}>Text: {sharedData.text}</Text>
-      )}
+      {data?.url && <Text style={styles.info}>URL: {data.url}</Text>}
+      {data?.text && <Text style={styles.info}>Text: {data.text}</Text>}
 
-      {sharedData?.url && (
-        <Text style={styles.data}>URL: {sharedData.url}</Text>
-      )}
-
-      {sharedData?.images && (
-        <Text style={styles.data}>
-          Images: {sharedData.images.length} file(s)
-        </Text>
-      )}
-
-      <View style={styles.buttons}>
-        <Button title="Save & Close" onPress={handleSave} />
-        <Button title="Open App" onPress={handleOpenApp} color="#007AFF" />
-        <Button title="Cancel" onPress={close} color="#FF3B30" />
-      </View>
+      <Button title="Open in App" onPress={() => openHostApp('/shared')} />
+      <Button title="Cancel" onPress={close} />
     </View>
   );
 }
@@ -119,26 +89,24 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: '#fff',
+    justifyContent: 'center',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
+    textAlign: 'center',
   },
-  data: {
+  info: {
     fontSize: 16,
     marginBottom: 10,
-  },
-  buttons: {
-    marginTop: 20,
-    gap: 10,
   },
 });
 ```
 
 ### 4. Configure Metro
 
-Wrap your Metro config with `withTargetsMetro`:
+**Required for all React Native extensions.** This enables Metro to bundle your extension's entry point separately from the main app.
 
 ```javascript
 // metro.config.js
@@ -148,45 +116,174 @@ const { withTargetsMetro } = require('expo-targets/metro');
 module.exports = withTargetsMetro(getDefaultConfig(__dirname));
 ```
 
-### 5. Build
+The Metro wrapper:
+
+- Discovers targets with an `entry` field in their config
+- Creates separate bundles for each extension
+- Excludes packages listed in `excludedPackages`
+
+> **Note:** Pure Swift/SwiftUI extensions (like widgets) do NOT need Metro configuration.
+
+### 5. Build and Run
 
 ```bash
-npx expo prebuild -p ios --clean
+npx expo prebuild
+npx expo run:ios
+```
+
+For testing extensions in Release mode (recommended for performance testing):
+
+```bash
 npx expo run:ios --configuration Release
 ```
 
-**Note:** Extensions must be built in Release mode.
+---
 
-## Configuration Reference
+## Naming Conventions
 
-### `entry` Field
+**All names must match exactly** — this is the most common source of bugs:
 
-**Type:** `string`
+| Location                  | Value          | Example      |
+| ------------------------- | -------------- | ------------ |
+| Config `name` field       | PascalCase     | `"ShareExt"` |
+| `createTarget()` argument | Same as config | `'ShareExt'` |
 
-Path to React Native entry point file.
+**If these don't match**, the extension will crash on launch with no useful error message.
 
-```json
-{
-  "entry": "./targets/share-ext/index.tsx"
+```typescript
+// expo-target.config.json
+{ "name": "ShareExt" }
+
+// index.tsx - MUST use exact same name
+createTarget('ShareExt', ShareExtension);  // ✅ Correct
+createTarget('shareExt', ShareExtension);  // ❌ Wrong case - will crash
+createTarget('ShareExtension', ShareExtension);  // ❌ Wrong name - will crash
+```
+
+---
+
+## Available APIs
+
+```typescript
+import {
+  getSharedData, // Get content shared to extension
+  close, // Close the extension
+  openHostApp, // Open main app with deep link
+  createTarget, // Access shared storage
+} from 'expo-targets';
+```
+
+### getSharedData()
+
+Returns the content shared to your extension:
+
+```typescript
+const data = getSharedData();
+// {
+//   text?: string,      // Plain text
+//   url?: string,       // URL
+//   images?: string[],  // Array of file:// paths
+//   webpageUrl?: string,
+//   webpageTitle?: string,
+//   preprocessedData?: any,  // From preprocessing.js
+// }
+```
+
+### Saving Data for Main App
+
+Save data in the extension for your main app to read later:
+
+```typescript
+import { createTarget, close } from 'expo-targets';
+
+const shareTarget = createTarget('ShareExt');
+
+function handleSave() {
+  const data = getSharedData();
+
+  // Save to shared storage
+  shareTarget.setData({
+    lastShared: data?.url,
+    timestamp: Date.now(),
+  });
+
+  // Close the extension
+  close();
 }
 ```
 
-**Requirements:**
+Your main app can read this data:
 
-- Must be a valid path relative to project root
-- File must exist at prebuild time
-- File must register a component with `AppRegistry`
-- Component name must match target `name`
+```typescript
+// In your main app
+import { createTarget } from 'expo-targets';
 
-**Supported formats:**
+const shareTarget = createTarget('ShareExt');
+const data = shareTarget.getData();
+console.log('Last shared:', data?.lastShared);
+```
 
-- `.tsx`, `.ts`, `.jsx`, `.js`
+### Opening the Main App
 
-### `excludedPackages` Field
+Use `openHostApp()` to open your main app with a deep link:
 
-**Type:** `string[]`
+```typescript
+import { openHostApp } from 'expo-targets';
 
-Expo/React Native packages to exclude from extension bundle.
+function handleOpenInApp() {
+  // Opens: com.yourcompany.yourapp://shared/123
+  openHostApp('/shared/123');
+  // Extension closes automatically after opening host app
+}
+```
+
+**No additional setup required** — expo-targets automatically uses your bundle identifier as the URL scheme.
+
+In your main app, handle the deep link:
+
+```typescript
+// App.tsx
+import { Linking } from 'react-native';
+import { useEffect } from 'react';
+
+useEffect(() => {
+  const handleUrl = ({ url }: { url: string }) => {
+    const path = url.split('://')[1]; // "shared/123"
+    // Navigate based on path
+  };
+
+  // Handle cold start
+  Linking.getInitialURL().then((url) => url && handleUrl({ url }));
+
+  // Handle warm start
+  const sub = Linking.addEventListener('url', handleUrl);
+  return () => sub.remove();
+}, []);
+```
+
+---
+
+## Memory Limits & Bundle Size
+
+iOS extensions have **strict memory limits**. Exceeding them causes iOS to terminate your extension without warning.
+
+### Memory Limits by Extension Type
+
+| Extension Type     | Typical Limit | Behavior When Exceeded          |
+| ------------------ | ------------- | ------------------------------- |
+| Share Extension    | ~120MB        | Terminated, user sees error     |
+| Action Extension   | ~120MB        | Same as share extensions        |
+| Widget             | ~30MB         | Terminated silently             |
+| App Clip           | ~150MB        | More lenient, but still limited |
+| Messages Extension | ~120MB        | Similar to share extensions     |
+
+**Important:** These are approximate limits. iOS may terminate extensions using less memory under system pressure. Always test on physical devices.
+
+**Reference:** [Apple's App Extension Programming Guide](https://developer.apple.com/library/archive/documentation/General/Conceptual/ExtensibilityPG/)
+
+### Excluding Packages
+
+Reduce bundle size by excluding packages your extension doesn't need:
 
 ```json
 {
@@ -201,351 +298,248 @@ Expo/React Native packages to exclude from extension bundle.
 
 **Common exclusions:**
 
-| Package                                     | Why Exclude                                | Size Savings |
-| ------------------------------------------- | ------------------------------------------ | ------------ |
-| `expo-updates`                              | OTA updates not needed in extensions       | ~500KB       |
-| `expo-dev-client`                           | Development tools not needed in production | ~800KB       |
-| `@react-native-community/netinfo`           | Network monitoring not needed              | ~100KB       |
-| `react-native-reanimated`                   | Animations library if not used             | ~1.5MB       |
-| `@react-native-async-storage/async-storage` | Use App Groups instead                     | ~200KB       |
+| Package                   | Reason                     | Savings |
+| ------------------------- | -------------------------- | ------- |
+| `expo-updates`            | OTA updates not needed     | ~500KB  |
+| `expo-dev-client`         | Dev tools not needed       | ~800KB  |
+| `react-native-reanimated` | Heavy animation library    | ~1.5MB  |
+| `@sentry/react-native`    | Error reporting not needed | ~1MB    |
+| `react-native-screens`    | Native nav not needed      | ~300KB  |
 
-**Tips:**
+### Tips for Smaller Bundles
 
-- Start with minimal exclusions
-- Add packages you don't use in the extension
-- Monitor bundle size with Metro output
-- Test thoroughly after excluding packages
+1. **Exclude aggressively** — Start minimal, add packages only when needed
+2. **Avoid heavy UI libraries** — Use basic React Native components
+3. **Keep extension logic minimal** — Do heavy processing in your main app
+4. **Test on physical devices** — Simulators are more forgiving with memory
 
-## Extension APIs
+---
 
-### Getting Shared Data
+## Debugging Extensions
 
-```typescript
-import { getSharedData } from 'expo-targets';
-import type { SharedData } from 'expo-targets';
+Extensions run in a **separate process** with limited debugging capabilities. They **do not connect to Metro** — no hot reloading, no Chrome DevTools.
 
-const data = getSharedData();
+### Viewing Console Logs
 
-// SharedData interface:
-interface SharedData {
-  text?: string; // Plain text content
-  url?: string; // URL string
-  images?: string[]; // Array of image file URLs
-  webpageUrl?: string; // Webpage URL (if shared from Safari)
-  webpageTitle?: string; // Webpage title
-  preprocessedData?: any; // Custom preprocessed data
-}
+**Via Xcode (Recommended):**
+
+1. Open your project: `open ios/YourApp.xcworkspace`
+2. Select the extension target from the scheme dropdown (top left)
+3. Run the extension (⌘R)
+4. View logs in the Debug Console (bottom panel)
+5. `console.log()` statements from JavaScript appear here
+
+**Via Device Console:**
+
+1. Xcode → **Window** → **Devices and Simulators**
+2. Select your device
+3. Click **Open Console**
+4. Filter by your extension's bundle identifier
+
+**Via Terminal:**
+
+```bash
+# Stream logs from simulator
+xcrun simctl spawn booted log stream --predicate 'processImagePath contains "YourExtension"'
 ```
 
-### Closing Extension
+### Debugging Strategies
 
-```typescript
-import { close } from 'expo-targets';
+**JavaScript Errors:**
 
-function handleDone() {
-  // Save data...
-  close(); // Dismisses extension
-}
+- Errors appear in Xcode console, not Chrome DevTools
+- No hot reloading — changes require full rebuild
+- Use `console.log()` extensively
+
+**Breakpoint Debugging:**
+
+- Swift breakpoints work normally in Xcode
+- JavaScript breakpoints do NOT work (no Metro connection)
+- Set breakpoints in Swift bridge code if needed
+
+### Common Issues
+
+**Extension crashes on launch:**
+
+```
+Symptoms: Extension shows briefly then disappears
+Causes:
+  - createTarget name doesn't match config name
+  - Bundle too large (exceeds memory limit)
+  - Missing App Group configuration
+Solutions:
+  - Check name consistency (see Naming Conventions above)
+  - Add more packages to excludedPackages
+  - Verify App Group IDs match everywhere
 ```
 
-### Opening Host App
+**Component doesn't render:**
 
-```typescript
-import { openHostApp } from 'expo-targets';
-
-function handleOpenApp() {
-  openHostApp('/shared-content?id=123');
-  // Host app opens to specified deep link path
-}
+```
+Symptoms: Extension shows blank/white screen
+Causes:
+  - Entry file path wrong in config
+  - Metro config wrapper not applied
+  - Component not passed to createTarget
+Solutions:
+  - Verify entry path is relative to project root
+  - Check metro.config.js has withTargetsMetro wrapper
+  - Ensure component is passed as second arg: createTarget('Name', Component)
 ```
 
-**Requirements:**
+**Data sharing fails:**
 
-- Configure deep linking in main app
-- Use URL scheme: `{bundleId}://{path}`
+```
+Symptoms: getSharedData() returns null, setData() doesn't persist
+Causes:
+  - App Group IDs don't match
+  - App Group not configured in main app
+Solutions:
+  - Check all three locations have identical App Group ID:
+    • app.json entitlements
+    • expo-target.config.json
+    • Swift code (if any)
+```
 
-## Best Practices
+**Extension not appearing in share sheet:**
 
-### 1. Keep Bundle Size Small
+```
+Symptoms: Extension missing when sharing from other apps
+Causes:
+  - activationRules don't match content type
+  - Build not complete
+Solutions:
+  - Check activationRules in config match what you're sharing
+  - Clean build folder (⇧⌘K in Xcode)
+  - Delete app and reinstall
+```
 
-Extensions have memory and size constraints.
+---
 
-**Good:**
+## Messages Extension
+
+iMessage apps let users interact with your app directly in Messages.
+
+### Configuration
 
 ```json
 {
-  "excludedPackages": [
-    "expo-updates",
-    "expo-dev-client",
-    "@react-native-community/netinfo"
-  ]
+  "type": "messages",
+  "name": "MyMessages",
+  "platforms": ["ios"],
+  "appGroup": "group.com.yourapp",
+  "entry": "./targets/my-messages/index.tsx"
 }
 ```
 
-**Avoid:**
-
-- Large dependencies (chart libraries, etc.)
-- Unused UI component libraries
-- Heavy animation libraries
-
-### 2. Use Shared Components
-
-Create a shared components folder:
-
-```
-targets/
-  ├── _shared/
-  │   ├── Button.tsx
-  │   ├── TextField.tsx
-  │   └── styles.ts
-  └── share-ext/
-      └── src/
-          └── ShareExtension.tsx  # Imports from _shared
-```
-
-### 3. Handle Errors Gracefully
+### Entry Point
 
 ```typescript
-export default function ShareExtension() {
-  const [error, setError] = useState<string | null>(null);
+// targets/my-messages/index.tsx
+import { createTarget } from 'expo-targets';
+import MessagesApp from './MessagesApp';
 
-  useEffect(() => {
-    try {
-      const data = getSharedData();
-      if (!data) {
-        setError('No data shared');
-        return;
-      }
-      setSharedData(data);
-    } catch (err) {
-      setError('Failed to load shared content');
-    }
-  }, []);
-
-  if (error) {
-    return (
-      <View style={styles.error}>
-        <Text>{error}</Text>
-        <Button title="Close" onPress={close} />
-      </View>
-    );
-  }
-
-  // Render normal UI...
-}
+// Pass component as second argument - name must match config exactly
+export const messagesTarget = createTarget<'messages'>(
+  'MyMessages',
+  MessagesApp
+);
 ```
 
-### 4. Store Data for Main App
-
-Use App Group storage to pass data to main app:
+### Using Messages APIs
 
 ```typescript
+import React, { useEffect, useState } from 'react';
+import { View, Text, Button, StyleSheet } from 'react-native';
 import { createTarget } from 'expo-targets';
 
-const shareTarget = createTarget('ShareExt');
+const messages = createTarget<'messages'>('MyMessages');
 
-function handleSave(url: string) {
-  // Store for main app to read
-  shareTarget.setData({
-    lastShared: url,
-    timestamp: Date.now(),
-    type: 'url',
-  });
+export default function MessagesApp() {
+  const [style, setStyle] = useState(messages.getPresentationStyle());
 
-  close();
-}
-```
-
-Main app reads:
-
-```typescript
-import { shareTarget } from './targets/share-ext';
-
-function checkSharedData() {
-  const data = shareTarget.getData();
-  if (data?.lastShared) {
-    console.log('User shared:', data.lastShared);
-    // Process shared content...
-  }
-}
-```
-
-### 5. Build in Release Mode
-
-Extensions don't work in Debug mode due to JavaScript runtime differences.
-
-```bash
-# iOS
-npx expo run:ios --configuration Release
-
-# Or build in Xcode with Release scheme
-```
-
-## Advanced Patterns
-
-### Preprocessing Web Content
-
-For share extensions that accept web pages, you can preprocess the content:
-
-**1. Create preprocessing script:**
-
-Create `targets/share-ext/preprocessing.js`:
-
-```javascript
-var ExtensionPreprocessingJS = {
-  run: function (arguments) {
-    arguments.completionFunction({
-      url: document.URL,
-      title: document.title,
-      selection: window.getSelection().toString(),
+  useEffect(() => {
+    const sub = messages.addEventListener('onPresentationStyleChange', (newStyle) => {
+      setStyle(newStyle);
     });
-  },
-};
-```
+    return () => sub.remove();
+  }, []);
 
-**2. Configure in target:**
+  const sendSticker = () => {
+    messages.sendMessage({
+      caption: 'Check this out!',
+      subcaption: 'Sent from MyApp',
+      imageUrl: 'https://example.com/sticker.png',
+    });
+  };
 
-```json
-{
-  "type": "share",
-  "ios": {
-    "activationRules": [{ "type": "webpage" }],
-    "preprocessingFile": "./targets/share-ext/preprocessing.js"
-  }
-}
-```
-
-**3. Access in React Native:**
-
-```typescript
-const data = getSharedData();
-console.log(data.preprocessedData); // { url, title, selection }
-```
-
-### Multiple Entry Points
-
-For complex extensions, split logic:
-
-```
-targets/share-ext/
-  ├── index.tsx              # Entry point
-  ├── src/
-  │   ├── ShareExtension.tsx # Main component
-  │   ├── screens/
-  │   │   ├── ShareText.tsx
-  │   │   ├── ShareImage.tsx
-  │   │   └── ShareURL.tsx
-  │   └── hooks/
-  │       └── useSharedData.ts
-```
-
-### Custom Navigation
-
-Use React Navigation for multi-screen extensions:
-
-```typescript
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-
-const Stack = createNativeStackNavigator();
-
-export default function ShareExtension() {
   return (
-    <NavigationContainer>
-      <Stack.Navigator>
-        <Stack.Screen name="Share" component={ShareScreen} />
-        <Stack.Screen name="Preview" component={PreviewScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <View style={styles.container}>
+      <Text style={styles.info}>Current style: {style}</Text>
+
+      <Button
+        title="Expand"
+        onPress={() => messages.requestPresentationStyle('expanded')}
+      />
+      <Button title="Send Sticker" onPress={sendSticker} />
+      <Button
+        title="Collapse"
+        onPress={() => messages.requestPresentationStyle('compact')}
+      />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, padding: 20 },
+  info: { fontSize: 16, marginBottom: 20 },
+});
 ```
 
-## Troubleshooting
+### Messages API Reference
 
-### Extension crashes on launch
+```typescript
+const messages = createTarget<'messages'>('MyMessages');
 
-**Causes:**
+// Presentation
+messages.getPresentationStyle(); // 'compact' | 'expanded' | null
+messages.requestPresentationStyle('expanded');
+messages.requestPresentationStyle('compact'); // Use instead of close()
 
-- Built in Debug mode
-- Missing `AppRegistry.registerComponent`
-- Component name mismatch
+// Sending messages
+messages.sendMessage({
+  caption: string,      // Required: main text
+  subcaption?: string,  // Optional: secondary text
+  imageUrl?: string,    // Optional: image to display
+});
 
-**Solution:**
+// Interactive sessions
+const sessionId = messages.createSession();
+messages.sendUpdate({ caption: 'Updated!' }, sessionId);
 
-```bash
-# Rebuild in Release
-npx expo run:ios --configuration Release
+// Conversation info
+messages.getConversationInfo();
+// Returns: { conversationId, participantCount, hasSelectedMessage } | null
+
+// Events
+const sub = messages.addEventListener('onPresentationStyleChange', (style) => {
+  console.log('Style changed:', style);
+});
+sub.remove(); // Cleanup
 ```
 
-### Bundle size too large
-
-**Causes:**
-
-- Too many dependencies
-- Not excluding unnecessary packages
-
-**Solution:**
-
-```json
-{
-  "excludedPackages": [
-    "expo-updates",
-    "expo-dev-client",
-    "@react-native-community/netinfo",
-    "react-native-reanimated"
-  ]
-}
-```
-
-### Extension UI not rendering
-
-**Causes:**
-
-- Metro config not wrapped
-- Entry file not found
-- Wrong component name
-
-**Solution:**
-
-```javascript
-// metro.config.js
-const { withTargetsMetro } = require('expo-targets/metro');
-module.exports = withTargetsMetro(getDefaultConfig(__dirname));
-```
-
-### Shared data returns null
-
-**Causes:**
-
-- Extension doesn't have proper activation rules
-- Content type not supported
-- iOS permissions not granted
-
-**Solution:**
-
-```json
-{
-  "ios": {
-    "activationRules": [
-      { "type": "text" },
-      { "type": "url" },
-      { "type": "image", "maxCount": 5 }
-    ]
-  }
-}
-```
+---
 
 ## Examples
 
-See working examples:
+See working examples in the repository:
 
-- [extensions-showcase](../apps/extensions-showcase/) - React Native share, action, and messages extensions
-- [clips-and-stickers](../apps/clips-and-stickers/) - App Clip with data sharing
-- [bare-rn-share](../apps/bare-rn-share/) - Bare React Native share extension
+- **[extensions-showcase](../apps/extensions-showcase/)** — React Native share and action extensions
+- **[bare-rn-share](../apps/bare-rn-share/)** — Share extension in bare RN workflow
 
-## See Also
-
-- [API Reference](./api-reference.md)
-- [Config Reference](./config-reference.md)
-- [Share Extension Config](./SHARE_EXTENSION_CONFIG.md)
+```bash
+cd apps/extensions-showcase
+npm install
+npx expo prebuild
+npx expo run:ios
+```

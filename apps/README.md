@@ -1,455 +1,170 @@
 # Example Apps
 
-This directory contains example applications demonstrating `expo-targets` features, organized by theme and workflow type.
+Working examples for every extension type. Clone the repo and explore!
 
 ## Quick Start
 
-To run any example:
-
 ```bash
-cd apps/<example-name>
-bun install
-npx expo prebuild  # For managed workflow
-# OR
-npx expo-targets sync  # For bare RN workflow (see app README)
+cd apps/widgets-showcase
+npm install
+npx expo prebuild --clean
 npx expo run:ios
 ```
 
 ---
 
-## 📱 Example Apps Overview
+## 🟢 Start Here: Widgets
 
-### 🎯 Thematic Examples
+### [widgets-showcase](./widgets-showcase)
 
-#### 1. **widgets-showcase** - Widget Examples
+Three widget examples from basic to advanced:
 
-**Workflow:** Managed (Expo)
-**Target Types:** Widget
-**Complexity:** Basic → Advanced
+- **Hello Widget** — Simple data sharing between app and widget
+- **Counter Widget** — Increment/decrement from app, see updates in widget
+- **Weather Widget** — Timeline-based updates, multiple widget sizes
 
-Demonstrates three widget implementations:
-
-- **Hello Widget**: Basic widget with simple data sharing
-- **Counter Widget**: Interactive counter with increment/decrement
-- **Weather Widget**: Advanced timeline-based weather widget with multiple sizes
-
-**Best for:** Learning widget development patterns
+**Best for:** Learning widget fundamentals, understanding App Groups, SwiftUI basics
 
 ---
 
-#### 2. **extensions-showcase** - React Native Extensions
+## 📱 React Native Extensions
 
-**Workflow:** Managed (Expo)
-**Target Types:** Share Extension, Action Extension
-**Complexity:** Intermediate
+### [extensions-showcase](./extensions-showcase)
 
-React Native-based extensions with custom UI:
+React Native UI in extensions:
 
-- **Share Extension**: Share content from other apps with RN UI
-- **Action Extension**: Process images with RN UI
+- **Share Extension** — Share content from other apps with custom RN UI
+- **Action Extension** — Process images with custom UI
+- **Messages App** — iMessage extension with React Native
 
-**Best for:** Building extensions with React Native UI
-
----
-
-#### 3. **native-extensions-showcase** - Native Swift Extensions
-
-**Workflow:** Managed (Expo)
-**Target Types:** Share Extension, Action Extension, App Clip
-**Complexity:** Advanced
-
-Native Swift/SwiftUI implementations with function-based configs:
-
-- **Native Share**: Swift share extension
-- **Native Action**: Swift action extension
-- **Native Clip**: SwiftUI App Clip
-
-**Features:**
-
-- Function-based config files (`.ts`/`.js`)
-- Pure native implementations
-- Production-ready patterns
-
-**Best for:** Learning native extension development
+**Best for:** Building extensions with React Native instead of native code
 
 ---
 
-#### 4. **clips-and-stickers** - App Clips & iMessage
+### [native-extensions-showcase](./native-extensions-showcase)
 
-**Workflow:** Managed (Expo)
-**Target Types:** App Clip, iMessage Stickers
-**Complexity:** Intermediate
+Pure Swift/SwiftUI extensions (no React Native):
 
-Combined examples:
+- **Native Share** — Swift share extension
+- **Native Action** — Swift action extension
+- **Native Clip** — SwiftUI App Clip
 
-- **Quick Checkout Clip**: App Clip with data sharing
-- **Fun Stickers**: iMessage sticker pack
-
-**Best for:** App Clips and iMessage extensions
+**Best for:** Native extension development, learning the Swift side
 
 ---
 
-### 🔧 Workflow Examples
+## 🎪 App Clips & iMessage
 
-#### 5. **bare-rn-widgets** - Bare React Native Widget
+### [clips-and-stickers](./clips-and-stickers)
 
-**Workflow:** Bare React Native
-**Target Type:** Widget
-**Complexity:** Intermediate
+- **Quick Checkout** — App Clip with data sharing to main app
+- **Fun Stickers** — iMessage sticker pack with custom assets
 
-Demonstrates adding a widget to an existing bare RN project:
-
-- Uses `expo-targets sync` instead of `expo prebuild`
-- Manual Xcode project management
-- Widget with data sharing
-
-**Best for:** Integrating widgets into existing bare RN apps
+**Best for:** App Clips, iMessage sticker packs
 
 ---
 
-#### 6. **bare-rn-share** - Bare React Native Share Extension
+## 🔧 Bare React Native Workflow
 
-**Workflow:** Bare React Native
-**Target Type:** Share Extension
-**Complexity:** Advanced
+### [bare-rn-widgets](./bare-rn-widgets)
 
-Share extension in bare RN workflow:
+Adding widgets to an existing bare React Native project using `expo-targets sync` instead of `expo prebuild`.
 
-- React Native UI in extension
-- Metro configuration for extensions
-- Release mode requirements
+### [bare-rn-share](./bare-rn-share)
 
-**Best for:** Adding share extensions to bare RN apps
+Share extension with React Native UI in bare workflow.
+
+**Best for:** Integrating expo-targets into existing RN projects where you can't use `expo prebuild`
 
 ---
 
-### 🎪 Comprehensive Examples
+## 🎯 All Target Types
 
-#### 7. **all-targets-demo** - Kitchen Sink
+### [all-targets-demo](./all-targets-demo)
 
-**Workflow:** Managed (Expo)
-**Target Types:** All 10 types
-**Complexity:** Reference
+Complete reference with all supported target types:
 
-Complete example demonstrating all target types:
+- Widget, App Clip, Share, Action, Messages
+- Stickers, Safari, Notifications, Intents
 
-- **Production-ready**: Widget, Clip, Share, Action, Stickers
-- **Config-only**: Safari, Notification Content/Service, Intent, Intent UI
-
-**Best for:** Reference implementation, understanding all target types
+**Best for:** Reference implementation, seeing all types in one project
 
 ---
 
-## 🎯 Feature Comparison
+## Quick Reference
 
-| App                            | Workflow | Target Types        | UI Type      | Config Type        | Data Sharing |
-| ------------------------------ | -------- | ------------------- | ------------ | ------------------ | ------------ |
-| **widgets-showcase**           | Managed  | Widget              | Native Swift | JSON               | ✅           |
-| **extensions-showcase**        | Managed  | Share, Action       | React Native | JSON               | ✅           |
-| **native-extensions-showcase** | Managed  | Share, Action, Clip | Native Swift | Function (.ts/.js) | ✅           |
-| **clips-and-stickers**         | Managed  | Clip, Stickers      | Native Swift | JSON               | ✅           |
-| **bare-rn-widgets**            | Bare RN  | Widget              | Native Swift | JSON               | ✅           |
-| **bare-rn-share**              | Bare RN  | Share               | React Native | JSON               | ✅           |
-| **all-targets-demo**           | Managed  | All 10 types        | Mixed        | JSON               | ✅           |
-
----
-
-## 📚 Learning Path
-
-### 🟢 Beginner - Start Here
-
-**1. widgets-showcase** → **Hello Widget**
-
-- Basic widget setup
-- Data sharing fundamentals
-- Widget refresh mechanism
-
-**Key concepts:**
-
-- `createTarget()` API
-- `setData()` / `getData()`
-- Widget refresh
-- App Groups
+| Example                    | Extension Types         | UI           | Workflow |
+| -------------------------- | ----------------------- | ------------ | -------- |
+| widgets-showcase           | Widget                  | SwiftUI      | Managed  |
+| extensions-showcase        | Share, Action, Messages | React Native | Managed  |
+| native-extensions-showcase | Share, Action, Clip     | Swift        | Managed  |
+| clips-and-stickers         | Clip, Stickers          | Swift        | Managed  |
+| bare-rn-widgets            | Widget                  | SwiftUI      | Bare RN  |
+| bare-rn-share              | Share                   | React Native | Bare RN  |
+| all-targets-demo           | All types               | Mixed        | Managed  |
 
 ---
 
-### 🟡 Intermediate - Build Extensions
+## Running Examples
 
-**2. extensions-showcase** → **Share Extension**
-
-- React Native extension UI
-- Content type handling
-- Extension lifecycle
-
-**3. clips-and-stickers** → **Quick Checkout Clip**
-
-- App Clip URL handling
-- Native SwiftUI in extensions
-- Data synchronization
-
-**Key concepts:**
-
-- Extension entry points
-- Metro configuration
-- Native-Swift communication
-- Extension constraints
-
----
-
-### 🟠 Advanced - Native Development
-
-**4. native-extensions-showcase** → **Native Share**
-
-- Pure Swift implementations
-- Function-based configs
-- Advanced SwiftUI patterns
-
-**5. bare-rn-widgets** → **Bare RN Integration**
-
-- Existing project integration
-- `expo-targets sync` workflow
-- Manual Xcode setup
-
-**Key concepts:**
-
-- Native-only extensions
-- Config file functions
-- Bare workflow differences
-- Release mode requirements
-
----
-
-### 🔴 Expert - Production Patterns
-
-**6. all-targets-demo** → **Complete Reference**
-
-- All target types
-- Production patterns
-- Config-only targets
-
-**7. bare-rn-share** → **Bare RN Extensions**
-
-- React Native in extensions
-- Metro bundling
-- Extension memory limits
-
-**Key concepts:**
-
-- Multi-target architecture
-- Extension best practices
-- Performance optimization
-- Production deployment
-
----
-
-## 🔄 Workflow Comparison
-
-### Managed Workflow (Expo)
-
-**Apps:** `widgets-showcase`, `extensions-showcase`, `native-extensions-showcase`, `clips-and-stickers`, `all-targets-demo`
-
-**Setup:**
+### Managed Workflow (most examples)
 
 ```bash
-cd apps/<app-name>
-bun install
-npx expo prebuild
+cd apps/<example>
+npm install
+npx expo prebuild --clean
 npx expo run:ios
 ```
-
-**Characteristics:**
-
-- ✅ `ios/` directory auto-generated
-- ✅ Full project regeneration
-- ✅ Works out of the box
-- ✅ Metro auto-configured
-
----
 
 ### Bare React Native Workflow
 
-**Apps:** `bare-rn-widgets`, `bare-rn-share`
+```bash
+cd apps/<example>
+npm install
+npx expo-targets sync
+cd ios && pod install && cd ..
+npx react-native run-ios
+```
 
-**Setup:**
+### Building for Release
+
+For React Native extensions, test in Release mode to catch memory issues:
 
 ```bash
-cd apps/<app-name>
-bun install
-npx expo-targets sync  # Adds targets to existing Xcode project
-cd ios && pod install
-# Build in Xcode (Release mode for RN extensions)
-```
-
-**Characteristics:**
-
-- ✅ Incremental target addition
-- ✅ Manual Xcode project management
-- ✅ Existing project integration
-- ⚠️ Requires Metro config for RN extensions
-- ⚠️ Release mode required for RN extensions
-
-**See each app's README for detailed setup instructions.**
-
----
-
-## 🎨 Configuration Patterns
-
-### JSON Config
-
-```json
-// expo-target.config.json
-{
-  "type": "widget",
-  "name": "MyWidget",
-  "platforms": ["ios"],
-  "appGroup": "group.com.example.app"
-}
-```
-
-**Used in:** Most examples
-
----
-
-### Function-Based Config (TypeScript)
-
-```typescript
-// expo-target.config.ts
-import type { ExpoConfig, TargetConfig } from 'expo-targets/plugin';
-
-export default function (config: ExpoConfig): TargetConfig {
-  const bundleId = config.ios?.bundleIdentifier || 'com.example.app';
-
-  return {
-    type: 'share',
-    name: 'MyShare',
-    platforms: ['ios'],
-    appGroup: `group.${bundleId}`,
-    ios: {
-      bundleIdentifier: `${bundleId}.share`,
-    },
-  };
-}
-```
-
-**Used in:** `native-extensions-showcase`
-
-**Benefits:**
-
-- Dynamic configuration
-- Access to Expo config
-- Type safety
-- Similar to `app.config.js`
-
----
-
-## 🏗️ Architecture Patterns
-
-### Single Target
-
-```
-app/
-  App.tsx
-  targets/
-    my-widget/
-      expo-target.config.json
-      index.ts              # createTarget + helpers
-      ios/
-        Widget.swift        # Swift implementation
-```
-
-### Multiple Targets (Shared Data)
-
-```
-app/
-  App.tsx
-  targets/
-    widget/
-      expo-target.config.json
-      index.ts
-      ios/Widget.swift
-    clip/
-      expo-target.config.json
-      index.ts
-      ios/ClipView.swift
-```
-
-### React Native Extension
-
-```
-app/
-  App.tsx
-  metro.config.js           # Required for RN extensions
-  targets/
-    share-extension/
-      expo-target.config.json
-      index.tsx             # Entry point (registers RN component)
-      src/
-        ShareExtension.tsx  # React Native UI
+npx expo run:ios --configuration Release
 ```
 
 ---
 
-## 🚀 Quick Reference
+## Troubleshooting Examples
 
-### Data Sharing
+**Example doesn't build?**
 
-```typescript
-import { createTarget } from 'expo-targets';
-
-const myWidget = createTarget('MyWidget');
-
-// Set data
-myWidget.setData({ message: 'Hello' });
-
-// Get data
-const data = myWidget.getData<{ message: string }>();
-
-// Refresh widget
-myWidget.refresh();
+```bash
+# Clean and rebuild
+rm -rf ios android node_modules
+npm install
+npx expo prebuild --clean
+npx expo run:ios
 ```
 
-### Widget Refresh
+**Widget doesn't appear?**
 
-```typescript
-// After updating data
-myWidget.setData({ count: 5 });
-myWidget.refresh(); // Updates widget immediately
-```
+1. Build succeeded but widget not in picker?
+2. Long press home screen → tap **+** → search for the app name
+3. If not found: Product → Clean Build Folder (⇧⌘K) → rebuild
 
-### Extension Close
+**Extension crashes?**
 
-```typescript
-import { createTarget } from 'expo-targets';
-
-const shareTarget = createTarget<'share'>('ShareExtension', ShareComponent);
-
-// In extension component
-shareTarget.close(); // Closes extension
-```
+1. Check Xcode console for error messages
+2. Verify App Group IDs match in app.json and expo-target.config.json
+3. Try Release build: `npx expo run:ios --configuration Release`
 
 ---
 
-## 📖 Additional Resources
+## Documentation Links
 
-- [Getting Started Guide](../docs/getting-started.md)
-- [API Reference](../docs/api-reference.md)
-- [Configuration Reference](../docs/config-reference.md)
-- [Architecture Overview](../docs/ARCHITECTURE.md)
-
----
-
-## 🤝 Contributing
-
-Have an interesting example? Submit a PR with:
-
-- Complete working app
-- Clear README
-- Unique demonstration of features
-- Production-quality code
-- Appropriate workflow type (managed vs bare RN)
-
----
-
-## 📝 License
-
-MIT License - see [LICENSE](../LICENSE) for details
+- [Getting Started](../docs/getting-started.md) — Build your first widget
+- [Configuration](../docs/configuration.md) — All config options
+- [API Reference](../docs/api.md) — JavaScript/TypeScript API
+- [React Native Extensions](../docs/react-native-extensions.md) — RN in extensions

@@ -1,35 +1,39 @@
-# Getting Started with expo-targets
+# Getting Started
 
-This guide walks you through creating your first iOS widget with expo-targets, from installation to deployment.
+Build your first iOS widget in 5 minutes.
 
 ## Prerequisites
 
-- **Expo SDK 50+** (tested with Expo 52+)
-- **iOS development environment**:
-  - macOS with Xcode 14+
-  - Xcode Command Line Tools installed
-- **Device/Simulator**: iOS 14+ for widgets
-- **Package manager**: Bun or npm
+- macOS with Xcode 14+
+- Expo SDK 50+ (tested with 52+)
+- iOS Simulator or device running iOS 14+
 
-## Installation
+> **Device Testing Requirements**
+>
+> For testing on physical devices (not simulator):
+>
+> - Apple Developer account (free or paid)
+> - App Groups capability must be enabled in your provisioning profile
+> - Configure in Xcode: **Signing & Capabilities** → Add **App Groups**
+>
+> Simulator testing works without these requirements, but real devices require proper provisioning.
+
+## Step 1: Install
 
 ```bash
-bun add expo-targets
-# or npm install expo-targets
+npm install expo-targets
+# or: yarn add expo-targets / bun add expo-targets
 ```
 
-## Step 1: Configure App Groups
+## Step 2: Configure Your App
 
-App Groups enable data sharing between your main app and extensions via shared UserDefaults.
-
-### Add to app.json
+Add the plugin and App Groups to your `app.json`:
 
 ```json
 {
   "expo": {
     "name": "My App",
     "slug": "my-app",
-    "version": "1.0.0",
     "ios": {
       "bundleIdentifier": "com.yourcompany.myapp",
       "entitlements": {
@@ -41,44 +45,40 @@ App Groups enable data sharing between your main app and extensions via shared U
 }
 ```
 
-**Important**:
+> **⚠️ App Groups are Critical**
+>
+> App Groups enable data sharing between your app and widgets. If the IDs don't match exactly, **data sharing fails silently** — your widget will show default values instead of app data.
+>
+> - The ID must start with `group.`
+> - Convention: use `group.{your.bundle.identifier}` (e.g., `group.com.yourcompany.myapp`)
+> - **Must match exactly** in: `app.json`, target config, and Swift code
 
-- App Group ID must start with `group.`
-- Must match exactly in config and Swift code
-- Extensions automatically inherit this App Group
+## Step 3: Create a Widget
 
-### Configure Apple Developer Portal
-
-For physical devices, register your App Group:
-
-1. Go to [Apple Developer](https://developer.apple.com/account/resources/identifiers/list)
-2. Select your App ID
-3. Enable **App Groups** capability
-4. Create/select your App Group (e.g., `group.com.yourcompany.myapp`)
-
-## Step 2: Create a Widget Target
-
-### Option A: Use CLI (Recommended)
+Run the CLI:
 
 ```bash
 npx create-target
 ```
 
-Prompts:
+Choose:
 
-- **Type**: Widget
-- **Name**: hello-widget
-- **Platforms**: iOS
+- **Type:** Widget
+- **Name:** hello-widget
 
-### Option B: Manual Creation
+This creates:
 
-Create directory structure:
-
-```bash
-mkdir -p targets/hello-widget/ios
+```
+targets/hello-widget/
+├── expo-target.config.json   # Configuration
+├── index.ts                  # Pre-configured target instance
+└── ios/
+    └── Widget.swift          # SwiftUI code
 ```
 
-Create `targets/hello-widget/expo-target.config.json`:
+### Generated Files Explained
+
+**`expo-target.config.json`** — Tells expo-targets how to build this extension:
 
 ```json
 {
@@ -86,452 +86,347 @@ Create `targets/hello-widget/expo-target.config.json`:
   "name": "HelloWidget",
   "displayName": "Hello Widget",
   "platforms": ["ios"],
-  "appGroup": "group.com.yourcompany.myapp",
+  "appGroup": "group.com.yourcompany.yourapp",
   "ios": {
-    "deploymentTarget": "14.0",
-    "colors": {
-      "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" },
-      "BackgroundColor": { "light": "#F2F2F7", "dark": "#1C1C1E" },
-      "TextPrimary": { "light": "#000000", "dark": "#FFFFFF" }
-    }
+    "deploymentTarget": "14.0"
   }
 }
 ```
 
-**Config explained:**
-
-- `name`: Target identifier (PascalCase, used in Swift)
-- `appGroup`: Must match app.json
-- `type`: Extension type
-- `deploymentTarget`: Minimum iOS version
-- `colors`: Named colors for SwiftUI
-
-## Step 3: Implement the Widget
-
-Create `targets/hello-widget/ios/Widget.swift`:
-
-```swift
-import WidgetKit
-import SwiftUI
-
-struct SimpleEntry: TimelineEntry {
-    let date: Date
-    let message: String
-    let count: Int
-}
-
-struct Provider: TimelineProvider {
-    private let appGroup = "group.com.yourcompany.myapp"
-
-    func placeholder(in context: Context) -> SimpleEntry {
-        SimpleEntry(date: Date(), message: "Loading...", count: 0)
-    }
-
-    func getSnapshot(in context: Context, completion: @escaping (SimpleEntry) -> ()) {
-        let entry = getEntry()
-        completion(entry)
-    }
-
-    func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> ()) {
-        let entry = getEntry()
-
-        let nextUpdate = Calendar.current.date(byAdding: .minute, value: 15, to: Date())!
-        let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
-        completion(timeline)
-    }
-
-    private func getEntry() -> SimpleEntry {
-        let defaults = UserDefaults(suiteName: appGroup)
-        let message = defaults?.string(forKey: "message") ?? "No message yet"
-        let count = defaults?.integer(forKey: "count") ?? 0
-
-        return SimpleEntry(date: Date(), message: message, count: count)
-    }
-}
-
-struct HelloWidgetView: View {
-    var entry: Provider.Entry
-    @Environment(\.widgetFamily) var family
-
-    var body: some View {
-        ZStack {
-            Color("BackgroundColor")
-
-            VStack(spacing: 12) {
-                Image(systemName: "star.fill")
-                    .font(.system(size: family == .systemSmall ? 32 : 48))
-                    .foregroundColor(Color("AccentColor"))
-
-                Text(entry.message)
-                    .font(family == .systemSmall ? .body : .title3)
-                    .fontWeight(.semibold)
-                    .foregroundColor(Color("TextPrimary"))
-                    .multilineTextAlignment(.center)
-                    .lineLimit(family == .systemSmall ? 2 : 3)
-
-                if entry.count > 0 {
-                    Text("\(entry.count)")
-                        .font(.caption)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color("AccentColor").opacity(0.2))
-                        .foregroundColor(Color("AccentColor"))
-                        .cornerRadius(8)
-                }
-
-                if family != .systemSmall {
-                    Text(entry.date, style: .time)
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-            }
-            .padding()
-        }
-    }
-}
-
-@main
-struct HelloWidget: Widget {
-    let kind: String = "HelloWidget"
-
-    var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: Provider()) { entry in
-            HelloWidgetView(entry: entry)
-        }
-        .configurationDisplayName("Hello Widget")
-        .description("Displays messages from your app")
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
-    }
-}
-
-struct HelloWidget_Previews: PreviewProvider {
-    static var previews: some View {
-        HelloWidgetView(entry: SimpleEntry(
-            date: Date(),
-            message: "Preview Message",
-            count: 42
-        ))
-        .previewContext(WidgetPreviewContext(family: .systemSmall))
-    }
-}
-```
-
-## Step 4: Create Runtime API
-
-Create `targets/hello-widget/index.ts`:
+**`index.ts`** — Pre-configured target instance you can import directly:
 
 ```typescript
 import { createTarget } from 'expo-targets';
 
 export const helloWidget = createTarget('HelloWidget');
-
-export interface HelloWidgetData {
-  message: string;
-  count?: number;
-}
 ```
 
-## Step 5: Use in Your App
+**`ios/Widget.swift`** — The complete SwiftUI widget (see [full code below](#complete-widget-swift-code)).
 
-In your main app (`App.tsx`):
+### ⚠️ After Running create-target
+
+The CLI generates placeholder App Group IDs. **You must update them to match your `app.json`:**
+
+1. Open `targets/hello-widget/expo-target.config.json`
+2. Change `"appGroup": "group.com.yourcompany.yourapp"` to match your `app.json`
+3. Open `targets/hello-widget/ios/Widget.swift`
+4. Find `let appGroup = "YOUR_APP_GROUP_HERE"` and update it
+
+### Naming Conventions
+
+All these names must match exactly (except the folder name, which is just organizational):
+
+| Location            | Format              | Example                            | Notes                                 |
+| ------------------- | ------------------- | ---------------------------------- | ------------------------------------- |
+| Target folder       | kebab-case          | `targets/hello-widget/`            | Just for organization                 |
+| Config `name` field | PascalCase          | `"name": "HelloWidget"`            | **The canonical identifier**          |
+| Swift `kind`        | Same as config name | `let kind: String = "HelloWidget"` | Must match config `name` exactly      |
+| JavaScript usage    | Same as config name | `createTarget('HelloWidget')`      | Must match config `name` exactly      |
+| `index.ts` export   | camelCase           | `export const helloWidget = ...`   | Just for convenience, can be anything |
+
+**Critical:** The config `name` field, Swift `kind`, and `createTarget()` argument must all match exactly. If they don't, data sharing will fail silently.
+
+> **Note:** For React Native extensions (share, action, clip, messages), pass your component as the second argument to `createTarget()`. See [React Native Extensions](./react-native-extensions.md#naming-conventions) for details.
+
+## Step 4: Build & Run
+
+> **What does `prebuild` do?**
+>
+> `npx expo prebuild` generates the native `ios/` and `android/` folders from your Expo config. Run this whenever you:
+>
+> - Add or modify targets
+> - Change `app.json` configuration
+> - Update target configuration files
+
+> **Note:** This requires `npx expo run:ios` (development builds). Does not work with Expo Go.
+
+```bash
+npx expo prebuild
+npx expo run:ios
+```
+
+## Step 5: Add the Widget to Home Screen
+
+1. Long press on the home screen
+2. Tap the **+** button
+3. Search for your app name
+4. Select a widget size and tap **Add Widget**
+
+🎉 **Your widget is now on the home screen!**
+
+---
+
+## Update Your Widget from React Native
+
+Open `App.tsx` and add:
 
 ```typescript
-import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import React from 'react';
+import { View, Button, StyleSheet } from 'react-native';
+
+// Option A: Import the generated target instance (recommended)
 import { helloWidget } from './targets/hello-widget';
-import type { HelloWidgetData } from './targets/hello-widget';
 
-export default function App() {
-  const [message, setMessage] = useState('');
-  const [count, setCount] = useState(0);
+// Option B: Create your own instance
+// import { createTarget } from 'expo-targets';
+// const helloWidget = createTarget('HelloWidget');
 
+function App() {
   const updateWidget = () => {
-    if (!message.trim()) {
-      Alert.alert('Error', 'Please enter a message');
-      return;
-    }
-
-    // Update widget data
-    helloWidget.set('message', message);
-    helloWidget.set('count', count);
+    helloWidget.setData({
+      message: 'Hello from React Native!',
+    });
     helloWidget.refresh();
-
-    Alert.alert('Success', 'Widget updated!');
-    setMessage('');
-  };
-
-  const updateWidgetTypeSafe = () => {
-    const data: HelloWidgetData = {
-      message: message || 'Hello Widget!',
-      count: count,
-    };
-
-    helloWidget.setData(data);
-    helloWidget.refresh();
-
-    Alert.alert('Success', 'Widget updated!');
-  };
-
-  const readWidgetData = () => {
-    const msg = helloWidget.get('message');
-    const data = helloWidget.getData<HelloWidgetData>();
-
-    Alert.alert('Widget Data',
-      `Message: ${msg}\nFull data: ${JSON.stringify(data, null, 2)}`
-    );
-  };
-
-  const clearWidget = () => {
-    helloWidget.clear();
-    helloWidget.refresh();
-    Alert.alert('Success', 'Widget cleared!');
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Hello Widget Demo</Text>
-
-      <View style={styles.section}>
-        <Text style={styles.label}>Message:</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter message for widget"
-          value={message}
-          onChangeText={setMessage}
-        />
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.label}>Count: {count}</Text>
-        <View style={styles.row}>
-          <Button title="-" onPress={() => setCount(Math.max(0, count - 1))} />
-          <Button title="+" onPress={() => setCount(count + 1)} />
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <Button title="Update Widget" onPress={updateWidget} />
-      </View>
-
-      <View style={styles.section}>
-        <Button
-          title="Update (Type-Safe)"
-          onPress={updateWidgetTypeSafe}
-          color="#007AFF"
-        />
-      </View>
-
-      <View style={styles.section}>
-        <Button
-          title="Read Data"
-          onPress={readWidgetData}
-          color="#34C759"
-        />
-      </View>
-
-      <View style={styles.section}>
-        <Button
-          title="Clear Widget"
-          onPress={clearWidget}
-          color="#FF3B30"
-        />
-      </View>
+      <Button title="Update Widget" onPress={updateWidget} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    padding: 20,
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 32,
-  },
-  section: {
-    marginVertical: 12,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-  },
-  row: {
-    flexDirection: 'row',
-    gap: 12,
-  },
+  container: { flex: 1, justifyContent: 'center', padding: 20 },
 });
+
+export default App;
 ```
 
-### API Methods
+Tap the button, and your widget updates instantly.
 
-```typescript
-// Storage methods
-helloWidget.set(key: string, value: any): void
-helloWidget.get<T>(key: string): T | null
-helloWidget.remove(key: string): void
-helloWidget.clear(): void
+> **Which import style should I use?**
+>
+> - **Import from `./targets/hello-widget`** — Recommended. The generated `index.ts` is pre-configured with the correct name and can include typed helpers.
+> - **Create with `createTarget()`** — Use when you need the target instance outside the targets folder, or want more control.
+>
+> Both approaches work identically — they create the same underlying target instance.
 
-// Batch operations
-helloWidget.setData(data: Record<string, any>): void
-helloWidget.getData<T>(): T
+---
 
-// Lifecycle
-helloWidget.refresh(): void
+## Complete Widget Swift Code
+
+Here's the full `Widget.swift` generated by `create-target`. This is a complete, working SwiftUI widget:
+
+```swift
+import WidgetKit
+import SwiftUI
+
+// Data structure for timeline entries
+struct SimpleEntry: TimelineEntry {
+    let date: Date
+    let message: String
+}
+
+// Provides timeline data to the widget
+struct Provider: TimelineProvider {
+    // ⚠️ IMPORTANT: This must match your app.json App Group ID exactly
+    let appGroup = "group.com.yourcompany.myapp"
+
+    // Placeholder shown while widget loads
+    func placeholder(in context: Context) -> SimpleEntry {
+        SimpleEntry(date: Date(), message: "Loading...")
+    }
+
+    // Snapshot for widget gallery preview
+    func getSnapshot(in context: Context, completion: @escaping (SimpleEntry) -> ()) {
+        let entry = SimpleEntry(date: Date(), message: loadMessage())
+        completion(entry)
+    }
+
+    // Provides timeline of entries for the widget
+    func getTimeline(in context: Context, completion: @escaping (Timeline<SimpleEntry>) -> ()) {
+        let entry = SimpleEntry(date: Date(), message: loadMessage())
+        // Refresh every 15 minutes (iOS may adjust this)
+        let nextUpdate = Calendar.current.date(byAdding: .minute, value: 15, to: Date())!
+        let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
+        completion(timeline)
+    }
+
+    // Load data from shared App Group storage
+    private func loadMessage() -> String {
+        let defaults = UserDefaults(suiteName: appGroup)
+        return defaults?.string(forKey: "message") ?? "No message yet"
+    }
+}
+
+// The widget's SwiftUI view
+struct WidgetView: View {
+    var entry: Provider.Entry
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "star.fill")
+                .font(.system(size: 24))
+                .foregroundColor(.blue)
+
+            Text(entry.message)
+                .font(.body)
+                .multilineTextAlignment(.center)
+        }
+        .padding()
+    }
+}
+
+// Widget configuration
+@main
+struct HelloWidget: Widget {
+    // ⚠️ IMPORTANT: This must match the "name" field in expo-target.config.json
+    let kind: String = "HelloWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: Provider()) { entry in
+            WidgetView(entry: entry)
+        }
+        .configurationDisplayName("Hello Widget")
+        .description("A simple message widget")
+        .supportedFamilies([.systemSmall, .systemMedium])
+    }
+}
 ```
 
-## Step 6: Build and Deploy
+### Customizing Your Widget
 
-### Generate Native Project
+**Change the appearance:**
 
-```bash
-npx expo prebuild -p ios --clean
-```
+- Edit the `WidgetView` struct to modify layout, colors, and fonts
+- Use SwiftUI views like `Text`, `Image`, `VStack`, `HStack`, `ZStack`
+- Reference colors defined in your config: `Color("AccentColor")`
 
-Expected output:
+**Change supported sizes:**
 
-```
-[expo-targets] Found 1 target(s)
-[expo-targets] Processing hello-widget: type=widget, name=HelloWidget
-[expo-targets] Successfully configured HelloWidget target
-```
+- Modify `.supportedFamilies([...])` to include `.systemSmall`, `.systemMedium`, `.systemLarge`
 
-### Build in Xcode
+**Read different data:**
 
-Open workspace:
+- Add more keys in `loadMessage()` using `defaults?.string(forKey: "yourKey")`
+- For complex data, use `defaults?.data(forKey: "key")` and decode JSON
 
-```bash
-open ios/YourApp.xcworkspace
-```
+**Add more data fields:**
 
-In Xcode:
+- Add properties to `SimpleEntry`
+- Load them in `Provider`
+- Display them in `WidgetView`
 
-1. Select your main app scheme
-2. Choose a device or simulator (iOS 14+)
-3. Click **Run** (Cmd+R)
-
-### Verify Target
-
-In Xcode Project Navigator:
-
-- See `HelloWidget` target
-- Check `HelloWidget` folder contains `Widget.swift`, `Info.plist`
-- Verify `Assets.xcassets` contains color sets
-
-### Add Widget to Home Screen
-
-Once app is running:
-
-1. **Long press** on home screen
-2. **Tap "+"** button (top left)
-3. **Search** for "Hello Widget"
-4. **Select size** (Small, Medium, or Large)
-5. **Tap "Add Widget"**
-6. **Done**
-
-### Test Updates
-
-1. Open your app
-2. Enter a message and count
-3. Tap "Update Widget"
-4. Go to home screen → widget updates immediately
+---
 
 ## Troubleshooting
 
-### Widget not appearing?
+### Widget doesn't appear in picker?
 
-**Solution:**
+**Error:** Widget not showing when you tap + on home screen
 
-1. Run `npx expo prebuild -p ios --clean`
-2. Open Xcode → Check widget target exists
-3. Verify `Info.plist` in `targets/hello-widget/ios/`
-4. Clean build folder (Cmd+Shift+K)
+**Solutions:**
 
-### Widget not updating?
+1. Run `npx expo prebuild` (regenerates native projects)
+2. Check Xcode that the target exists: Open `.xcworkspace` → Project Navigator should show your widget target
+3. Clean build folder: **Product → Clean Build Folder** (⇧⌘K)
+4. Delete the app from simulator and rebuild
 
-**Solution:**
+### Widget shows "No message yet" after calling setData?
 
-1. Verify App Group IDs match exactly:
-   ```json
-   // app.json
-   "entitlements": {
-     "com.apple.security.application-groups": ["group.com.yourcompany.myapp"]
-   }
-   ```
-   ```json
-   // expo-target.config.json
-   "appGroup": "group.com.yourcompany.myapp"
-   ```
-   ```swift
-   // Widget.swift
-   UserDefaults(suiteName: "group.com.yourcompany.myapp")
-   ```
-2. Call `helloWidget.refresh()` after setting data
-3. Test on physical device (simulators cache aggressively)
-4. Force reload: Remove widget and re-add
+**Error:** Data isn't reaching the widget
+
+**Checklist — App Group IDs must match exactly in all three places:**
+
+```
+app.json:                    "group.com.yourcompany.myapp"
+expo-target.config.json:     "group.com.yourcompany.myapp"
+Widget.swift (appGroup):     "group.com.yourcompany.myapp"
+```
+
+Also verify:
+
+- You're calling `widget.refresh()` after `setData()`
+- Test on a physical device (simulators cache aggressively)
+- The `kind` in Swift matches the `name` in config
 
 ### Build errors?
 
-**"No such module 'WidgetKit'":**
+**Error:** `No such module 'WidgetKit'`
 
-- Check deployment target is iOS 14.0+
-- Verify `WidgetKit.framework` in Build Phases
+**Solution:** Your deployment target may be too low. Widgets require iOS 14+:
 
-**"Cannot find type 'TimelineProvider'":**
+```json
+{
+  "ios": {
+    "deploymentTarget": "14.0"
+  }
+}
+```
 
-- Add `import WidgetKit` to Swift file
-- Check Swift version in build settings (5.0+)
+**Error:** `Multiple commands produce...` or signing errors
 
-**Generic build failures:**
+**Solution:**
 
-1. Clean: Product → Clean Build Folder (Cmd+Shift+K)
-2. Delete derived data: Xcode → Preferences → Locations
-3. Re-prebuild: `rm -rf ios/ && npx expo prebuild -p ios --clean`
+1. Delete `ios/` folder completely
+2. Re-run `npx expo prebuild`
+3. If still failing, open Xcode and check **Signing & Capabilities** for each target
+
+### Common Error Messages
+
+| Error                                           | Cause                | Fix                                              |
+| ----------------------------------------------- | -------------------- | ------------------------------------------------ |
+| `Target 'X' not found`                          | Target name mismatch | Ensure `createTarget('X')` matches config `name` |
+| `UserDefaults suiteName is nil`                 | Invalid App Group ID | Check App Group starts with `group.`             |
+| `Widget extension has conflicting provisioning` | Signing mismatch     | Re-run prebuild or check Xcode signing settings  |
+
+---
 
 ## Next Steps
 
-### Create More Targets
+- **[Configuration Reference](./configuration.md)** — All configuration options
+- **[API Reference](./api.md)** — Complete JavaScript/TypeScript API
+- **[React Native Extensions](./react-native-extensions.md)** — Build share/action extensions with React Native
+- **[Examples](../apps/)** — Working example apps for every extension type
+
+### Try Other Extension Types
 
 ```bash
 npx create-target
 ```
 
-Try other target types:
+Choose from:
 
-- **App Clip**: Lightweight app experiences
-- **Share Extension**: Share content to your app
-- **iMessage Stickers**: Custom sticker packs
+- **App Clip** — Lightweight app experiences
+- **Share Extension** — Accept shared content from other apps
+- **iMessage Stickers** — Custom sticker packs
+- **Action Extension** — Process content in place
 
-### Advanced Features
+---
 
-- Multiple widget sizes with size-specific views
-- Network requests in timeline provider
-- Complex data with JSON encoding
-- Widget configuration (IntentConfiguration)
-- Interactive buttons (iOS 17+)
+## Workflows: Managed vs Bare
 
-### Additional Resources
+### Expo Managed (Recommended)
 
-- [API Reference](./api-reference.md)
-- [Config Reference](./config-reference.md)
-- [Example Apps](../apps/README.md) - Complete examples organized by theme and workflow
+Your `ios/` folder is generated by Expo and not committed to git.
 
-**Recommended Examples:**
-- **Getting Started**: [`widgets-showcase`](../apps/widgets-showcase) - Start with Hello Widget
-- **Extensions**: [`extensions-showcase`](../apps/extensions-showcase) - React Native extensions
-- **Native Code**: [`native-extensions-showcase`](../apps/native-extensions-showcase) - Pure Swift examples
-- **Bare RN**: [`bare-rn-widgets`](../apps/bare-rn-widgets) - Adding to existing projects
+```bash
+npx expo prebuild   # Generates ios/ folder
+npx expo run:ios    # Builds and runs
+```
 
-Congratulations! You've successfully created an iOS widget with expo-targets. 🎉
+**Use this if:**
+
+- Starting a new project
+- Your `ios/` folder is in `.gitignore`
+- You run `expo prebuild` regularly
+- You don't have custom native code modifications
+
+### Bare React Native
+
+Your `ios/` folder is committed to git and you maintain it manually.
+
+```bash
+npx expo-targets sync       # Adds targets to existing ios/
+cd ios && pod install
+npx react-native run-ios    # Or: npx expo run:ios
+```
+
+**Use this if:**
+
+- You have an existing React Native project
+- Your `ios/` folder has custom native modifications
+- You can't use `expo prebuild` (it would overwrite your changes)
+
+> **Tip:** See [bare-rn-widgets](../apps/bare-rn-widgets/) and [bare-rn-share](../apps/bare-rn-share/) for complete examples.

@@ -1,35 +1,25 @@
 # expo-targets
 
-Add iOS widgets, App Clips, iMessage stickers, share extensions, and other native extensions to your Expo app.
+Add **iOS widgets**, **App Clips**, **iMessage stickers**, and **share extensions** to your Expo app — no native experience required.
 
-> **Status**: Production-ready for iOS. Android widgets available (Glance + RemoteViews).
-
-## Features
-
-- 🎯 **Multiple Target Types**: Widgets, App Clips, iMessage stickers, share extensions
-- 📦 **Simple JSON Config**: Define targets with `expo-target.config.json`
-- 🔄 **Data Sharing**: Built-in storage for communication between app and extensions
-- ⚛️ **React Native Support**: Optional RN rendering in share/action/clip extensions
-- 🎨 **Asset Management**: Automatic color and image asset generation
-- 🚀 **CLI Tool**: Scaffold new targets with `npx create-target`
-- 🔧 **Xcode Integration**: Full Xcode project manipulation for seamless native builds
+> **⚠️ Important:** Requires development builds (`npx expo run:ios`). Does not work with Expo Go.
+>
+> **Prerequisites:** macOS, Xcode 14+, Expo SDK 50+, iOS 14+. [Full requirements →](./docs/getting-started.md#prerequisites)
 
 ## Quick Start
 
-### Installation
+### 1. Install
 
 ```bash
-bun add expo-targets
-# or npm install expo-targets
+npm install expo-targets
 ```
 
-### 1. Configure App Groups
-
-Add App Groups to `app.json` for data sharing between app and extensions:
+### 2. Configure `app.json`
 
 ```json
 {
   "expo": {
+    "plugins": ["expo-targets"],
     "ios": {
       "bundleIdentifier": "com.yourcompany.yourapp",
       "entitlements": {
@@ -37,394 +27,199 @@ Add App Groups to `app.json` for data sharing between app and extensions:
           "group.com.yourcompany.yourapp"
         ]
       }
-    },
-    "plugins": ["expo-targets"]
+    }
   }
 }
 ```
 
-### 2. Create a Widget Target
+> **Why App Groups?** App Groups enable data sharing between your main app and extensions. The ID must start with `group.` — convention is `group.{your.bundle.identifier}`.
 
-Use the CLI to scaffold:
+### 3. Create a Widget
 
 ```bash
 npx create-target
+# Choose: Widget → my-widget → iOS
 ```
 
-Or manually create `targets/my-widget/expo-target.config.json`:
+This creates:
 
-```json
-{
-  "type": "widget",
-  "name": "MyWidget",
-  "displayName": "My Widget",
-  "platforms": ["ios"],
-  "appGroup": "group.com.yourcompany.yourapp",
-  "ios": {
-    "deploymentTarget": "14.0",
-    "colors": {
-      "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" },
-      "BackgroundColor": { "light": "#FFFFFF", "dark": "#1C1C1E" }
-    }
-  }
-}
+```
+targets/my-widget/
+├── expo-target.config.json   # Widget configuration
+├── index.ts                  # Pre-configured target instance
+└── ios/
+    └── Widget.swift          # SwiftUI widget code
 ```
 
-Create `targets/my-widget/ios/Widget.swift`:
-
-```swift
-import WidgetKit
-import SwiftUI
-
-@main
-struct MyWidget: Widget {
-    let kind: String = "MyWidget"
-
-    var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: Provider()) { entry in
-            WidgetView(entry: entry)
-        }
-        .configurationDisplayName("My Widget")
-        .description("A simple widget")
-        .supportedFamilies([.systemSmall, .systemMedium])
-    }
-}
-
-struct WidgetView: View {
-    var entry: Provider.Entry
-
-    var body: some View {
-        VStack {
-            Text(entry.message)
-                .foregroundColor(Color("AccentColor"))
-        }
-        .containerBackground(Color("BackgroundColor"), for: .widget)
-    }
-}
-
-struct Provider: TimelineProvider {
-    let appGroup = "group.com.yourcompany.yourapp"
-
-    func placeholder(in context: Context) -> SimpleEntry {
-        SimpleEntry(date: Date(), message: "Loading...")
-    }
-
-    func getSnapshot(in context: Context, completion: @escaping (SimpleEntry) -> ()) {
-        completion(SimpleEntry(date: Date(), message: "Snapshot"))
-    }
-
-    func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> ()) {
-        let defaults = UserDefaults(suiteName: appGroup)
-        let message = defaults?.string(forKey: "message") ?? "No data"
-        let entry = SimpleEntry(date: Date(), message: message)
-
-        let nextUpdate = Calendar.current.date(byAdding: .minute, value: 15, to: Date())!
-        let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
-        completion(timeline)
-    }
-}
-
-struct SimpleEntry: TimelineEntry {
-    let date: Date
-    let message: String
-}
-```
-
-### 3. Use in Your App
-
-Create `targets/my-widget/index.ts`:
-
-```typescript
-import { createTarget } from 'expo-targets';
-
-export const myWidget = createTarget('MyWidget');
-```
-
-Import and use in your app:
-
-```typescript
-import { myWidget } from './targets/my-widget';
-
-function updateWidget() {
-  myWidget.setData({ message: 'Hello Widget!' });
-  myWidget.refresh();
-}
-```
-
-### 4. Build Your App
-
-**Expo Managed Workflow (CNG)**:
+### 4. Build & Run
 
 ```bash
-npx expo prebuild -p ios --clean
+npx expo prebuild
 npx expo run:ios
 ```
 
-**Bare React Native**:
+> **Building a Share/Action Extension with React Native?** You'll also need to configure Metro. See [React Native Extensions](./docs/react-native-extensions.md#4-configure-metro).
+
+### 5. Update from Your App
+
+```typescript
+// Option A: Import the generated target instance
+import { myWidget } from './targets/my-widget';
+
+myWidget.setData({ message: 'Hello from React Native!' });
+myWidget.refresh();
+
+// Option B: Create your own instance
+import { createTarget } from 'expo-targets';
+
+const myWidget = createTarget('MyWidget'); // Must match config "name" field
+myWidget.setData({ message: 'Hello!' });
+myWidget.refresh();
+```
+
+🎉 **That's it!** Long-press your home screen, tap **+**, search for your app, and add the widget.
+
+---
+
+## Supported Extensions
+
+| Type                   | iOS | Android | Description             |
+| ---------------------- | --- | ------- | ----------------------- |
+| `widget`               | ✅  | ✅      | Home screen widgets     |
+| `clip`                 | ✅  | —       | App Clips               |
+| `stickers`             | ✅  | —       | iMessage sticker packs  |
+| `messages`             | ✅  | —       | iMessage apps           |
+| `share`                | ✅  | 🔜      | Share extensions        |
+| `action`               | ✅  | 🔜      | Action extensions       |
+| `safari`               | 📋  | —       | Safari web extensions   |
+| `notification-content` | 📋  | 🔜      | Rich notification UI    |
+| `notification-service` | 📋  | 🔜      | Notification processing |
+| `intent`               | 📋  | —       | Siri intents            |
+| `intent-ui`            | 📋  | —       | Siri intent UI          |
+
+**Legend:** ✅ Production ready · 📋 Config-only\* · 🔜 Planned · — Not applicable
+
+> \*Config-only types generate the Xcode target structure but require you to write all Swift code yourself. See [Configuration → Extension Types](./docs/configuration.md#extension-types-reference).
+
+---
+
+## How It Works
+
+expo-targets uses **App Groups** to share data between your app and extensions:
+
+```
+┌─────────────────┐        ┌─────────────────┐
+│   Your App      │        │   Widget        │
+│                 │        │                 │
+│  widget.set()   │───────▶│  UserDefaults   │
+│  widget.refresh()        │  reads data     │
+└─────────────────┘        └─────────────────┘
+```
+
+Your JavaScript code writes to shared storage, and your Swift widget reads from it. Simple.
+
+---
+
+## Examples
+
+Clone the repo and explore working examples:
 
 ```bash
-npx expo-targets sync
-cd ios && pod install
-npx react-native run-ios
+git clone https://github.com/csark0812/expo-targets.git
+cd expo-targets/apps/widgets-showcase
+npm install && npx expo run:ios
 ```
+
+| Example                                           | What it shows                          |
+| ------------------------------------------------- | -------------------------------------- |
+| [widgets-showcase](./apps/widgets-showcase)       | Basic to advanced widgets              |
+| [extensions-showcase](./apps/extensions-showcase) | React Native share/action extensions   |
+| [clips-and-stickers](./apps/clips-and-stickers)   | App Clips + iMessage stickers          |
+| [bare-rn-widgets](./apps/bare-rn-widgets)         | Adding widgets to existing RN projects |
+
+See [apps/README.md](./apps/README.md) for the full list.
+
+---
+
+## Documentation
+
+- **[Getting Started](./docs/getting-started.md)** — Build your first widget in 5 minutes
+- **[Configuration](./docs/configuration.md)** — All config options explained
+- **[API Reference](./docs/api.md)** — JavaScript/TypeScript API
+- **[React Native Extensions](./docs/react-native-extensions.md)** — Using RN in share/action extensions
+
+---
 
 ## Workflows
 
 ### Expo Managed (Recommended)
 
-Uses Continuous Native Generation (CNG) - `ios/` directory is generated from config:
+Best for most projects. Expo manages your native `ios/` folder via prebuild:
 
 ```bash
-npm install expo-targets
-npx create-target          # Create a new target
-npx expo prebuild --clean  # Generate native projects
-npx expo run:ios           # Build and run
+npx expo prebuild
+npx expo run:ios
 ```
 
-**Best for**: New projects, teams preferring declarative config, EAS Build users
+Use this if:
+
+- Starting a new project
+- Your `ios/` folder is generated (not in git)
+- You use `expo prebuild` regularly
 
 ### Bare React Native
 
-Keep your manually-managed `ios/` directory and sync targets into it:
+For existing projects with a custom `ios/` folder you maintain manually:
 
 ```bash
-npm install expo-targets
-npx create-target          # Create a new target
-npx expo-targets sync      # Sync targets to Xcode
-cd ios && pod install      # Install dependencies
-npx react-native run-ios   # Build and run
+npx expo-targets sync    # Add targets to existing ios/ folder
+cd ios && pod install
+npx react-native run-ios
 ```
 
-**Best for**: Existing bare RN projects, teams needing manual Xcode control
+Use this if:
 
-## Architecture: Reference-in-Place
+- You have an existing React Native project with native modifications
+- Your `ios/` folder is committed to git
+- You can't use `expo prebuild` (it would overwrite your changes)
 
-expo-targets uses a **reference-in-place** architecture for native code:
+---
 
-### File Structure
-
-```
-targets/my-widget/
-├── expo-target.config.json   [Target configuration]
-├── index.ts                  [JS/TS runtime code]
-├── ios/
-│   └── Widget.swift          [Swift source - referenced in place]
-└── ios/build/                [Generated artifacts - git ignored]
-    ├── Info.plist            [Generated from config]
-    ├── Assets.xcassets/      [Generated colors & assets]
-    └── *.entitlements        [Generated entitlements]
-```
-
-### Key Benefits
-
-1. **Single Source of Truth**: Swift files live in `targets/`, not copied to `ios/`
-2. **Edit Anywhere**: Change files in Xcode or VS Code - same location
-3. **Clean Git History**: Only track source files, not generated copies
-4. **Bare RN Compatible**: Sync CLI enables usage without full CNG workflow
-
-### Xcode Integration
-
-Files appear in virtual `expo:targets` group in Xcode navigator:
-
-```
-Xcode Project
-├── YourApp
-├── YourAppTests
-└── expo:targets/              [Virtual group]
-    ├── MyWidget/
-    │   ├── Widget.swift       [→ targets/my-widget/ios/Widget.swift]
-    │   ├── Info.plist         [→ targets/my-widget/ios/build/Info.plist]
-    │   └── Assets.xcassets/   [→ targets/my-widget/ios/build/Assets.xcassets]
-    └── MyClip/
-        └── ...
-```
-
-
-## Supported Target Types
-
-| Type                   | iOS | Android | Description            |
-| ---------------------- | --- | ------- | ---------------------- |
-| `widget`               | ✅  | ✅      | Home screen widgets    |
-| `clip`                 | ✅  | —       | App Clips              |
-| `stickers`             | ✅  | —       | iMessage sticker packs |
-| `messages`             | ✅  | —       | iMessage apps          |
-| `share`                | ✅  | 📝      | Share extensions       |
-| `action`               | ✅  | 📝      | Action extensions      |
-| `intent`               | 📋  | —       | Siri intents           |
-| `notification-content` | 📋  | 📝      | Notification content   |
-| `notification-service` | 📋  | 📝      | Notification service   |
-| `safari`               | 📋  | —       | Safari extensions      |
-
-✅ Production | 📋 Config-only | 📝 Planned | — Not applicable
-
-## API Reference
-
-### Target Instance
+## API at a Glance
 
 ```typescript
-import { createTarget } from 'expo-targets';
+import { createTarget, refreshAllTargets } from 'expo-targets';
 
-const widget = createTarget('WidgetName');
+// Create a target instance
+const widget = createTarget('MyWidget');
 
-// Storage methods
-widget.set(key: string, value: any): void
-widget.get<T>(key: string): T | null
-widget.remove(key: string): void
-widget.clear(): void
-
-// Batch operations
-widget.setData(data: Record<string, any>): void
-widget.getData<T>(): T
+// Storage
+widget.set('key', value); // Set a single value
+widget.get<T>('key'); // Get a value
+widget.setData({ key: value }); // Set multiple values
+widget.getData<T>(); // Get all data
+widget.clear(); // Clear all data
 
 // Lifecycle
-widget.refresh(): void  // Refresh this specific target
+widget.refresh(); // Refresh this widget
+refreshAllTargets(); // Refresh all widgets
 ```
 
-### Utility Functions
+For share/action extensions:
 
 ```typescript
-import {
-  refreshAllTargets,
-  clearSharedData,
-  close,
-  openHostApp,
-  getSharedData,
-} from 'expo-targets';
+import { close, openHostApp, getSharedData } from 'expo-targets';
 
-// Refresh all widgets/controls
-refreshAllTargets();
-
-// Clear all data for an app group
-clearSharedData('group.com.yourapp');
-
-// Extension functions (share, action, clip only)
-close(); // Close extension
-openHostApp('/path'); // Open main app with deep link
 const data = getSharedData(); // Get shared content
+openHostApp('/path'); // Open main app
+close(); // Close extension
 ```
 
-### Storage Class
-
-```typescript
-import { AppGroupStorage } from 'expo-targets';
-
-const storage = new AppGroupStorage('group.com.yourapp');
-
-storage.set(key, value);
-storage.get<T>(key);
-storage.remove(key);
-storage.clear();
-storage.setData(data);
-storage.getData<T>();
-storage.getKeys();
-storage.refresh(targetName?);
-```
-
-## Configuration Reference
-
-### Basic Structure
-
-`targets/{name}/expo-target.config.json`:
-
-```json
-{
-  "type": "widget",
-  "name": "MyWidget",
-  "displayName": "My Widget",
-  "platforms": ["ios"],
-  "appGroup": "group.com.yourapp",
-  "ios": {
-    // iOS-specific config
-  }
-}
-```
-
-### Required Fields
-
-- `type`: Extension type (`widget`, `clip`, `stickers`, `share`, `action`, etc.)
-- `name`: Target identifier (PascalCase recommended)
-- `platforms`: Array of supported platforms (`["ios"]`)
-- `appGroup`: App Group for data sharing (must start with `group.`)
-
-### Optional Fields
-
-- `displayName`: Human-readable name shown in UI
-- `entry`: React Native entry point (for share/action/clip with RN)
-- `excludedPackages`: Expo packages to exclude from RN bundle
-
-### iOS Configuration
-
-```json
-{
-  "ios": {
-    "deploymentTarget": "14.0",
-    "bundleIdentifier": "com.yourapp.widget",
-    "colors": {
-      "AccentColor": "#007AFF",
-      "Background": { "light": "#FFFFFF", "dark": "#000000" }
-    },
-    "images": {
-      "Logo": "./assets/logo.png"
-    },
-    "frameworks": ["CoreLocation", "MapKit"],
-    "entitlements": {
-      "com.apple.developer.networking.wifi-info": true
-    },
-    "infoPlist": {
-      "NSLocationWhenInUseUsageDescription": "Show nearby locations"
-    }
-  }
-}
-```
-
-## Examples
-
-See [apps/README.md](./apps/README.md) for complete examples organized by theme and workflow:
-
-### Quick Links
-
-- **🎯 Widgets**: [`widgets-showcase`](./apps/widgets-showcase) - Basic to advanced widget examples
-- **📤 Extensions**: [`extensions-showcase`](./apps/extensions-showcase) - React Native share/action extensions
-- **⚡ Native**: [`native-extensions-showcase`](./apps/native-extensions-showcase) - Pure Swift extensions with function configs
-- **🎪 All Types**: [`all-targets-demo`](./apps/all-targets-demo) - Comprehensive demo of all 10 target types
-- **🔧 Bare RN**: [`bare-rn-widgets`](./apps/bare-rn-widgets), [`bare-rn-share`](./apps/bare-rn-share) - Bare React Native workflow examples
-
-See [apps/README.md](./apps/README.md) for complete examples and learning paths.
-
-## Documentation
-
-- [Getting Started](./docs/getting-started.md) - Step-by-step guide
-- [API Reference](./docs/api-reference.md) - Complete API documentation
-- [Config Reference](./docs/config-reference.md) - Configuration options
-- [Architecture](./docs/ARCHITECTURE.md) - How it works
-- [Implementation Status](./IMPLEMENTATION_STATUS.md) - What's implemented
-
-## Troubleshooting
-
-### Widget not appearing?
-
-1. Run `npx expo prebuild -p ios --clean`
-2. Check Xcode project for target
-3. Verify `Info.plist` exists in target directory
-
-### Widget not updating?
-
-1. Verify App Group IDs match exactly in:
-   - `app.json` entitlements
-   - `expo-target.config.json` appGroup
-   - Swift code `UserDefaults(suiteName:)`
-2. Call `widget.refresh()` after setting data
-3. Test on physical device (simulators cache aggressively)
-
-### Build errors?
-
-1. Clean build folder: Product → Clean Build Folder (Cmd+Shift+K)
-2. Delete `ios/` and re-run prebuild
-3. Check deployment target is appropriate for extension type
+---
 
 ## Contributing
 
-Contributions welcome! This project is in active development.
+Contributions welcome! This project is actively maintained.
 
 ## License
 
@@ -432,8 +227,4 @@ MIT
 
 ## Credits
 
-Inspired by:
-
-- [@bacons/apple-targets](https://github.com/EvanBacon/expo-apple-targets)
-- [expo-widgets](https://github.com/bittingz/expo-widgets)
-- [expo-share-extension](https://github.com/MaxAst/expo-share-extension)
+Inspired by [@bacons/apple-targets](https://github.com/EvanBacon/expo-apple-targets), [expo-widgets](https://github.com/bittingz/expo-widgets), and [expo-share-extension](https://github.com/MaxAst/expo-share-extension).
