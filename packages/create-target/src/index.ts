@@ -59,85 +59,138 @@ async function main() {
 
   fs.mkdirSync(targetDir, { recursive: true });
 
+  const pascalName = kebabToPascal(response.name);
   const config = generateConfig(
     response.type,
+    response.name,
+    pascalName,
     response.platforms,
     response.useReactNative
   );
-  fs.writeFileSync(path.join(targetDir, 'expo-target.config.js'), config);
+  fs.writeFileSync(path.join(targetDir, 'expo-target.config.json'), config);
 
   if (response.platforms.includes('ios')) {
-    copyTemplate(response.type, 'ios', targetDir);
+    copyTemplate(response.type, 'ios', targetDir, pascalName);
 
     if (response.useReactNative) {
-      const entryFile = path.join(process.cwd(), `index.${response.name}.js`);
-      fs.writeFileSync(entryFile, getReactNativeTemplate(response.type));
-      console.log(`✅ Created entry file: index.${response.name}.js`);
+      const entryFile = path.join(targetDir, 'index.tsx');
+      fs.writeFileSync(
+        entryFile,
+        getReactNativeTemplate(response.type, pascalName)
+      );
+      console.log(`✅ Created entry file: targets/${response.name}/index.tsx`);
       console.log('📝 Remember to add Metro config wrapper to metro.config.js');
     }
   }
 
+  // Generate index.ts with pre-configured target instance
+  const indexTs = `import { createTarget } from 'expo-targets';
+
+export const ${pascalToCamel(pascalName)} = createTarget('${pascalName}');
+`;
+  fs.writeFileSync(path.join(targetDir, 'index.ts'), indexTs);
+
   console.log(`\n✅ Created target at targets/${response.name}`);
+
+  // Post-creation warnings
+  console.log('\n⚠️  Remember to:');
   console.log(
-    'Run `npx expo prebuild -p ios --clean` to generate Xcode project\n'
+    '   1. Update "appGroup" in expo-target.config.json to match your app.json'
   );
+  if (response.type === 'widget') {
+    console.log('   2. Update the App Group ID in ios/Widget.swift to match');
+  }
+  console.log('\nRun `npx expo prebuild` to generate Xcode project\n');
+}
+
+function getDeploymentTarget(type: string): string {
+  const targets: Record<string, string> = {
+    widget: '14.0',
+    clip: '14.0',
+    stickers: '10.0',
+    messages: '14.0',
+    share: '13.0',
+    action: '13.0',
+  };
+  return targets[type] || '14.0';
 }
 
 function generateConfig(
   type: string,
+  kebabName: string,
+  pascalName: string,
   platforms: string[],
   useReactNative?: boolean
 ): string {
-  const iosConfig = platforms.includes('ios')
-    ? `
-    ios: {
-      deploymentTarget: '18.0',${
-        useReactNative
-          ? `
-      useReactNative: true,
-      excludedPackages: ['expo-updates', 'expo-dev-client'],`
-          : ''
-      }
-    },`
-    : '';
+  const config: any = {
+    type,
+    name: pascalName,
+    displayName: kebabName
+      .split('-')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' '),
+    platforms: platforms,
+    appGroup: 'group.com.yourcompany.yourapp',
+  };
 
-  return `module.exports = {
-  type: '${type}',
-  platforms: {${iosConfig}
-  },
-};
-`;
+  if (platforms.includes('ios')) {
+    config.ios = {
+      deploymentTarget: getDeploymentTarget(type),
+    };
+
+    if (useReactNative) {
+      config.entry = `./targets/${kebabName}/index.tsx`;
+      config.excludedPackages = ['expo-updates', 'expo-dev-client'];
+    }
+  }
+
+  return JSON.stringify(config, null, 2);
 }
 
-function copyTemplate(type: string, platform: string, targetDir: string) {
+function copyTemplate(
+  type: string,
+  platform: string,
+  targetDir: string,
+  pascalName: string
+) {
   const platformDir = path.join(targetDir, platform);
   fs.mkdirSync(platformDir, { recursive: true });
 
-  const templates: Record<string, string> = {
-    widget: `import WidgetKit
+  function getWidgetTemplate(name: string): string {
+    return `import WidgetKit
 import SwiftUI
 
+struct SimpleEntry: TimelineEntry {
+    let date: Date
+    let message: String
+}
+
 struct Provider: TimelineProvider {
+    // ⚠️ IMPORTANT: Update this App Group ID to match your app.json entitlements
+    // Example: "group.com.yourcompany.yourapp"
+    // Must match exactly or data sharing will fail silently
+    let appGroup = "YOUR_APP_GROUP_HERE"
+
     func placeholder(in context: Context) -> SimpleEntry {
         SimpleEntry(date: Date(), message: "Placeholder")
     }
 
     func getSnapshot(in context: Context, completion: @escaping (SimpleEntry) -> ()) {
-        let entry = SimpleEntry(date: Date(), message: "Loading...")
+        let entry = SimpleEntry(date: Date(), message: loadMessage())
         completion(entry)
     }
 
-    func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> ()) {
-        let entry = SimpleEntry(date: Date(), message: "Hello Widget")
+    func getTimeline(in context: Context, completion: @escaping (Timeline<SimpleEntry>) -> ()) {
+        let entry = SimpleEntry(date: Date(), message: loadMessage())
         let nextUpdate = Calendar.current.date(byAdding: .minute, value: 15, to: Date())!
         let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
         completion(timeline)
     }
-}
 
-struct SimpleEntry: TimelineEntry {
-    let date: Date
-    let message: String
+    private func loadMessage() -> String {
+        let defaults = UserDefaults(suiteName: appGroup)
+        return defaults?.string(forKey: "message") ?? "No message yet"
+    }
 }
 
 struct WidgetView: View {
@@ -154,18 +207,23 @@ struct WidgetView: View {
 }
 
 @main
-struct MyWidget: Widget {
-    let kind: String = "MyWidget"
+struct ${name}: Widget {
+    // ⚠️ IMPORTANT: This "kind" must match the "name" field in expo-target.config.json exactly
+    let kind: String = "${name}"
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: Provider()) { entry in
             WidgetView(entry: entry)
         }
-        .configurationDisplayName("My Widget")
+        .configurationDisplayName("${name}")
         .description("A simple widget")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
-}`,
+}`;
+  }
+
+  const templates: Record<string, string | Function> = {
+    widget: getWidgetTemplate,
     clip: `import SwiftUI
 
 @main
@@ -323,7 +381,9 @@ class ActionViewController: UIViewController {
 }`,
   };
 
-  const template = templates[type] || templates.widget;
+  const templateFn = templates[type] || templates.widget;
+  const template =
+    typeof templateFn === 'function' ? templateFn(pascalName) : templateFn;
   let filename = 'Main.swift';
   if (type === 'widget') {
     filename = 'Widget.swift';
@@ -352,15 +412,15 @@ class ActionViewController: UIViewController {
   }
 }
 
-function getReactNativeTemplate(type: string): string {
+function getReactNativeTemplate(type: string, pascalName: string): string {
   return `import { AppRegistry } from 'react-native';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-function ${capitalize(type)}Extension() {
+function ${pascalName}() {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>${capitalize(type)} Extension</Text>
+      <Text style={styles.text}>${pascalName}</Text>
       <Text style={styles.subtitle}>Built with React Native</Text>
     </View>
   );
@@ -384,14 +444,20 @@ const styles = StyleSheet.create({
   },
 });
 
-AppRegistry.registerComponent('${type}Extension', () => ${capitalize(
-    type
-  )}Extension);
+// ⚠️ IMPORTANT: Component name must match the "name" field in expo-target.config.json exactly
+AppRegistry.registerComponent('${pascalName}', () => ${pascalName});
 `;
 }
 
-function capitalize(str: string): string {
-  return str.charAt(0).toUpperCase() + str.slice(1);
+function kebabToPascal(kebab: string): string {
+  return kebab
+    .split('-')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join('');
+}
+
+function pascalToCamel(pascal: string): string {
+  return pascal.charAt(0).toLowerCase() + pascal.slice(1);
 }
 
 main().catch(console.error);
