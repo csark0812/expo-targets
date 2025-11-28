@@ -1,10 +1,10 @@
 # Bare RN Share Extension
 
-Example demonstrating a share extension with React Native UI in a bare React Native workflow.
+Example demonstrating share extensions with React Native UI in a bare React Native workflow — supports both iOS and Android.
 
 ## Overview
 
-This app shows how to create a share extension with React Native UI using expo-targets in an existing bare React Native project.
+This app shows how to create share extensions with React Native UI using expo-targets in an existing bare React Native project. The same code works on both iOS and Android with platform-specific optimizations.
 
 ## Workflow: Bare React Native
 
@@ -12,10 +12,11 @@ This example uses `expo-targets sync` to add the extension target to your existi
 
 ### Setup Steps
 
-1. **Ensure you have an existing iOS project**
+1. **Ensure you have an existing React Native project**
    ```bash
-   # Your project should already have an ios/ directory
-   ls ios/
+   # Your project should already have ios/ and/or android/ directories
+   ls ios/    # For iOS support
+   ls android/  # For Android support
    ```
 
 2. **Install expo-targets**
@@ -33,6 +34,9 @@ This example uses `expo-targets sync` to add the extension target to your existi
              "group.com.test.barernshare"
            ]
          }
+       },
+       "android": {
+         "package": "com.test.barernshare"
        },
        "plugins": ["expo-targets"]
      }
@@ -62,23 +66,27 @@ This example uses `expo-targets sync` to add the extension target to your existi
    });
    ```
 
-7. **Sync targets to Xcode**
+7. **Sync targets to Xcode (iOS)**
    ```bash
    npx expo-targets sync
-   ```
-
-8. **Install CocoaPods dependencies**
-   ```bash
    cd ios
    pod install
    cd ..
    ```
 
-9. **Build in Xcode (Release mode)**
+8. **Build and Run**
+   
+   **iOS (Release mode required):**
    ```bash
    open ios/YourApp.xcworkspace
    # Select Release configuration
    # Build and run
+   ```
+   
+   **Android:**
+   ```bash
+   npx expo run:android
+   # Or open in Android Studio: android/
    ```
 
 ## Key Requirements
@@ -98,15 +106,27 @@ This wrapper:
 - Configures bundling for extensions
 - Sets up proper module resolution
 
-### Release Mode
+### Platform-Specific Notes
 
-**Important:** React Native extensions only work in Release builds, not Debug.
+#### iOS
+
+**Release Mode Required:** React Native extensions only work in Release builds, not Debug.
 
 In Xcode:
 1. Select your scheme
 2. Edit scheme → Run → Build Configuration
 3. Set to **Release**
 4. Build and run
+
+**App Groups:** Required for data sharing between main app and extension.
+
+#### Android
+
+**Works in Debug Mode:** Unlike iOS, Android share activities work in both Debug and Release builds.
+
+**No App Groups Needed:** Android uses SharedPreferences with the app's package name for data sharing.
+
+**Automatic Registration:** The share activity is automatically added to AndroidManifest.xml during prebuild.
 
 ### Entry Point
 

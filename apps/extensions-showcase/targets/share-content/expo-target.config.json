@@ -2,7 +2,7 @@
   "type": "share",
   "name": "ShareContent",
   "displayName": "Share Content",
-  "platforms": ["ios"],
+  "platforms": ["ios", "android"],
   "entry": "./targets/share-content/index.tsx",
   "appGroup": "group.com.test.extensionsshowcase",
   "ios": {

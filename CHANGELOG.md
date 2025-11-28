@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Android Share Extension Support**: Full React Native support for Android share extensions
+  - Share extensions now work on both iOS and Android with the same codebase
+  - Automatic activity registration in AndroidManifest.xml with ACTION_SEND/ACTION_SEND_MULTIPLE intent filters
+  - Support for multiple MIME types (text/plain, image/*, video/*, */*)
+  - ExpoTargetsExtensionModule implementation for Android with `closeExtension()`, `openHostApp()`, and `getSharedData()`
+  - Automatic theme generation for share activities
+  - Source set configuration for React Native share activities
+  - Works in both Debug and Release modes (unlike iOS which requires Release)
+- **Android Action Extension Support**: Action extensions now supported on Android
+- **Comprehensive Documentation**: Added Android-specific documentation for share extensions
+  - Platform-specific considerations and architecture differences
+  - Testing guidelines for Android share sheet
+  - Debugging strategies with adb logcat
+  - Memory considerations
+- **Updated Examples**: `bare-rn-share` and `extensions-showcase` now support both iOS and Android
+- **Tests**: Added comprehensive Android share extension test suite
 - CI/CD workflows with GitHub Actions
 - Automated npm publishing on PR merge
 
