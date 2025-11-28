@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Live Activities support** — iOS 16.1+ Live Activities with Dynamic Island
+  - New `live-activity` target type
+  - Lock Screen and Dynamic Island layouts
+  - ActivityKit integration
+  - Complete Swift template with compact, expanded, and minimal presentations
+  - Comprehensive documentation and example app
 - CI/CD workflows with GitHub Actions
 - Automated npm publishing on PR merge
 
@@ -35,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Supported Target Types (iOS)
 
 - `widget` - Home screen widgets (iOS 14+)
+- `live-activity` - Live Activities & Dynamic Island (iOS 16.1+)
 - `clip` - App Clips (iOS 14+)
 - `stickers` - iMessage sticker packs
 - `share` - Share extensions

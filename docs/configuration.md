@@ -432,6 +432,90 @@ widget.refresh();
 }
 ```
 
+### Live Activity (iOS 16.1+)
+
+Live Activities display real-time information on the Lock Screen and Dynamic Island.
+
+```json
+{
+  "type": "live-activity",
+  "name": "DeliveryTracker",
+  "displayName": "Delivery Tracker",
+  "platforms": ["ios"],
+  "appGroup": "group.com.yourapp",
+  "ios": {
+    "deploymentTarget": "16.1",
+    "colors": {
+      "AccentColor": { "light": "#4CAF50", "dark": "#81C784" },
+      "BackgroundColor": { "light": "#FFFFFF", "dark": "#1C1C1E" }
+    }
+  }
+}
+```
+
+**Main App Configuration** — Enable Live Activities in your `app.json`:
+
+```json
+{
+  "ios": {
+    "infoPlist": {
+      "NSSupportsLiveActivities": true,
+      "NSSupportsLiveActivitiesFrequentUpdates": true
+    }
+  }
+}
+```
+
+**Key Features:**
+
+- **Lock Screen**: Large informative cards with real-time updates
+- **Dynamic Island**: Interactive UI on iPhone 14 Pro+ models
+- **Push Updates**: Support for remote updates via push notifications
+- **Compact/Expanded**: Multiple presentation styles
+
+**Use Cases:**
+
+- Sports scores and game tracking
+- Delivery and ride-sharing status
+- Music playback controls
+- Timer and countdown displays
+- Order status updates
+
+**Swift Implementation** — Live Activities use `ActivityAttributes` to define data:
+
+```swift
+struct DeliveryTrackerAttributes: ActivityAttributes {
+    public struct ContentState: Codable, Hashable {
+        var status: String       // Dynamic: changes during activity
+        var estimatedTime: Date
+    }
+    
+    var orderId: String         // Static: doesn't change
+    var destination: String
+}
+```
+
+**Starting Activities** — Requires native Swift code using ActivityKit:
+
+```swift
+let attributes = DeliveryTrackerAttributes(
+    orderId: "ABC123",
+    destination: "Home"
+)
+let state = DeliveryTrackerAttributes.ContentState(
+    status: "Out for delivery",
+    estimatedTime: Date().addingTimeInterval(1800)
+)
+
+let activity = try Activity<DeliveryTrackerAttributes>.request(
+    attributes: attributes,
+    contentState: state,
+    pushType: nil  // or .token for remote updates
+)
+```
+
+See the [live-activity-demo](../apps/live-activity-demo) example for a complete implementation.
+
 ### Widget (Android)
 
 ```json
@@ -682,29 +766,30 @@ export default function (config: ExpoConfig) {
 
 ## Extension Types Reference
 
-| Type                      | iOS           | Android    | Description             |
-| ------------------------- | ------------- | ---------- | ----------------------- |
-| `widget`                  | ✅ iOS 14+    | ✅ API 26+ | Home screen widgets     |
-| `clip`                    | ✅ iOS 14+    | —          | App Clips               |
-| `stickers`                | ✅ iOS 10+    | —          | iMessage sticker packs  |
-| `messages`                | ✅ iOS 10+    | —          | iMessage apps           |
-| `share`                   | ✅ iOS 8+     | 🔜         | Share extensions        |
-| `action`                  | ✅ iOS 8+     | 🔜         | Action extensions       |
-| `safari`                  | 📋 iOS 15+    | —          | Safari web extensions   |
-| `notification-content`    | 📋 iOS 10+    | 🔜         | Rich notification UI    |
-| `notification-service`    | 📋 iOS 10+    | 🔜         | Notification processing |
-| `intent`                  | 📋 iOS 12+    | —          | Siri intents            |
-| `intent-ui`               | 📋 iOS 12+    | —          | Siri intent UI          |
-| `spotlight`               | 📋 iOS 9+     | —          | Spotlight index         |
-| `bg-download`             | 📋 iOS 7+     | —          | Background downloads    |
-| `quicklook-thumbnail`     | 📋 iOS 11+    | —          | QuickLook thumbnails    |
-| `location-push`           | 📋 iOS 15+    | —          | Location push service   |
-| `credentials-provider`    | 📋 iOS 12+    | —          | Credential provider     |
-| `account-auth`            | 📋 iOS 12.2+  | —          | Account authentication  |
-| `app-intent`              | 📋 iOS 16+    | —          | App intents             |
-| `device-activity-monitor` | 📋 iOS 15+    | —          | Device activity monitor |
-| `matter`                  | 📋 iOS 16.1+  | —          | Matter extensions       |
-| `watch`                   | 📋 watchOS 2+ | —          | Watch app               |
+| Type                      | iOS           | Android    | Description                    |
+| ------------------------- | ------------- | ---------- | ------------------------------ |
+| `widget`                  | ✅ iOS 14+    | ✅ API 26+ | Home screen widgets            |
+| `live-activity`           | ✅ iOS 16.1+  | —          | Live Activities & Dynamic Island |
+| `clip`                    | ✅ iOS 14+    | —          | App Clips                      |
+| `stickers`                | ✅ iOS 10+    | —          | iMessage sticker packs         |
+| `messages`                | ✅ iOS 10+    | —          | iMessage apps                  |
+| `share`                   | ✅ iOS 8+     | 🔜         | Share extensions               |
+| `action`                  | ✅ iOS 8+     | 🔜         | Action extensions              |
+| `safari`                  | 📋 iOS 15+    | —          | Safari web extensions          |
+| `notification-content`    | 📋 iOS 10+    | 🔜         | Rich notification UI           |
+| `notification-service`    | 📋 iOS 10+    | 🔜         | Notification processing        |
+| `intent`                  | 📋 iOS 12+    | —          | Siri intents                   |
+| `intent-ui`               | 📋 iOS 12+    | —          | Siri intent UI                 |
+| `spotlight`               | 📋 iOS 9+     | —          | Spotlight index                |
+| `bg-download`             | 📋 iOS 7+     | —          | Background downloads           |
+| `quicklook-thumbnail`     | 📋 iOS 11+    | —          | QuickLook thumbnails           |
+| `location-push`           | 📋 iOS 15+    | —          | Location push service          |
+| `credentials-provider`    | 📋 iOS 12+    | —          | Credential provider            |
+| `account-auth`            | 📋 iOS 12.2+  | —          | Account authentication         |
+| `app-intent`              | 📋 iOS 16+    | —          | App intents                    |
+| `device-activity-monitor` | 📋 iOS 15+    | —          | Device activity monitor        |
+| `matter`                  | 📋 iOS 16.1+  | —          | Matter extensions              |
+| `watch`                   | 📋 watchOS 2+ | —          | Watch app                      |
 
 **Legend:** ✅ Production ready · 📋 Config-only (bring your own Swift/Kotlin) · 🔜 Planned · — Not applicable
 
@@ -773,14 +858,15 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
 
 ## Recommended Deployment Targets
 
-| Type       | Recommended | Minimum  |
-| ---------- | ----------- | -------- |
-| `widget`   | `"14.0"`    | iOS 14.0 |
-| `clip`     | `"14.0"`    | iOS 14.0 |
-| `stickers` | `"10.0"`    | iOS 10.0 |
-| `messages` | `"14.0"`    | iOS 10.0 |
-| `share`    | `"13.0"`    | iOS 8.0  |
-| `action`   | `"13.0"`    | iOS 8.0  |
+| Type            | Recommended | Minimum   |
+| --------------- | ----------- | --------- |
+| `widget`        | `"14.0"`    | iOS 14.0  |
+| `live-activity` | `"16.1"`    | iOS 16.1  |
+| `clip`          | `"14.0"`    | iOS 14.0  |
+| `stickers`      | `"10.0"`    | iOS 10.0  |
+| `messages`      | `"14.0"`    | iOS 10.0  |
+| `share`         | `"13.0"`    | iOS 8.0   |
+| `action`        | `"13.0"`    | iOS 8.0   |
 
 ---
 

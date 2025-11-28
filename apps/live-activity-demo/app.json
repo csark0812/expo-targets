@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "Live Activity Demo",
+    "slug": "live-activity-demo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "bundleIdentifier": "com.test.liveactivitydemo",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSSupportsLiveActivities": true,
+        "NSSupportsLiveActivitiesFrequentUpdates": true
+      },
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.test.liveactivitydemo"
+        ]
+      }
+    },
+    "plugins": ["expo-targets"],
+    "extra": {
+      "eas": {
+        "projectId": "demo-live-activity"
+      }
+    }
+  }
+}

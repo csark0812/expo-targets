@@ -27,6 +27,21 @@ Three widget examples from basic to advanced:
 
 ---
 
+## 🏝️ Live Activities & Dynamic Island
+
+### [live-activity-demo](./live-activity-demo)
+
+Real-time updates on Lock Screen and Dynamic Island (iOS 16.1+):
+
+- **Score Tracker** — Live score updates with Dynamic Island support
+- **Lock Screen UI** — Rich card layouts on Lock Screen
+- **Dynamic Island Layouts** — Compact, expanded, and minimal presentations
+- **Real-time Updates** — Demonstrates ActivityKit integration
+
+**Best for:** Live Activities, Dynamic Island, real-time information display, iOS 16.1+ features
+
+---
+
 ## 📱 React Native Extensions
 
 ### [extensions-showcase](./extensions-showcase)
@@ -93,15 +108,16 @@ Complete reference with all supported target types:
 
 ## Quick Reference
 
-| Example                    | Extension Types         | UI           | Workflow |
-| -------------------------- | ----------------------- | ------------ | -------- |
-| widgets-showcase           | Widget                  | SwiftUI      | Managed  |
-| extensions-showcase        | Share, Action, Messages | React Native | Managed  |
-| native-extensions-showcase | Share, Action, Clip     | Swift        | Managed  |
-| clips-and-stickers         | Clip, Stickers          | Swift        | Managed  |
-| bare-rn-widgets            | Widget                  | SwiftUI      | Bare RN  |
-| bare-rn-share              | Share                   | React Native | Bare RN  |
-| all-targets-demo           | All types               | Mixed        | Managed  |
+| Example                    | Extension Types         | UI           | Workflow | iOS Ver  |
+| -------------------------- | ----------------------- | ------------ | -------- | -------- |
+| widgets-showcase           | Widget                  | SwiftUI      | Managed  | 14.0+    |
+| live-activity-demo         | Live Activity           | SwiftUI      | Managed  | 16.1+    |
+| extensions-showcase        | Share, Action, Messages | React Native | Managed  | 13.0+    |
+| native-extensions-showcase | Share, Action, Clip     | Swift        | Managed  | 13.0+    |
+| clips-and-stickers         | Clip, Stickers          | Swift        | Managed  | 14.0+    |
+| bare-rn-widgets            | Widget                  | SwiftUI      | Bare RN  | 14.0+    |
+| bare-rn-share              | Share                   | React Native | Bare RN  | 13.0+    |
+| all-targets-demo           | All types               | Mixed        | Managed  | 14.0+    |
 
 ---
 
@@ -165,6 +181,7 @@ npx expo run:ios
 ## Documentation Links
 
 - [Getting Started](../docs/getting-started.md) — Build your first widget
+- [Live Activities Guide](../docs/live-activities.md) — Real-time Lock Screen & Dynamic Island
 - [Configuration](../docs/configuration.md) — All config options
 - [API Reference](../docs/api.md) — JavaScript/TypeScript API
 - [React Native Extensions](../docs/react-native-extensions.md) — RN in extensions
