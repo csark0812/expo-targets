@@ -1,0 +1,35 @@
+package {{PACKAGE_NAME}}.share
+
+import android.os.Bundle
+import com.facebook.react.ReactActivity
+import com.facebook.react.ReactActivityDelegate
+import com.facebook.react.defaults.DefaultReactActivityDelegate
+
+/**
+ * Share Extension Activity for {{TARGET_NAME}}
+ * 
+ * This activity appears in the Android share sheet when users share content
+ * from other apps. It uses React Native to render the share UI.
+ */
+class {{TARGET_NAME}}ShareActivity : ReactActivity() {
+
+    /**
+     * Returns the name of the main component registered from JavaScript.
+     * This must match the name used in createTarget() second parameter.
+     */
+    override fun getMainComponentName(): String = "{{TARGET_NAME}}"
+
+    /**
+     * Returns the instance of the [ReactActivityDelegate]. We use [DefaultReactActivityDelegate]
+     * which allows you to enable New Architecture with a single boolean flag [fabricEnabled]
+     */
+    override fun createReactActivityDelegate(): ReactActivityDelegate =
+        DefaultReactActivityDelegate(this, mainComponentName, fabricEnabled = false)
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        
+        // The intent data is automatically available to the React Native app
+        // through ExpoTargetsExtensionModule.getSharedData()
+    }
+}

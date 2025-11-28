@@ -1,8 +1,8 @@
 {
   "type": "share",
   "name": "ShareExtension",
-  "displayName": "Share Extension",
-  "platforms": ["ios"],
+  "displayName": "Share to My App",
+  "platforms": ["ios", "android"],
   "entry": "./targets/share-extension/src/index.tsx",
   "appGroup": "group.com.test.barernshare",
   "ios": {

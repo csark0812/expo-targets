@@ -4,14 +4,14 @@ Build share extensions, action extensions, App Clips, and iMessage apps using Re
 
 ## Supported Types
 
-| Type       | React Native Support | Notes                    |
-| ---------- | -------------------- | ------------------------ |
-| `share`    | ✅ Full support      | Custom UI for sharing    |
-| `action`   | ✅ Full support      | Process content in place |
-| `clip`     | ✅ Full support      | Lightweight app preview  |
-| `messages` | ✅ Full support      | iMessage app with RN UI  |
-| `widget`   | ❌ SwiftUI only      | iOS uses WidgetKit       |
-| `stickers` | ❌ Native only       | Static image assets      |
+| Type       | iOS React Native | Android React Native | Notes                          |
+| ---------- | ---------------- | -------------------- | ------------------------------ |
+| `share`    | ✅ Full support  | ✅ Full support      | Custom UI for sharing          |
+| `action`   | ✅ Full support  | ✅ Full support      | Process content in place       |
+| `clip`     | ✅ Full support  | — Not applicable     | iOS App Clips only             |
+| `messages` | ✅ Full support  | — Not applicable     | iMessage apps (iOS only)       |
+| `widget`   | ❌ SwiftUI only  | ❌ Native only       | iOS: WidgetKit, Android: Glance |
+| `stickers` | ❌ Native only   | — Not applicable     | iMessage stickers (iOS only)   |
 
 ---
 
@@ -21,7 +21,7 @@ Build share extensions, action extensions, App Clips, and iMessage apps using Re
 
 ```bash
 npx create-target
-# Choose: Share Extension → share-ext → iOS → Yes (Use React Native)
+# Choose: Share Extension → share-ext → iOS/Android → Yes (Use React Native)
 ```
 
 Or manually configure `expo-target.config.json`:
@@ -30,7 +30,7 @@ Or manually configure `expo-target.config.json`:
 {
   "type": "share",
   "name": "ShareExt",
-  "platforms": ["ios"],
+  "platforms": ["ios", "android"],
   "appGroup": "group.com.yourcompany.yourapp",
   "entry": "./targets/share-ext/index.tsx",
   "excludedPackages": ["expo-updates", "expo-dev-client"]
@@ -315,11 +315,72 @@ Reduce bundle size by excluding packages your extension doesn't need:
 
 ---
 
+## Android-Specific Considerations
+
+Share extensions on Android work differently than iOS:
+
+### How Android Share Extensions Work
+
+**Architecture:**
+- No separate extension process (unlike iOS)
+- Uses a standard Activity with intent filters
+- Appears in the system share sheet based on MIME type filters
+- React Native runs in the same process as the main app
+
+**Intent Filters:**
+
+Android share extensions use `ACTION_SEND` and `ACTION_SEND_MULTIPLE` intents. By default, expo-targets configures your share extension to accept:
+- Text/URLs (`text/plain`)
+- Images (`image/*`)
+- Videos (`video/*`)
+- All files (`*/*`)
+
+The share activity is automatically added to your `AndroidManifest.xml` during prebuild.
+
+### Memory Considerations
+
+Android activities have more generous memory limits than iOS extensions (~512MB typical), but:
+- Apps with excessive memory usage may still be killed by the system
+- Users on low-memory devices may experience issues
+- Follow the same best practices: exclude unnecessary packages and keep bundles small
+
+### Testing Android Share Extensions
+
+**From Android Studio:**
+
+1. Run your app: `npx expo run:android`
+2. Open another app (e.g., Chrome, Gallery)
+3. Share content (text, image, etc.)
+4. Your app should appear in the share sheet
+5. View logs: `adb logcat | grep -i ReactNative`
+
+**Debugging Tips:**
+
+- Use `adb logcat` to view logs
+- Share activity runs in the same process, so debugging is easier than iOS
+- Test with different MIME types (text, images, videos)
+- Test with single and multiple items
+
+### Platform-Specific Data
+
+The shared data structure is consistent across platforms, but Android provides additional fields:
+
+```typescript
+const data = getSharedData();
+// Android-specific fields:
+// - data.title: Subject line (from Intent.EXTRA_SUBJECT)
+// - data.videos: Video URIs (when sharing videos)
+```
+
+---
+
 ## Debugging Extensions
 
-Extensions run in a **separate process** with limited debugging capabilities. They **do not connect to Metro** — no hot reloading, no Chrome DevTools.
+### iOS Debugging
 
-### Viewing Console Logs
+iOS extensions run in a **separate process** with limited debugging capabilities. They **do not connect to Metro** — no hot reloading, no Chrome DevTools.
+
+#### Viewing Console Logs
 
 **Via Xcode (Recommended):**
 
@@ -343,7 +404,7 @@ Extensions run in a **separate process** with limited debugging capabilities. Th
 xcrun simctl spawn booted log stream --predicate 'processImagePath contains "YourExtension"'
 ```
 
-### Debugging Strategies
+#### iOS Debugging Strategies
 
 **JavaScript Errors:**
 
@@ -356,6 +417,59 @@ xcrun simctl spawn booted log stream --predicate 'processImagePath contains "You
 - Swift breakpoints work normally in Xcode
 - JavaScript breakpoints do NOT work (no Metro connection)
 - Set breakpoints in Swift bridge code if needed
+
+### Android Debugging
+
+Android share extensions run in the same process as your main app, making debugging easier.
+
+#### Viewing Console Logs
+
+**Via Terminal (Recommended):**
+
+```bash
+# View all React Native logs
+adb logcat | grep -i ReactNative
+
+# Filter by your package name
+adb logcat | grep com.yourcompany.yourapp
+
+# View all logs with colors
+adb logcat -v color
+```
+
+**Via Android Studio:**
+
+1. Run your app: `npx expo run:android`
+2. Open **Logcat** tab (bottom of Android Studio)
+3. Filter by your package name
+4. Share content to trigger the extension
+5. `console.log()` statements appear in Logcat
+
+#### Android Debugging Strategies
+
+**Testing the Share Sheet:**
+
+1. Install your app with share extension
+2. Open another app (Chrome, Gallery, Files, etc.)
+3. Share content (text, image, file)
+4. Your app should appear in the share sheet
+5. Tap your app to open the share extension
+
+**Common Testing Scenarios:**
+
+- Share text from Chrome → tests text handling
+- Share URL from Chrome → tests URL handling  
+- Share single image from Gallery → tests single image
+- Share multiple images from Gallery → tests multiple items
+- Share video → tests video handling
+
+**Metro Connection:**
+
+Unlike iOS, Android share activities CAN connect to Metro in development mode:
+- Hot reloading works
+- Fast refresh works
+- Console logs appear in Metro terminal
+- Remote debugging is possible
 
 ### Common Issues
 

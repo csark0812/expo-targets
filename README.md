@@ -1,10 +1,14 @@
 # expo-targets
 
-Add **iOS widgets**, **App Clips**, **iMessage stickers**, and **share extensions** to your Expo app — no native experience required.
+Add **widgets**, **share extensions**, **App Clips**, and **iMessage stickers** to your Expo app — supports both iOS and Android.
 
-> **⚠️ Important:** Requires development builds (`npx expo run:ios`). Does not work with Expo Go.
+> **⚠️ Important:** Requires development builds (`npx expo run:ios` / `npx expo run:android`). Does not work with Expo Go.
 >
-> **Prerequisites:** macOS, Xcode 14+, Expo SDK 50+, iOS 14+. [Full requirements →](./docs/getting-started.md#prerequisites)
+> **Prerequisites:**
+> - **iOS:** macOS, Xcode 14+, Expo SDK 50+, iOS 14+
+> - **Android:** Android Studio, Expo SDK 50+, Android 5.0+ (API 21+)
+> 
+> [Full requirements →](./docs/getting-started.md#prerequisites)
 
 ## Quick Start
 
@@ -89,8 +93,8 @@ myWidget.refresh();
 | `clip`                 | ✅  | —       | App Clips               |
 | `stickers`             | ✅  | —       | iMessage sticker packs  |
 | `messages`             | ✅  | —       | iMessage apps           |
-| `share`                | ✅  | 🔜      | Share extensions        |
-| `action`               | ✅  | 🔜      | Action extensions       |
+| `share`                | ✅  | ✅      | Share extensions        |
+| `action`               | ✅  | ✅      | Action extensions       |
 | `safari`               | 📋  | —       | Safari web extensions   |
 | `notification-content` | 📋  | 🔜      | Rich notification UI    |
 | `notification-service` | 📋  | 🔜      | Notification processing |
