@@ -1,0 +1,15 @@
+{
+  "type": "live-activity",
+  "name": "WorkoutTracker",
+  "displayName": "Workout Tracker",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.liveactivitydemo",
+  "ios": {
+    "deploymentTarget": "16.1",
+    "colors": {
+      "AccentColor": "#34C759",
+      "Primary": "#34C759",
+      "Secondary": "#8FDC6E"
+    }
+  }
+}

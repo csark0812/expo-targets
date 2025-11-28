@@ -2,6 +2,7 @@ import type { ExpoConfig } from '@expo/config-types';
 
 export type ExtensionType =
   | 'widget'
+  | 'live-activity'
   | 'clip'
   | 'stickers'
   | 'messages'
@@ -64,6 +65,7 @@ export interface StickerPack {
 
 export const TYPE_MINIMUM_DEPLOYMENT_TARGETS: Record<ExtensionType, string> = {
   widget: '14.0',
+  'live-activity': '16.1',
   clip: '14.0',
   stickers: '10.0',
   messages: '10.0',
@@ -88,6 +90,7 @@ export const TYPE_MINIMUM_DEPLOYMENT_TARGETS: Record<ExtensionType, string> = {
 
 export const TYPE_BUNDLE_IDENTIFIER_SUFFIXES: Record<ExtensionType, string> = {
   widget: 'widget',
+  'live-activity': 'live-activity',
   clip: 'clip',
   stickers: 'stickers',
   messages: 'messages',
