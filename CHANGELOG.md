@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Color and image asset generation
 - Entitlements sync between app and extensions
 - React Native support in share/action/clip extensions
-- `npx create-target` CLI scaffolding tool
+- `npx create-expo-target` CLI scaffolding tool
 - Metro wrapper for extension entry points
 - 7 comprehensive example apps
 - Full documentation suite

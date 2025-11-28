@@ -1,4 +1,4 @@
-# create-target
+# create-expo-target
 
 CLI tool for scaffolding expo-targets extensions.
 
@@ -7,7 +7,7 @@ CLI tool for scaffolding expo-targets extensions.
 ## Usage
 
 ```bash
-npx create-target
+npx create-expo-target
 ```
 
 ## What It Does
@@ -256,7 +256,7 @@ bun run build
 npm link
 
 # Use in any Expo project
-create-target
+create-expo-target
 ```
 
 ## Command Line Options
@@ -265,7 +265,7 @@ Currently interactive only. Command-line options coming soon:
 
 ```bash
 # Planned
-npx create-target --type widget --name my-widget --platforms ios
+npx create-expo-target --type widget --name my-widget --platforms ios
 ```
 
 ## Templates

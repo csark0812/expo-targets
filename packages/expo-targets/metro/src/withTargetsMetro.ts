@@ -144,8 +144,6 @@ export function withTargetsMetro(
     );
   });
 
-  const originalGetTransformOptions =
-    metroConfig.transformer?.getTransformOptions;
   const originalRewriteRequestUrl = metroConfig.server?.rewriteRequestUrl;
 
   console.log(
@@ -211,36 +209,6 @@ export function withTargetsMetro(
         }
 
         return rewrittenUrl;
-      },
-    },
-    transformer: {
-      ...metroConfig.transformer,
-      getTransformOptions: async (
-        entryPoints: readonly string[],
-        options: any,
-        getDependenciesOf: any
-      ) => {
-        console.log(
-          `[expo-targets-metro] 🔄 Transform requested for entry points:`,
-          entryPoints
-        );
-
-        const transformOptions = originalGetTransformOptions
-          ? await originalGetTransformOptions(
-              entryPoints,
-              options,
-              getDependenciesOf
-            )
-          : {};
-
-        return {
-          ...transformOptions,
-          transform: {
-            ...transformOptions.transform,
-            experimentalImportSupport: false,
-            inlineRequires: true,
-          },
-        };
       },
     },
   };
