@@ -1,6 +1,6 @@
 # expo-targets
 
-Add **iOS widgets**, **App Clips**, **iMessage stickers**, and **share extensions** to your Expo app — no native experience required.
+Add **iOS widgets**, **Live Activities**, **App Clips**, **iMessage stickers**, and **share extensions** to your Expo app — no native experience required.
 
 > **⚠️ Important:** Requires development builds (`npx expo run:ios`). Does not work with Expo Go.
 >
@@ -83,19 +83,20 @@ myWidget.refresh();
 
 ## Supported Extensions
 
-| Type                   | iOS | Android | Description             |
-| ---------------------- | --- | ------- | ----------------------- |
-| `widget`               | ✅  | ✅      | Home screen widgets     |
-| `clip`                 | ✅  | —       | App Clips               |
-| `stickers`             | ✅  | —       | iMessage sticker packs  |
-| `messages`             | ✅  | —       | iMessage apps           |
-| `share`                | ✅  | 🔜      | Share extensions        |
-| `action`               | ✅  | 🔜      | Action extensions       |
-| `safari`               | 📋  | —       | Safari web extensions   |
-| `notification-content` | 📋  | 🔜      | Rich notification UI    |
-| `notification-service` | 📋  | 🔜      | Notification processing |
-| `intent`               | 📋  | —       | Siri intents            |
-| `intent-ui`            | 📋  | —       | Siri intent UI          |
+| Type                   | iOS      | Android | Description                      |
+| ---------------------- | -------- | ------- | -------------------------------- |
+| `widget`               | ✅       | ✅      | Home screen widgets              |
+| `live-activity`        | ✅       | —       | Live Activities & Dynamic Island |
+| `clip`                 | ✅       | —       | App Clips                        |
+| `stickers`             | ✅       | —       | iMessage sticker packs           |
+| `messages`             | ✅       | —       | iMessage apps                    |
+| `share`                | ✅       | 🔜      | Share extensions                 |
+| `action`               | ✅       | 🔜      | Action extensions                |
+| `safari`               | 📋       | —       | Safari web extensions            |
+| `notification-content` | 📋       | 🔜      | Rich notification UI             |
+| `notification-service` | 📋       | 🔜      | Notification processing          |
+| `intent`               | 📋       | —       | Siri intents                     |
+| `intent-ui`            | 📋       | —       | Siri intent UI                   |
 
 **Legend:** ✅ Production ready · 📋 Config-only\* · 🔜 Planned · — Not applicable
 
@@ -133,6 +134,7 @@ npm install && npx expo run:ios
 | Example                                           | What it shows                          |
 | ------------------------------------------------- | -------------------------------------- |
 | [widgets-showcase](./apps/widgets-showcase)       | Basic to advanced widgets              |
+| [live-activity-demo](./apps/live-activity-demo)   | Live Activities & Dynamic Island       |
 | [extensions-showcase](./apps/extensions-showcase) | React Native share/action extensions   |
 | [clips-and-stickers](./apps/clips-and-stickers)   | App Clips + iMessage stickers          |
 | [bare-rn-widgets](./apps/bare-rn-widgets)         | Adding widgets to existing RN projects |
@@ -144,6 +146,7 @@ See [apps/README.md](./apps/README.md) for the full list.
 ## Documentation
 
 - **[Getting Started](./docs/getting-started.md)** — Build your first widget in 5 minutes
+- **[Live Activities Guide](./docs/live-activities.md)** — Real-time Lock Screen & Dynamic Island
 - **[Configuration](./docs/configuration.md)** — All config options explained
 - **[API Reference](./docs/api.md)** — JavaScript/TypeScript API
 - **[React Native Extensions](./docs/react-native-extensions.md)** — Using RN in share/action extensions

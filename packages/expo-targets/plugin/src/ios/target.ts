@@ -59,6 +59,21 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       supportsActivationRules: false,
       activationRulesLocation: 'none',
     },
+    'live-activity': {
+      requiresCode: true,
+      targetType: 'app_extension',
+      embedType: 'foundation-extension',
+      frameworks: ['WidgetKit', 'SwiftUI', 'ActivityKit', 'AppIntents'],
+      productType: 'com.apple.product-type.app-extension',
+      extensionPointIdentifier: 'com.apple.widgetkit-extension',
+      defaultUsesAppGroups: true,
+      requiresEntitlements: true,
+      basePlist: {
+        NSSupportsLiveActivities: true,
+      },
+      supportsActivationRules: false,
+      activationRulesLocation: 'none',
+    },
     clip: {
       requiresCode: true,
       targetType: 'application',

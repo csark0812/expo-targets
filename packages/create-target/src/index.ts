@@ -13,6 +13,7 @@ async function main() {
       message: 'What type of target?',
       choices: [
         { title: 'Widget', value: 'widget' },
+        { title: 'Live Activity', value: 'live-activity' },
         { title: 'App Clip', value: 'clip' },
         { title: 'iMessage Stickers', value: 'imessage' },
         { title: 'Messages App', value: 'messages' },
@@ -100,12 +101,17 @@ export const ${pascalToCamel(pascalName)} = createTarget('${pascalName}');
   if (response.type === 'widget') {
     console.log('   2. Update the App Group ID in ios/Widget.swift to match');
   }
+  if (response.type === 'live-activity') {
+    console.log('   2. Enable "Supports Live Activities" in your main app\'s Info.plist');
+    console.log('   3. Add Push Notifications capability for remote Live Activity updates');
+  }
   console.log('\nRun `npx expo prebuild` to generate Xcode project\n');
 }
 
 function getDeploymentTarget(type: string): string {
   const targets: Record<string, string> = {
     widget: '14.0',
+    'live-activity': '16.1',
     clip: '14.0',
     stickers: '10.0',
     messages: '14.0',
@@ -222,8 +228,124 @@ struct ${name}: Widget {
 }`;
   }
 
+  function getLiveActivityTemplate(name: string): string {
+    return `import ActivityKit
+import WidgetKit
+import SwiftUI
+
+// MARK: - Activity Attributes
+// Define your Live Activity's static and dynamic data
+
+struct ${name}Attributes: ActivityAttributes {
+    public struct ContentState: Codable, Hashable {
+        // Dynamic data that changes during the Live Activity
+        var value: Int
+        var status: String
+    }
+    
+    // Static data that doesn't change
+    var name: String
+}
+
+// MARK: - Live Activity Widget
+
+@main
+struct ${name}: Widget {
+    var body: some WidgetConfiguration {
+        ActivityConfiguration(for: ${name}Attributes.self) { context in
+            // Lock screen/banner UI
+            LiveActivityView(context: context)
+        } dynamicIsland: { context in
+            DynamicIsland {
+                // Expanded UI
+                DynamicIslandExpandedRegion(.leading) {
+                    Image(systemName: "star.fill")
+                        .foregroundColor(.yellow)
+                }
+                
+                DynamicIslandExpandedRegion(.trailing) {
+                    Text("\\(context.state.value)")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                }
+                
+                DynamicIslandExpandedRegion(.center) {
+                    Text(context.state.status)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                DynamicIslandExpandedRegion(.bottom) {
+                    HStack {
+                        Text(context.attributes.name)
+                            .font(.caption)
+                        Spacer()
+                    }
+                }
+            } compactLeading: {
+                // Compact leading (left side of Dynamic Island)
+                Image(systemName: "star.fill")
+                    .foregroundColor(.yellow)
+            } compactTrailing: {
+                // Compact trailing (right side of Dynamic Island)
+                Text("\\(context.state.value)")
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+            } minimal: {
+                // Minimal presentation (when multiple Live Activities are active)
+                Image(systemName: "star.fill")
+                    .foregroundColor(.yellow)
+            }
+        }
+    }
+}
+
+// MARK: - Views
+
+struct LiveActivityView: View {
+    let context: ActivityViewContext<${name}Attributes>
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "star.fill")
+                    .foregroundColor(.yellow)
+                    .font(.title2)
+                
+                Text(context.attributes.name)
+                    .font(.headline)
+                
+                Spacer()
+                
+                Text("\\(context.state.value)")
+                    .font(.title2)
+                    .fontWeight(.bold)
+            }
+            
+            Text(context.state.status)
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding()
+        .activityBackgroundTint(Color.black.opacity(0.25))
+        .activitySystemActionForegroundColor(Color.white)
+    }
+}
+
+// MARK: - Preview
+
+#Preview("Live Activity", as: .content, using: ${name}Attributes(name: "Preview")) {
+    ${name}()
+} contentStates: {
+    ${name}Attributes.ContentState(value: 42, status: "Active")
+    ${name}Attributes.ContentState(value: 100, status: "Complete")
+}
+`;
+  }
+
   const templates: Record<string, string | Function> = {
     widget: getWidgetTemplate,
+    'live-activity': getLiveActivityTemplate,
     clip: `import SwiftUI
 
 @main
@@ -387,6 +509,8 @@ class ActionViewController: UIViewController {
   let filename = 'Main.swift';
   if (type === 'widget') {
     filename = 'Widget.swift';
+  } else if (type === 'live-activity') {
+    filename = 'LiveActivity.swift';
   } else if (type === 'messages') {
     filename = 'MessagesViewController.swift';
   }

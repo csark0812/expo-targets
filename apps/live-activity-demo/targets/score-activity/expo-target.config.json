@@ -1,0 +1,17 @@
+{
+  "type": "live-activity",
+  "name": "ScoreActivity",
+  "displayName": "Score Activity",
+  "platforms": ["ios"],
+  "appGroup": "group.com.test.liveactivitydemo",
+  "ios": {
+    "deploymentTarget": "16.1",
+    "bundleIdentifier": "com.test.liveactivitydemo.scoreactivity",
+    "colors": {
+      "AccentColor": { "light": "#2196F3", "dark": "#64B5F6" },
+      "BackgroundColor": { "light": "#FFFFFF", "dark": "#1C1C1E" },
+      "TextPrimary": { "light": "#000000", "dark": "#FFFFFF" },
+      "ScoreColor": { "light": "#4CAF50", "dark": "#81C784" }
+    }
+  }
+}
