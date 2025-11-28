@@ -1,0 +1,15 @@
+{
+  "type": "live-activity",
+  "name": "TimerActivity",
+  "displayName": "Timer",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.liveactivitydemo",
+  "ios": {
+    "deploymentTarget": "16.1",
+    "colors": {
+      "AccentColor": "#FF9500",
+      "Primary": "#FF9500",
+      "Secondary": "#FFB84D"
+    }
+  }
+}

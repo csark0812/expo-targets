@@ -86,6 +86,7 @@ myWidget.refresh();
 | Type                   | iOS | Android | Description             |
 | ---------------------- | --- | ------- | ----------------------- |
 | `widget`               | ✅  | ✅      | Home screen widgets     |
+| `live-activity`        | ✅  | —       | Dynamic Island & Live Activities |
 | `clip`                 | ✅  | —       | App Clips               |
 | `stickers`             | ✅  | —       | iMessage sticker packs  |
 | `messages`             | ✅  | —       | iMessage apps           |

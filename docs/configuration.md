@@ -432,6 +432,123 @@ widget.refresh();
 }
 ```
 
+### Live Activity (iOS Dynamic Island)
+
+Live Activities power the Dynamic Island on iPhone 14 Pro+ and appear on the Lock Screen for all iOS 16.1+ devices.
+
+```json
+{
+  "type": "live-activity",
+  "name": "DeliveryTracker",
+  "displayName": "Delivery Tracker",
+  "platforms": ["ios"],
+  "appGroup": "group.com.yourapp",
+  "ios": {
+    "deploymentTarget": "16.1",
+    "colors": {
+      "AccentColor": "#FF6B00",
+      "Background": { "light": "#FFFFFF", "dark": "#1C1C1E" }
+    }
+  }
+}
+```
+
+**Usage in your app:**
+
+```typescript
+import { createLiveActivity } from 'expo-targets';
+
+// Create a Live Activity manager
+const delivery = createLiveActivity('DeliveryTracker', 'group.com.yourapp');
+
+// Start the activity
+const token = await delivery.start(
+  { orderId: '12345', restaurantName: 'Pizza Palace' }, // Static attributes
+  { status: 'preparing', eta: '20 min', driver: null }  // Dynamic state
+);
+
+// Update the activity
+await delivery.update({
+  status: 'on-the-way',
+  eta: '10 min',
+  driver: 'John Doe'
+});
+
+// End the activity
+await delivery.end('immediate'); // or 'default' or 'after'
+```
+
+**Swift Widget Implementation:**
+
+Create `targets/delivery-tracker/ios/DeliveryTrackerLiveActivity.swift`:
+
+```swift
+import ActivityKit
+import WidgetKit
+import SwiftUI
+
+struct DeliveryTrackerAttributes: ActivityAttributes {
+    public struct ContentState: Codable, Hashable {
+        var status: String
+        var eta: String
+        var driver: String?
+    }
+    
+    var orderId: String
+    var restaurantName: String
+}
+
+@available(iOS 16.1, *)
+struct DeliveryTrackerLiveActivity: Widget {
+    var body: some WidgetConfiguration {
+        ActivityConfiguration(for: DeliveryTrackerAttributes.self) { context in
+            // Lock Screen UI
+            VStack(alignment: .leading) {
+                Text("Order #\(context.attributes.orderId)")
+                    .font(.headline)
+                Text(context.state.status)
+                    .font(.caption)
+                Text("ETA: \(context.state.eta)")
+            }
+            .padding()
+        } dynamicIsland: { context in
+            DynamicIsland {
+                // Expanded view
+                DynamicIslandExpandedRegion(.leading) {
+                    Image(systemName: "takeoutbag.and.cup.and.straw.fill")
+                }
+                DynamicIslandExpandedRegion(.trailing) {
+                    Text(context.state.eta)
+                }
+                DynamicIslandExpandedRegion(.center) {
+                    Text(context.state.status)
+                }
+            } compactLeading: {
+                Image(systemName: "takeoutbag.and.cup.and.straw.fill")
+            } compactTrailing: {
+                Text(context.state.eta)
+            } minimal: {
+                Image(systemName: "takeoutbag.and.cup.and.straw.fill")
+            }
+        }
+    }
+}
+```
+
+**Key Features:**
+
+- **Dynamic Island**: Compact, minimal, and expanded UI states
+- **Lock Screen**: Rich notifications that persist
+- **Real-time Updates**: Update content without restarting
+- **Deep Linking**: Tap to open your app
+- **Background Updates**: Push notifications can update Live Activities
+
+**Requirements:**
+
+- iOS 16.1+ (iPhone 14 Pro+ for Dynamic Island)
+- NSSupportsLiveActivities in Info.plist (automatically added)
+- App Group for data sharing
+
 ### Widget (Android)
 
 ```json
@@ -685,6 +802,7 @@ export default function (config: ExpoConfig) {
 | Type                      | iOS           | Android    | Description             |
 | ------------------------- | ------------- | ---------- | ----------------------- |
 | `widget`                  | ✅ iOS 14+    | ✅ API 26+ | Home screen widgets     |
+| `live-activity`           | ✅ iOS 16.1+  | —          | Dynamic Island & Live Activities |
 | `clip`                    | ✅ iOS 14+    | —          | App Clips               |
 | `stickers`                | ✅ iOS 10+    | —          | iMessage sticker packs  |
 | `messages`                | ✅ iOS 10+    | —          | iMessage apps           |
@@ -773,14 +891,15 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
 
 ## Recommended Deployment Targets
 
-| Type       | Recommended | Minimum  |
-| ---------- | ----------- | -------- |
-| `widget`   | `"14.0"`    | iOS 14.0 |
-| `clip`     | `"14.0"`    | iOS 14.0 |
-| `stickers` | `"10.0"`    | iOS 10.0 |
-| `messages` | `"14.0"`    | iOS 10.0 |
-| `share`    | `"13.0"`    | iOS 8.0  |
-| `action`   | `"13.0"`    | iOS 8.0  |
+| Type            | Recommended | Minimum   |
+| --------------- | ----------- | --------- |
+| `widget`        | `"14.0"`    | iOS 14.0  |
+| `live-activity` | `"16.1"`    | iOS 16.1  |
+| `clip`          | `"14.0"`    | iOS 14.0  |
+| `stickers`      | `"10.0"`    | iOS 10.0  |
+| `messages`      | `"14.0"`    | iOS 10.0  |
+| `share`         | `"13.0"`    | iOS 8.0   |
+| `action`        | `"13.0"`    | iOS 8.0   |
 
 ---
 

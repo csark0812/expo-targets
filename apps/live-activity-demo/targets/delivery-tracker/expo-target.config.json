@@ -1,0 +1,15 @@
+{
+  "type": "live-activity",
+  "name": "DeliveryTracker",
+  "displayName": "Delivery Tracker",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.liveactivitydemo",
+  "ios": {
+    "deploymentTarget": "16.1",
+    "colors": {
+      "AccentColor": "#FF6B00",
+      "Primary": "#FF6B00",
+      "Secondary": "#FFB84D"
+    }
+  }
+}

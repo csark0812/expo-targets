@@ -41,6 +41,21 @@ export type {
   SelectedMessage,
 } from './modules/messages';
 
+// Live Activity module
+export {
+  LiveActivityManager,
+  createLiveActivity,
+  getActiveLiveActivities,
+  areActivitiesEnabled,
+} from './modules/live-activity';
+export type {
+  LiveActivityAttributes,
+  LiveActivityContentState,
+  LiveActivityState,
+  LiveActivity,
+  ActivityDismissalPolicy,
+} from './modules/live-activity';
+
 // Config types
 export type {
   TargetConfig,

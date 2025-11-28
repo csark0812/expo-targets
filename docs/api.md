@@ -599,6 +599,172 @@ interface NonExtensionTarget extends BaseTarget {
 
 ---
 
+## Live Activities API
+
+### createLiveActivity(activityId, appGroup)
+
+Create a Live Activity manager for iOS Dynamic Island and Lock Screen.
+
+```typescript
+import { createLiveActivity } from 'expo-targets';
+
+const delivery = createLiveActivity('DeliveryTracker', 'group.com.myapp');
+```
+
+**Parameters:**
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `activityId` | `string` | Unique identifier for this activity type |
+| `appGroup` | `string` | App Group identifier (e.g., "group.com.myapp") |
+
+**Returns:** `LiveActivityManager` instance
+
+---
+
+### LiveActivityManager Methods
+
+#### start(attributes, contentState)
+
+Start a new Live Activity.
+
+```typescript
+const token = await activity.start(
+  { orderId: '12345', restaurantName: 'Pizza Palace' }, // Static attributes
+  { status: 'Order Received', eta: '30 min' }           // Dynamic state
+);
+```
+
+**Parameters:**
+
+- `attributes`: Static data that doesn't change (e.g., order ID, game name)
+- `contentState`: Dynamic data that updates (e.g., status, score)
+
+**Returns:** `Promise<string | null>` - Activity token or null on failure
+
+#### update(contentState)
+
+Update an active Live Activity.
+
+```typescript
+await activity.update({
+  status: 'Out for Delivery',
+  eta: '5 min',
+  driver: 'John Doe'
+});
+```
+
+**Returns:** `Promise<boolean>` - Success status
+
+#### end(dismissalPolicy?)
+
+End a Live Activity.
+
+```typescript
+await activity.end('default'); // Stays visible for a while
+await activity.end('immediate'); // Dismisses immediately
+await activity.end('after'); // iOS 16.2+ - Dismisses after delay
+```
+
+**Parameters:**
+
+- `dismissalPolicy`: `'default' | 'immediate' | 'after'` (default: `'default'`)
+
+**Returns:** `Promise<boolean>` - Success status
+
+#### getState()
+
+Get current activity state.
+
+```typescript
+const state = await activity.getState();
+if (state) {
+  console.log('Status:', state.contentState.status);
+}
+```
+
+**Returns:** `Promise<LiveActivityState | null>`
+
+#### clear()
+
+Clear all data for this activity.
+
+```typescript
+await activity.clear();
+```
+
+**Returns:** `Promise<boolean>` - Success status
+
+---
+
+### Global Live Activity Functions
+
+#### areActivitiesEnabled()
+
+Check if Live Activities are supported and enabled.
+
+```typescript
+import { areActivitiesEnabled } from 'expo-targets';
+
+const enabled = await areActivitiesEnabled();
+if (!enabled) {
+  console.log('Live Activities not available');
+}
+```
+
+**Returns:** `Promise<boolean>`
+
+#### getActiveLiveActivities(appGroup)
+
+Get all active Live Activities.
+
+```typescript
+import { getActiveLiveActivities } from 'expo-targets';
+
+const activities = await getActiveLiveActivities('group.com.myapp');
+console.log(`Found ${activities.length} active activities`);
+```
+
+**Returns:** `Promise<LiveActivity[]>`
+
+---
+
+### Complete Live Activity Example
+
+```typescript
+import { createLiveActivity, areActivitiesEnabled } from 'expo-targets';
+
+async function trackDelivery(orderId: string) {
+  // Check availability
+  if (!(await areActivitiesEnabled())) {
+    return;
+  }
+
+  // Create manager
+  const delivery = createLiveActivity('DeliveryTracker', 'group.com.myapp');
+
+  // Start activity
+  const token = await delivery.start(
+    { orderId, restaurantName: 'Pizza Palace' },
+    { status: 'Preparing', eta: '20 min', driver: null }
+  );
+
+  // Update over time
+  await delivery.update({
+    status: 'Out for Delivery',
+    eta: '5 min',
+    driver: 'John Doe'
+  });
+
+  // End when complete
+  await delivery.end('default');
+}
+```
+
+See [Live Activities Documentation](./live-activities.md) for complete guide.
+
+---
+
 ## Platform Support
 
 ### Runtime API
@@ -613,18 +779,23 @@ interface NonExtensionTarget extends BaseTarget {
 | `close()`                 | ✅ iOS 13+ | 🔜         |
 | `openHostApp()`           | ✅ iOS 13+ | 🔜         |
 | `getSharedData()`         | ✅ iOS 13+ | 🔜         |
+| **Live Activities**       |            |            |
+| `createLiveActivity()`    | ✅ iOS 16.1+ | —        |
+| `areActivitiesEnabled()`  | ✅ iOS 16.1+ | —        |
+| `getActiveLiveActivities()` | ✅ iOS 16.1+ | —      |
 
 ### Extension Types by Platform
 
-| Type       | iOS            | Android                      |
-| ---------- | -------------- | ---------------------------- |
-| `widget`   | ✅ iOS 14+     | ✅ API 26+ (Glance: API 33+) |
-| `clip`     | ✅ iOS 14+     | —                            |
-| `stickers` | ✅ iOS 10+     | —                            |
-| `messages` | ✅ iOS 10+     | —                            |
-| `share`    | ✅ iOS 8+      | 🔜                           |
-| `action`   | ✅ iOS 8+      | 🔜                           |
-| Others     | 📋 Config-only | —                            |
+| Type            | iOS            | Android                      |
+| --------------- | -------------- | ---------------------------- |
+| `widget`        | ✅ iOS 14+     | ✅ API 26+ (Glance: API 33+) |
+| `live-activity` | ✅ iOS 16.1+   | —                            |
+| `clip`          | ✅ iOS 14+     | —                            |
+| `stickers`      | ✅ iOS 10+     | —                            |
+| `messages`      | ✅ iOS 10+     | —                            |
+| `share`         | ✅ iOS 8+      | 🔜                           |
+| `action`        | ✅ iOS 8+      | 🔜                           |
+| Others          | 📋 Config-only | —                            |
 
 **Legend:** ✅ Production ready · 📋 Config-only · 🔜 Planned · — Not applicable
 

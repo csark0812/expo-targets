@@ -27,6 +27,22 @@ Three widget examples from basic to advanced:
 
 ---
 
+## 🏝️ Dynamic Island & Live Activities
+
+### [live-activity-demo](./live-activity-demo)
+
+Comprehensive Live Activities demonstration:
+
+- **Delivery Tracking** — Real-time order status with driver info
+- **Workout Tracking** — Distance, pace, time, and calories
+- **Countdown Timer** — Customizable timers with progress bars
+
+Shows all Dynamic Island states: compact, minimal, and expanded views.
+
+**Best for:** Learning Live Activities, Dynamic Island UI design, real-time updates
+
+---
+
 ## 📱 React Native Extensions
 
 ### [extensions-showcase](./extensions-showcase)
@@ -96,6 +112,7 @@ Complete reference with all supported target types:
 | Example                    | Extension Types         | UI           | Workflow |
 | -------------------------- | ----------------------- | ------------ | -------- |
 | widgets-showcase           | Widget                  | SwiftUI      | Managed  |
+| live-activity-demo         | Live Activity           | SwiftUI      | Managed  |
 | extensions-showcase        | Share, Action, Messages | React Native | Managed  |
 | native-extensions-showcase | Share, Action, Clip     | Swift        | Managed  |
 | clips-and-stickers         | Clip, Stickers          | Swift        | Managed  |
