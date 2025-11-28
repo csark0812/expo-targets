@@ -633,6 +633,67 @@ For organized sticker packs:
 }
 ```
 
+### Wallet Extension
+
+```json
+{
+  "type": "wallet",
+  "name": "MyWalletExt",
+  "displayName": "My Wallet",
+  "platforms": ["ios"],
+  "ios": {
+    "deploymentTarget": "13.0",
+    "entitlements": {
+      "com.apple.developer.pass-type-identifiers": [
+        "$(TeamIdentifierPrefix)*"
+      ]
+    }
+  }
+}
+```
+
+**Requirements:**
+
+- Requires Apple Developer Program membership
+- Must have pass type identifiers configured in Apple Developer portal
+- Requires server-side pass generation and signing infrastructure
+- See [Apple's Wallet documentation](https://developer.apple.com/documentation/passkit/wallet) for complete setup
+
+**Implementation:**
+
+You must create `ios/PassProvider.swift` that conforms to `PKIssuerProvisioningExtensionHandler`:
+
+```swift
+import PassKit
+
+class PassProvider: NSObject, PKIssuerProvisioningExtensionHandler {
+    func status(completion: @escaping (PKIssuerProvisioningExtensionStatus) -> Void) {
+        let status = PKIssuerProvisioningExtensionStatus()
+        status.requiresAuthentication = true
+        status.passEntriesAvailable = true
+        completion(status)
+    }
+    
+    func passEntries(completion: @escaping ([PKIssuerProvisioningExtensionPassEntry]?, Error?) -> Void) {
+        // Return available passes that can be added to Wallet
+        completion([], nil)
+    }
+    
+    func generateAddPaymentPassRequestForPassEntryWithIdentifier(
+        _ identifier: String,
+        configuration: PKAddPaymentPassRequestConfiguration,
+        certificateChain: [Data],
+        nonce: Data,
+        nonceSignature: Data,
+        completionHandler: @escaping (PKAddPaymentPassRequest) -> Void
+    ) {
+        // Generate encrypted pass data from your server
+        let request = PKAddPaymentPassRequest()
+        completionHandler(request)
+    }
+}
+```
+
 ---
 
 ## Dynamic Configuration
@@ -690,6 +751,7 @@ export default function (config: ExpoConfig) {
 | `messages`                | ✅ iOS 10+    | —          | iMessage apps           |
 | `share`                   | ✅ iOS 8+     | 🔜         | Share extensions        |
 | `action`                  | ✅ iOS 8+     | 🔜         | Action extensions       |
+| `wallet`                  | 📋 iOS 13+    | —          | Wallet extensions       |
 | `safari`                  | 📋 iOS 15+    | —          | Safari web extensions   |
 | `notification-content`    | 📋 iOS 10+    | 🔜         | Rich notification UI    |
 | `notification-service`    | 📋 iOS 10+    | 🔜         | Notification processing |
@@ -754,13 +816,14 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
 
 **Required protocols by type:**
 
-| Type                   | Required Protocol/Class          | Documentation                                                                                              |
-| ---------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `safari`               | `NSExtensionRequestHandling`     | [Apple Docs](https://developer.apple.com/documentation/safariservices/safari_web_extensions)               |
-| `notification-content` | `UNNotificationContentExtension` | [Apple Docs](https://developer.apple.com/documentation/usernotificationsui/unnotificationcontentextension) |
-| `notification-service` | `UNNotificationServiceExtension` | [Apple Docs](https://developer.apple.com/documentation/usernotifications/unnotificationserviceextension)   |
-| `intent`               | `INExtension`                    | [Apple Docs](https://developer.apple.com/documentation/sirikit/inextension)                                |
-| `intent-ui`            | `INExtension`                    | [Apple Docs](https://developer.apple.com/documentation/sirikit/inextension)                                |
+| Type                   | Required Protocol/Class                   | Documentation                                                                                                                        |
+| ---------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `wallet`               | `PKIssuerProvisioningExtensionHandler`    | [Apple Docs](https://developer.apple.com/documentation/passkit/pkissuerprovisioningextensionhandler)                                 |
+| `safari`               | `NSExtensionRequestHandling`              | [Apple Docs](https://developer.apple.com/documentation/safariservices/safari_web_extensions)                                         |
+| `notification-content` | `UNNotificationContentExtension`          | [Apple Docs](https://developer.apple.com/documentation/usernotificationsui/unnotificationcontentextension)                           |
+| `notification-service` | `UNNotificationServiceExtension`          | [Apple Docs](https://developer.apple.com/documentation/usernotifications/unnotificationserviceextension)                             |
+| `intent`               | `INExtension`                             | [Apple Docs](https://developer.apple.com/documentation/sirikit/inextension)                                                          |
+| `intent-ui`            | `INExtension`                             | [Apple Docs](https://developer.apple.com/documentation/sirikit/inextension)                                                          |
 
 **Tips:**
 
@@ -781,6 +844,7 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
 | `messages` | `"14.0"`    | iOS 10.0 |
 | `share`    | `"13.0"`    | iOS 8.0  |
 | `action`   | `"13.0"`    | iOS 8.0  |
+| `wallet`   | `"13.0"`    | iOS 13.0 |
 
 ---
 

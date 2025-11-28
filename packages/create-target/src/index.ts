@@ -18,6 +18,7 @@ async function main() {
         { title: 'Messages App', value: 'messages' },
         { title: 'Share Extension', value: 'share' },
         { title: 'Action Extension', value: 'action' },
+        { title: 'Wallet Extension', value: 'wallet' },
       ],
     },
     {
@@ -111,6 +112,7 @@ function getDeploymentTarget(type: string): string {
     messages: '14.0',
     share: '13.0',
     action: '13.0',
+    wallet: '13.0',
   };
   return targets[type] || '14.0';
 }
@@ -379,6 +381,60 @@ class ActionViewController: UIViewController {
         ])
     }
 }`,
+    wallet: `import PassKit
+
+class PassProvider: NSObject, PKIssuerProvisioningExtensionHandler {
+    
+    // MARK: - PKIssuerProvisioningExtensionHandler
+    
+    func status(completion: @escaping (PKIssuerProvisioningExtensionStatus) -> Void) {
+        // Return the status of the extension
+        // This method is called to determine if the extension is ready to provision passes
+        let status = PKIssuerProvisioningExtensionStatus()
+        status.requiresAuthentication = true
+        status.passEntriesAvailable = true
+        completion(status)
+    }
+    
+    func passEntries(completion: @escaping ([PKIssuerProvisioningExtensionPassEntry]?, Error?) -> Void) {
+        // Return available passes that can be provisioned
+        // Each entry represents a pass that the user can add to Wallet
+        
+        let passEntry = PKIssuerProvisioningExtensionPassEntry()
+        // Configure your pass entry here
+        // passEntry.identifier = "your-pass-identifier"
+        // passEntry.title = "Your Pass Title"
+        // passEntry.art = UIImage(named: "PassArt")
+        
+        completion([passEntry], nil)
+    }
+    
+    func remotePassEntries(completion: @escaping ([PKIssuerProvisioningExtensionPassEntry]?, Error?) -> Void) {
+        // Return passes available from a remote source
+        // This is called when refreshing available passes
+        passEntries(completion: completion)
+    }
+    
+    func generateAddPaymentPassRequestForPassEntryWithIdentifier(
+        _ identifier: String,
+        configuration: PKAddPaymentPassRequestConfiguration,
+        certificateChain: [Data],
+        nonce: Data,
+        nonceSignature: Data,
+        completionHandler: @escaping (PKAddPaymentPassRequest) -> Void
+    ) {
+        // Generate the encrypted pass data for provisioning
+        // This is where you communicate with your server to create the pass
+        
+        let request = PKAddPaymentPassRequest()
+        // Configure the request with encrypted pass data from your server
+        // request.encryptedPassData = ...
+        // request.activationData = ...
+        // request.ephemeralPublicKey = ...
+        
+        completionHandler(request)
+    }
+}`,
   };
 
   const templateFn = templates[type] || templates.widget;
@@ -389,6 +445,8 @@ class ActionViewController: UIViewController {
     filename = 'Widget.swift';
   } else if (type === 'messages') {
     filename = 'MessagesViewController.swift';
+  } else if (type === 'wallet') {
+    filename = 'PassProvider.swift';
   }
 
   fs.writeFileSync(path.join(platformDir, filename), template);

@@ -7,6 +7,7 @@ export type ExtensionType =
   | 'messages'
   | 'share'
   | 'action'
+  | 'wallet'
   | 'safari'
   | 'notification-content'
   | 'notification-service'
@@ -69,6 +70,7 @@ export const TYPE_MINIMUM_DEPLOYMENT_TARGETS: Record<ExtensionType, string> = {
   messages: '10.0',
   share: '8.0',
   action: '8.0',
+  wallet: '13.0',
   'notification-content': '10.0',
   'notification-service': '10.0',
   intent: '12.0',
@@ -93,6 +95,7 @@ export const TYPE_BUNDLE_IDENTIFIER_SUFFIXES: Record<ExtensionType, string> = {
   messages: 'messages',
   share: 'share',
   action: 'action',
+  wallet: 'wallet',
   safari: 'safari',
   'notification-content': 'notification-content',
   'notification-service': 'notification-service',

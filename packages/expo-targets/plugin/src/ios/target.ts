@@ -160,6 +160,23 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       supportsActivationRules: true,
       activationRulesLocation: 'direct',
     },
+    wallet: {
+      requiresCode: true,
+      targetType: 'app_extension',
+      embedType: 'foundation-extension',
+      frameworks: ['PassKit'],
+      productType: 'com.apple.product-type.app-extension',
+      extensionPointIdentifier: 'com.apple.passkit-issuer-extension',
+      defaultUsesAppGroups: false,
+      requiresEntitlements: true,
+      basePlist: {
+        NSExtension: {
+          NSExtensionPrincipalClass: '$(PRODUCT_MODULE_NAME).PassProvider',
+        },
+      },
+      supportsActivationRules: false,
+      activationRulesLocation: 'none',
+    },
     safari: {
       requiresCode: true,
       targetType: 'app_extension',
