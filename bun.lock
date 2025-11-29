@@ -149,7 +149,7 @@
     },
     "packages/expo-targets": {
       "name": "expo-targets",
-      "version": "0.2.2",
+      "version": "0.2.3",
       "dependencies": {
         "@babel/parser": "^7.25.0",
         "@babel/traverse": "^7.25.0",
