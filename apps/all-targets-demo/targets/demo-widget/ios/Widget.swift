@@ -63,7 +63,7 @@ struct Provider: TimelineProvider {
 
     private func loadMessage() -> String {
         let defaults = UserDefaults(suiteName: appGroup)
-        if let message = defaults?.string(forKey: "message") {
+        if let message = defaults?.string(forKey: "DemoWidget:message") {
             return message
         }
         return "All Targets Demo"
@@ -78,8 +78,8 @@ struct Provider: TimelineProvider {
 
         // Fallback to UserDefaults - expo-targets stores booleans as integers (1/0)
         let defaults = UserDefaults(suiteName: appGroup)
-        let isLoggedIn = (defaults?.integer(forKey: "isLoggedIn") ?? 0) != 0
-        let username = defaults?.string(forKey: "username")
+        let isLoggedIn = (defaults?.integer(forKey: "DemoWidget:isLoggedIn") ?? 0) != 0
+        let username = defaults?.string(forKey: "DemoWidget:username")
 
         if isLoggedIn {
             return (true, username)
@@ -91,12 +91,12 @@ struct Provider: TimelineProvider {
         let defaults = UserDefaults(suiteName: appGroup)
 
         var avatarURL: URL? = nil
-        if let urlString = defaults?.string(forKey: "avatarURL") {
+        if let urlString = defaults?.string(forKey: "DemoWidget:avatarURL") {
             avatarURL = URL(string: urlString)
         }
 
-        let weatherIcon = defaults?.string(forKey: "weatherIcon")
-        let temperature = defaults?.integer(forKey: "temperature")
+        let weatherIcon = defaults?.string(forKey: "DemoWidget:weatherIcon")
+        let temperature = defaults?.integer(forKey: "DemoWidget:temperature")
 
         return (avatarURL, weatherIcon, temperature != 0 ? temperature : nil)
     }

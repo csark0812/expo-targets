@@ -27,7 +27,7 @@ struct Provider: TimelineProvider {
 
     private func loadMessage() -> String {
         let defaults = UserDefaults(suiteName: appGroup)
-        return defaults?.string(forKey: "message") ?? "No message yet"
+        return defaults?.string(forKey: "HelloWidget:message") ?? "No message yet"
     }
 }
 

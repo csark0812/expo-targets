@@ -2,59 +2,93 @@ import ExpoModulesCore
 import WidgetKit
 
 public class ExpoTargetsStorageModule: Module {
+  private func resolveKey(_ key: String, targetName: String?) -> String {
+    guard let targetName = targetName, !targetName.isEmpty else {
+      return key
+    }
+    return "\(targetName):\(key)"
+  }
+
   public func definition() -> ModuleDefinition {
     Name("ExpoTargetsStorage")
 
-    Function("setInt") { (key: String, value: Int, suite: String?) -> Void in
+    Function("setInt") { (key: String, value: Int, suite: String?, targetName: String?) -> Void in
       let defaults = UserDefaults(suiteName: suite ?? "")
-      defaults?.set(value, forKey: key)
+      defaults?.set(value, forKey: self.resolveKey(key, targetName: targetName))
       defaults?.synchronize()
     }
 
-    Function("setString") { (key: String, value: String, suite: String?) -> Void in
+    Function("setString") { (key: String, value: String, suite: String?, targetName: String?) -> Void in
       let defaults = UserDefaults(suiteName: suite ?? "")
-      defaults?.set(value, forKey: key)
+      defaults?.set(value, forKey: self.resolveKey(key, targetName: targetName))
       defaults?.synchronize()
     }
 
-    Function("setObject") { (key: String, value: [String: Any], suite: String?) -> Bool in
+    Function("setObject") { (key: String, value: [String: Any], suite: String?, targetName: String?) -> Bool in
       let defaults = UserDefaults(suiteName: suite ?? "")
-      defaults?.set(value, forKey: key)
+      defaults?.set(value, forKey: self.resolveKey(key, targetName: targetName))
       defaults?.synchronize()
       return true
     }
 
-    Function("get") { (key: String, suite: String?) -> String? in
+    Function("get") { (key: String, suite: String?, targetName: String?) -> String? in
       let defaults = UserDefaults(suiteName: suite ?? "")
-      return defaults?.string(forKey: key)
+      return defaults?.string(forKey: self.resolveKey(key, targetName: targetName))
     }
 
-    Function("remove") { (key: String, suite: String?) -> Void in
+    Function("remove") { (key: String, suite: String?, targetName: String?) -> Void in
       let defaults = UserDefaults(suiteName: suite ?? "")
-      defaults?.removeObject(forKey: key)
+      defaults?.removeObject(forKey: self.resolveKey(key, targetName: targetName))
       defaults?.synchronize()
     }
 
-    Function("getAllKeys") { (suite: String?) -> [String] in
+    Function("getAllKeys") { (suite: String?, targetName: String?) -> [String] in
       let suiteName = suite ?? ""
       guard let dict = UserDefaults.standard.persistentDomain(forName: suiteName) else {
         return []
       }
-      return Array(dict.keys)
+      let allKeys = Array(dict.keys)
+      guard let targetName = targetName, !targetName.isEmpty else {
+        return allKeys
+      }
+      let prefix = "\(targetName):"
+      return allKeys
+        .filter { $0.hasPrefix(prefix) }
+        .map { String($0.dropFirst(prefix.count)) }
     }
 
-    Function("getAllData") { (suite: String?) -> [String: Any] in
+    Function("getAllData") { (suite: String?, targetName: String?) -> [String: Any] in
       let suiteName = suite ?? ""
-      return UserDefaults.standard.persistentDomain(forName: suiteName) ?? [:]
+      guard let dict = UserDefaults.standard.persistentDomain(forName: suiteName) else {
+        return [:]
+      }
+      guard let targetName = targetName, !targetName.isEmpty else {
+        return dict
+      }
+      let prefix = "\(targetName):"
+      var result: [String: Any] = [:]
+      for (key, value) in dict {
+        if key.hasPrefix(prefix) {
+          result[String(key.dropFirst(prefix.count))] = value
+        }
+      }
+      return result
     }
 
-    Function("clearAll") { (suite: String?) -> Void in
+    Function("clearAll") { (suite: String?, targetName: String?) -> Void in
       let defaults = UserDefaults(suiteName: suite ?? "")
       guard let dict = defaults?.dictionaryRepresentation() else {
         return
       }
-      for key in dict.keys {
-        defaults?.removeObject(forKey: key)
+      if let targetName = targetName, !targetName.isEmpty {
+        let prefix = "\(targetName):"
+        for key in dict.keys where key.hasPrefix(prefix) {
+          defaults?.removeObject(forKey: key)
+        }
+      } else {
+        for key in dict.keys {
+          defaults?.removeObject(forKey: key)
+        }
       }
       defaults?.synchronize()
     }

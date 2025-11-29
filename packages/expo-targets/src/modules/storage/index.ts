@@ -3,35 +3,59 @@ import { requireNativeModule } from 'expo-modules-core';
 const ExpoTargetsStorageModule = requireNativeModule('ExpoTargetsStorage');
 
 export class AppGroupStorage {
-  constructor(private readonly appGroup: string) {}
+  constructor(
+    private readonly appGroup: string,
+    private readonly targetName?: string
+  ) {}
 
   set(key: string, value: any) {
     if (value === null || value === undefined) {
-      ExpoTargetsStorageModule.remove(key, this.appGroup);
+      ExpoTargetsStorageModule.remove(key, this.appGroup, this.targetName);
     } else if (typeof value === 'number') {
-      ExpoTargetsStorageModule.setInt(key, Math.floor(value), this.appGroup);
+      ExpoTargetsStorageModule.setInt(
+        key,
+        Math.floor(value),
+        this.appGroup,
+        this.targetName
+      );
     } else if (typeof value === 'string') {
-      ExpoTargetsStorageModule.setString(key, value, this.appGroup);
+      ExpoTargetsStorageModule.setString(
+        key,
+        value,
+        this.appGroup,
+        this.targetName
+      );
     } else if (typeof value === 'boolean') {
-      ExpoTargetsStorageModule.setInt(key, value ? 1 : 0, this.appGroup);
+      ExpoTargetsStorageModule.setInt(
+        key,
+        value ? 1 : 0,
+        this.appGroup,
+        this.targetName
+      );
     } else if (Array.isArray(value)) {
       ExpoTargetsStorageModule.setString(
         key,
         JSON.stringify(value),
-        this.appGroup
+        this.appGroup,
+        this.targetName
       );
     } else {
       ExpoTargetsStorageModule.setString(
         key,
         JSON.stringify(value),
-        this.appGroup
+        this.appGroup,
+        this.targetName
       );
     }
   }
 
   get<T = any>(key: string): T | null {
     try {
-      const value = ExpoTargetsStorageModule.get(key, this.appGroup);
+      const value = ExpoTargetsStorageModule.get(
+        key,
+        this.appGroup,
+        this.targetName
+      );
       if (value === null || value === undefined) {
         return null;
       }
@@ -52,11 +76,11 @@ export class AppGroupStorage {
   }
 
   remove(key: string) {
-    ExpoTargetsStorageModule.remove(key, this.appGroup);
+    ExpoTargetsStorageModule.remove(key, this.appGroup, this.targetName);
   }
 
   clear() {
-    ExpoTargetsStorageModule.clearAll(this.appGroup);
+    ExpoTargetsStorageModule.clearAll(this.appGroup, this.targetName);
   }
 
   setData(data: Record<string, any>) {
@@ -67,7 +91,10 @@ export class AppGroupStorage {
 
   getData<T extends Record<string, any>>(): T {
     try {
-      const rawData = ExpoTargetsStorageModule.getAllData(this.appGroup);
+      const rawData = ExpoTargetsStorageModule.getAllData(
+        this.appGroup,
+        this.targetName
+      );
       if (!rawData || typeof rawData !== 'object') {
         return {} as T;
       }
@@ -95,7 +122,10 @@ export class AppGroupStorage {
 
   getKeys(): string[] {
     try {
-      return ExpoTargetsStorageModule.getAllKeys(this.appGroup);
+      return ExpoTargetsStorageModule.getAllKeys(
+        this.appGroup,
+        this.targetName
+      );
     } catch (error) {
       console.warn('Failed to get all keys:', error);
       return [];
@@ -103,7 +133,7 @@ export class AppGroupStorage {
   }
 
   refresh(targetName?: string) {
-    ExpoTargetsStorageModule.refreshTarget(targetName);
+    ExpoTargetsStorageModule.refreshTarget(targetName ?? this.targetName);
   }
 }
 

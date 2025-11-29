@@ -10,7 +10,7 @@ import androidx.glance.currentState
 import androidx.glance.state.PreferencesGlanceStateDefinition
 import expo.modules.targets.ExpoTargetsWidgetUpdateReceiver
 
-private val MESSAGE_KEY = stringPreferencesKey("message")
+private val MESSAGE_KEY = stringPreferencesKey("DemoWidget:message")
 
 class DemoWidget : GlanceAppWidget() {
     override val stateDefinition = PreferencesGlanceStateDefinition
