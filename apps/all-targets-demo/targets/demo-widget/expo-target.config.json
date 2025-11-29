@@ -5,6 +5,7 @@
   "platforms": ["ios", "android"],
   "appGroup": "group.com.test.alltargetsdemo",
   "ios": {
+    "deploymentTarget": "15.1",
     "colors": {
       "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" },
       "BackgroundColor": { "light": "#F2F2F7", "dark": "#1C1C1E" }
