@@ -26,11 +26,11 @@
     },
     "plugins": ["../../packages/expo-targets/app.plugin.js"],
     "android": {
+      "package": "com.csarkissian.alltargetsdemo",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      },
-      "package": "com.csarkissian.alltargetsdemo"
+      }
     }
   }
 }
