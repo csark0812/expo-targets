@@ -95,6 +95,7 @@ export function shouldUseAppGroups(type: ExtensionType): boolean {
     'device-activity-monitor': false,
     matter: false,
     watch: false,
+    wallet: false,
   };
 
   return SHOULD_USE_APP_GROUPS_BY_DEFAULT[type];

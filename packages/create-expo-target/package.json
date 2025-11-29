@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "CLI tool for scaffolding expo-targets extensions",
   "main": "build/index.js",
+  "files": [
+    "build"
+  ],
   "bin": {
     "create-expo-target": "./build/index.js"
   },

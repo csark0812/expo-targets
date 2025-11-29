@@ -37,8 +37,7 @@ export function mainTargetUsesFrameworks(
   mainTargetName: string
 ): boolean {
   const targetRegex = new RegExp(
-    `target\\s+'${mainTargetName}'\\s+do([\\s\\S]*?)(?=\\n\\s*target\\s+|post_install|$)`,
-    'm'
+    `target\\s+'${mainTargetName}'\\s+do([\\s\\S]*?)(?=post_install|\\ntarget\\s+|$)`
   );
 
   const match = podfileContent.match(targetRegex);
@@ -235,8 +234,7 @@ export function ensureMainTargetUsesFrameworks(
 ): string {
   // Check if main target already has use_frameworks!
   const targetRegex = new RegExp(
-    `target\\s+'${mainTargetName}'\\s+do([\\s\\S]*?)(?=\\n\\s*target\\s+|post_install|$)`,
-    'm'
+    `target\\s+'${mainTargetName}'\\s+do([\\s\\S]*?)(?=post_install|\\ntarget\\s+|$)`
   );
 
   const match = podfileContent.match(targetRegex);
@@ -246,8 +244,10 @@ export function ensureMainTargetUsesFrameworks(
 
   const targetBlock = match[1];
 
-  // Check if use_frameworks! already exists in this target
-  if (targetBlock.includes('use_frameworks!')) {
+  // Check if unconditional use_frameworks! :linkage => :static already exists
+  // Conditional statements use variables (podfile_properties or ENV), so checking
+  // for the literal ':static' ensures we only match unconditional statements
+  if (targetBlock.includes('use_frameworks! :linkage => :static')) {
     return podfileContent;
   }
 
@@ -524,11 +524,13 @@ ${END_MARKER}`;
   const hasPostInstallEnd = afterTrimmed.startsWith('end');
 
   // Insert: newline + our code + newline (preserve existing post_install end if present)
+  // Important: preserve indentation of afterInsert to maintain valid Podfile structure
+  // Using trimStart() would break the "  end" indentation that ensureExtensionDeploymentTargets relies on
   return (
     beforeInsert.trimEnd() +
     (needsNewlineBefore ? '\n' : '') +
     fixCode +
     '\n' +
-    afterInsert.trimStart()
+    afterInsert
   );
 }

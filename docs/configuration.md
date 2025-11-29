@@ -621,6 +621,8 @@ For organized sticker packs:
 }
 ```
 
+**⚠️ iOS Limitation:** You cannot have both a `stickers` target and a `messages` target in the same app. iOS only allows one message payload provider extension per app. Both types use the same extension point identifier (`com.apple.message-payload-provider`). Choose either stickers OR a messages app, but not both.
+
 ### Messages App
 
 ```json
@@ -633,6 +635,8 @@ For organized sticker packs:
 }
 ```
 
+**⚠️ iOS Limitation:** You cannot have both a `messages` target and a `stickers` target in the same app. iOS only allows one message payload provider extension per app. Both types use the same extension point identifier (`com.apple.message-payload-provider`). Choose either a messages app OR stickers, but not both.
+
 ### Wallet Extension
 
 ```json
@@ -644,9 +648,7 @@ For organized sticker packs:
   "ios": {
     "deploymentTarget": "13.0",
     "entitlements": {
-      "com.apple.developer.pass-type-identifiers": [
-        "$(TeamIdentifierPrefix)*"
-      ]
+      "com.apple.developer.pass-type-identifiers": ["$(TeamIdentifierPrefix)*"]
     }
   }
 }
@@ -673,12 +675,12 @@ class PassProvider: NSObject, PKIssuerProvisioningExtensionHandler {
         status.passEntriesAvailable = true
         completion(status)
     }
-    
+
     func passEntries(completion: @escaping ([PKIssuerProvisioningExtensionPassEntry]?, Error?) -> Void) {
         // Return available passes that can be added to Wallet
         completion([], nil)
     }
-    
+
     func generateAddPaymentPassRequestForPassEntryWithIdentifier(
         _ identifier: String,
         configuration: PKAddPaymentPassRequestConfiguration,
@@ -770,6 +772,30 @@ export default function (config: ExpoConfig) {
 
 **Legend:** ✅ Production ready · 📋 Config-only (bring your own Swift/Kotlin) · 🔜 Planned · — Not applicable
 
+### iOS Limitations
+
+**Message Payload Provider Extension Limit**
+
+iOS only allows **one message payload provider extension** per app. This means you cannot have both a `stickers` target and a `messages` target in the same app, as both use the extension point identifier `com.apple.message-payload-provider`.
+
+**Error if violated:**
+
+```
+Multiple message payload provider extensions found in app but only one is allowed
+```
+
+**Solution:** Choose either:
+
+- A `stickers` target (static sticker packs), OR
+- A `messages` target (interactive iMessage app)
+
+You cannot use both in the same app. If you need both features, consider:
+
+- Creating separate apps for each
+- Using a messages app that includes sticker functionality programmatically
+
+**Reference:** [Apple's Messages Framework Documentation](https://developer.apple.com/documentation/messages)
+
 ### Config-Only Types
 
 Config-only types (`📋`) generate the Xcode target structure and Info.plist configuration, but **you must write all Swift/Kotlin code yourself**. These are for advanced use cases where you need full control over the implementation.
@@ -816,14 +842,14 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
 
 **Required protocols by type:**
 
-| Type                   | Required Protocol/Class                   | Documentation                                                                                                                        |
-| ---------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `wallet`               | `PKIssuerProvisioningExtensionHandler`    | [Apple Docs](https://developer.apple.com/documentation/passkit/pkissuerprovisioningextensionhandler)                                 |
-| `safari`               | `NSExtensionRequestHandling`              | [Apple Docs](https://developer.apple.com/documentation/safariservices/safari_web_extensions)                                         |
-| `notification-content` | `UNNotificationContentExtension`          | [Apple Docs](https://developer.apple.com/documentation/usernotificationsui/unnotificationcontentextension)                           |
-| `notification-service` | `UNNotificationServiceExtension`          | [Apple Docs](https://developer.apple.com/documentation/usernotifications/unnotificationserviceextension)                             |
-| `intent`               | `INExtension`                             | [Apple Docs](https://developer.apple.com/documentation/sirikit/inextension)                                                          |
-| `intent-ui`            | `INExtension`                             | [Apple Docs](https://developer.apple.com/documentation/sirikit/inextension)                                                          |
+| Type                   | Required Protocol/Class                | Documentation                                                                                              |
+| ---------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `wallet`               | `PKIssuerProvisioningExtensionHandler` | [Apple Docs](https://developer.apple.com/documentation/passkit/pkissuerprovisioningextensionhandler)       |
+| `safari`               | `NSExtensionRequestHandling`           | [Apple Docs](https://developer.apple.com/documentation/safariservices/safari_web_extensions)               |
+| `notification-content` | `UNNotificationContentExtension`       | [Apple Docs](https://developer.apple.com/documentation/usernotificationsui/unnotificationcontentextension) |
+| `notification-service` | `UNNotificationServiceExtension`       | [Apple Docs](https://developer.apple.com/documentation/usernotifications/unnotificationserviceextension)   |
+| `intent`               | `INExtension`                          | [Apple Docs](https://developer.apple.com/documentation/sirikit/inextension)                                |
+| `intent-ui`            | `INExtension`                          | [Apple Docs](https://developer.apple.com/documentation/sirikit/inextension)                                |
 
 **Tips:**
 

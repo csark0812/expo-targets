@@ -67,7 +67,7 @@ export const TYPE_MINIMUM_DEPLOYMENT_TARGETS: Record<ExtensionType, string> = {
   widget: '14.0',
   clip: '14.0',
   stickers: '10.0',
-  messages: '10.0',
+  messages: '13.0',
   share: '8.0',
   action: '8.0',
   wallet: '13.0',

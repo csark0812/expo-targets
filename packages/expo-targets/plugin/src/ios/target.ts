@@ -582,6 +582,18 @@ export function getTargetInfoPlistForType(
     }
   }
 
+  // Ensure IntentsSupported is present for Siri Intent extensions
+  // iOS requires this key in NSExtensionAttributes for intent and intent-ui types
+  if ((type === 'intent' || type === 'intent-ui') && basePlist.NSExtension) {
+    if (!basePlist.NSExtension.NSExtensionAttributes) {
+      basePlist.NSExtension.NSExtensionAttributes = {};
+    }
+    // Only add IntentsSupported if not already present (allow user override)
+    if (!basePlist.NSExtension.NSExtensionAttributes.IntentsSupported) {
+      basePlist.NSExtension.NSExtensionAttributes.IntentsSupported = [];
+    }
+  }
+
   return plist.build(basePlist);
 }
 

@@ -159,7 +159,7 @@ jobs:
 
       - name: Publish create-expo-target to npm
         run: |
-          cd packages/create-target
+          cd packages/create-expo-target
           PACKAGE_NAME=$(node -p "require('./package.json').name")
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
           TARBALL="${PACKAGE_NAME}-${PACKAGE_VERSION}.tgz"

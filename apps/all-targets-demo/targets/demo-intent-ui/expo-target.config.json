@@ -7,9 +7,16 @@
     "infoPlist": {
       "NSExtension": {
         "NSExtensionPointIdentifier": "com.apple.intents-ui-service",
-        "NSExtensionPrincipalClass": "IntentViewController"
+        "NSExtensionPrincipalClass": "IntentViewController",
+        "NSExtensionAttributes": {
+          "IntentsSupported": [
+            "INStartWorkoutIntent",
+            "INPauseWorkoutIntent",
+            "INEndWorkoutIntent",
+            "INResumeWorkoutIntent"
+          ]
+        }
       }
     }
   }
 }
-
