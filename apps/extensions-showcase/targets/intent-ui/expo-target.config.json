@@ -1,9 +1,10 @@
 {
-  "type": "intent",
-  "name": "DemoIntent",
-  "displayName": "Demo Intent",
+  "type": "intent-ui",
+  "name": "DemoIntentUI",
+  "displayName": "Demo Intent UI",
   "platforms": ["ios"],
   "ios": {
+    "bundleIdentifier": "com.csarkissian.alltargetsdemo.intenthandlerui",
     "infoPlist": {
       "NSExtension": {
         "NSExtensionAttributes": {

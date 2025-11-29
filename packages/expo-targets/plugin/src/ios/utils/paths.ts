@@ -152,15 +152,19 @@ export function getStickerPackPath({
 /**
  * Get build output directory in targets/ folder.
  * This is where generated files (Info.plist, Assets, entitlements) are placed.
+ * Optional buildSubdirectory for auto-generated targets (e.g., intent-ui from combined config).
  */
 export function getTargetBuildPath({
   projectRoot,
   targetDirectory,
+  buildSubdirectory,
 }: {
   projectRoot: string;
   targetDirectory: string;
+  buildSubdirectory?: string;
 }): string {
-  return path.join(projectRoot, targetDirectory, 'ios', 'build');
+  const basePath = path.join(projectRoot, targetDirectory, 'ios', 'build');
+  return buildSubdirectory ? path.join(basePath, buildSubdirectory) : basePath;
 }
 
 /**
@@ -170,12 +174,14 @@ export function getTargetBuildPath({
 export function getTargetInfoPlistPath({
   projectRoot,
   targetDirectory,
+  buildSubdirectory,
 }: {
   projectRoot: string;
   targetDirectory: string;
+  buildSubdirectory?: string;
 }): string {
   return path.join(
-    getTargetBuildPath({ projectRoot, targetDirectory }),
+    getTargetBuildPath({ projectRoot, targetDirectory, buildSubdirectory }),
     'Info.plist'
   );
 }
@@ -187,12 +193,14 @@ export function getTargetInfoPlistPath({
 export function getTargetEntitlementsPath({
   projectRoot,
   targetDirectory,
+  buildSubdirectory,
 }: {
   projectRoot: string;
   targetDirectory: string;
+  buildSubdirectory?: string;
 }): string {
   return path.join(
-    getTargetBuildPath({ projectRoot, targetDirectory }),
+    getTargetBuildPath({ projectRoot, targetDirectory, buildSubdirectory }),
     'generated.entitlements'
   );
 }
@@ -206,14 +214,16 @@ export function getTargetAssetsPath({
   projectRoot,
   targetDirectory,
   isStickers,
+  buildSubdirectory,
 }: {
   projectRoot: string;
   targetDirectory: string;
   isStickers?: boolean;
+  buildSubdirectory?: string;
 }): string {
   const assetsFolderName = isStickers ? 'Stickers.xcassets' : 'Assets.xcassets';
   return path.join(
-    getTargetBuildPath({ projectRoot, targetDirectory }),
+    getTargetBuildPath({ projectRoot, targetDirectory, buildSubdirectory }),
     assetsFolderName
   );
 }
@@ -225,13 +235,15 @@ export function getTargetColorsetPath({
   projectRoot,
   targetDirectory,
   colorName,
+  buildSubdirectory,
 }: {
   projectRoot: string;
   targetDirectory: string;
   colorName: string;
+  buildSubdirectory?: string;
 }): string {
   return path.join(
-    getTargetAssetsPath({ projectRoot, targetDirectory }),
+    getTargetAssetsPath({ projectRoot, targetDirectory, buildSubdirectory }),
     `${colorName}.colorset`
   );
 }

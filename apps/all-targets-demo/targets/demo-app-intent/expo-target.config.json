@@ -1,0 +1,6 @@
+{
+  "type": "app-intent",
+  "name": "DemoAppIntent",
+  "displayName": "Demo App Intent",
+  "platforms": ["ios"]
+}

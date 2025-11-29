@@ -12,6 +12,7 @@ export const withTargetEntitlements: ConfigPlugin<{
   type: ExtensionType;
   entitlements?: Record<string, any>;
   logger: Logger;
+  buildSubdirectory?: string;
 }> = (config, props) => {
   return withDangerousMod(config, [
     'ios',
@@ -36,6 +37,11 @@ export const withTargetEntitlements: ConfigPlugin<{
         );
       }
 
+      // Add Wallet extension specific entitlements
+      if (props.type === 'wallet' || props.type === 'wallet-ui') {
+        entitlements['com.apple.developer.payment-pass-provisioning'] = true;
+      }
+
       // Sync App Groups if needed
       if (Plist.shouldUseAppGroups(props.type)) {
         const mainAppGroups = config.ios?.entitlements?.[
@@ -56,6 +62,7 @@ export const withTargetEntitlements: ConfigPlugin<{
       const entitlementsPath = Paths.getTargetEntitlementsPath({
         projectRoot: config.modRequest.projectRoot,
         targetDirectory: props.targetDirectory,
+        buildSubdirectory: props.buildSubdirectory,
       });
 
       Plist.writePlist(entitlementsPath, entitlements);

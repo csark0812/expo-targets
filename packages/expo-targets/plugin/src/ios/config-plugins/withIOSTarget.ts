@@ -23,6 +23,11 @@ interface IOSTargetProps extends IOSTargetConfigWithReactNative {
   directory: string;
   configPath: string;
   logger: Logger;
+  intents?: {
+    intentsSupported?: string[];
+    intentsRestrictedWhileLocked?: string[];
+  };
+  buildSubdirectory?: string;
 }
 
 export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
@@ -184,6 +189,7 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
     type: props.type,
     entitlements: props.entitlements,
     logger: props.logger,
+    buildSubdirectory: props.buildSubdirectory,
   });
 
   // Note: Color generation is handled in withXcodeChanges where colors are created

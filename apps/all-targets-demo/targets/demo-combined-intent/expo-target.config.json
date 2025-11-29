@@ -1,0 +1,12 @@
+{
+  "type": "intent",
+  "name": "DemoCombinedIntent",
+  "displayName": "Demo Combined Intent",
+  "platforms": ["ios"],
+  "ios": {
+    "intents": {
+      "intentsSupported": ["INSendMessageIntent", "INSearchForMessagesIntent"],
+      "ui": true
+    }
+  }
+}

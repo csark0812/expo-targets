@@ -8,6 +8,7 @@ export type ExtensionType =
   | 'share'
   | 'action'
   | 'wallet'
+  | 'wallet-ui'
   | 'safari'
   | 'notification-content'
   | 'notification-service'
@@ -63,6 +64,32 @@ export interface StickerPack {
   assets: string[];
 }
 
+// Intent extension UI configuration
+export interface IntentUIConfig {
+  enabled: boolean;
+  name?: string;
+  bundleIdentifier?: string;
+}
+
+// Intent extension configuration (only applies when type='intent')
+export interface IntentsConfig {
+  intentsSupported?: string[];
+  intentsRestrictedWhileLocked?: string[];
+  ui?: boolean | IntentUIConfig;
+}
+
+// Wallet extension UI configuration
+export interface WalletUIConfig {
+  enabled: boolean;
+  name?: string;
+  bundleIdentifier?: string;
+}
+
+// Wallet extension configuration (only applies when type='wallet')
+export interface WalletConfig {
+  ui?: boolean | WalletUIConfig;
+}
+
 export const TYPE_MINIMUM_DEPLOYMENT_TARGETS: Record<ExtensionType, string> = {
   widget: '14.0',
   clip: '14.0',
@@ -70,7 +97,8 @@ export const TYPE_MINIMUM_DEPLOYMENT_TARGETS: Record<ExtensionType, string> = {
   messages: '13.0',
   share: '8.0',
   action: '8.0',
-  wallet: '13.0',
+  wallet: '14.0',
+  'wallet-ui': '14.0',
   'notification-content': '10.0',
   'notification-service': '10.0',
   intent: '12.0',
@@ -96,6 +124,7 @@ export const TYPE_BUNDLE_IDENTIFIER_SUFFIXES: Record<ExtensionType, string> = {
   share: 'share',
   action: 'action',
   wallet: 'wallet',
+  'wallet-ui': 'wallet-ui',
   safari: 'safari',
   'notification-content': 'notification-content',
   'notification-service': 'notification-service',
@@ -185,6 +214,33 @@ interface BaseIOSTargetConfig {
     }[];
     icons?: Record<string, string>;
   };
+
+  // Intent extension configuration (only applies when type='intent')
+  /**
+   * Siri Intents configuration for intent extensions
+   * When ui is enabled, generates both Intent and Intent UI extensions
+   * @example
+   * intents: {
+   *   intentsSupported: ['INStartWorkoutIntent', 'INPauseWorkoutIntent'],
+   *   ui: true
+   * }
+   */
+  intents?: IntentsConfig;
+
+  // Wallet extension configuration (only applies when type='wallet')
+  /**
+   * Wallet extension configuration for payment pass provisioning
+   * When ui is enabled, generates both Non-UI and UI (auth) extensions
+   * @example
+   * wallet: {
+   *   ui: true  // Creates both wallet and wallet-ui targets
+   * }
+   * // Or with custom config:
+   * wallet: {
+   *   ui: { enabled: true, name: 'MyWalletAuth' }
+   * }
+   */
+  wallet?: WalletConfig;
 }
 
 // Types that support React Native rendering

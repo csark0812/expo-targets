@@ -130,9 +130,20 @@ export const withTargetsDir: ConfigPlugin<{
         }
       }
 
-      if (supportsIOS && evaluatedConfig.ios) {
+      if (supportsIOS) {
+        // Extract intents config from ios.intents for intent/intent-ui types
+        const intentsConfig =
+          evaluatedConfig.type === 'intent' && evaluatedConfig.ios?.intents
+            ? {
+                intentsSupported:
+                  evaluatedConfig.ios.intents.intentsSupported || [],
+                intentsRestrictedWhileLocked:
+                  evaluatedConfig.ios.intents.intentsRestrictedWhileLocked,
+              }
+            : undefined;
+
         config = withIOSTarget(config, {
-          ...evaluatedConfig.ios,
+          ...(evaluatedConfig.ios || {}),
           type: evaluatedConfig.type,
           name: targetName,
           displayName: evaluatedConfig.displayName,
@@ -141,8 +152,87 @@ export const withTargetsDir: ConfigPlugin<{
           excludedPackages: evaluatedConfig.excludedPackages,
           directory: targetDirectory,
           configPath: targetPath,
+          intents: intentsConfig,
           logger,
         });
+
+        // Auto-generate Intent UI target when intent type has ios.intents.ui enabled
+        if (
+          evaluatedConfig.type === 'intent' &&
+          evaluatedConfig.ios?.intents?.ui
+        ) {
+          const intentsConfig = evaluatedConfig.ios.intents;
+          const uiConfig =
+            typeof intentsConfig.ui === 'object' ? intentsConfig.ui : {};
+
+          const intentUIName = uiConfig.name || `${targetName}UI`;
+          const intentUIBundleId = uiConfig.bundleIdentifier;
+
+          logger.log(
+            `Auto-generating Intent UI target: ${intentUIName} (from ${targetName})`
+          );
+
+          config = withIOSTarget(config, {
+            type: 'intent-ui',
+            name: intentUIName,
+            displayName: `${evaluatedConfig.displayName || targetName} UI`,
+            appGroup: evaluatedConfig.appGroup,
+            bundleIdentifier: intentUIBundleId,
+            directory: targetDirectory,
+            configPath: targetPath,
+            intents: {
+              intentsSupported: intentsConfig.intentsSupported || [],
+            },
+            buildSubdirectory: intentUIName,
+            logger,
+          });
+
+          // Store Intent UI config for runtime access
+          targetConfigs.push({
+            type: 'intent-ui',
+            name: intentUIName,
+            displayName: `${evaluatedConfig.displayName || targetName} UI`,
+            platforms: ['ios'],
+            appGroup,
+          });
+        }
+
+        // Auto-generate Wallet UI target when wallet type has ios.wallet.ui enabled
+        if (
+          evaluatedConfig.type === 'wallet' &&
+          evaluatedConfig.ios?.wallet?.ui
+        ) {
+          const walletConfig = evaluatedConfig.ios.wallet;
+          const uiConfig =
+            typeof walletConfig.ui === 'object' ? walletConfig.ui : {};
+
+          const walletUIName = uiConfig.name || `${targetName}UI`;
+          const walletUIBundleId = uiConfig.bundleIdentifier;
+
+          logger.log(
+            `Auto-generating Wallet UI target: ${walletUIName} (from ${targetName})`
+          );
+
+          config = withIOSTarget(config, {
+            type: 'wallet-ui',
+            name: walletUIName,
+            displayName: `${evaluatedConfig.displayName || targetName} UI`,
+            appGroup: evaluatedConfig.appGroup,
+            bundleIdentifier: walletUIBundleId,
+            directory: targetDirectory,
+            configPath: targetPath,
+            logger,
+          });
+
+          // Store Wallet UI config for runtime access
+          targetConfigs.push({
+            type: 'wallet-ui',
+            name: walletUIName,
+            displayName: `${evaluatedConfig.displayName || targetName} UI`,
+            platforms: ['ios'],
+            appGroup,
+          });
+        }
       }
 
       if (supportsAndroid) {

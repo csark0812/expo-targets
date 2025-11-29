@@ -1,0 +1,9 @@
+{
+  "type": "wallet-ui",
+  "name": "DemoWalletUI",
+  "displayName": "Demo Wallet UI",
+  "platforms": ["ios"],
+  "ios": {
+    "bundleIdentifier": "com.csarkissian.alltargetsdemo.walletaui"
+  }
+}

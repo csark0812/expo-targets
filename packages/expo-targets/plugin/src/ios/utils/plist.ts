@@ -96,6 +96,7 @@ export function shouldUseAppGroups(type: ExtensionType): boolean {
     matter: false,
     watch: false,
     wallet: false,
+    'wallet-ui': false,
   };
 
   return SHOULD_USE_APP_GROUPS_BY_DEFAULT[type];

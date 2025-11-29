@@ -25,6 +25,11 @@ interface IOSTargetProps extends IOSTargetConfigWithReactNative {
   directory: string;
   configPath: string;
   logger: Logger;
+  intents?: {
+    intentsSupported?: string[];
+    intentsRestrictedWhileLocked?: string[];
+  };
+  buildSubdirectory?: string;
 }
 
 export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
@@ -64,6 +69,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     const targetBuildPath = Paths.getTargetBuildPath({
       projectRoot,
       targetDirectory: props.directory,
+      buildSubdirectory: props.buildSubdirectory,
     });
     File.ensureDirectoryExists(targetBuildPath);
     props.logger.log(
@@ -74,6 +80,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     const infoPlistPath = Paths.getTargetInfoPlistPath({
       projectRoot,
       targetDirectory: props.directory,
+      buildSubdirectory: props.buildSubdirectory,
     });
 
     // Extract URL schemes from expo config for auto-injection into extensions
@@ -116,6 +123,9 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       Array.isArray(props.activationRules) && props.activationRules.length > 0;
     const hasPreprocessingFile = !!props.preprocessingFile;
 
+    // Extract intents config from either ios.intents or props.intents (for auto-generated UI)
+    const intentsConfig = props.intents || (props as any).intents;
+
     const infoPlistContent = getTargetInfoPlistForType(
       props.type,
       props.infoPlist,
@@ -128,7 +138,8 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       props.entry,
       mainAppSchemes.length > 0 ? mainAppSchemes : undefined,
       targetsConfig,
-      props.targetIcon
+      props.targetIcon,
+      intentsConfig
     );
     File.writeFileSafe(infoPlistPath, infoPlistContent);
     props.logger.log(
@@ -141,6 +152,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
         projectRoot,
         targetDirectory: props.directory,
         isStickers: true,
+        buildSubdirectory: props.buildSubdirectory,
       });
 
       // Create root Contents.json for Stickers.xcassets
@@ -363,6 +375,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       const entitlementsPath = Paths.getTargetEntitlementsPath({
         projectRoot,
         targetDirectory: props.directory,
+        buildSubdirectory: props.buildSubdirectory,
       });
       const relativeEntitlementsPath = path.relative(
         platformProjectRoot,
@@ -860,6 +873,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       projectRoot,
       targetDirectory: props.directory,
       isStickers: props.type === 'stickers',
+      buildSubdirectory: props.buildSubdirectory,
     });
 
     // Copy user assets to build directory if they exist
@@ -879,6 +893,7 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
           projectRoot,
           targetDirectory: props.directory,
           colorName,
+          buildSubdirectory: props.buildSubdirectory,
         });
         if (typeof colorValue === 'string') {
           Asset.createColorset({

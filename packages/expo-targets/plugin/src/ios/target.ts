@@ -166,12 +166,31 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       embedType: 'foundation-extension',
       frameworks: ['PassKit'],
       productType: 'com.apple.product-type.app-extension',
-      extensionPointIdentifier: 'com.apple.passkit-issuer-extension',
+      extensionPointIdentifier: 'com.apple.PassKit.issuer-provisioning',
       defaultUsesAppGroups: false,
       requiresEntitlements: true,
       basePlist: {
         NSExtension: {
           NSExtensionPrincipalClass: '$(PRODUCT_MODULE_NAME).PassProvider',
+        },
+      },
+      supportsActivationRules: false,
+      activationRulesLocation: 'none',
+    },
+    'wallet-ui': {
+      requiresCode: true,
+      targetType: 'app_extension',
+      embedType: 'foundation-extension',
+      frameworks: ['PassKit'],
+      productType: 'com.apple.product-type.app-extension',
+      extensionPointIdentifier:
+        'com.apple.PassKit.issuer-provisioning.authorization',
+      defaultUsesAppGroups: false,
+      requiresEntitlements: true,
+      basePlist: {
+        NSExtension: {
+          NSExtensionPrincipalClass:
+            '$(PRODUCT_MODULE_NAME).AuthorizationViewController',
         },
       },
       supportsActivationRules: false,
@@ -424,7 +443,11 @@ export function getTargetInfoPlistForType(
   entry?: string,
   mainAppSchemes?: string[],
   targetsConfig?: any[],
-  targetIcon?: string
+  targetIcon?: string,
+  intentsConfig?: {
+    intentsSupported?: string[];
+    intentsRestrictedWhileLocked?: string[];
+  }
 ): string {
   const typeCharacteristics = TYPE_CHARACTERISTICS[type];
   if (!typeCharacteristics) {
@@ -492,6 +515,33 @@ export function getTargetInfoPlistForType(
             : activationRules,
       };
     }
+  }
+
+  // Handle IntentsSupported for intent and intent-ui types
+  if ((type === 'intent' || type === 'intent-ui') && intentsConfig) {
+    const nsExtension = basePlist.NSExtension || {};
+    const nsExtensionAttributes = nsExtension.NSExtensionAttributes || {};
+
+    if (
+      intentsConfig.intentsSupported &&
+      intentsConfig.intentsSupported.length > 0
+    ) {
+      nsExtensionAttributes.IntentsSupported = intentsConfig.intentsSupported;
+    }
+
+    if (
+      type === 'intent' &&
+      intentsConfig.intentsRestrictedWhileLocked &&
+      intentsConfig.intentsRestrictedWhileLocked.length > 0
+    ) {
+      nsExtensionAttributes.IntentsRestrictedWhileLocked =
+        intentsConfig.intentsRestrictedWhileLocked;
+    }
+
+    basePlist.NSExtension = {
+      ...nsExtension,
+      NSExtensionAttributes: nsExtensionAttributes,
+    };
   }
 
   // Override NSExtensionPrincipalClass for React Native extensions
