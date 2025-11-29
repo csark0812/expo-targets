@@ -671,6 +671,7 @@ Most wallet implementations require both a Non-UI extension (background provisio
 ```
 
 This generates two targets:
+
 - `MyWallet` — Non-UI extension for pass provisioning
 - `MyWalletUI` — UI extension for authentication flow
 
@@ -827,31 +828,31 @@ export default function (config: ExpoConfig) {
 
 ## Extension Types Reference
 
-| Type                      | iOS           | Android    | Description                |
-| ------------------------- | ------------- | ---------- | -------------------------- |
-| `widget`                  | ✅ iOS 14+    | ✅ API 26+ | Home screen widgets        |
-| `clip`                    | ✅ iOS 14+    | —          | App Clips                  |
-| `stickers`                | ✅ iOS 10+    | —          | iMessage sticker packs     |
-| `messages`                | ✅ iOS 10+    | —          | iMessage apps              |
-| `share`                   | ✅ iOS 8+     | 🔜         | Share extensions           |
-| `action`                  | ✅ iOS 8+     | 🔜         | Action extensions          |
-| `wallet`                  | 📋 iOS 14+    | —          | Wallet pass provisioning   |
-| `wallet-ui`               | 📋 iOS 14+    | —          | Wallet authentication UI   |
-| `safari`                  | 📋 iOS 15+    | —          | Safari web extensions      |
-| `notification-content`    | 📋 iOS 10+    | 🔜         | Rich notification UI       |
-| `notification-service`    | 📋 iOS 10+    | 🔜         | Notification processing    |
-| `intent`                  | 📋 iOS 12+    | —          | Siri intents (legacy)      |
-| `intent-ui`               | 📋 iOS 12+    | —          | Siri intent custom UI      |
-| `app-intent`              | 📋 iOS 16+    | —          | App Intents (modern Siri)  |
-| `spotlight`               | 📋 iOS 9+     | —          | Spotlight index            |
-| `bg-download`             | 📋 iOS 7+     | —          | Background downloads       |
-| `quicklook-thumbnail`     | 📋 iOS 11+    | —          | QuickLook thumbnails       |
-| `location-push`           | 📋 iOS 15+    | —          | Location push service      |
-| `credentials-provider`    | 📋 iOS 12+    | —          | Credential provider        |
-| `account-auth`            | 📋 iOS 12.2+  | —          | Account authentication     |
-| `device-activity-monitor` | 📋 iOS 15+    | —          | Device activity monitor    |
-| `matter`                  | 📋 iOS 16.1+  | —          | Matter extensions          |
-| `watch`                   | 📋 watchOS 2+ | —          | Watch app                  |
+| Type                      | iOS           | Android    | Description               |
+| ------------------------- | ------------- | ---------- | ------------------------- |
+| `widget`                  | ✅ iOS 14+    | ✅ API 26+ | Home screen widgets       |
+| `clip`                    | ✅ iOS 14+    | —          | App Clips                 |
+| `stickers`                | ✅ iOS 10+    | —          | iMessage sticker packs    |
+| `messages`                | ✅ iOS 10+    | —          | iMessage apps             |
+| `share`                   | ✅ iOS 8+     | 🔜         | Share extensions          |
+| `action`                  | ✅ iOS 8+     | 🔜         | Action extensions         |
+| `wallet`                  | 📋 iOS 14+    | —          | Wallet pass provisioning  |
+| `wallet-ui`               | 📋 iOS 14+    | —          | Wallet authentication UI  |
+| `safari`                  | 📋 iOS 15+    | —          | Safari web extensions     |
+| `notification-content`    | 📋 iOS 10+    | 🔜         | Rich notification UI      |
+| `notification-service`    | 📋 iOS 10+    | 🔜         | Notification processing   |
+| `intent`                  | 📋 iOS 12+    | —          | Siri intents (legacy)     |
+| `intent-ui`               | 📋 iOS 12+    | —          | Siri intent custom UI     |
+| `app-intent`              | 📋 iOS 16+    | —          | App Intents (modern Siri) |
+| `spotlight`               | 📋 iOS 9+     | —          | Spotlight index           |
+| `bg-download`             | 📋 iOS 7+     | —          | Background downloads      |
+| `quicklook-thumbnail`     | 📋 iOS 11+    | —          | QuickLook thumbnails      |
+| `location-push`           | 📋 iOS 15+    | —          | Location push service     |
+| `credentials-provider`    | 📋 iOS 12+    | —          | Credential provider       |
+| `account-auth`            | 📋 iOS 12.2+  | —          | Account authentication    |
+| `device-activity-monitor` | 📋 iOS 15+    | —          | Device activity monitor   |
+| `matter`                  | 📋 iOS 16.1+  | —          | Matter extensions         |
+| `watch`                   | 📋 watchOS 2+ | —          | Watch app                 |
 
 **Legend:** ✅ Production ready · 📋 Config-only (bring your own Swift/Kotlin) · 🔜 Planned · — Not applicable
 
@@ -1206,6 +1207,7 @@ Use `intents.ui` to generate both Intent and Intent UI extensions from a single 
 ```
 
 This generates two targets:
+
 - `MyIntent` — Handles intent execution
 - `MyIntentUI` — Provides custom UI during intent handling
 
@@ -1380,14 +1382,14 @@ struct GetGreetingIntent: AppIntent {
 
 **When to use App Intents vs legacy Intent:**
 
-| Feature | App Intents (iOS 16+) | Legacy Intent (iOS 12+) |
-| ------- | --------------------- | ----------------------- |
-| Shortcuts support | ✅ Native | ✅ Requires donation |
-| Focus Filters | ✅ | ❌ |
-| Spotlight suggestions | ✅ Built-in | ❌ |
-| Siri voice | ✅ | ✅ |
-| Widget configuration | ✅ | ❌ |
-| Backwards compatibility | iOS 16+ only | iOS 12+ |
+| Feature                 | App Intents (iOS 16+) | Legacy Intent (iOS 12+) |
+| ----------------------- | --------------------- | ----------------------- |
+| Shortcuts support       | ✅ Native             | ✅ Requires donation    |
+| Focus Filters           | ✅                    | ❌                      |
+| Spotlight suggestions   | ✅ Built-in           | ❌                      |
+| Siri voice              | ✅                    | ✅                      |
+| Widget configuration    | ✅                    | ❌                      |
+| Backwards compatibility | iOS 16+ only          | iOS 12+                 |
 
 > **Recommendation:** Use App Intents for new projects targeting iOS 16+. Use legacy Intent extensions for broader device support.
 
