@@ -308,6 +308,13 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       // INFOPLIST_FILE will be set later to point to targets/*/ios/build/Info.plist
     };
 
+    // Set display name from config if provided (allows user-friendly names with spaces)
+    // This overrides the CFBundleDisplayName from Info.plist which uses $(PRODUCT_NAME)
+    if (props.displayName) {
+      targetSpecificSettings.INFOPLIST_KEY_CFBundleDisplayName = `"${props.displayName}"`;
+      props.logger.log(`Set display name: ${props.displayName}`);
+    }
+
     // Only code-based targets need entitlements - generate in build directory
     if (typeConfig.requiresEntitlements) {
       const entitlementsPath = Paths.getTargetEntitlementsPath({
