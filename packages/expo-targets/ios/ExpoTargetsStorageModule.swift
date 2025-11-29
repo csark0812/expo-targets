@@ -36,16 +36,16 @@ public class ExpoTargetsStorageModule: Module {
     }
 
     Function("getAllKeys") { (suite: String?) -> [String] in
-      let defaults = UserDefaults(suiteName: suite ?? "")
-      guard let dict = defaults?.dictionaryRepresentation() else {
+      let suiteName = suite ?? ""
+      guard let dict = UserDefaults.standard.persistentDomain(forName: suiteName) else {
         return []
       }
       return Array(dict.keys)
     }
 
     Function("getAllData") { (suite: String?) -> [String: Any] in
-      let defaults = UserDefaults(suiteName: suite ?? "")
-      return defaults?.dictionaryRepresentation() ?? [:]
+      let suiteName = suite ?? ""
+      return UserDefaults.standard.persistentDomain(forName: suiteName) ?? [:]
     }
 
     Function("clearAll") { (suite: String?) -> Void in
