@@ -67,7 +67,9 @@ export async function syncTargets(options: SyncOptions = {}) {
 
   if (targetConfigFiles.length === 0) {
     console.log(`[expo-targets-sync] No targets found in ${targetsRoot}/`);
-    console.log('[expo-targets-sync] Create a target first: npx create-target');
+    console.log(
+      '[expo-targets-sync] Create a target first: npx create-expo-target'
+    );
     return;
   }
 

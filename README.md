@@ -37,7 +37,7 @@ npm install expo-targets
 ### 3. Create a Widget
 
 ```bash
-npx create-target
+npx create-expo-target
 # Choose: Widget → my-widget → iOS
 ```
 
