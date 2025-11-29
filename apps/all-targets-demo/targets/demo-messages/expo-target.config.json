@@ -3,7 +3,7 @@
   "name": "DemoMessages",
   "displayName": "Demo Messages",
   "platforms": ["ios"],
-  "appGroup": "group.com.test.alltargetsdemo",
+  "appGroup": "group.com.csarkissian.alltargetsdemo",
   "ios": {
     "colors": {
       "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" },

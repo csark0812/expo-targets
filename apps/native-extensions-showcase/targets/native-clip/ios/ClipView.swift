@@ -153,9 +153,9 @@ struct ClipView: View {
 
     private func storeCheckoutData() {
         let defaults = UserDefaults(suiteName: "group.com.test.nativeextensionsshowcase")
-        defaults?.set(itemName, forKey: "lastItemName")
-        defaults?.set(price, forKey: "lastPrice")
-        defaults?.set(Date().timeIntervalSince1970, forKey: "checkoutTimestamp")
+        defaults?.set(itemName, forKey: "native-clip:lastItemName")
+        defaults?.set(price, forKey: "native-clip:lastPrice")
+        defaults?.set(Date().timeIntervalSince1970, forKey: "native-clip:checkoutTimestamp")
     }
 }
 

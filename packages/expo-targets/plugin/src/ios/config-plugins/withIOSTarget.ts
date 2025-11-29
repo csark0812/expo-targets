@@ -175,6 +175,7 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
       excludedPackages: props.excludedPackages,
       // Standalone if no entry, or if it's a web-based entry (safari with RN Web)
       standalone: !props.entry || isWebBasedEntry,
+      targetDirectory: props.directory, // For pods.rb file detection
       logger: props.logger,
     });
   } else {

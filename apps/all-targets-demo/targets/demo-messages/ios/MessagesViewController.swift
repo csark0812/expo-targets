@@ -2,7 +2,7 @@ import UIKit
 import Messages
 
 class MessagesViewController: MSMessagesAppViewController {
-    private let appGroup = "group.com.test.alltargetsdemo"
+    private let appGroup = "group.com.csarkissian.alltargetsdemo"
 
     private var titleLabel: UILabel!
     private var subtitleLabel: UILabel!

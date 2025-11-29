@@ -3,6 +3,7 @@ import {
   withDangerousMod,
   IOSConfig,
 } from '@expo/config-plugins';
+import fs from 'fs';
 import path from 'path';
 
 import { type ExtensionType } from '../../config';
@@ -17,6 +18,7 @@ export const withTargetPodfile: ConfigPlugin<{
   extensionType: ExtensionType;
   excludedPackages?: string[];
   standalone?: boolean;
+  targetDirectory?: string;
   logger: Logger;
 }> = (config, props) => {
   return withDangerousMod(config, [
@@ -53,6 +55,25 @@ export const withTargetPodfile: ConfigPlugin<{
         ? Podfile.mainTargetUsesFrameworks(podfile, mainTargetName)
         : undefined;
 
+      // Read pods.rb from target's ios directory if it exists
+      // This allows custom CocoaPods configuration per target (e.g., Firebase, third-party SDKs)
+      // Compatible with @bacons/apple-targets pods.rb format
+      let podsRbContent: string | undefined;
+      if (props.targetDirectory) {
+        const podsRbPath = path.join(
+          projectRoot,
+          props.targetDirectory,
+          'ios',
+          'pods.rb'
+        );
+        if (fs.existsSync(podsRbPath)) {
+          podsRbContent = fs.readFileSync(podsRbPath, 'utf-8');
+          props.logger.log(
+            `Found pods.rb for ${props.targetName}: ${podsRbPath}`
+          );
+        }
+      }
+
       // Generate appropriate target block based on type
       // React Native targets are nested inside main target to inherit dependencies
       const targetBlock = props.standalone
@@ -60,11 +81,13 @@ export const withTargetPodfile: ConfigPlugin<{
             targetName: props.targetName,
             deploymentTarget: props.deploymentTarget,
             useFrameworks: mainUsesFrameworks,
+            podsRbContent,
           })
         : Podfile.generateReactNativeTargetBlock({
             targetName: props.targetName,
             deploymentTarget: props.deploymentTarget,
             extensionType: props.extensionType,
+            podsRbContent,
           });
 
       props.logger.log(

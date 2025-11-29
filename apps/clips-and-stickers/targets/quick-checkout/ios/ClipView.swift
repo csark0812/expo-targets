@@ -153,9 +153,9 @@ struct ClipView: View {
 
     private func storeCheckoutData() {
         let defaults = UserDefaults(suiteName: "group.com.test.clipsandstickers")
-        defaults?.set(itemName, forKey: "lastItemName")
-        defaults?.set(price, forKey: "lastPrice")
-        defaults?.set(Date().timeIntervalSince1970, forKey: "checkoutTimestamp")
+        defaults?.set(itemName, forKey: "QuickCheckout:lastItemName")
+        defaults?.set(price, forKey: "QuickCheckout:lastPrice")
+        defaults?.set(Date().timeIntervalSince1970, forKey: "QuickCheckout:checkoutTimestamp")
     }
 }
 

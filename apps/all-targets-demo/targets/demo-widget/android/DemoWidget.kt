@@ -1,4 +1,4 @@
-package com.test.alltargetsdemo.widget.demowidget
+package com.csarkissian.alltargetsdemo.widget.demowidget
 
 import android.content.Context
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -10,7 +10,7 @@ import androidx.glance.currentState
 import androidx.glance.state.PreferencesGlanceStateDefinition
 import expo.modules.targets.ExpoTargetsWidgetUpdateReceiver
 
-private val MESSAGE_KEY = stringPreferencesKey("message")
+private val MESSAGE_KEY = stringPreferencesKey("DemoWidget:message")
 
 class DemoWidget : GlanceAppWidget() {
     override val stateDefinition = PreferencesGlanceStateDefinition
@@ -26,7 +26,7 @@ class DemoWidget : GlanceAppWidget() {
 
 class DemoWidgetUpdateReceiver : ExpoTargetsWidgetUpdateReceiver<DemoWidget>(
     DemoWidget::class,
-    "group.com.test.alltargetsdemo"
+    "group.com.csarkissian.alltargetsdemo"
 )
 
 class DemoWidgetWidgetReceiver : GlanceAppWidgetReceiver() {
