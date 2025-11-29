@@ -3,7 +3,7 @@
   "name": "DemoWidget",
   "displayName": "Demo Widget",
   "platforms": ["ios", "android"],
-  "appGroup": "group.com.test.alltargetsdemo",
+  "appGroup": "group.com.csarkissian.alltargetsdemo",
   "ios": {
     "deploymentTarget": "15.1",
     "colors": {
@@ -12,7 +12,7 @@
     }
   },
   "android": {
-    "packageName": "com.test.alltargetsdemo.demo",
+    "packageName": "com.csarkissian.alltargetsdemo.widget",
     "colors": {
       "accent_color": { "light": "#007AFF", "dark": "#0A84FF" },
       "background_color": { "light": "#F2F2F7", "dark": "#1C1C1E" },

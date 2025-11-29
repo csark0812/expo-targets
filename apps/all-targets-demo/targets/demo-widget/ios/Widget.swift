@@ -14,8 +14,8 @@ struct DemoEntry: TimelineEntry {
 }
 
 struct Provider: TimelineProvider {
-    let appGroup = "group.com.test.alltargetsdemo"
-    let keychain = Keychain(service: "com.test.alltargetsdemo", accessGroup: "group.com.test.alltargetsdemo")
+    let appGroup = "group.com.csarkissian.alltargetsdemo"
+    let keychain = Keychain(service: "com.csarkissian.alltargetsdemo", accessGroup: "group.com.csarkissian.alltargetsdemo")
 
     func placeholder(in context: Context) -> DemoEntry {
         DemoEntry(
@@ -63,7 +63,6 @@ struct Provider: TimelineProvider {
 
     private func loadMessage() -> String {
         let defaults = UserDefaults(suiteName: appGroup)
-        // expo-targets storage stores values directly by key, not in nested dictionary
         if let message = defaults?.string(forKey: "message") {
             return message
         }
@@ -183,4 +182,3 @@ struct DemoWidgetView: View {
         }
     }
 }
-

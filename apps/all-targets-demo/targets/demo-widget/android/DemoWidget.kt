@@ -1,4 +1,4 @@
-package com.test.alltargetsdemo.widget.demowidget
+package com.csarkissian.alltargetsdemo.widget.demowidget
 
 import android.content.Context
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -26,7 +26,7 @@ class DemoWidget : GlanceAppWidget() {
 
 class DemoWidgetUpdateReceiver : ExpoTargetsWidgetUpdateReceiver<DemoWidget>(
     DemoWidget::class,
-    "group.com.test.alltargetsdemo"
+    "group.com.csarkissian.alltargetsdemo"
 )
 
 class DemoWidgetWidgetReceiver : GlanceAppWidgetReceiver() {

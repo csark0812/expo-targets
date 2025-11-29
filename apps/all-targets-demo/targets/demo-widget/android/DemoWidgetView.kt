@@ -1,4 +1,4 @@
-package com.test.alltargetsdemo.widget.demowidget
+package com.csarkissian.alltargetsdemo.widget.demowidget
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
@@ -12,7 +12,7 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
-import com.test.alltargetsdemo.R
+import com.csarkissian.alltargetsdemo.R
 
 @Composable
 fun DemoWidgetView(message: String) {
