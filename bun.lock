@@ -148,7 +148,7 @@
     },
     "packages/expo-targets": {
       "name": "expo-targets",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "dependencies": {
         "@babel/parser": "^7.25.0",
         "@babel/traverse": "^7.25.0",
@@ -180,7 +180,7 @@
       "dependencies": {
         "@expo/config-plugins": "~8.0.0",
         "commander": "^11.1.0",
-        "expo-targets": "workspace:*",
+        "expo-targets": "^0.1.0",
         "glob": "^10.3.10",
         "xcode": "3.0.1",
       },
@@ -2218,6 +2218,8 @@
     "@babel/preset-env/semver": ["semver@6.3.1", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA=="],
 
     "@eslint/eslintrc/ignore": ["ignore@5.3.2", "", {}, "sha512-hsBTNUqQTDwkWtcdYI2i06Y/nUBEsNEDJKjWdigLvegy8kDuJAS8uRlpkkcQpyEXL0Z/pjDy5HBmMjRCJ2gq+g=="],
+
+    "@expo-targets/cli/expo-targets": ["expo-targets@0.1.1", "", { "dependencies": { "@babel/parser": "^7.25.0", "@babel/traverse": "^7.25.0", "@babel/types": "^7.25.0", "@expo/config-plugins": "^8.0.0", "@expo/config-types": "^52.0.0", "@expo/plist": "^0.1.0", "@react-native/normalize-colors": "^0.79.2", "debug": "^4.3.4", "glob": "^10.4.2", "xcode": "3.0.1" }, "peerDependencies": { "expo": "*", "expo-constants": "*" } }, "sha512-h4DszUjaGm0ln87unLAJHKDtyotKKcgf68kW10Dar+RilmX7pmaeuwwarVQ+t9XqS7qErr5u5vPX9IviWXu41Q=="],
 
     "@expo/cli/@expo/config-plugins": ["@expo/config-plugins@54.0.2", "", { "dependencies": { "@expo/config-types": "^54.0.8", "@expo/json-file": "~10.0.7", "@expo/plist": "^0.4.7", "@expo/sdk-runtime-versions": "^1.0.0", "chalk": "^4.1.2", "debug": "^4.3.5", "getenv": "^2.0.0", "glob": "^10.4.2", "resolve-from": "^5.0.0", "semver": "^7.5.4", "slash": "^3.0.0", "slugify": "^1.6.6", "xcode": "^3.0.1", "xml2js": "0.6.0" } }, "sha512-jD4qxFcURQUVsUFGMcbo63a/AnviK8WUGard+yrdQE3ZrB/aurn68SlApjirQQLEizhjI5Ar2ufqflOBlNpyPg=="],
 
