@@ -176,6 +176,74 @@ Add iOS-specific options under the `ios` key:
 | `safari`         | SafariServices, WebKit                      |
 | `notification-*` | UserNotifications, UserNotificationsUI      |
 
+### CocoaPods Dependencies (pods.rb)
+
+Add a `pods.rb` file in your target's `ios/` directory to include custom CocoaPods dependencies. This is useful for adding third-party SDKs like Firebase to your extension targets.
+
+**File structure:**
+
+```
+targets/my-widget/
+├── expo-target.config.json
+└── ios/
+    ├── pods.rb                ← Custom CocoaPods configuration
+    └── Widget.swift
+```
+
+**Example `pods.rb` for Firebase:**
+
+```ruby
+# targets/my-widget/ios/pods.rb
+pod 'Firebase/Auth'
+pod 'Firebase/Firestore'
+```
+
+The contents of `pods.rb` are injected into the target block in the generated Podfile:
+
+```ruby
+# Generated Podfile (after prebuild)
+target 'MyWidgetTarget' do
+    use_frameworks! :linkage => :static
+    platform :ios, '14.0'
+    # From pods.rb:
+    pod 'Firebase/Auth'
+    pod 'Firebase/Firestore'
+end
+```
+
+**Advanced example with React Native setup:**
+
+For App Clips or other targets that need full React Native support:
+
+```ruby
+# targets/my-clip/ios/pods.rb
+require File.join(File.dirname(`node --print "require.resolve('react-native/package.json')"`), "scripts/react_native_pods")
+
+exclude = []
+use_expo_modules!(exclude: exclude)
+
+config_command = [
+  'node',
+  '--no-warnings',
+  '--eval',
+  'require(require.resolve(\'expo-modules-autolinking\', { paths: [require.resolve(\'expo/package.json\')] }))(process.argv.slice(1))',
+  'react-native-config',
+  '--json',
+  '--platform',
+  'ios'
+]
+
+config = use_native_modules!(config_command)
+
+use_react_native!(
+  :path => config[:reactNativePath],
+  :hermes_enabled => true,
+  :app_path => "#{Pod::Config.instance.installation_root}/..",
+)
+```
+
+> **Note:** The `pods.rb` file is evaluated inside the target's `do...end` block. Global CocoaPods properties are available via the `podfile_properties` variable.
+
 ### Colors
 
 Define colors with light/dark mode support:

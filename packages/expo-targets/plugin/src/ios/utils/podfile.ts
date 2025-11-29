@@ -10,20 +10,36 @@
  *
  * Note: ExpoTargetsMessages is accessed via the main app's autolinking through shared
  * registry defined in generated code, so no direct pod dependency is needed.
+ *
+ * @param podsRbContent - Optional content from a pods.rb file in the target directory.
+ *                        Allows custom CocoaPods configuration (e.g., Firebase, third-party SDKs).
+ *                        See: https://github.com/nicklockwood/apple-targets#cocoapods
  */
 export function generateReactNativeTargetBlock({
   targetName,
   deploymentTarget,
   extensionType,
+  podsRbContent,
 }: {
   targetName: string;
   deploymentTarget: string;
   extensionType: string;
+  podsRbContent?: string;
 }): string {
+  // Indent pods.rb content to match target block indentation
+  const customPods = podsRbContent
+    ? '\n' +
+      podsRbContent
+        .split('\n')
+        .map((line) => (line.trim() ? `    ${line}` : ''))
+        .join('\n') +
+      '\n'
+    : '';
+
   return `
   target '${targetName}' do
     platform :ios, '${deploymentTarget}'
-    inherit! :search_paths
+    inherit! :search_paths${customPods}
   end
 `;
 }
@@ -53,22 +69,39 @@ export function mainTargetUsesFrameworks(
  * Generate a Podfile target block for a standalone (non-RN) extension.
  * Standalone targets use native code only (Swift/Obj-C), no React Native or Expo modules.
  * Must match main app's use_frameworks! setting for CocoaPods integration.
+ *
+ * @param podsRbContent - Optional content from a pods.rb file in the target directory.
+ *                        Allows custom CocoaPods configuration (e.g., Firebase, third-party SDKs).
+ *                        See: https://github.com/nicklockwood/apple-targets#cocoapods
  */
 export function generateStandaloneTargetBlock({
   targetName,
   deploymentTarget,
   useFrameworks,
+  podsRbContent,
 }: {
   targetName: string;
   deploymentTarget: string;
   useFrameworks?: boolean;
+  podsRbContent?: string;
 }): string {
   const frameworksLine = useFrameworks
     ? `    use_frameworks! :linkage => :static\n`
     : '';
+
+  // Indent pods.rb content to match target block indentation
+  const customPods = podsRbContent
+    ? '\n' +
+      podsRbContent
+        .split('\n')
+        .map((line) => (line.trim() ? `    ${line}` : ''))
+        .join('\n') +
+      '\n'
+    : '';
+
   return `
-  target '${targetName}' do
-${frameworksLine}    platform :ios, '${deploymentTarget}'
+target '${targetName}' do
+${frameworksLine}    platform :ios, '${deploymentTarget}'${customPods}
   end
 `;
 }
