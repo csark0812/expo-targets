@@ -30,11 +30,21 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
   props.logger.log(`Configuring iOS target: ${targetName} (${props.type})`);
 
   // Validate React Native compatibility
-  const REACT_NATIVE_COMPATIBLE_TYPES: ExtensionType[] = [
+  // Native RN types run actual React Native with native modules
+  const REACT_NATIVE_NATIVE_TYPES: ExtensionType[] = [
     'share',
     'action',
     'clip',
     'messages',
+  ];
+
+  // Web-based RN types run React Native Web in a web view
+  const REACT_NATIVE_WEB_TYPES: ExtensionType[] = ['safari'];
+
+  // All types that support entry field
+  const REACT_NATIVE_COMPATIBLE_TYPES: ExtensionType[] = [
+    ...REACT_NATIVE_NATIVE_TYPES,
+    ...REACT_NATIVE_WEB_TYPES,
   ];
 
   // Validate entry field
@@ -110,11 +120,13 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
     }
   }
 
-  // React Native extensions require ExpoModulesCore, which has minimum iOS 15.1
-  // Ensure deployment target meets this requirement when using React Native (entry specified)
+  // Native React Native extensions require ExpoModulesCore, which has minimum iOS 15.1
+  // Web-based extensions (safari) don't require ExpoModulesCore
   const EXPO_MODULES_MINIMUM = '15.1';
+  const isNativeRNExtension =
+    props.entry && REACT_NATIVE_NATIVE_TYPES.includes(props.type);
   if (
-    props.entry &&
+    isNativeRNExtension &&
     parseFloat(deploymentTarget!) < parseFloat(EXPO_MODULES_MINIMUM)
   ) {
     props.logger.log(
@@ -144,8 +156,11 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
 
   // Add Podfile target only for code-based targets (skip asset-only like stickers)
   // Extensions with React Native need full RN setup, others need standalone config
+  // Safari with entry uses web rendering, so it's standalone (no RN deps)
   const { TYPE_CHARACTERISTICS } = require('../target');
   const typeConfig = TYPE_CHARACTERISTICS[props.type];
+  const isWebBasedEntry =
+    !!props.entry && REACT_NATIVE_WEB_TYPES.includes(props.type);
 
   if (typeConfig.requiresCode) {
     config = withTargetPodfile(config, {
@@ -153,7 +168,8 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
       deploymentTarget: deploymentTarget!, // Guaranteed to be set by resolution logic above
       extensionType: props.type,
       excludedPackages: props.excludedPackages,
-      standalone: !props.entry, // Standalone (no dependency inheritance) if not using React Native
+      // Standalone if no entry, or if it's a web-based entry (safari with RN Web)
+      standalone: !props.entry || isWebBasedEntry,
       logger: props.logger,
     });
   } else {

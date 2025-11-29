@@ -15,7 +15,7 @@ import {
   getTargetInfoPlistForType,
   TYPE_CHARACTERISTICS,
 } from '../target';
-import { Xcode, Paths, File, Asset, ReactNativeSwift } from '../utils';
+import { Xcode, Paths, File, Asset, ReactNativeSwift, Safari } from '../utils';
 
 interface IOSTargetProps extends IOSTargetConfigWithReactNative {
   type: ExtensionType;
@@ -216,6 +216,49 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
             `Created sticker pack "${stickerPack.name}" with ${stickerPack.assets.length} sticker(s)`
           );
         });
+      }
+    }
+
+    // Generate Safari web extension resources (RN Web mode only)
+    if (props.type === 'safari' && props.entry) {
+      const resourcesPath = path.join(targetBuildPath, 'Resources');
+
+      // Check if user has provided custom Resources folder
+      if (Safari.hasCustomSafariResources(props.directory)) {
+        props.logger.log(
+          `Using custom Safari Resources from ${path.relative(projectRoot, path.join(props.directory, 'ios', 'Resources'))}`
+        );
+        // Copy user's Resources to build directory
+        const userResourcesPath = path.join(
+          props.directory,
+          'ios',
+          'Resources'
+        );
+        File.copyDirectorySafe(userResourcesPath, resourcesPath);
+      } else {
+        // Generate default Safari resources for React Native Web
+        props.logger.log(`Generating Safari web extension resources...`);
+
+        // Extract manifest config from props if provided
+        const manifestConfig = (props as any).manifest as
+          | Safari.SafariManifestConfig
+          | undefined;
+
+        Safari.generateSafariResources(resourcesPath, {
+          name: props.name,
+          displayName: props.displayName,
+          manifest: manifestConfig,
+        });
+
+        props.logger.log(
+          `Generated Safari Resources at ${path.relative(projectRoot, resourcesPath)}`
+        );
+        props.logger.log(`  - popup.html (React Native Web container)`);
+        props.logger.log(`  - manifest.json`);
+        props.logger.log(`  - background.js`);
+        props.logger.log(
+          `  - popup.js (placeholder - bundle via 'npx expo export --platform web')`
+        );
       }
     }
 
@@ -581,8 +624,21 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
         )
       : [];
 
-    // Auto-generate ReactNativeViewController.swift if using React Native without user Swift files
-    if (props.entry && swiftFiles.length === 0) {
+    // Safari extensions use web rendering (not native RN), so they need different handling
+    // They only need SafariWebExtensionHandler.swift, not ReactNativeViewController.swift
+    if (props.type === 'safari') {
+      const hasSafariHandler = swiftFiles.some(
+        (f) =>
+          f === 'SafariWebExtensionHandler.swift' ||
+          f.endsWith('/SafariWebExtensionHandler.swift')
+      );
+      if (!hasSafariHandler) {
+        swiftFiles.push('SafariWebExtensionHandler.swift');
+        props.logger.log(`Will generate SafariWebExtensionHandler.swift`);
+      }
+    }
+    // Auto-generate ReactNativeViewController.swift for native RN extensions (not Safari)
+    else if (props.entry && swiftFiles.length === 0) {
       props.logger.log(
         `No Swift files found - generating view controllers for React Native`
       );
@@ -644,6 +700,12 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
         file.endsWith('/MessagesViewController.swift') ||
         file.endsWith('\\MessagesViewController.swift');
 
+      // Check if this is SafariWebExtensionHandler.swift
+      const isSafariHandler =
+        file === 'SafariWebExtensionHandler.swift' ||
+        file.endsWith('/SafariWebExtensionHandler.swift') ||
+        file.endsWith('\\SafariWebExtensionHandler.swift');
+
       if (
         props.entry &&
         props.type === 'messages' &&
@@ -704,6 +766,32 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
           File.writeFileSafe(sourceFilePath, template);
           props.logger.log(
             `  Generated: ReactNativeViewController.swift in build directory (regenerated)`
+          );
+        }
+      } else if (props.type === 'safari' && isSafariHandler) {
+        // Safari handler - check if user provided, otherwise generate
+        const userFilePath = path.join(
+          projectRoot,
+          props.directory,
+          'ios',
+          'SafariWebExtensionHandler.swift'
+        );
+        if (fs.existsSync(userFilePath)) {
+          sourceFilePath = userFilePath;
+          props.logger.log(
+            `  Using user-provided: SafariWebExtensionHandler.swift`
+          );
+        } else {
+          sourceFilePath = path.join(
+            targetBuildPath,
+            'SafariWebExtensionHandler.swift'
+          );
+          const template = Safari.generateSafariSwiftHandler(
+            props.displayName || props.name
+          );
+          File.writeFileSafe(sourceFilePath, template);
+          props.logger.log(
+            `  Generated: SafariWebExtensionHandler.swift in build directory`
           );
         }
       } else {

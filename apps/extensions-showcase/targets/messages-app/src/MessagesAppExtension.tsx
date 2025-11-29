@@ -7,8 +7,11 @@ import {
   TextInput,
   ScrollView,
 } from 'react-native';
-import type { PresentationStyle, SelectedMessage } from 'expo-targets';
-import { messagesAppTarget } from '..';
+import type {
+  PresentationStyle,
+  SelectedMessage,
+  MessagesExtensionTarget,
+} from 'expo-targets';
 
 interface MessagesAppProps {
   presentationStyle: PresentationStyle;
@@ -17,6 +20,7 @@ interface MessagesAppProps {
   hasSelectedMessage: boolean;
   selectedMessage?: SelectedMessage;
   remoteParticipantIds: string[];
+  target: MessagesExtensionTarget;
 }
 
 interface MessageTemplate {
@@ -58,7 +62,10 @@ const templates: MessageTemplate[] = [
   },
 ];
 
-export default function MessagesAppExtension(props: MessagesAppProps) {
+export default function MessagesAppExtension({
+  target,
+  ...props
+}: MessagesAppProps) {
   const [presentationStyle, setPresentationStyle] = useState<PresentationStyle>(
     props.presentationStyle
   );
@@ -69,7 +76,7 @@ export default function MessagesAppExtension(props: MessagesAppProps) {
       props.presentationStyle
     );
     // Listen for presentation style changes
-    const subscription = messagesAppTarget.addEventListener(
+    const subscription = target.addEventListener(
       'onPresentationStyleChange',
       (style: PresentationStyle) => {
         console.log(
@@ -90,7 +97,7 @@ export default function MessagesAppExtension(props: MessagesAppProps) {
 
   const handleTextFocus = () => {
     if (presentationStyle === 'compact') {
-      messagesAppTarget.requestPresentationStyle('expanded');
+      target.requestPresentationStyle('expanded');
     }
   };
 
@@ -99,7 +106,7 @@ export default function MessagesAppExtension(props: MessagesAppProps) {
       '[MessagesApp] handleSendTemplate called for:',
       template.caption
     );
-    messagesAppTarget.sendMessage({
+    target.sendMessage({
       caption: template.caption,
       subcaption: template.subcaption,
       trailingSubcaption: `To ${props.participantCount} people`,
@@ -108,9 +115,9 @@ export default function MessagesAppExtension(props: MessagesAppProps) {
     });
 
     // Store in App Group
-    const existing = messagesAppTarget.getData<{ messages: any[] }>();
+    const existing = target.getData<{ messages: any[] }>();
     const messages = existing.messages || [];
-    messagesAppTarget.setData({
+    target.setData({
       messages: [
         ...messages,
         {
@@ -121,9 +128,9 @@ export default function MessagesAppExtension(props: MessagesAppProps) {
       ],
     });
 
-    console.log('[MessagesApp] Calling messagesAppTarget.close()');
-    messagesAppTarget.requestPresentationStyle('compact');
-    console.log('[MessagesApp] messagesAppTarget.close() returned');
+    console.log('[MessagesApp] Calling target.close()');
+    target.requestPresentationStyle('compact');
+    console.log('[MessagesApp] target.close() returned');
   };
 
   const handleSendCustom = () => {
@@ -133,18 +140,18 @@ export default function MessagesAppExtension(props: MessagesAppProps) {
       '[MessagesApp] handleSendCustom called with message:',
       customMessage
     );
-    messagesAppTarget.sendMessage({
+    target.sendMessage({
       caption: customMessage,
       subcaption: 'Custom message',
       url: `expo-targets://message?type=custom`,
     });
 
     console.log(
-      '[MessagesApp] Calling messagesAppTarget.requestPresentationStyle("compact")'
+      '[MessagesApp] Calling target.requestPresentationStyle("compact")'
     );
-    messagesAppTarget.requestPresentationStyle('compact');
+    target.requestPresentationStyle('compact');
     console.log(
-      '[MessagesApp] messagesAppTarget.requestPresentationStyle("compact") returned'
+      '[MessagesApp] target.requestPresentationStyle("compact") returned'
     );
   };
 
@@ -163,7 +170,7 @@ export default function MessagesAppExtension(props: MessagesAppProps) {
               presentationStyle
             );
             try {
-              messagesAppTarget.requestPresentationStyle('expanded');
+              target.requestPresentationStyle('expanded');
               console.log(
                 '[MessagesApp] requestPresentationStyle called successfully'
               );
@@ -233,7 +240,7 @@ export default function MessagesAppExtension(props: MessagesAppProps) {
           style={styles.cancelButton}
           onPress={() => {
             console.log('[MessagesApp] Cancel button pressed');
-            messagesAppTarget.requestPresentationStyle('compact');
+            target.requestPresentationStyle('compact');
           }}
         >
           <Text style={styles.cancelButtonText}>Cancel</Text>

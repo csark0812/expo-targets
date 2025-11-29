@@ -1,18 +1,22 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { demoActionTarget } from '../index';
+import type { ExtensionTarget } from 'expo-targets';
 
 interface ActionExtensionProps {
   images?: string[];
+  target: ExtensionTarget;
 }
 
-export default function ActionExtension(props: ActionExtensionProps) {
+export default function ActionExtension({
+  target,
+  ...props
+}: ActionExtensionProps) {
   const handleProcess = () => {
-    demoActionTarget.setData({
+    target.setData({
       processedAt: new Date().toISOString(),
       imageCount: props.images?.length || 0,
     });
-    demoActionTarget.close();
+    target.close();
   };
 
   return (
@@ -29,7 +33,7 @@ export default function ActionExtension(props: ActionExtensionProps) {
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.button, styles.cancelButton]}
-        onPress={() => demoActionTarget.close()}
+        onPress={() => target.close()}
       >
         <Text style={cancelButtonTextStyle.buttonText}>Cancel</Text>
       </TouchableOpacity>
@@ -83,4 +87,3 @@ const cancelButtonTextStyle = StyleSheet.create({
     fontWeight: '600',
   },
 });
-

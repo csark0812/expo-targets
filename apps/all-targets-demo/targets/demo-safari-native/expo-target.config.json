@@ -1,0 +1,10 @@
+{
+  "type": "safari",
+  "name": "DemoSafariNative",
+  "displayName": "Demo Safari (Native)",
+  "platforms": ["ios"],
+  "ios": {
+    "bundleIdentifier": "com.csarkissian.alltargetsdemo.safarinative",
+    "deploymentTarget": "15.0"
+  }
+}

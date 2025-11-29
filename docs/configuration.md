@@ -816,10 +816,190 @@ Config-only types (`📋`) generate the Xcode target structure and Info.plist co
 
 **Example: Safari Extension (config-only)**
 
+Safari extensions support two modes: **React Native Web** (write React components) or **Native** (manual HTML/JS/CSS). Both modes auto-generate the Swift handler for you.
+
+### Mode 1: React Native Web (Recommended)
+
+Write your Safari extension popup using React Native components. The same `createTarget` API used for share/action extensions works here.
+
+**Minimal setup:**
+
+```
+targets/my-safari/
+├── expo-target.config.json
+└── src/
+    └── SafariExtension.tsx
+```
+
+That's it! The Swift handler, popup.html, manifest.json, and other resources are auto-generated during prebuild.
+
+**Config (`expo-target.config.json`):**
+
 ```json
 {
   "type": "safari",
   "name": "MySafariExt",
+  "displayName": "My Safari Extension",
+  "entry": "./targets/my-safari/src/SafariExtension.tsx",
+  "platforms": ["ios"],
+  "ios": {
+    "manifest": {
+      "permissions": ["storage", "activeTab"],
+      "description": "My awesome Safari extension"
+    }
+  }
+}
+```
+
+**Entry file (`src/SafariExtension.tsx`):**
+
+```tsx
+import { createTarget, useBrowserTab, useBrowserStorage } from 'expo-targets';
+import { View, Text, Button, StyleSheet } from 'react-native';
+
+function SafariPopup({ target }) {
+  const tab = useBrowserTab();
+  const [count, setCount] = useBrowserStorage('clickCount', 0);
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Safari Extension</Text>
+      {tab && <Text style={styles.url}>{tab.url}</Text>}
+      <Text>Clicked: {count} times</Text>
+      <Button title="Click me" onPress={() => setCount(count + 1)} />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { padding: 16, minWidth: 300 },
+  title: { fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
+  url: { fontSize: 12, color: '#666', marginBottom: 12 },
+});
+
+export default createTarget('MySafariExt', SafariPopup);
+```
+
+**Available Safari hooks:**
+
+```tsx
+import {
+  useBrowserTab, // Get current tab info (url, title)
+  useBrowserStorage, // Sync storage (across devices)
+  useLocalBrowserStorage, // Local storage
+  useSendToContentScript, // Send message to content script
+  useSendToNative, // Send message to Swift handler
+  useMessageListener, // Listen for messages
+  openTab, // Open new tab
+  closePopup, // Close extension popup
+  copyToClipboard, // Copy text
+} from 'expo-targets';
+```
+
+**Building the bundle:**
+
+After `npx expo prebuild`, build the web bundle:
+
+```bash
+# From your project root
+npx expo export --platform web --output-dir ios/build/safari-resources
+
+# Copy to extension Resources (the prebuild creates a placeholder popup.js)
+cp ios/build/safari-resources/bundle.js ios/[AppName]/targets/[ExtName]/ios/build/Resources/popup.js
+```
+
+### Mode 2: Native/Manual
+
+For full control, provide your own web resources without an `entry` field. The Swift handler is still auto-generated.
+
+**Minimal setup:**
+
+```
+targets/my-safari/
+├── expo-target.config.json
+└── ios/
+    └── Resources/
+        ├── manifest.json
+        ├── popup.html
+        ├── popup.js
+        └── ... (your web assets)
+```
+
+**Config:**
+
+```json
+{
+  "type": "safari",
+  "name": "MySafariExt",
+  "platforms": ["ios"]
+}
+```
+
+**Full directory structure:**
+
+```
+targets/my-safari/
+├── expo-target.config.json
+└── ios/
+    └── Resources/
+        ├── manifest.json          ← Required: Web extension manifest
+        ├── _locales/
+        │   └── en/
+        │       └── messages.json  ← Localized strings
+        ├── background.js          ← Background script
+        ├── content.js             ← Content script (optional)
+        ├── popup.html             ← Popup UI (optional)
+        ├── popup.js               ← Popup logic (optional)
+        ├── popup.css              ← Popup styles (optional)
+        └── images/
+            ├── icon-48.png        ← Extension icons
+            ├── icon-96.png
+            ├── icon-128.png
+            └── toolbar-icon.svg   ← Toolbar icon
+```
+
+**Required `manifest.json`:**
+
+```json
+{
+  "manifest_version": 3,
+  "default_locale": "en",
+  "name": "__MSG_extension_name__",
+  "description": "__MSG_extension_description__",
+  "version": "1.0",
+  "icons": {
+    "48": "images/icon-48.png",
+    "96": "images/icon-96.png",
+    "128": "images/icon-128.png"
+  },
+  "background": {
+    "scripts": ["background.js"],
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "js": ["content.js"],
+      "matches": ["*://example.com/*"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "images/toolbar-icon.svg"
+  },
+  "permissions": []
+}
+```
+
+> **Note:** The `SafariWebExtensionHandler.swift` file is auto-generated during prebuild. If you need to customize native message handling, you can create your own at `ios/SafariWebExtensionHandler.swift` and it won't be overwritten.
+
+> Safari web extensions use standard Web Extension APIs. See [Apple's Safari Web Extensions documentation](https://developer.apple.com/documentation/safariservices/safari_web_extensions) for details.
+
+**Example: Notification Service Extension**
+
+```json
+{
+  "type": "notification-service",
+  "name": "MyNotificationService",
   "platforms": ["ios"],
   "ios": {
     "deploymentTarget": "15.0"
@@ -827,18 +1007,122 @@ Config-only types (`📋`) generate the Xcode target structure and Info.plist co
 }
 ```
 
-You must then create `ios/SafariWebExtensionHandler.swift`:
+Create `ios/NotificationService.swift`:
 
 ```swift
-import SafariServices
-import WebKit
+import UserNotifications
 
-class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
-    func beginRequest(with context: NSExtensionContext) {
-        // Your implementation
+class NotificationService: UNNotificationServiceExtension {
+    var contentHandler: ((UNNotificationContent) -> Void)?
+    var bestAttemptContent: UNMutableNotificationContent?
+
+    override func didReceive(_ request: UNNotificationRequest,
+                            withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void) {
+        self.contentHandler = contentHandler
+        bestAttemptContent = (request.content.mutableCopy() as? UNMutableNotificationContent)
+
+        if let bestAttemptContent = bestAttemptContent {
+            // Modify the notification content
+            bestAttemptContent.title = "\(bestAttemptContent.title) [modified]"
+            contentHandler(bestAttemptContent)
+        }
+    }
+
+    override func serviceExtensionTimeWillExpire() {
+        if let contentHandler = contentHandler, let bestAttemptContent = bestAttemptContent {
+            contentHandler(bestAttemptContent)
+        }
     }
 }
 ```
+
+> **Important:** Notification Service Extensions require push notifications to have `"mutable-content": 1` in the payload.
+
+**Example: Notification Content Extension**
+
+```json
+{
+  "type": "notification-content",
+  "name": "MyNotificationContent",
+  "platforms": ["ios"],
+  "ios": {
+    "deploymentTarget": "15.0",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionAttributes": {
+          "UNNotificationExtensionCategory": "MY_CATEGORY",
+          "UNNotificationExtensionInitialContentSizeRatio": 0.3,
+          "UNNotificationExtensionDefaultContentHidden": false
+        }
+      }
+    }
+  }
+}
+```
+
+Create `ios/NotificationViewController.swift`:
+
+```swift
+import UIKit
+import UserNotifications
+import UserNotificationsUI
+
+class NotificationViewController: UIViewController, UNNotificationContentExtension {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // Setup your custom UI
+    }
+
+    func didReceive(_ notification: UNNotification) {
+        // Update UI with notification content
+        let content = notification.request.content
+        // Use content.title, content.body, content.userInfo, etc.
+    }
+}
+```
+
+> **Important:** The `UNNotificationExtensionCategory` must match the category set in your push notification payload. Register categories in your main app using `UNUserNotificationCenter.current().setNotificationCategories()`.
+
+**Example: Intent Extension (Siri)**
+
+```json
+{
+  "type": "intent",
+  "name": "MyIntentHandler",
+  "platforms": ["ios"],
+  "ios": {
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionAttributes": {
+          "IntentsSupported": [
+            "INSendMessageIntent",
+            "INSearchForMessagesIntent"
+          ]
+        }
+      }
+    }
+  }
+}
+```
+
+Create `ios/IntentHandler.swift`:
+
+```swift
+import Intents
+
+class IntentHandler: INExtension, INSendMessageIntentHandling {
+    override func handler(for intent: INIntent) -> Any {
+        return self
+    }
+
+    func handle(intent: INSendMessageIntent, completion: @escaping (INSendMessageIntentResponse) -> Void) {
+        let response = INSendMessageIntentResponse(code: .success, userActivity: nil)
+        completion(response)
+    }
+}
+```
+
+> **Important:** The main app must have the Siri capability enabled in entitlements. Users must also grant Siri permission.
 
 **Required protocols by type:**
 
@@ -849,7 +1133,7 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
 | `notification-content` | `UNNotificationContentExtension`       | [Apple Docs](https://developer.apple.com/documentation/usernotificationsui/unnotificationcontentextension) |
 | `notification-service` | `UNNotificationServiceExtension`       | [Apple Docs](https://developer.apple.com/documentation/usernotifications/unnotificationserviceextension)   |
 | `intent`               | `INExtension`                          | [Apple Docs](https://developer.apple.com/documentation/sirikit/inextension)                                |
-| `intent-ui`            | `INExtension`                          | [Apple Docs](https://developer.apple.com/documentation/sirikit/inextension)                                |
+| `intent-ui`            | `INUIHostedViewControlling`            | [Apple Docs](https://developer.apple.com/documentation/intentsui/inuihostedviewcontrolling)                |
 
 **Tips:**
 

@@ -1,15 +1,13 @@
 {
   "type": "safari",
   "name": "DemoSafari",
-  "displayName": "Demo Safari Extension",
+  "displayName": "Demo Safari (RN Web)",
+  "entry": "./targets/demo-safari/src/SafariExtension.tsx",
   "platforms": ["ios"],
   "ios": {
-    "infoPlist": {
-      "NSExtension": {
-        "NSExtensionPointIdentifier": "com.apple.Safari.web-extension",
-        "NSExtensionPrincipalClass": "SafariWebExtensionHandler"
-      }
+    "manifest": {
+      "permissions": ["storage", "activeTab"],
+      "description": "A Safari extension built with React Native Web"
     }
   }
 }
-

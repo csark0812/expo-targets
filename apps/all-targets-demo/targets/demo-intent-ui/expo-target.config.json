@@ -6,8 +6,6 @@
   "ios": {
     "infoPlist": {
       "NSExtension": {
-        "NSExtensionPointIdentifier": "com.apple.intents-ui-service",
-        "NSExtensionPrincipalClass": "IntentViewController",
         "NSExtensionAttributes": {
           "IntentsSupported": [
             "INStartWorkoutIntent",

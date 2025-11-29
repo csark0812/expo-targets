@@ -161,6 +161,30 @@ interface BaseIOSTargetConfig {
    * @see https://developer.apple.com/library/archive/documentation/General/Conceptual/ExtensibilityPG/Share.html
    */
   preprocessingFile?: string;
+
+  // Safari extension configuration (only applies when type='safari')
+  /**
+   * Custom manifest.json configuration for Safari web extensions
+   * Only applies to Safari extension targets with 'entry' field
+   * Merged with auto-generated manifest when using React Native Web mode
+   * @example
+   * manifest: {
+   *   permissions: ['storage', 'tabs'],
+   *   content_scripts: [{ matches: ['*://*.example.com/*'] }]
+   * }
+   */
+  manifest?: {
+    name?: string;
+    version?: string;
+    description?: string;
+    permissions?: string[];
+    content_scripts?: {
+      matches: string[];
+      js?: string[];
+      css?: string[];
+    }[];
+    icons?: Record<string, string>;
+  };
 }
 
 // Types that support React Native rendering

@@ -22,9 +22,12 @@
         "com.apple.developer.associated-domains": [
           "appclips:alltargetsdemo.example.com"
         ]
-      }
+      },
+      "appleTeamId": "G9U8CKZ2XG"
     },
-    "plugins": ["../../packages/expo-targets/app.plugin.js"],
+    "plugins": [
+      "../../packages/expo-targets/app.plugin.js"
+    ],
     "android": {
       "package": "com.csarkissian.alltargetsdemo",
       "adaptiveIcon": {

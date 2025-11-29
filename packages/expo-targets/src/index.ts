@@ -5,6 +5,7 @@ export type {
   ExtensionTarget,
   MessagesExtensionTarget,
   NonExtensionTarget,
+  SafariExtensionTarget,
   BaseTarget,
 } from './Target';
 
@@ -40,6 +41,22 @@ export type {
   ConversationInfo,
   SelectedMessage,
 } from './modules/messages';
+
+// Safari module
+export {
+  isSafariExtension,
+  getBrowserAPI,
+  useBrowserTab,
+  useBrowserStorage,
+  useLocalBrowserStorage,
+  useSendToContentScript,
+  useSendToNative,
+  useMessageListener,
+  openTab,
+  closePopup,
+  copyToClipboard,
+} from './modules/safari';
+export type { BrowserTab } from './modules/safari';
 
 // Config types
 export type {

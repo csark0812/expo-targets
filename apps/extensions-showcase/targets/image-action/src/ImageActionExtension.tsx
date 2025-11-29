@@ -8,15 +8,19 @@ import {
   Image,
   ActivityIndicator,
 } from 'react-native';
-import { imageActionTarget } from '../index';
+import type { ExtensionTarget } from 'expo-targets';
 
 interface ImageActionProps {
   images?: string[];
+  target: ExtensionTarget;
 }
 
 type FilterType = 'original' | 'grayscale' | 'sepia' | 'invert' | 'brighten';
 
-export default function ImageActionExtension(props: ImageActionProps) {
+export default function ImageActionExtension({
+  target,
+  ...props
+}: ImageActionProps) {
   const [selectedFilter, setSelectedFilter] = useState<FilterType>('original');
   const [processing, setProcessing] = useState(false);
   const imageUrl = props.images?.[0];
@@ -36,7 +40,7 @@ export default function ImageActionExtension(props: ImageActionProps) {
 
     // Simulate image processing
     setTimeout(() => {
-      const existingData = imageActionTarget.getData<{
+      const existingData = target.getData<{
         items: ProcessedItem[];
       }>() || { items: [] };
       const newItem: ProcessedItem = {
@@ -46,15 +50,15 @@ export default function ImageActionExtension(props: ImageActionProps) {
         filter: selectedFilter,
       };
       const updatedItems = [...(existingData.items || []), newItem];
-      imageActionTarget.setData({ items: updatedItems });
+      target.setData({ items: updatedItems });
 
       setProcessing(false);
-      imageActionTarget.close();
+      target.close();
     }, 1000);
   };
 
   const handleCancel = () => {
-    imageActionTarget.close();
+    target.close();
   };
 
   if (!imageUrl) {

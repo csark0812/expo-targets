@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
-import { shareContentTarget } from '../index';
+import type { ExtensionTarget } from 'expo-targets';
 
 interface SharedData {
   text?: string;
@@ -16,12 +16,17 @@ interface SharedData {
   files?: string[];
 }
 
-interface ShareExtensionProps extends SharedData {}
+interface ShareExtensionProps extends SharedData {
+  target: ExtensionTarget;
+}
 
-export default function ShareExtension(props: ShareExtensionProps) {
+export default function ShareExtension({
+  target,
+  ...props
+}: ShareExtensionProps) {
   const handleSave = () => {
     if (props.text || props.url || props.images?.length) {
-      const existingData = shareContentTarget.getData<{
+      const existingData = target.getData<{
         items: SharedItem[];
       }>() || { items: [] };
       const newItem: SharedItem = {
@@ -30,13 +35,13 @@ export default function ShareExtension(props: ShareExtensionProps) {
         content: props,
       };
       const updatedItems = [...(existingData.items || []), newItem];
-      shareContentTarget.setData({ items: updatedItems });
+      target.setData({ items: updatedItems });
     }
-    shareContentTarget.close();
+    target.close();
   };
 
   const handleCancel = () => {
-    shareContentTarget.close();
+    target.close();
   };
 
   return (

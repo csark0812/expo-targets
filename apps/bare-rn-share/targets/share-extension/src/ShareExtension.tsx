@@ -6,21 +6,25 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
-import { shareExtensionTarget } from '../index';
+import type { ExtensionTarget } from 'expo-targets';
 
 interface ShareExtensionProps {
   text?: string;
   url?: string;
   images?: string[];
+  target: ExtensionTarget;
 }
 
-export default function ShareExtension(props: ShareExtensionProps) {
+export default function ShareExtension({
+  target,
+  ...props
+}: ShareExtensionProps) {
   const handleSave = () => {
-    shareExtensionTarget.setData({
+    target.setData({
       sharedAt: new Date().toISOString(),
       content: props,
     });
-    shareExtensionTarget.close();
+    target.close();
   };
 
   return (
@@ -70,7 +74,7 @@ export default function ShareExtension(props: ShareExtensionProps) {
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.cancelButton}
-          onPress={() => shareExtensionTarget.close()}
+          onPress={() => target.close()}
         >
           <Text style={styles.cancelButtonText}>Cancel</Text>
         </TouchableOpacity>
@@ -181,4 +185,3 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 });
-

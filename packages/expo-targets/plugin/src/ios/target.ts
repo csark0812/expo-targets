@@ -186,7 +186,12 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       extensionPointIdentifier: 'com.apple.Safari.web-extension',
       defaultUsesAppGroups: false,
       requiresEntitlements: true,
-      basePlist: {},
+      basePlist: {
+        NSExtension: {
+          NSExtensionPrincipalClass:
+            '$(PRODUCT_MODULE_NAME).SafariWebExtensionHandler',
+        },
+      },
       supportsActivationRules: false,
       activationRulesLocation: 'none',
     },
@@ -194,12 +199,22 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       requiresCode: true,
       targetType: 'app_extension',
       embedType: 'foundation-extension',
-      frameworks: [],
+      frameworks: ['UserNotifications', 'UserNotificationsUI'],
       productType: 'com.apple.product-type.app-extension',
       extensionPointIdentifier: 'com.apple.usernotifications.content-extension',
       defaultUsesAppGroups: false,
       requiresEntitlements: true,
-      basePlist: {},
+      basePlist: {
+        NSExtension: {
+          NSExtensionPrincipalClass:
+            '$(PRODUCT_MODULE_NAME).NotificationViewController',
+          NSExtensionAttributes: {
+            // UNNotificationExtensionCategory is required - user should override
+            UNNotificationExtensionCategory: 'myNotificationCategory',
+            UNNotificationExtensionInitialContentSizeRatio: 1,
+          },
+        },
+      },
       supportsActivationRules: false,
       activationRulesLocation: 'none',
     },
@@ -207,12 +222,17 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       requiresCode: true,
       targetType: 'app_extension',
       embedType: 'foundation-extension',
-      frameworks: [],
+      frameworks: ['UserNotifications'],
       productType: 'com.apple.product-type.app-extension',
       extensionPointIdentifier: 'com.apple.usernotifications.service',
       defaultUsesAppGroups: false,
       requiresEntitlements: true,
-      basePlist: {},
+      basePlist: {
+        NSExtension: {
+          NSExtensionPrincipalClass:
+            '$(PRODUCT_MODULE_NAME).NotificationService',
+        },
+      },
       supportsActivationRules: false,
       activationRulesLocation: 'none',
     },
@@ -220,12 +240,20 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       requiresCode: true,
       targetType: 'app_extension',
       embedType: 'foundation-extension',
-      frameworks: [],
+      frameworks: ['Intents'],
       productType: 'com.apple.product-type.app-extension',
       extensionPointIdentifier: 'com.apple.intents-service',
       defaultUsesAppGroups: false,
       requiresEntitlements: true,
-      basePlist: {},
+      basePlist: {
+        NSExtension: {
+          NSExtensionPrincipalClass: '$(PRODUCT_MODULE_NAME).IntentHandler',
+          NSExtensionAttributes: {
+            IntentsRestrictedWhileLocked: [],
+            IntentsSupported: [],
+          },
+        },
+      },
       supportsActivationRules: false,
       activationRulesLocation: 'none',
     },
@@ -233,12 +261,20 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       requiresCode: true,
       targetType: 'app_extension',
       embedType: 'foundation-extension',
-      frameworks: [],
+      frameworks: ['IntentsUI'],
       productType: 'com.apple.product-type.app-extension',
       extensionPointIdentifier: 'com.apple.intents-ui-service',
       defaultUsesAppGroups: false,
       requiresEntitlements: true,
-      basePlist: {},
+      basePlist: {
+        NSExtension: {
+          NSExtensionPrincipalClass:
+            '$(PRODUCT_MODULE_NAME).IntentViewController',
+          NSExtensionAttributes: {
+            IntentsSupported: [],
+          },
+        },
+      },
       supportsActivationRules: false,
       activationRulesLocation: 'none',
     },
@@ -545,6 +581,20 @@ export function getTargetInfoPlistForType(
   if (customProperties) {
     basePlist = deepMerge(basePlist, customProperties);
 
+    // Ensure NSExtensionPrincipalClass has $(PRODUCT_MODULE_NAME). prefix for Swift classes
+    // This is required for iOS to find the Swift class at runtime
+    if (basePlist.NSExtension?.NSExtensionPrincipalClass) {
+      const principalClass = basePlist.NSExtension.NSExtensionPrincipalClass;
+      // Add prefix if not already present and not using a storyboard
+      if (
+        typeof principalClass === 'string' &&
+        !principalClass.startsWith('$(PRODUCT_MODULE_NAME).') &&
+        !principalClass.includes('.')
+      ) {
+        basePlist.NSExtension.NSExtensionPrincipalClass = `$(PRODUCT_MODULE_NAME).${principalClass}`;
+      }
+    }
+
     // For action extensions, ensure NSExtensionActivationRule structure is correct
     // Custom properties might have added NSExtensionAttributes with NSExtensionActivationRule
     // Move it to direct level, but preserve other attributes like NSExtensionIcon
@@ -579,18 +629,6 @@ export function getTargetInfoPlistForType(
       }
       basePlist.NSExtension.NSExtensionAttributes.NSExtensionIcon =
         customProperties.NSExtension.NSExtensionAttributes.NSExtensionIcon;
-    }
-  }
-
-  // Ensure IntentsSupported is present for Siri Intent extensions
-  // iOS requires this key in NSExtensionAttributes for intent and intent-ui types
-  if ((type === 'intent' || type === 'intent-ui') && basePlist.NSExtension) {
-    if (!basePlist.NSExtension.NSExtensionAttributes) {
-      basePlist.NSExtension.NSExtensionAttributes = {};
-    }
-    // Only add IntentsSupported if not already present (allow user override)
-    if (!basePlist.NSExtension.NSExtensionAttributes.IntentsSupported) {
-      basePlist.NSExtension.NSExtensionAttributes.IntentsSupported = [];
     }
   }
 

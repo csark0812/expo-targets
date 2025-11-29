@@ -1,20 +1,24 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { demoShareTarget } from '../index';
+import type { ExtensionTarget } from 'expo-targets';
 
 interface ShareExtensionProps {
   text?: string;
   url?: string;
   images?: string[];
+  target: ExtensionTarget;
 }
 
-export default function ShareExtension(props: ShareExtensionProps) {
+export default function ShareExtension({
+  target,
+  ...props
+}: ShareExtensionProps) {
   const handleSave = () => {
-    demoShareTarget.setData({
+    target.setData({
       sharedAt: new Date().toISOString(),
       content: props,
     });
-    demoShareTarget.close();
+    target.close();
   };
 
   return (
@@ -31,7 +35,7 @@ export default function ShareExtension(props: ShareExtensionProps) {
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.button, styles.cancelButton]}
-        onPress={() => demoShareTarget.close()}
+        onPress={() => target.close()}
       >
         <Text style={cancelButtonTextStyle.buttonText}>Cancel</Text>
       </TouchableOpacity>
@@ -85,4 +89,3 @@ const cancelButtonTextStyle = StyleSheet.create({
     fontWeight: '600',
   },
 });
-
