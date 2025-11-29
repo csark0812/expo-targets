@@ -3,7 +3,7 @@
   "name": "ShareExtension",
   "displayName": "Share Extension",
   "platforms": ["ios"],
-  "entry": "./targets/share-extension/src/index.tsx",
+  "entry": "./targets/share-extension/index.tsx",
   "appGroup": "group.com.test.barernshare",
   "ios": {
     "activationRules": [
@@ -13,4 +13,3 @@
     ]
   }
 }
-

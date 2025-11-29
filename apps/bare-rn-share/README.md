@@ -13,17 +13,20 @@ This example uses `expo-targets sync` to add the extension target to your existi
 ### Setup Steps
 
 1. **Ensure you have an existing iOS project**
+
    ```bash
    # Your project should already have an ios/ directory
    ls ios/
    ```
 
 2. **Install expo-targets**
+
    ```bash
    npm install expo-targets
    ```
 
 3. **Configure app.json**
+
    ```json
    {
      "expo": {
@@ -40,18 +43,21 @@ This example uses `expo-targets sync` to add the extension target to your existi
    ```
 
 4. **Create target configuration**
+
    ```bash
    # Create targets/share-extension/expo-target.config.json
    # See targets/share-extension/expo-target.config.json in this app
    ```
 
 5. **Create React Native extension component**
+
    ```bash
    # Create targets/share-extension/src/ShareExtension.tsx
    # See targets/share-extension/src/ShareExtension.tsx in this app
    ```
 
 6. **Configure Metro** (Required for React Native extensions)
+
    ```javascript
    // metro.config.js
    const { getDefaultConfig } = require('expo/metro-config');
@@ -63,11 +69,13 @@ This example uses `expo-targets sync` to add the extension target to your existi
    ```
 
 7. **Sync targets to Xcode**
+
    ```bash
    npx expo-targets sync
    ```
 
 8. **Install CocoaPods dependencies**
+
    ```bash
    cd ios
    pod install
@@ -94,6 +102,7 @@ module.exports = withTargetsMetro(config, { projectRoot });
 ```
 
 This wrapper:
+
 - Handles extension entry points
 - Configures bundling for extensions
 - Sets up proper module resolution
@@ -103,6 +112,7 @@ This wrapper:
 **Important:** React Native extensions only work in Release builds, not Debug.
 
 In Xcode:
+
 1. Select your scheme
 2. Edit scheme → Run → Build Configuration
 3. Set to **Release**
@@ -114,7 +124,7 @@ The extension entry point is specified in config:
 
 ```json
 {
-  "entry": "./targets/share-extension/src/index.tsx"
+  "entry": "./targets/share-extension/index.tsx"
 }
 ```
 
@@ -124,7 +134,10 @@ This file registers the React Native component:
 import { createTarget } from 'expo-targets';
 import ShareExtension from './src/ShareExtension';
 
-export const shareExtensionTarget = createTarget<'share'>('ShareExtension', ShareExtension);
+export const shareExtensionTarget = createTarget<'share'>(
+  'ShareExtension',
+  ShareExtension
+);
 ```
 
 ## File Structure
@@ -179,16 +192,15 @@ bare-rn-share/
 
 ## Differences from Managed Workflow
 
-| Managed Workflow | Bare RN Workflow |
-|-----------------|------------------|
+| Managed Workflow                 | Bare RN Workflow                            |
+| -------------------------------- | ------------------------------------------- |
 | `expo prebuild` generates `ios/` | `expo-targets sync` adds to existing `ios/` |
-| Metro config auto-configured | Must configure Metro manually |
-| Works out of the box | Requires Release mode setup |
-| Full project regeneration | Incremental target addition |
+| Metro config auto-configured     | Must configure Metro manually               |
+| Works out of the box             | Requires Release mode setup                 |
+| Full project regeneration        | Incremental target addition                 |
 
 ## Next Steps
 
 - See `extensions-showcase` for managed workflow examples
 - Compare with `bare-rn-widgets` for widget examples
 - Check main docs for complete API reference
-

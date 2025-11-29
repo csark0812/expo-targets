@@ -3,7 +3,7 @@
   "name": "DemoShare",
   "displayName": "Demo Share",
   "platforms": ["ios"],
-  "entry": "./targets/demo-share/src/index.tsx",
+  "entry": "./targets/demo-share/index.tsx",
   "appGroup": "group.com.test.alltargetsdemo",
   "ios": {
     "activationRules": [
@@ -13,4 +13,3 @@
     ]
   }
 }
-

@@ -245,7 +245,7 @@ npx expo run:ios --configuration Release
 ### Build
 
 ```bash
-cd packages/create-target
+cd packages/create-expo-target
 bun run build
 ```
 

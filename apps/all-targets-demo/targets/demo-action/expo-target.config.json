@@ -3,12 +3,9 @@
   "name": "DemoAction",
   "displayName": "Demo Action",
   "platforms": ["ios"],
-  "entry": "./targets/demo-action/src/index.tsx",
+  "entry": "./targets/demo-action/index.tsx",
   "appGroup": "group.com.test.alltargetsdemo",
   "ios": {
-    "activationRules": [
-      { "type": "image", "maxCount": 1 }
-    ]
+    "activationRules": [{ "type": "image", "maxCount": 1 }]
   }
 }
-
