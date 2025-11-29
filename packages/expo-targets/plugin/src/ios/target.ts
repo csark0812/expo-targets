@@ -158,7 +158,7 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
         },
       },
       supportsActivationRules: true,
-      activationRulesLocation: 'direct',
+      activationRulesLocation: 'attributes',
     },
     wallet: {
       requiresCode: true,
