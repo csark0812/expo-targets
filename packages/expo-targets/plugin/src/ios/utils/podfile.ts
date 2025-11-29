@@ -399,9 +399,6 @@ ${END_MARKER}`;
   }
 
   if (postInstallStartLine === -1 || postInstallEndLine === -1) {
-    console.warn(
-      '[expo-targets] Could not find post_install hook to inject deployment target fixes'
-    );
     return podfileContent;
   }
 

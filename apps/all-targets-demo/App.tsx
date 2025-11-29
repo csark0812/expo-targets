@@ -8,19 +8,138 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  Platform,
 } from 'react-native';
+import * as Notifications from 'expo-notifications';
 import { demoWidget, updateWidget } from './targets/demo-widget';
 import { demoShareTarget } from './targets/demo-share';
 import { demoActionTarget } from './targets/demo-action';
+
+// Configure notification handler
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 export default function App() {
   const [widgetMessage, setWidgetMessage] = useState('');
   const [sharedData, setSharedData] = useState<any>(null);
   const [actionData, setActionData] = useState<any>(null);
+  const [notificationStatus, setNotificationStatus] = useState<string>('');
 
   useEffect(() => {
     loadData();
+    setupNotifications();
   }, []);
+
+  const setupNotifications = async () => {
+    const { status: existingStatus } =
+      await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+
+    setNotificationStatus(finalStatus);
+
+    if (finalStatus !== 'granted') {
+      console.log('Notification permissions not granted');
+    }
+
+    // Register notification categories for content extension
+    if (Platform.OS === 'ios') {
+      await Notifications.setNotificationCategoryAsync('DEMO_CONTENT', [
+        {
+          identifier: 'view',
+          buttonTitle: 'View Details',
+          options: { opensAppToForeground: true },
+        },
+        {
+          identifier: 'dismiss',
+          buttonTitle: 'Dismiss',
+          options: { isDestructive: true },
+        },
+      ]);
+    }
+  };
+
+  // Test notification that triggers the Notification Service Extension
+  const triggerServiceNotification = async () => {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Service Extension Test',
+        body: 'This notification will be processed by NotificationService',
+        data: {
+          type: 'service-test',
+          timestamp: Date.now(),
+        },
+        // mutable-content is automatically set by expo-notifications for rich notifications
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 2,
+      },
+    });
+    Alert.alert(
+      'Notification Scheduled',
+      'Check your notifications in 2 seconds. The service extension will add ✨ to the title.'
+    );
+  };
+
+  // Test notification that triggers the Notification Content Extension
+  const triggerContentNotification = async () => {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Content Extension Test',
+        body: 'Long press this notification to see custom UI!',
+        categoryIdentifier: 'DEMO_CONTENT',
+        data: {
+          type: 'content-test',
+          icon: 'star.fill',
+          tintColor: '#FF6B6B',
+          timestamp: Date.now(),
+        },
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 2,
+      },
+    });
+    Alert.alert(
+      'Notification Scheduled',
+      'Long press the notification when it appears to see the custom content UI!'
+    );
+  };
+
+  // Test notification with image (for service extension image download)
+  const triggerImageNotification = async () => {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Rich Media Test',
+        body: 'This notification includes an image attachment',
+        data: {
+          type: 'image-test',
+          imageURL: 'https://picsum.photos/400/300',
+          timestamp: Date.now(),
+        },
+        categoryIdentifier: 'DEMO_CONTENT',
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 2,
+      },
+    });
+    Alert.alert(
+      'Notification Scheduled',
+      'The service extension will download and attach an image.'
+    );
+  };
 
   const loadData = () => {
     const widgetData = demoWidget.getData<{ message?: string }>();
@@ -70,17 +189,22 @@ export default function App() {
 
   const configOnlyTargets = [
     { type: 'safari', name: 'DemoSafari', status: '📋 Config Only' },
+    { type: 'intent-ui', name: 'DemoIntentUI', status: '📋 Config Only' },
+  ];
+
+  const notificationTargets = [
     {
       type: 'notification-content',
       name: 'DemoNotificationContent',
-      status: '📋 Config Only',
+      status: '✅ Testable',
+      description: 'Long press notifications for custom UI',
     },
     {
       type: 'notification-service',
       name: 'DemoNotificationService',
-      status: '📋 Config Only',
+      status: '✅ Testable',
+      description: 'Modifies notifications before display',
     },
-    { type: 'intent-ui', name: 'DemoIntentUI', status: '📋 Config Only' },
   ];
 
   return (
@@ -207,6 +331,74 @@ export default function App() {
           <Text style={styles.refreshButtonText}>🔄 Refresh Data</Text>
         </TouchableOpacity>
 
+        {/* Notification Extension Testing */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>
+            🔔 Notification Extensions Testing
+          </Text>
+          <Text style={styles.description}>
+            Test the notification service and content extensions:
+          </Text>
+
+          <View style={styles.statusRow}>
+            <Text style={styles.statusLabel}>Permission Status:</Text>
+            <Text
+              style={[
+                styles.statusValue,
+                {
+                  color:
+                    notificationStatus === 'granted' ? '#34C759' : '#FF3B30',
+                },
+              ]}
+            >
+              {notificationStatus || 'Unknown'}
+            </Text>
+          </View>
+
+          <View style={styles.buttonGroup}>
+            <TouchableOpacity
+              style={[styles.notifButton, styles.serviceButton]}
+              onPress={triggerServiceNotification}
+            >
+              <Text style={styles.notifButtonText}>📬 Service Extension</Text>
+              <Text style={styles.notifButtonSubtext}>
+                Modifies notification title
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.notifButton, styles.contentButton]}
+              onPress={triggerContentNotification}
+            >
+              <Text style={styles.notifButtonText}>📋 Content Extension</Text>
+              <Text style={styles.notifButtonSubtext}>
+                Long press to see UI
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.notifButton, styles.imageButton]}
+              onPress={triggerImageNotification}
+            >
+              <Text style={styles.notifButtonText}>🖼️ Rich Media</Text>
+              <Text style={styles.notifButtonSubtext}>
+                Downloads & attaches image
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.infoBox}>
+            <Text style={styles.infoTitle}>How to test:</Text>
+            <Text style={styles.infoText}>
+              1. Tap a button above to schedule notification{'\n'}
+              2. Wait 2 seconds for notification{'\n'}
+              3. Service: Look for ✨ prefix in title{'\n'}
+              4. Content: Long press notification for custom UI{'\n'}
+              5. Check Xcode console for extension logs
+            </Text>
+          </View>
+        </View>
+
         {/* Production Ready Targets */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>✅ Production Ready Targets</Text>
@@ -215,6 +407,30 @@ export default function App() {
           </Text>
 
           {productionTargets.map((target) => (
+            <View key={target.name} style={styles.targetItem}>
+              <View style={styles.targetHeader}>
+                <Text style={styles.targetName}>{target.name}</Text>
+                <Text style={styles.targetStatus}>{target.status}</Text>
+              </View>
+              <Text style={styles.targetType}>Type: {target.type}</Text>
+              {target.description && (
+                <Text style={styles.targetDescription}>
+                  {target.description}
+                </Text>
+              )}
+            </View>
+          ))}
+        </View>
+
+        {/* Notification Targets */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>🔔 Notification Targets</Text>
+          <Text style={styles.description}>
+            Fully implemented notification extensions - use the buttons above to
+            test:
+          </Text>
+
+          {notificationTargets.map((target) => (
             <View key={target.name} style={styles.targetItem}>
               <View style={styles.targetHeader}>
                 <Text style={styles.targetName}>{target.name}</Text>
@@ -567,5 +783,50 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     marginTop: 12,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#f8f8f8',
+    borderRadius: 8,
+  },
+  statusLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginRight: 8,
+  },
+  statusValue: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  buttonGroup: {
+    gap: 10,
+  },
+  notifButton: {
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  serviceButton: {
+    backgroundColor: '#5856D6',
+  },
+  contentButton: {
+    backgroundColor: '#FF9500',
+  },
+  imageButton: {
+    backgroundColor: '#AF52DE',
+  },
+  notifButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  notifButtonSubtext: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 12,
+    marginTop: 4,
   },
 });

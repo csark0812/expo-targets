@@ -105,7 +105,7 @@ export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
       targetType: 'app_extension',
       embedType: 'foundation-extension',
       frameworks: ['Messages'],
-      productType: 'com.apple.product-type.app-extension',
+      productType: 'com.apple.product-type.app-extension.messages',
       extensionPointIdentifier: 'com.apple.message-payload-provider',
       defaultUsesAppGroups: true,
       requiresEntitlements: true,

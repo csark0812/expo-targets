@@ -4,6 +4,7 @@
   "displayName": "Demo Notification Service",
   "platforms": ["ios"],
   "ios": {
+    "deploymentTarget": "15.1",
     "infoPlist": {
       "NSExtension": {
         "NSExtensionPointIdentifier": "com.apple.usernotifications.service",
@@ -12,4 +13,3 @@
     }
   }
 }
-
