@@ -430,12 +430,12 @@ storage.refresh('WidgetName');
 
 ## CLI Commands
 
-### create-target
+### create-expo-target
 
 Interactive CLI to scaffold a new target:
 
 ```bash
-npx create-target
+npx create-expo-target
 ```
 
 **Prompts:**
@@ -462,7 +462,7 @@ If you choose "Use React Native for UI", it also creates:
 **Example session:**
 
 ```bash
-$ npx create-target
+$ npx create-expo-target
 🎯 Create Expo Target
 
 ? What type of target? Share Extension

@@ -20,7 +20,7 @@ Build share extensions, action extensions, App Clips, and iMessage apps using Re
 ### 1. Create the Target
 
 ```bash
-npx create-target
+npx create-expo-target
 # Choose: Share Extension → share-ext → iOS → Yes (Use React Native)
 ```
 

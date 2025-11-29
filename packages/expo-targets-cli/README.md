@@ -67,7 +67,7 @@ The CLI tool applies the same transformations as `expo prebuild` but directly to
 
 2. Create a target:
    ```bash
-   npx create-target
+   npx create-expo-target
    ```
 
 3. Sync to Xcode:
