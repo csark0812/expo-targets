@@ -1,0 +1,11 @@
+{
+  "type": "wallet",
+  "name": "DemoCombinedWallet",
+  "displayName": "Demo Combined Wallet",
+  "platforms": ["ios"],
+  "ios": {
+    "wallet": {
+      "ui": true
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "type": "wallet",
+  "name": "DemoWallet",
+  "displayName": "Demo Wallet",
+  "platforms": ["ios"],
+  "ios": {
+    "bundleIdentifier": "com.csarkissian.alltargetsdemo.walleta"
+  }
+}

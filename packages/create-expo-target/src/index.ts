@@ -18,7 +18,9 @@ async function main() {
         { title: 'Messages App', value: 'messages' },
         { title: 'Share Extension', value: 'share' },
         { title: 'Action Extension', value: 'action' },
-        { title: 'Wallet Extension', value: 'wallet' },
+        { title: 'Siri Intent', value: 'intent' },
+        { title: 'Wallet Extension (Non-UI)', value: 'wallet' },
+        { title: 'Wallet Extension (UI/Auth)', value: 'wallet-ui' },
       ],
     },
     {
@@ -44,6 +46,12 @@ async function main() {
       message: 'Use React Native for UI?',
       initial: false,
     },
+    {
+      type: (prev, values) => (values.type === 'intent' ? 'confirm' : null),
+      name: 'includeIntentUI',
+      message: 'Include custom UI extension? (displays custom visuals in Siri)',
+      initial: true,
+    },
   ]);
 
   if (!response.type || !response.name) {
@@ -66,12 +74,19 @@ async function main() {
     response.name,
     pascalName,
     response.platforms,
-    response.useReactNative
+    response.useReactNative,
+    response.includeIntentUI
   );
   fs.writeFileSync(path.join(targetDir, 'expo-target.config.json'), config);
 
   if (response.platforms.includes('ios')) {
-    copyTemplate(response.type, 'ios', targetDir, pascalName);
+    copyTemplate(
+      response.type,
+      'ios',
+      targetDir,
+      pascalName,
+      response.includeIntentUI
+    );
 
     if (response.useReactNative) {
       const entryFile = path.join(targetDir, 'index.tsx');
@@ -93,28 +108,7 @@ export const ${pascalToCamel(pascalName)} = createTarget('${pascalName}');
 
   console.log(`\n✅ Created target at targets/${response.name}`);
 
-  // Post-creation warnings
-  console.log('\n⚠️  Remember to:');
-  console.log(
-    '   1. Update "appGroup" in expo-target.config.json to match your app.json'
-  );
-  if (response.type === 'widget') {
-    console.log('   2. Update the App Group ID in ios/Widget.swift to match');
-  }
   console.log('\nRun `npx expo prebuild` to generate Xcode project\n');
-}
-
-function getDeploymentTarget(type: string): string {
-  const targets: Record<string, string> = {
-    widget: '14.0',
-    clip: '14.0',
-    stickers: '10.0',
-    messages: '14.0',
-    share: '13.0',
-    action: '13.0',
-    wallet: '13.0',
-  };
-  return targets[type] || '14.0';
 }
 
 function generateConfig(
@@ -122,7 +116,8 @@ function generateConfig(
   kebabName: string,
   pascalName: string,
   platforms: string[],
-  useReactNative?: boolean
+  useReactNative?: boolean,
+  includeIntentUI?: boolean
 ): string {
   const config: any = {
     type,
@@ -132,18 +127,20 @@ function generateConfig(
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' '),
     platforms: platforms,
-    appGroup: 'group.com.yourcompany.yourapp',
   };
 
-  if (platforms.includes('ios')) {
-    config.ios = {
-      deploymentTarget: getDeploymentTarget(type),
-    };
+  if (platforms.includes('ios') && useReactNative) {
+    config.entry = `./targets/${kebabName}/index.tsx`;
+    config.excludedPackages = ['expo-updates', 'expo-dev-client'];
+  }
 
-    if (useReactNative) {
-      config.entry = `./targets/${kebabName}/index.tsx`;
-      config.excludedPackages = ['expo-updates', 'expo-dev-client'];
-    }
+  if (type === 'intent' && platforms.includes('ios')) {
+    config.ios = {
+      intents: {
+        intentsSupported: ['INStartWorkoutIntent'],
+        ...(includeIntentUI && { ui: true }),
+      },
+    };
   }
 
   return JSON.stringify(config, null, 2);
@@ -153,7 +150,8 @@ function copyTemplate(
   type: string,
   platform: string,
   targetDir: string,
-  pascalName: string
+  pascalName: string,
+  includeIntentUI?: boolean
 ) {
   const platformDir = path.join(targetDir, platform);
   fs.mkdirSync(platformDir, { recursive: true });
@@ -384,9 +382,9 @@ class ActionViewController: UIViewController {
     wallet: `import PassKit
 
 class PassProvider: NSObject, PKIssuerProvisioningExtensionHandler {
-    
+
     // MARK: - PKIssuerProvisioningExtensionHandler
-    
+
     func status(completion: @escaping (PKIssuerProvisioningExtensionStatus) -> Void) {
         // Return the status of the extension
         // This method is called to determine if the extension is ready to provision passes
@@ -395,26 +393,26 @@ class PassProvider: NSObject, PKIssuerProvisioningExtensionHandler {
         status.passEntriesAvailable = true
         completion(status)
     }
-    
+
     func passEntries(completion: @escaping ([PKIssuerProvisioningExtensionPassEntry]?, Error?) -> Void) {
         // Return available passes that can be provisioned
         // Each entry represents a pass that the user can add to Wallet
-        
+
         let passEntry = PKIssuerProvisioningExtensionPassEntry()
         // Configure your pass entry here
         // passEntry.identifier = "your-pass-identifier"
         // passEntry.title = "Your Pass Title"
         // passEntry.art = UIImage(named: "PassArt")
-        
+
         completion([passEntry], nil)
     }
-    
+
     func remotePassEntries(completion: @escaping ([PKIssuerProvisioningExtensionPassEntry]?, Error?) -> Void) {
         // Return passes available from a remote source
         // This is called when refreshing available passes
         passEntries(completion: completion)
     }
-    
+
     func generateAddPaymentPassRequestForPassEntryWithIdentifier(
         _ identifier: String,
         configuration: PKAddPaymentPassRequestConfiguration,
@@ -425,14 +423,117 @@ class PassProvider: NSObject, PKIssuerProvisioningExtensionHandler {
     ) {
         // Generate the encrypted pass data for provisioning
         // This is where you communicate with your server to create the pass
-        
+
         let request = PKAddPaymentPassRequest()
         // Configure the request with encrypted pass data from your server
         // request.encryptedPassData = ...
         // request.activationData = ...
         // request.ephemeralPublicKey = ...
-        
+
         completionHandler(request)
+    }
+}`,
+    'wallet-ui': `import UIKit
+import PassKit
+
+class AuthorizationViewController: UIViewController, PKIssuerProvisioningExtensionAuthorizationProviding {
+
+    var completionHandler: ((PKIssuerProvisioningExtensionAuthorizationResult) -> Void)?
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupUI()
+    }
+
+    private func setupUI() {
+        view.backgroundColor = .systemBackground
+
+        let titleLabel = UILabel()
+        titleLabel.text = "Authenticate"
+        titleLabel.font = .boldSystemFont(ofSize: 24)
+        titleLabel.textAlignment = .center
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        let subtitleLabel = UILabel()
+        subtitleLabel.text = "Verify your identity to add this card"
+        subtitleLabel.font = .systemFont(ofSize: 16)
+        subtitleLabel.textColor = .secondaryLabel
+        subtitleLabel.textAlignment = .center
+        subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        let authenticateButton = UIButton(type: .system)
+        authenticateButton.setTitle("Authenticate", for: .normal)
+        authenticateButton.titleLabel?.font = .boldSystemFont(ofSize: 18)
+        authenticateButton.addTarget(self, action: #selector(authenticateTapped), for: .touchUpInside)
+        authenticateButton.translatesAutoresizingMaskIntoConstraints = false
+
+        let cancelButton = UIButton(type: .system)
+        cancelButton.setTitle("Cancel", for: .normal)
+        cancelButton.addTarget(self, action: #selector(cancelTapped), for: .touchUpInside)
+        cancelButton.translatesAutoresizingMaskIntoConstraints = false
+
+        view.addSubview(titleLabel)
+        view.addSubview(subtitleLabel)
+        view.addSubview(authenticateButton)
+        view.addSubview(cancelButton)
+
+        NSLayoutConstraint.activate([
+            titleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            titleLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -60),
+            subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 8),
+            subtitleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            authenticateButton.topAnchor.constraint(equalTo: subtitleLabel.bottomAnchor, constant: 32),
+            authenticateButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            cancelButton.topAnchor.constraint(equalTo: authenticateButton.bottomAnchor, constant: 16),
+            cancelButton.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+        ])
+    }
+
+    @objc private func authenticateTapped() {
+        completionHandler?(.authorized)
+    }
+
+    @objc private func cancelTapped() {
+        completionHandler?(.canceled)
+    }
+}`,
+    intent: `import Intents
+
+class IntentHandler: INExtension {
+
+    override func handler(for intent: INIntent) -> Any {
+        // Return self or specific handler based on intent type
+        return self
+    }
+}
+
+// MARK: - Example Intent Handling
+// Uncomment and customize for your specific intents
+
+// extension IntentHandler: INStartWorkoutIntentHandling {
+//     func handle(intent: INStartWorkoutIntent, completion: @escaping (INStartWorkoutIntentResponse) -> Void) {
+//         let response = INStartWorkoutIntentResponse(code: .continueInApp, userActivity: nil)
+//         completion(response)
+//     }
+// }`,
+    'intent-ui': `import IntentsUI
+
+class IntentViewController: UIViewController, INUIHostedViewControlling {
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+    }
+
+    func configureView(
+        for parameters: Set<INParameter>,
+        of interaction: INInteraction,
+        interactiveBehavior: INUIInteractiveBehavior,
+        context: INUIHostedViewContext,
+        completion: @escaping (Bool, Set<INParameter>, CGSize) -> Void
+    ) {
+        // Customize the UI based on the intent
+        let desiredSize = CGSize(width: view.bounds.width, height: 100)
+        completion(true, parameters, desiredSize)
     }
 }`,
   };
@@ -447,9 +548,24 @@ class PassProvider: NSObject, PKIssuerProvisioningExtensionHandler {
     filename = 'MessagesViewController.swift';
   } else if (type === 'wallet') {
     filename = 'PassProvider.swift';
+  } else if (type === 'wallet-ui') {
+    filename = 'AuthorizationViewController.swift';
+  } else if (type === 'intent') {
+    filename = 'IntentHandler.swift';
+  } else if (type === 'intent-ui') {
+    filename = 'IntentViewController.swift';
   }
 
   fs.writeFileSync(path.join(platformDir, filename), template);
+
+  // For intent type with UI, also create IntentViewController.swift
+  if (type === 'intent' && includeIntentUI) {
+    const intentUITemplate = templates['intent-ui'];
+    fs.writeFileSync(
+      path.join(platformDir, 'IntentViewController.swift'),
+      intentUITemplate as string
+    );
+  }
 
   if (type === 'imessage') {
     const stickersDir = path.join(platformDir, 'Stickers.xcstickers');

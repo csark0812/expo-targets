@@ -544,18 +544,20 @@ type ExtensionType =
   | 'messages'
   | 'share'
   | 'action'
+  | 'wallet'
+  | 'wallet-ui'
   | 'safari'
   | 'notification-content'
   | 'notification-service'
   | 'intent'
   | 'intent-ui'
+  | 'app-intent'
   | 'spotlight'
   | 'bg-download'
   | 'quicklook-thumbnail'
   | 'location-push'
   | 'credentials-provider'
   | 'account-auth'
-  | 'app-intent'
   | 'device-activity-monitor'
   | 'matter'
   | 'watch';
@@ -616,17 +618,22 @@ interface NonExtensionTarget extends BaseTarget {
 
 ### Extension Types by Platform
 
-| Type       | iOS            | Android                      |
-| ---------- | -------------- | ---------------------------- |
-| `widget`   | ✅ iOS 14+     | ✅ API 26+ (Glance: API 33+) |
-| `clip`     | ✅ iOS 14+     | —                            |
-| `stickers` | ✅ iOS 10+     | —                            |
-| `messages` | ✅ iOS 10+     | —                            |
-| `share`    | ✅ iOS 8+      | 🔜                           |
-| `action`   | ✅ iOS 8+      | 🔜                           |
-| Others     | 📋 Config-only | —                            |
+| Type         | iOS            | Android                      |
+| ------------ | -------------- | ---------------------------- |
+| `widget`     | ✅ iOS 14+     | ✅ API 26+ (Glance: API 33+) |
+| `clip`       | ✅ iOS 14+     | —                            |
+| `stickers`   | ✅ iOS 10+     | —                            |
+| `messages`   | ✅ iOS 10+     | —                            |
+| `share`      | ✅ iOS 8+      | 🔜                           |
+| `action`     | ✅ iOS 8+      | 🔜                           |
+| `wallet`     | 📋 iOS 14+     | —                            |
+| `intent`     | 📋 iOS 12+     | —                            |
+| `app-intent` | 📋 iOS 16+     | —                            |
+| Others       | 📋 Config-only | —                            |
 
 **Legend:** ✅ Production ready · 📋 Config-only · 🔜 Planned · — Not applicable
+
+> **Note:** Config-only types (`wallet`, `wallet-ui`, `intent`, `intent-ui`, `app-intent`, etc.) generate the Xcode target structure, but you must provide Swift implementation. See [Configuration Reference](./configuration.md#config-only-types) for details.
 
 ### Android Notes
 

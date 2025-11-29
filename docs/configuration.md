@@ -639,16 +639,52 @@ For organized sticker packs:
 
 ### Wallet Extension
 
+Wallet extensions enable in-app payment pass provisioning via Apple Wallet.
+
+**Basic configuration:**
+
 ```json
 {
   "type": "wallet",
-  "name": "MyWalletExt",
+  "name": "MyWallet",
+  "displayName": "My Wallet",
+  "platforms": ["ios"]
+}
+```
+
+**Combined configuration (with authentication UI):**
+
+Most wallet implementations require both a Non-UI extension (background provisioning) and a UI extension (user authentication). Use the `wallet.ui` option to generate both from a single config:
+
+```json
+{
+  "type": "wallet",
+  "name": "MyWallet",
   "displayName": "My Wallet",
   "platforms": ["ios"],
   "ios": {
-    "deploymentTarget": "13.0",
-    "entitlements": {
-      "com.apple.developer.pass-type-identifiers": ["$(TeamIdentifierPrefix)*"]
+    "wallet": {
+      "ui": true
+    }
+  }
+}
+```
+
+This generates two targets:
+- `MyWallet` — Non-UI extension for pass provisioning
+- `MyWalletUI` — UI extension for authentication flow
+
+For custom UI target naming:
+
+```json
+{
+  "ios": {
+    "wallet": {
+      "ui": {
+        "enabled": true,
+        "name": "MyWalletAuth",
+        "bundleIdentifier": "com.yourapp.wallet-auth"
+      }
     }
   }
 }
@@ -656,45 +692,91 @@ For organized sticker packs:
 
 **Requirements:**
 
-- Requires Apple Developer Program membership
-- Must have pass type identifiers configured in Apple Developer portal
-- Requires server-side pass generation and signing infrastructure
+- Apple Developer Program membership (paid)
+- Pass type identifiers configured in Apple Developer portal
+- Server-side pass generation and signing infrastructure
 - See [Apple's Wallet documentation](https://developer.apple.com/documentation/passkit/wallet) for complete setup
 
 **Implementation:**
 
-You must create `ios/PassProvider.swift` that conforms to `PKIssuerProvisioningExtensionHandler`:
+Create `ios/PassProvider.swift` conforming to `PKIssuerProvisioningExtensionHandler`:
 
 ```swift
 import PassKit
+import UIKit
 
-class PassProvider: NSObject, PKIssuerProvisioningExtensionHandler {
-    func status(completion: @escaping (PKIssuerProvisioningExtensionStatus) -> Void) {
+class PassProvider: PKIssuerProvisioningExtensionHandler {
+
+    override func status() async -> PKIssuerProvisioningExtensionStatus {
         let status = PKIssuerProvisioningExtensionStatus()
         status.requiresAuthentication = true
         status.passEntriesAvailable = true
-        completion(status)
+        status.remotePassEntriesAvailable = true
+        return status
     }
 
-    func passEntries(completion: @escaping ([PKIssuerProvisioningExtensionPassEntry]?, Error?) -> Void) {
-        // Return available passes that can be added to Wallet
-        completion([], nil)
+    override func passEntries() async -> [PKIssuerProvisioningExtensionPassEntry] {
+        guard let cardArt = UIImage(named: "CardArt")?.cgImage,
+              let config = createAddRequestConfiguration() else {
+            return []
+        }
+
+        guard let entry = PKIssuerProvisioningExtensionPaymentPassEntry(
+            identifier: "your-card-identifier",
+            title: "Your Card",
+            art: cardArt,
+            addRequestConfiguration: config
+        ) else {
+            return []
+        }
+
+        return [entry]
     }
 
-    func generateAddPaymentPassRequestForPassEntryWithIdentifier(
+    override func remotePassEntries() async -> [PKIssuerProvisioningExtensionPassEntry] {
+        return await passEntries()
+    }
+
+    override func generateAddPaymentPassRequestForPassEntryWithIdentifier(
         _ identifier: String,
         configuration: PKAddPaymentPassRequestConfiguration,
-        certificateChain: [Data],
+        certificateChain certificates: [Data],
         nonce: Data,
-        nonceSignature: Data,
-        completionHandler: @escaping (PKAddPaymentPassRequest) -> Void
-    ) {
-        // Generate encrypted pass data from your server
+        nonceSignature: Data
+    ) async -> PKAddPaymentPassRequest? {
+        // In production: send to server, get encrypted pass data back
         let request = PKAddPaymentPassRequest()
-        completionHandler(request)
+        // request.encryptedPassData = dataFromServer
+        // request.activationData = activationDataFromServer
+        return request
+    }
+
+    private func createAddRequestConfiguration() -> PKAddPaymentPassRequestConfiguration? {
+        guard let config = PKAddPaymentPassRequestConfiguration(encryptionScheme: .ECC_V2) else {
+            return nil
+        }
+        config.cardholderName = "Cardholder Name"
+        config.primaryAccountSuffix = "1234"
+        config.localizedDescription = "Your Card Description"
+        config.paymentNetwork = .visa
+        return config
     }
 }
 ```
+
+### Wallet UI Extension
+
+For standalone wallet UI extension (typically paired with a separate wallet extension):
+
+```json
+{
+  "type": "wallet-ui",
+  "name": "MyWalletUI",
+  "platforms": ["ios"]
+}
+```
+
+> **Tip:** Use the combined `wallet.ui: true` config instead of separate `wallet` and `wallet-ui` targets unless you need different configurations for each.
 
 ---
 
@@ -745,32 +827,35 @@ export default function (config: ExpoConfig) {
 
 ## Extension Types Reference
 
-| Type                      | iOS           | Android    | Description             |
-| ------------------------- | ------------- | ---------- | ----------------------- |
-| `widget`                  | ✅ iOS 14+    | ✅ API 26+ | Home screen widgets     |
-| `clip`                    | ✅ iOS 14+    | —          | App Clips               |
-| `stickers`                | ✅ iOS 10+    | —          | iMessage sticker packs  |
-| `messages`                | ✅ iOS 10+    | —          | iMessage apps           |
-| `share`                   | ✅ iOS 8+     | 🔜         | Share extensions        |
-| `action`                  | ✅ iOS 8+     | 🔜         | Action extensions       |
-| `wallet`                  | 📋 iOS 13+    | —          | Wallet extensions       |
-| `safari`                  | 📋 iOS 15+    | —          | Safari web extensions   |
-| `notification-content`    | 📋 iOS 10+    | 🔜         | Rich notification UI    |
-| `notification-service`    | 📋 iOS 10+    | 🔜         | Notification processing |
-| `intent`                  | 📋 iOS 12+    | —          | Siri intents            |
-| `intent-ui`               | 📋 iOS 12+    | —          | Siri intent UI          |
-| `spotlight`               | 📋 iOS 9+     | —          | Spotlight index         |
-| `bg-download`             | 📋 iOS 7+     | —          | Background downloads    |
-| `quicklook-thumbnail`     | 📋 iOS 11+    | —          | QuickLook thumbnails    |
-| `location-push`           | 📋 iOS 15+    | —          | Location push service   |
-| `credentials-provider`    | 📋 iOS 12+    | —          | Credential provider     |
-| `account-auth`            | 📋 iOS 12.2+  | —          | Account authentication  |
-| `app-intent`              | 📋 iOS 16+    | —          | App intents             |
-| `device-activity-monitor` | 📋 iOS 15+    | —          | Device activity monitor |
-| `matter`                  | 📋 iOS 16.1+  | —          | Matter extensions       |
-| `watch`                   | 📋 watchOS 2+ | —          | Watch app               |
+| Type                      | iOS           | Android    | Description                |
+| ------------------------- | ------------- | ---------- | -------------------------- |
+| `widget`                  | ✅ iOS 14+    | ✅ API 26+ | Home screen widgets        |
+| `clip`                    | ✅ iOS 14+    | —          | App Clips                  |
+| `stickers`                | ✅ iOS 10+    | —          | iMessage sticker packs     |
+| `messages`                | ✅ iOS 10+    | —          | iMessage apps              |
+| `share`                   | ✅ iOS 8+     | 🔜         | Share extensions           |
+| `action`                  | ✅ iOS 8+     | 🔜         | Action extensions          |
+| `wallet`                  | 📋 iOS 14+    | —          | Wallet pass provisioning   |
+| `wallet-ui`               | 📋 iOS 14+    | —          | Wallet authentication UI   |
+| `safari`                  | 📋 iOS 15+    | —          | Safari web extensions      |
+| `notification-content`    | 📋 iOS 10+    | 🔜         | Rich notification UI       |
+| `notification-service`    | 📋 iOS 10+    | 🔜         | Notification processing    |
+| `intent`                  | 📋 iOS 12+    | —          | Siri intents (legacy)      |
+| `intent-ui`               | 📋 iOS 12+    | —          | Siri intent custom UI      |
+| `app-intent`              | 📋 iOS 16+    | —          | App Intents (modern Siri)  |
+| `spotlight`               | 📋 iOS 9+     | —          | Spotlight index            |
+| `bg-download`             | 📋 iOS 7+     | —          | Background downloads       |
+| `quicklook-thumbnail`     | 📋 iOS 11+    | —          | QuickLook thumbnails       |
+| `location-push`           | 📋 iOS 15+    | —          | Location push service      |
+| `credentials-provider`    | 📋 iOS 12+    | —          | Credential provider        |
+| `account-auth`            | 📋 iOS 12.2+  | —          | Account authentication     |
+| `device-activity-monitor` | 📋 iOS 15+    | —          | Device activity monitor    |
+| `matter`                  | 📋 iOS 16.1+  | —          | Matter extensions          |
+| `watch`                   | 📋 watchOS 2+ | —          | Watch app                  |
 
 **Legend:** ✅ Production ready · 📋 Config-only (bring your own Swift/Kotlin) · 🔜 Planned · — Not applicable
+
+> **Combined targets:** For `wallet` and `intent` types, you can use the `ios.wallet.ui` or `ios.intents.ui` config options to generate both the main extension and its UI companion from a single config file. See [Wallet Extension](#wallet-extension) and [Intent Extension](#example-intent-extension-sirishortcuts--legacy) sections for details.
 
 ### iOS Limitations
 
@@ -1083,21 +1168,77 @@ class NotificationViewController: UIViewController, UNNotificationContentExtensi
 
 > **Important:** The `UNNotificationExtensionCategory` must match the category set in your push notification payload. Register categories in your main app using `UNUserNotificationCenter.current().setNotificationCategories()`.
 
-**Example: Intent Extension (Siri)**
+**Example: Intent Extension (Siri/Shortcuts — Legacy)**
+
+Intent extensions handle Siri voice commands and Shortcuts actions using the legacy `INIntent` system (iOS 12+).
+
+**Basic configuration:**
 
 ```json
 {
   "type": "intent",
-  "name": "MyIntentHandler",
+  "name": "MyIntent",
+  "platforms": ["ios"],
+  "ios": {
+    "intents": {
+      "intentsSupported": ["INSendMessageIntent", "INSearchForMessagesIntent"]
+    }
+  }
+}
+```
+
+**Combined configuration (with custom UI):**
+
+Use `intents.ui` to generate both Intent and Intent UI extensions from a single config:
+
+```json
+{
+  "type": "intent",
+  "name": "MyIntent",
+  "platforms": ["ios"],
+  "ios": {
+    "intents": {
+      "intentsSupported": ["INSendMessageIntent", "INSearchForMessagesIntent"],
+      "ui": true
+    }
+  }
+}
+```
+
+This generates two targets:
+- `MyIntent` — Handles intent execution
+- `MyIntentUI` — Provides custom UI during intent handling
+
+For custom UI target naming:
+
+```json
+{
+  "ios": {
+    "intents": {
+      "intentsSupported": ["INStartWorkoutIntent"],
+      "ui": {
+        "enabled": true,
+        "name": "MyIntentDisplay",
+        "bundleIdentifier": "com.yourapp.intent-display"
+      }
+    }
+  }
+}
+```
+
+**Alternative: Manual Info.plist configuration:**
+
+```json
+{
+  "type": "intent",
+  "name": "MyIntent",
   "platforms": ["ios"],
   "ios": {
     "infoPlist": {
       "NSExtension": {
         "NSExtensionAttributes": {
-          "IntentsSupported": [
-            "INSendMessageIntent",
-            "INSearchForMessagesIntent"
-          ]
+          "IntentsSupported": ["INStartWorkoutIntent", "INPauseWorkoutIntent"],
+          "IntentsRestrictedWhileLocked": ["INStartWorkoutIntent"]
         }
       }
     }
@@ -1112,28 +1253,156 @@ import Intents
 
 class IntentHandler: INExtension, INSendMessageIntentHandling {
     override func handler(for intent: INIntent) -> Any {
-        return self
+        switch intent {
+        case is INSendMessageIntent:
+            return self
+        default:
+            fatalError("Unhandled intent type: \(intent)")
+        }
     }
 
     func handle(intent: INSendMessageIntent, completion: @escaping (INSendMessageIntentResponse) -> Void) {
         let response = INSendMessageIntentResponse(code: .success, userActivity: nil)
         completion(response)
     }
+
+    func resolveRecipients(for intent: INSendMessageIntent, with completion: @escaping ([INSendMessageRecipientResolutionResult]) -> Void) {
+        if let recipients = intent.recipients, !recipients.isEmpty {
+            completion(recipients.map { INSendMessageRecipientResolutionResult.success(with: $0) })
+        } else {
+            completion([INSendMessageRecipientResolutionResult.needsValue()])
+        }
+    }
 }
 ```
 
 > **Important:** The main app must have the Siri capability enabled in entitlements. Users must also grant Siri permission.
+
+### Intent UI Extension
+
+For standalone intent UI extension (custom Siri response UI):
+
+```json
+{
+  "type": "intent-ui",
+  "name": "MyIntentUI",
+  "platforms": ["ios"],
+  "ios": {
+    "intents": {
+      "intentsSupported": ["INSendMessageIntent"]
+    }
+  }
+}
+```
+
+Create `ios/IntentViewController.swift`:
+
+```swift
+import IntentsUI
+
+class IntentViewController: UIViewController, INUIHostedViewControlling {
+    func configureView(
+        for parameters: Set<INParameter>,
+        of interaction: INInteraction,
+        interactiveBehavior: INUIInteractiveBehavior,
+        context: INUIHostedViewContext,
+        completion: @escaping (Bool, Set<INParameter>, CGSize) -> Void
+    ) {
+        // Configure your custom UI based on the intent
+        let desiredSize = CGSize(width: view.bounds.width, height: 120)
+        completion(true, parameters, desiredSize)
+    }
+}
+```
+
+> **Tip:** Use the combined `intents.ui: true` config instead of separate `intent` and `intent-ui` targets unless you need different configurations for each.
+
+### App Intent Extension (iOS 16+)
+
+App Intents are the modern replacement for legacy INIntent-based intents. They provide better Shortcuts integration, Focus Filters, and Spotlight suggestions.
+
+```json
+{
+  "type": "app-intent",
+  "name": "MyAppIntent",
+  "platforms": ["ios"]
+}
+```
+
+Create `ios/AppIntentExtension.swift`:
+
+```swift
+import AppIntents
+
+@main
+struct MyAppIntentExtension: AppIntentsExtension {
+}
+
+struct MyAppShortcuts: AppShortcutsProvider {
+    static var appShortcuts: [AppShortcut] {
+        AppShortcut(
+            intent: OpenAppIntent(),
+            phrases: ["Open \(.applicationName)"],
+            shortTitle: "Open App",
+            systemImageName: "app"
+        )
+    }
+}
+```
+
+Create `ios/MyIntents.swift` for your intent definitions:
+
+```swift
+import AppIntents
+
+struct OpenAppIntent: AppIntent {
+    static var title: LocalizedStringResource = "Open App"
+    static var description = IntentDescription("Opens the app")
+    static var openAppWhenRun: Bool = true
+
+    func perform() async throws -> some IntentResult {
+        return .result()
+    }
+}
+
+struct GetGreetingIntent: AppIntent {
+    static var title: LocalizedStringResource = "Get Greeting"
+    static var description = IntentDescription("Returns a personalized greeting")
+
+    @Parameter(title: "Name")
+    var name: String
+
+    func perform() async throws -> some IntentResult & ReturnsValue<String> {
+        return .result(value: "Hello, \(name)!")
+    }
+}
+```
+
+**When to use App Intents vs legacy Intent:**
+
+| Feature | App Intents (iOS 16+) | Legacy Intent (iOS 12+) |
+| ------- | --------------------- | ----------------------- |
+| Shortcuts support | ✅ Native | ✅ Requires donation |
+| Focus Filters | ✅ | ❌ |
+| Spotlight suggestions | ✅ Built-in | ❌ |
+| Siri voice | ✅ | ✅ |
+| Widget configuration | ✅ | ❌ |
+| Backwards compatibility | iOS 16+ only | iOS 12+ |
+
+> **Recommendation:** Use App Intents for new projects targeting iOS 16+. Use legacy Intent extensions for broader device support.
 
 **Required protocols by type:**
 
 | Type                   | Required Protocol/Class                | Documentation                                                                                              |
 | ---------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `wallet`               | `PKIssuerProvisioningExtensionHandler` | [Apple Docs](https://developer.apple.com/documentation/passkit/pkissuerprovisioningextensionhandler)       |
+| `wallet-ui`            | `PKIssuerProvisioningExtensionHandler` | [Apple Docs](https://developer.apple.com/documentation/passkit/pkissuerprovisioningextensionhandler)       |
 | `safari`               | `NSExtensionRequestHandling`           | [Apple Docs](https://developer.apple.com/documentation/safariservices/safari_web_extensions)               |
 | `notification-content` | `UNNotificationContentExtension`       | [Apple Docs](https://developer.apple.com/documentation/usernotificationsui/unnotificationcontentextension) |
 | `notification-service` | `UNNotificationServiceExtension`       | [Apple Docs](https://developer.apple.com/documentation/usernotifications/unnotificationserviceextension)   |
 | `intent`               | `INExtension`                          | [Apple Docs](https://developer.apple.com/documentation/sirikit/inextension)                                |
 | `intent-ui`            | `INUIHostedViewControlling`            | [Apple Docs](https://developer.apple.com/documentation/intentsui/inuihostedviewcontrolling)                |
+| `app-intent`           | `AppIntentsExtension`                  | [Apple Docs](https://developer.apple.com/documentation/appintents)                                         |
 
 **Tips:**
 
@@ -1146,15 +1415,19 @@ class IntentHandler: INExtension, INSendMessageIntentHandling {
 
 ## Recommended Deployment Targets
 
-| Type       | Recommended | Minimum  |
-| ---------- | ----------- | -------- |
-| `widget`   | `"14.0"`    | iOS 14.0 |
-| `clip`     | `"14.0"`    | iOS 14.0 |
-| `stickers` | `"10.0"`    | iOS 10.0 |
-| `messages` | `"14.0"`    | iOS 10.0 |
-| `share`    | `"13.0"`    | iOS 8.0  |
-| `action`   | `"13.0"`    | iOS 8.0  |
-| `wallet`   | `"13.0"`    | iOS 13.0 |
+| Type         | Recommended | Minimum  |
+| ------------ | ----------- | -------- |
+| `widget`     | `"14.0"`    | iOS 14.0 |
+| `clip`       | `"14.0"`    | iOS 14.0 |
+| `stickers`   | `"10.0"`    | iOS 10.0 |
+| `messages`   | `"14.0"`    | iOS 10.0 |
+| `share`      | `"13.0"`    | iOS 8.0  |
+| `action`     | `"13.0"`    | iOS 8.0  |
+| `wallet`     | `"14.0"`    | iOS 14.0 |
+| `wallet-ui`  | `"14.0"`    | iOS 14.0 |
+| `intent`     | `"14.0"`    | iOS 12.0 |
+| `intent-ui`  | `"14.0"`    | iOS 12.0 |
+| `app-intent` | `"16.0"`    | iOS 16.0 |
 
 ---
 
