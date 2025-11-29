@@ -14,10 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.test.alltargetsdemo",
+      "bundleIdentifier": "com.csarkissian.alltargetsdemo",
       "entitlements": {
         "com.apple.security.application-groups": [
-          "group.com.test.alltargetsdemo"
+          "group.com.csarkissian.alltargetsdemo"
         ],
         "com.apple.developer.associated-domains": [
           "appclips:alltargetsdemo.example.com"
@@ -30,7 +30,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.test.alltargetsdemo"
+      "package": "com.csarkissian.alltargetsdemo"
     }
   }
 }
