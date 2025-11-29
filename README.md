@@ -1,6 +1,6 @@
 # expo-targets
 
-Add **iOS widgets**, **App Clips**, **iMessage stickers**, and **share extensions** to your Expo app — no native experience required.
+Add **iOS widgets**, **App Clips**, **iMessage stickers**, **share extensions**, and **wallet extensions** to your Expo app — no native experience required.
 
 > **⚠️ Important:** Requires development builds (`npx expo run:ios`). Does not work with Expo Go.
 >
@@ -91,6 +91,7 @@ myWidget.refresh();
 | `messages`             | ✅  | —       | iMessage apps           |
 | `share`                | ✅  | 🔜      | Share extensions        |
 | `action`               | ✅  | 🔜      | Action extensions       |
+| `wallet`               | 📋  | —       | Wallet extensions       |
 | `safari`               | 📋  | —       | Safari web extensions   |
 | `notification-content` | 📋  | 🔜      | Rich notification UI    |
 | `notification-service` | 📋  | 🔜      | Notification processing |

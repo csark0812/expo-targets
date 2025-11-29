@@ -7,6 +7,7 @@ export type ExtensionType =
   | 'messages'
   | 'share'
   | 'action'
+  | 'wallet'
   | 'safari'
   | 'notification-content'
   | 'notification-service'
@@ -66,9 +67,10 @@ export const TYPE_MINIMUM_DEPLOYMENT_TARGETS: Record<ExtensionType, string> = {
   widget: '14.0',
   clip: '14.0',
   stickers: '10.0',
-  messages: '10.0',
+  messages: '13.0',
   share: '8.0',
   action: '8.0',
+  wallet: '13.0',
   'notification-content': '10.0',
   'notification-service': '10.0',
   intent: '12.0',
@@ -93,6 +95,7 @@ export const TYPE_BUNDLE_IDENTIFIER_SUFFIXES: Record<ExtensionType, string> = {
   messages: 'messages',
   share: 'share',
   action: 'action',
+  wallet: 'wallet',
   safari: 'safari',
   'notification-content': 'notification-content',
   'notification-service': 'notification-service',
@@ -158,6 +161,30 @@ interface BaseIOSTargetConfig {
    * @see https://developer.apple.com/library/archive/documentation/General/Conceptual/ExtensibilityPG/Share.html
    */
   preprocessingFile?: string;
+
+  // Safari extension configuration (only applies when type='safari')
+  /**
+   * Custom manifest.json configuration for Safari web extensions
+   * Only applies to Safari extension targets with 'entry' field
+   * Merged with auto-generated manifest when using React Native Web mode
+   * @example
+   * manifest: {
+   *   permissions: ['storage', 'tabs'],
+   *   content_scripts: [{ matches: ['*://*.example.com/*'] }]
+   * }
+   */
+  manifest?: {
+    name?: string;
+    version?: string;
+    description?: string;
+    permissions?: string[];
+    content_scripts?: {
+      matches: string[];
+      js?: string[];
+      css?: string[];
+    }[];
+    icons?: Record<string, string>;
+  };
 }
 
 // Types that support React Native rendering

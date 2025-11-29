@@ -8,6 +8,13 @@ import {
   type MessageLayout,
   type ConversationInfo,
 } from './modules/messages';
+import {
+  isSafariExtension,
+  bootstrapSafariExtension,
+  closePopup,
+  openTab,
+  copyToClipboard,
+} from './modules/safari';
 import { AppGroupStorage, getTargetsConfigFromBundle } from './modules/storage';
 import type {
   TargetConfig,
@@ -54,10 +61,18 @@ export interface NonExtensionTarget extends BaseTarget {
   getSharedData?: undefined;
 }
 
+export interface SafariExtensionTarget extends BaseTarget {
+  type: 'safari';
+  closePopup: () => void;
+  openTab: (url: string) => Promise<void>;
+  copyToClipboard: (text: string) => Promise<boolean>;
+}
+
 export type Target =
   | ExtensionTarget
   | MessagesExtensionTarget
-  | NonExtensionTarget;
+  | NonExtensionTarget
+  | SafariExtensionTarget;
 
 function getTargetConfig(targetName: string): TargetConfig | null {
   const expoConfig = Constants.expoConfig;
@@ -113,10 +128,16 @@ const EXTENSION_TYPES: Set<ReactNativeCompatibleType> = new Set([
   'messages',
 ]);
 
+const WEB_EXTENSION_TYPES: Set<ExtensionType> = new Set(['safari']);
+
 function isExtensionType(
   type: ExtensionType
 ): type is ReactNativeCompatibleType {
   return EXTENSION_TYPES.has(type as ReactNativeCompatibleType);
+}
+
+function isWebExtensionType(type: ExtensionType): boolean {
+  return WEB_EXTENSION_TYPES.has(type);
 }
 
 // Function overloads for better type inference
@@ -124,6 +145,10 @@ export function createTarget<T extends 'messages'>(
   targetName: string,
   componentFunc?: React.ComponentType<any>
 ): MessagesExtensionTarget;
+export function createTarget<T extends 'safari'>(
+  targetName: string,
+  componentFunc?: React.ComponentType<any>
+): SafariExtensionTarget;
 export function createTarget<
   T extends Exclude<ReactNativeCompatibleType, 'messages'>,
 >(
@@ -144,6 +169,11 @@ export function createTarget<T extends ExtensionType = ExtensionType>(
   targetName: string,
   componentFunc?: React.ComponentType<any>
 ): Target {
+  // Safari web extension: runs in browser context, use web rendering
+  if (isSafariExtension() && componentFunc) {
+    return createSafariTarget(targetName, componentFunc);
+  }
+
   const config = getTargetConfig(targetName);
   if (!config) {
     throw new Error(
@@ -151,21 +181,17 @@ export function createTarget<T extends ExtensionType = ExtensionType>(
     );
   }
 
-  if (componentFunc && 'entry' in config && config.entry) {
-    let qualifiedComponent = componentFunc;
-
-    if (process.env.NODE_ENV !== 'production') {
-      try {
-        const { withDevTools } = require('expo/src/launch/withDevTools');
-        qualifiedComponent = withDevTools(componentFunc);
-      } catch (error) {
-        console.warn(
-          '[expo-targets] Could not load withDevTools, using component as-is'
-        );
-      }
-    }
-
-    AppRegistry.registerComponent(targetName, () => qualifiedComponent);
+  // Safari extension with entry but running in native context (config lookup)
+  // This shouldn't normally happen but handle gracefully
+  if (
+    isWebExtensionType(config.type) &&
+    componentFunc &&
+    'entry' in config &&
+    config.entry
+  ) {
+    // Safari extensions with entry should bootstrap for web
+    bootstrapSafariExtension(targetName, componentFunc);
+    return createSafariTargetFromConfig(targetName, config);
   }
 
   const appGroup = getTargetAppGroup(targetName, config);
@@ -175,6 +201,7 @@ export function createTarget<T extends ExtensionType = ExtensionType>(
     );
   }
 
+  // Build target object first so we can pass it to the component
   const storage = new AppGroupStorage(appGroup);
   const baseTarget: BaseTarget = {
     name: targetName,
@@ -192,6 +219,8 @@ export function createTarget<T extends ExtensionType = ExtensionType>(
       storage.refresh(targetName);
     },
   };
+
+  let target: Target;
 
   if (isExtensionType(config.type)) {
     const extension = new Extension();
@@ -216,24 +245,138 @@ export function createTarget<T extends ExtensionType = ExtensionType>(
           listener: (style: PresentationStyle) => void
         ) => messages.addEventListener(eventName, listener),
       };
-      return messagesTarget as any;
+      target = messagesTarget as any;
+    } else {
+      const extensionTarget: ExtensionTarget = {
+        ...baseTarget,
+        type: config.type as ReactNativeCompatibleType,
+        close: () => extension.close(),
+        openHostApp: (path?: string) => extension.openHostApp(path),
+        getSharedData: () => extension.getSharedData(),
+      };
+      target = extensionTarget as any;
     }
-
-    const extensionTarget: ExtensionTarget = {
+  } else {
+    const nonExtensionTarget: NonExtensionTarget = {
       ...baseTarget,
-      type: config.type as ReactNativeCompatibleType,
-      close: () => extension.close(),
-      openHostApp: (path?: string) => extension.openHostApp(path),
-      getSharedData: () => extension.getSharedData(),
+      close: undefined,
+      openHostApp: undefined,
+      getSharedData: undefined,
     };
-    return extensionTarget as any;
+    target = nonExtensionTarget as any;
   }
 
-  const nonExtensionTarget: NonExtensionTarget = {
-    ...baseTarget,
-    close: undefined,
-    openHostApp: undefined,
-    getSharedData: undefined,
+  // Register component with target injected as prop
+  if (componentFunc && 'entry' in config && config.entry) {
+    const WrappedComponent = (props: any) => {
+      const React = require('react');
+      return React.createElement(componentFunc, { ...props, target });
+    };
+
+    let qualifiedComponent = WrappedComponent;
+
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        const { withDevTools } = require('expo/src/launch/withDevTools');
+        qualifiedComponent = withDevTools(WrappedComponent);
+      } catch (error) {
+        console.warn(
+          '[expo-targets] Could not load withDevTools, using component as-is'
+        );
+      }
+    }
+
+    AppRegistry.registerComponent(targetName, () => qualifiedComponent);
+  }
+
+  return target;
+}
+
+/**
+ * Create a Safari extension target when running in web context
+ * This is called when isSafariExtension() returns true
+ */
+function createSafariTarget(
+  targetName: string,
+  componentFunc: React.ComponentType<any>
+): SafariExtensionTarget {
+  // Bootstrap the React component for web rendering
+  bootstrapSafariExtension(targetName, componentFunc);
+
+  // Create a web-based storage adapter using browser.storage
+  const webStorage = {
+    setData: async (data: Record<string, any>) => {
+      try {
+        const api = (window as any).browser || (window as any).chrome;
+        if (api?.storage?.local?.set) {
+          await api.storage.local.set({ [targetName]: data });
+        }
+      } catch (err) {
+        console.warn('[expo-targets/safari] Storage setData failed:', err);
+      }
+    },
+    getData: <T extends Record<string, any>>(): T => {
+      // Sync get isn't possible with browser.storage, return empty
+      // Use useBrowserStorage hook for async access
+      return {} as T;
+    },
+    refresh: () => {
+      // No-op for web storage
+    },
   };
-  return nonExtensionTarget as any;
+
+  const safariTarget: SafariExtensionTarget = {
+    name: targetName,
+    type: 'safari',
+    appGroup: '', // Not applicable for Safari extensions
+    storage: webStorage as any, // Web storage adapter
+    config: { type: 'safari', name: targetName, platforms: ['ios'] },
+    setData: webStorage.setData as any,
+    getData: webStorage.getData,
+    refresh: webStorage.refresh,
+    closePopup,
+    openTab,
+    copyToClipboard,
+  };
+
+  return safariTarget;
+}
+
+/**
+ * Create a Safari target from config (fallback when config is available)
+ */
+function createSafariTargetFromConfig(
+  targetName: string,
+  config: TargetConfig
+): SafariExtensionTarget {
+  const webStorage = {
+    setData: async (data: Record<string, any>) => {
+      try {
+        const api = (window as any).browser || (window as any).chrome;
+        if (api?.storage?.local?.set) {
+          await api.storage.local.set({ [targetName]: data });
+        }
+      } catch (err) {
+        console.warn('[expo-targets/safari] Storage setData failed:', err);
+      }
+    },
+    getData: <T extends Record<string, any>>(): T => {
+      return {} as T;
+    },
+    refresh: () => {},
+  };
+
+  return {
+    name: targetName,
+    type: 'safari',
+    appGroup: config.appGroup || '',
+    storage: webStorage as any,
+    config,
+    setData: webStorage.setData as any,
+    getData: webStorage.getData,
+    refresh: webStorage.refresh,
+    closePopup,
+    openTab,
+    copyToClipboard,
+  };
 }

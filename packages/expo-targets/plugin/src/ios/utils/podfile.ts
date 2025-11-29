@@ -37,8 +37,7 @@ export function mainTargetUsesFrameworks(
   mainTargetName: string
 ): boolean {
   const targetRegex = new RegExp(
-    `target\\s+'${mainTargetName}'\\s+do([\\s\\S]*?)(?=\\n\\s*target\\s+|post_install|$)`,
-    'm'
+    `target\\s+'${mainTargetName}'\\s+do([\\s\\S]*?)(?=post_install|\\ntarget\\s+|$)`
   );
 
   const match = podfileContent.match(targetRegex);
@@ -235,8 +234,7 @@ export function ensureMainTargetUsesFrameworks(
 ): string {
   // Check if main target already has use_frameworks!
   const targetRegex = new RegExp(
-    `target\\s+'${mainTargetName}'\\s+do([\\s\\S]*?)(?=\\n\\s*target\\s+|post_install|$)`,
-    'm'
+    `target\\s+'${mainTargetName}'\\s+do([\\s\\S]*?)(?=post_install|\\ntarget\\s+|$)`
   );
 
   const match = podfileContent.match(targetRegex);
@@ -246,8 +244,10 @@ export function ensureMainTargetUsesFrameworks(
 
   const targetBlock = match[1];
 
-  // Check if use_frameworks! already exists in this target
-  if (targetBlock.includes('use_frameworks!')) {
+  // Check if unconditional use_frameworks! :linkage => :static already exists
+  // Conditional statements use variables (podfile_properties or ENV), so checking
+  // for the literal ':static' ensures we only match unconditional statements
+  if (targetBlock.includes('use_frameworks! :linkage => :static')) {
     return podfileContent;
   }
 
@@ -325,18 +325,23 @@ export function ensureExtensionDeploymentTargets(
     return podfileContent;
   }
 
-  // Remove any existing deployment target fix code
-  if (
-    podfileContent.includes('# [expo-targets] Fix extension deployment targets')
-  ) {
-    const fixRegex =
-      /\s*# \[expo-targets\] Fix extension deployment targets[\s\S]*?(?=\n\s{4}\w|\n\s{2}end)/;
-    podfileContent = podfileContent.replace(fixRegex, '');
+  const START_MARKER = '    # [expo-targets-standalone-start]';
+  const END_MARKER = '    # [expo-targets-standalone-end]';
+
+  // Remove any existing block between markers (idempotent)
+  const startIndex = podfileContent.indexOf(START_MARKER);
+  if (startIndex !== -1) {
+    const endIndex = podfileContent.indexOf(END_MARKER, startIndex);
+    if (endIndex !== -1) {
+      const beforeBlock = podfileContent.substring(0, startIndex);
+      const afterBlock = podfileContent.substring(endIndex + END_MARKER.length);
+      podfileContent = beforeBlock.trimEnd() + '\n' + afterBlock.trimStart();
+    }
   }
 
   // Generate the deployment target fix code to inject
-  const fixCode = `
-    # [expo-targets] Fix extension deployment targets
+  const fixCode = `${START_MARKER}
+    # Fix standalone extension deployment targets
     installer.pods_project.targets.each do |target|
 ${extensions
   .map(
@@ -358,24 +363,50 @@ ${extensions
   )
   .join('\n')}
     end
-`;
+${END_MARKER}`;
 
-  // Find the main app's post_install hook and inject our code before the closing 'end'
-  // Look for: post_install do |installer| ... react_native_post_install(...) ... end
-  const postInstallRegex =
-    /(post_install do \|installer\|[\s\S]*?react_native_post_install\([\s\S]*?\)[\s\S]*?)(\n\s{2}end)/;
+  // Find the post_install block and its closing 'end' by counting Ruby block keywords
+  // Ruby uses 'end' to close: do, if, unless, def, class, module, begin, case, while, until
+  const lines = podfileContent.split('\n');
+  let postInstallStartLine = -1;
+  let postInstallEndLine = -1;
+  let depth = 0;
 
-  const match = podfileContent.match(postInstallRegex);
-  if (match) {
-    // Inject our code before the closing 'end' of post_install
-    return podfileContent.replace(postInstallRegex, `$1${fixCode}$2`);
+  // Ruby keywords that open blocks requiring 'end'
+  const blockOpenRegex =
+    /\b(do|if|unless|def|class|module|begin|case|while|until)\b/g;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    if (line.includes('post_install do')) {
+      postInstallStartLine = i;
+      depth = 1;
+      continue;
+    }
+
+    if (postInstallStartLine !== -1) {
+      // Count all Ruby block openers and 'end' to find the matching end
+      const openMatches = (line.match(blockOpenRegex) || []).length;
+      const endMatches = (line.match(/\bend\b/g) || []).length;
+      depth += openMatches - endMatches;
+
+      if (depth === 0 && endMatches > 0) {
+        postInstallEndLine = i;
+        break;
+      }
+    }
   }
 
-  // Fallback: couldn't find the post_install hook, skip modification
-  console.warn(
-    '[expo-targets] Could not find post_install hook to inject deployment target fixes'
-  );
-  return podfileContent;
+  if (postInstallStartLine === -1 || postInstallEndLine === -1) {
+    return podfileContent;
+  }
+
+  // Insert before the closing 'end' of post_install
+  const beforeLines = lines.slice(0, postInstallEndLine).join('\n');
+  const afterLines = lines.slice(postInstallEndLine).join('\n');
+
+  return beforeLines + '\n' + fixCode + '\n' + afterLines;
 }
 
 /**
@@ -524,11 +555,13 @@ ${END_MARKER}`;
   const hasPostInstallEnd = afterTrimmed.startsWith('end');
 
   // Insert: newline + our code + newline (preserve existing post_install end if present)
+  // Important: preserve indentation of afterInsert to maintain valid Podfile structure
+  // Using trimStart() would break the "  end" indentation that ensureExtensionDeploymentTargets relies on
   return (
     beforeInsert.trimEnd() +
     (needsNewlineBefore ? '\n' : '') +
     fixCode +
     '\n' +
-    afterInsert.trimStart()
+    afterInsert
   );
 }

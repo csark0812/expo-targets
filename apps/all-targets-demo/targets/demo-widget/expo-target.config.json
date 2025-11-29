@@ -2,13 +2,20 @@
   "type": "widget",
   "name": "DemoWidget",
   "displayName": "Demo Widget",
-  "platforms": ["ios"],
+  "platforms": ["ios", "android"],
   "appGroup": "group.com.test.alltargetsdemo",
   "ios": {
     "colors": {
       "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" },
       "BackgroundColor": { "light": "#F2F2F7", "dark": "#1C1C1E" }
     }
+  },
+  "android": {
+    "packageName": "com.test.alltargetsdemo.demo",
+    "colors": {
+      "accent_color": { "light": "#007AFF", "dark": "#0A84FF" },
+      "background_color": { "light": "#F2F2F7", "dark": "#1C1C1E" },
+      "text_primary": { "light": "#000000", "dark": "#FFFFFF" }
+    }
   }
 }
-

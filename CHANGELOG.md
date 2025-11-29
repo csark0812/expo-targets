@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- iOS Wallet extension support (config-only, iOS 13+)
 - CI/CD workflows with GitHub Actions
 - Automated npm publishing on PR merge
 

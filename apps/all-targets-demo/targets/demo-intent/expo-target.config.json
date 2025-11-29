@@ -6,10 +6,15 @@
   "ios": {
     "infoPlist": {
       "NSExtension": {
-        "NSExtensionPointIdentifier": "com.apple.intents-service",
-        "NSExtensionPrincipalClass": "IntentHandler"
+        "NSExtensionAttributes": {
+          "IntentsSupported": [
+            "INStartWorkoutIntent",
+            "INPauseWorkoutIntent",
+            "INEndWorkoutIntent",
+            "INResumeWorkoutIntent"
+          ]
+        }
       }
     }
   }
 }
-

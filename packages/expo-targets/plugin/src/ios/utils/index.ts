@@ -10,3 +10,4 @@ export * as Plist from './plist';
 export * as Podfile from './podfile';
 export * as Asset from './asset';
 export * as ReactNativeSwift from './reactNativeSwift';
+export * as Safari from './safari';

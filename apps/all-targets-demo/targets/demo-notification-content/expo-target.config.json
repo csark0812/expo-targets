@@ -4,12 +4,15 @@
   "displayName": "Demo Notification Content",
   "platforms": ["ios"],
   "ios": {
+    "deploymentTarget": "15.1",
     "infoPlist": {
       "NSExtension": {
-        "NSExtensionPointIdentifier": "com.apple.usernotifications.content",
-        "NSExtensionPrincipalClass": "NotificationViewController"
+        "NSExtensionAttributes": {
+          "UNNotificationExtensionCategory": "DEMO_CONTENT",
+          "UNNotificationExtensionInitialContentSizeRatio": 0.3,
+          "UNNotificationExtensionDefaultContentHidden": false
+        }
       }
     }
   }
 }
-

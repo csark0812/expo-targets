@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "expo": "~54.0.18",
+    "expo-notifications": "~0.32.0",
     "expo-status-bar": "~3.0.8",
     "expo-targets": "workspace:*",
     "react": "19.1.0",

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Demo Safari Native</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header class="header">
+        <h1>🦁 Safari Native</h1>
+        <p class="subtitle">Built with HTML/CSS/JS</p>
+      </header>
+
+      <section class="section">
+        <h2 class="section-title">Current Tab</h2>
+        <div id="tab-info" class="tab-info">
+          <div class="loading">
+            <span class="spinner"></span>
+            <span>Loading...</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Storage Counter</h2>
+        <div class="counter">
+          <span class="counter-label">Click count:</span>
+          <span id="counter-value" class="counter-value">0</span>
+        </div>
+        <button id="btn-increment" class="button">Increment Counter</button>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Native Communication</h2>
+        <div id="native-status" class="status">
+          <span class="status-indicator"></span>
+          <span>Ready</span>
+        </div>
+        <button id="btn-native" class="button">Send to Native Handler</button>
+        <div id="native-response" class="response"></div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Actions</h2>
+        <div class="actions">
+          <button id="btn-copy" class="button primary" disabled>
+            Copy URL
+          </button>
+          <button id="btn-open" class="button">Open Expo Docs</button>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <p>Demo Safari Native Extension</p>
+      </footer>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

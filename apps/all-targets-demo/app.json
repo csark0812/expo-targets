@@ -14,23 +14,26 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.test.alltargetsdemo",
+      "bundleIdentifier": "com.csarkissian.alltargetsdemo",
       "entitlements": {
         "com.apple.security.application-groups": [
-          "group.com.test.alltargetsdemo"
+          "group.com.csarkissian.alltargetsdemo"
         ],
         "com.apple.developer.associated-domains": [
           "appclips:alltargetsdemo.example.com"
         ]
-      }
+      },
+      "appleTeamId": "G9U8CKZ2XG"
     },
-    "plugins": ["../../packages/expo-targets/app.plugin.js"],
+    "plugins": [
+      "../../packages/expo-targets/app.plugin.js"
+    ],
     "android": {
+      "package": "com.csarkissian.alltargetsdemo",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      },
-      "package": "com.test.alltargetsdemo"
+      }
     }
   }
 }

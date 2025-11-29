@@ -8,6 +8,7 @@ type ExtensionType =
   | 'stickers'
   | 'share'
   | 'action'
+  | 'wallet'
   | 'safari'
   | 'notification-content'
   | 'notification-service'
@@ -30,6 +31,7 @@ const ALL_TARGET_TYPES: ExtensionType[] = [
   'stickers',
   'share',
   'action',
+  'wallet',
   'safari',
   'notification-content',
   'notification-service',

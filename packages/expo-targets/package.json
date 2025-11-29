@@ -4,6 +4,16 @@
   "description": "Expo config plugin for Apple targets and Android app extensions",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
+  "files": [
+    "build",
+    "plugin/build",
+    "metro/build",
+    "app.plugin.js",
+    "ios",
+    "android",
+    "expo-module.config.json",
+    "README.md"
+  ],
   "exports": {
     ".": {
       "import": "./build/src/index.js",

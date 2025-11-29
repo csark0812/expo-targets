@@ -43,14 +43,9 @@ export const withTargetPodfile: ConfigPlugin<{
       const projectRoot = config.modRequest.projectRoot;
       const mainTargetName = getProjectName(projectRoot);
 
-      // Only React Native extensions need main app to use_frameworks! (they inherit pods)
-      // Standalone extensions are siblings and don't inherit, so they don't need this
-      if (!props.standalone) {
-        podfile = Podfile.ensureMainTargetUsesFrameworks(
-          podfile,
-          mainTargetName
-        );
-      }
+      // Ensure main app has use_frameworks! for CocoaPods compatibility
+      // Both React Native and standalone extensions need main app to have matching setting
+      podfile = Podfile.ensureMainTargetUsesFrameworks(podfile, mainTargetName);
 
       // For standalone targets, detect main app's use_frameworks! setting
       // CocoaPods requires host app and extensions to have matching use_frameworks! settings
