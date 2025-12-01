@@ -19,8 +19,7 @@ async function main() {
         { title: 'Share Extension', value: 'share' },
         { title: 'Action Extension', value: 'action' },
         { title: 'Siri Intent', value: 'intent' },
-        { title: 'Wallet Extension (Non-UI)', value: 'wallet' },
-        { title: 'Wallet Extension (UI/Auth)', value: 'wallet-ui' },
+        { title: 'Wallet Extension', value: 'wallet' },
       ],
     },
     {
@@ -139,6 +138,14 @@ function generateConfig(
       intents: {
         intentsSupported: ['INStartWorkoutIntent'],
         ...(includeIntentUI && { ui: true }),
+      },
+    };
+  }
+
+  if (type === 'wallet' && platforms.includes('ios')) {
+    config.ios = {
+      wallet: {
+        ui: true,
       },
     };
   }
@@ -380,57 +387,64 @@ class ActionViewController: UIViewController {
     }
 }`,
     wallet: `import PassKit
+import UIKit
 
-class PassProvider: NSObject, PKIssuerProvisioningExtensionHandler {
+class PassProvider: PKIssuerProvisioningExtensionHandler {
 
-    // MARK: - PKIssuerProvisioningExtensionHandler
-
-    func status(completion: @escaping (PKIssuerProvisioningExtensionStatus) -> Void) {
-        // Return the status of the extension
-        // This method is called to determine if the extension is ready to provision passes
+    override func status() async -> PKIssuerProvisioningExtensionStatus {
         let status = PKIssuerProvisioningExtensionStatus()
         status.requiresAuthentication = true
         status.passEntriesAvailable = true
-        completion(status)
+        status.remotePassEntriesAvailable = true
+        return status
     }
 
-    func passEntries(completion: @escaping ([PKIssuerProvisioningExtensionPassEntry]?, Error?) -> Void) {
-        // Return available passes that can be provisioned
-        // Each entry represents a pass that the user can add to Wallet
+    override func passEntries() async -> [PKIssuerProvisioningExtensionPassEntry] {
+        guard let cardArt = UIImage(named: "CardArt")?.cgImage,
+              let config = createAddRequestConfiguration() else {
+            return []
+        }
 
-        let passEntry = PKIssuerProvisioningExtensionPassEntry()
-        // Configure your pass entry here
-        // passEntry.identifier = "your-pass-identifier"
-        // passEntry.title = "Your Pass Title"
-        // passEntry.art = UIImage(named: "PassArt")
+        guard let entry = PKIssuerProvisioningExtensionPaymentPassEntry(
+            identifier: "your-card-identifier",
+            title: "Your Card",
+            art: cardArt,
+            addRequestConfiguration: config
+        ) else {
+            return []
+        }
 
-        completion([passEntry], nil)
+        return [entry]
     }
 
-    func remotePassEntries(completion: @escaping ([PKIssuerProvisioningExtensionPassEntry]?, Error?) -> Void) {
-        // Return passes available from a remote source
-        // This is called when refreshing available passes
-        passEntries(completion: completion)
+    override func remotePassEntries() async -> [PKIssuerProvisioningExtensionPassEntry] {
+        return await passEntries()
     }
 
-    func generateAddPaymentPassRequestForPassEntryWithIdentifier(
+    override func generateAddPaymentPassRequestForPassEntryWithIdentifier(
         _ identifier: String,
         configuration: PKAddPaymentPassRequestConfiguration,
-        certificateChain: [Data],
+        certificateChain certificates: [Data],
         nonce: Data,
-        nonceSignature: Data,
-        completionHandler: @escaping (PKAddPaymentPassRequest) -> Void
-    ) {
-        // Generate the encrypted pass data for provisioning
-        // This is where you communicate with your server to create the pass
-
+        nonceSignature: Data
+    ) async -> PKAddPaymentPassRequest? {
+        // In production: send certificates/nonce to server, get encrypted pass data back
         let request = PKAddPaymentPassRequest()
-        // Configure the request with encrypted pass data from your server
-        // request.encryptedPassData = ...
-        // request.activationData = ...
-        // request.ephemeralPublicKey = ...
+        // request.encryptedPassData = dataFromServer
+        // request.activationData = activationDataFromServer
+        return request
+    }
 
-        completionHandler(request)
+    private func createAddRequestConfiguration() -> PKAddPaymentPassRequestConfiguration? {
+        guard let config = PKAddPaymentPassRequestConfiguration(encryptionScheme: .ECC_V2) else {
+            return nil
+        }
+        config.cardholderName = "Cardholder Name"
+        config.primaryAccountSuffix = "1234"
+        config.localizedDescription = "Your Card Description"
+        config.primaryAccountIdentifier = ""
+        config.paymentNetwork = .visa
+        return config
     }
 }`,
     'wallet-ui': `import UIKit
@@ -548,15 +562,20 @@ class IntentViewController: UIViewController, INUIHostedViewControlling {
     filename = 'MessagesViewController.swift';
   } else if (type === 'wallet') {
     filename = 'PassProvider.swift';
-  } else if (type === 'wallet-ui') {
-    filename = 'AuthorizationViewController.swift';
   } else if (type === 'intent') {
     filename = 'IntentHandler.swift';
-  } else if (type === 'intent-ui') {
-    filename = 'IntentViewController.swift';
   }
 
   fs.writeFileSync(path.join(platformDir, filename), template);
+
+  // For wallet type, also create AuthorizationViewController.swift (combined wallet with UI)
+  if (type === 'wallet') {
+    const walletUITemplate = templates['wallet-ui'];
+    fs.writeFileSync(
+      path.join(platformDir, 'AuthorizationViewController.swift'),
+      walletUITemplate as string
+    );
+  }
 
   // For intent type with UI, also create IntentViewController.swift
   if (type === 'intent' && includeIntentUI) {

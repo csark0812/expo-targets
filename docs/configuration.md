@@ -709,16 +709,7 @@ For organized sticker packs:
 
 Wallet extensions enable in-app payment pass provisioning via Apple Wallet.
 
-**Basic configuration:**
-
-```json
-{
-  "type": "wallet",
-  "name": "MyWallet",
-  "displayName": "My Wallet",
-  "platforms": ["ios"]
-}
-```
+> **Note:** `npx create-expo-target` generates combined wallet extensions (with UI) by default, which is the recommended setup for most implementations.
 
 **Combined configuration (with authentication UI):**
 
@@ -756,6 +747,19 @@ For custom UI target naming:
       }
     }
   }
+}
+```
+
+**Basic configuration (without UI):**
+
+For rare cases where you only need background provisioning without user authentication:
+
+```json
+{
+  "type": "wallet",
+  "name": "MyWallet",
+  "displayName": "My Wallet",
+  "platforms": ["ios"]
 }
 ```
 
@@ -833,20 +837,6 @@ class PassProvider: PKIssuerProvisioningExtensionHandler {
 }
 ```
 
-### Wallet UI Extension
-
-For standalone wallet UI extension (typically paired with a separate wallet extension):
-
-```json
-{
-  "type": "wallet-ui",
-  "name": "MyWalletUI",
-  "platforms": ["ios"]
-}
-```
-
-> **Tip:** Use the combined `wallet.ui: true` config instead of separate `wallet` and `wallet-ui` targets unless you need different configurations for each.
-
 ---
 
 ## Dynamic Configuration
@@ -904,13 +894,11 @@ export default function (config: ExpoConfig) {
 | `messages`                | ✅ iOS 10+    | —          | iMessage apps             |
 | `share`                   | ✅ iOS 8+     | 🔜         | Share extensions          |
 | `action`                  | ✅ iOS 8+     | 🔜         | Action extensions         |
-| `wallet`                  | 📋 iOS 14+    | —          | Wallet pass provisioning  |
-| `wallet-ui`               | 📋 iOS 14+    | —          | Wallet authentication UI  |
+| `wallet`                  | ✅ iOS 14+    | —          | Wallet pass provisioning  |
 | `safari`                  | 📋 iOS 15+    | —          | Safari web extensions     |
 | `notification-content`    | 📋 iOS 10+    | 🔜         | Rich notification UI      |
 | `notification-service`    | 📋 iOS 10+    | 🔜         | Notification processing   |
 | `intent`                  | 📋 iOS 12+    | —          | Siri intents (legacy)     |
-| `intent-ui`               | 📋 iOS 12+    | —          | Siri intent custom UI     |
 | `app-intent`              | 📋 iOS 16+    | —          | App Intents (modern Siri) |
 | `spotlight`               | 📋 iOS 9+     | —          | Spotlight index           |
 | `bg-download`             | 📋 iOS 7+     | —          | Background downloads      |
@@ -924,7 +912,7 @@ export default function (config: ExpoConfig) {
 
 **Legend:** ✅ Production ready · 📋 Config-only (bring your own Swift/Kotlin) · 🔜 Planned · — Not applicable
 
-> **Combined targets:** For `wallet` and `intent` types, you can use the `ios.wallet.ui` or `ios.intents.ui` config options to generate both the main extension and its UI companion from a single config file. See [Wallet Extension](#wallet-extension) and [Intent Extension](#example-intent-extension-sirishortcuts--legacy) sections for details.
+> **Combined targets:** For `wallet` and `intent` types, you can use the `ios.wallet.ui` or `ios.intents.ui` config options to generate both the main extension and its UI companion from a single config file. The CLI generates combined wallet extensions by default. See [Wallet Extension](#wallet-extension) and [Intent Extension](#example-intent-extension-sirishortcuts--legacy) sections for details.
 
 ### iOS Limitations
 
@@ -1463,16 +1451,16 @@ struct GetGreetingIntent: AppIntent {
 
 **Required protocols by type:**
 
-| Type                   | Required Protocol/Class                | Documentation                                                                                              |
-| ---------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `wallet`               | `PKIssuerProvisioningExtensionHandler` | [Apple Docs](https://developer.apple.com/documentation/passkit/pkissuerprovisioningextensionhandler)       |
-| `wallet-ui`            | `PKIssuerProvisioningExtensionHandler` | [Apple Docs](https://developer.apple.com/documentation/passkit/pkissuerprovisioningextensionhandler)       |
-| `safari`               | `NSExtensionRequestHandling`           | [Apple Docs](https://developer.apple.com/documentation/safariservices/safari_web_extensions)               |
-| `notification-content` | `UNNotificationContentExtension`       | [Apple Docs](https://developer.apple.com/documentation/usernotificationsui/unnotificationcontentextension) |
-| `notification-service` | `UNNotificationServiceExtension`       | [Apple Docs](https://developer.apple.com/documentation/usernotifications/unnotificationserviceextension)   |
-| `intent`               | `INExtension`                          | [Apple Docs](https://developer.apple.com/documentation/sirikit/inextension)                                |
-| `intent-ui`            | `INUIHostedViewControlling`            | [Apple Docs](https://developer.apple.com/documentation/intentsui/inuihostedviewcontrolling)                |
-| `app-intent`           | `AppIntentsExtension`                  | [Apple Docs](https://developer.apple.com/documentation/appintents)                                         |
+| Type                   | Required Protocol/Class                                                                          | Documentation                                                                                              |
+| ---------------------- | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `wallet`               | `PKIssuerProvisioningExtensionHandler` + `PKIssuerProvisioningExtensionAuthorizationProviding`\* | [Apple Docs](https://developer.apple.com/documentation/passkit/pkissuerprovisioningextensionhandler)       |
+| `safari`               | `NSExtensionRequestHandling`                                                                     | [Apple Docs](https://developer.apple.com/documentation/safariservices/safari_web_extensions)               |
+| `notification-content` | `UNNotificationContentExtension`                                                                 | [Apple Docs](https://developer.apple.com/documentation/usernotificationsui/unnotificationcontentextension) |
+| `notification-service` | `UNNotificationServiceExtension`                                                                 | [Apple Docs](https://developer.apple.com/documentation/usernotifications/unnotificationserviceextension)   |
+| `intent`               | `INExtension` + `INUIHostedViewControlling`\*                                                    | [Apple Docs](https://developer.apple.com/documentation/sirikit/inextension)                                |
+| `app-intent`           | `AppIntentsExtension`                                                                            | [Apple Docs](https://developer.apple.com/documentation/appintents)                                         |
+
+\*When using the `ui: true` option for combined targets
 
 **Tips:**
 
@@ -1494,9 +1482,7 @@ struct GetGreetingIntent: AppIntent {
 | `share`      | `"13.0"`    | iOS 8.0  |
 | `action`     | `"13.0"`    | iOS 8.0  |
 | `wallet`     | `"14.0"`    | iOS 14.0 |
-| `wallet-ui`  | `"14.0"`    | iOS 14.0 |
 | `intent`     | `"14.0"`    | iOS 12.0 |
-| `intent-ui`  | `"14.0"`    | iOS 12.0 |
 | `app-intent` | `"16.0"`    | iOS 16.0 |
 
 ---

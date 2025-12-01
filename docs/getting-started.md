@@ -388,14 +388,15 @@ npx create-expo-target
 
 **Production-ready types:**
 
+- **Widget** — Home screen widgets
 - **App Clip** — Lightweight app experiences
 - **Share Extension** — Accept shared content from other apps
 - **iMessage Stickers** — Custom sticker packs
 - **Action Extension** — Process content in place
+- **Wallet Extension** — Payment pass provisioning to Apple Wallet
 
 **Config-only types** (bring your own Swift):
 
-- **Wallet Extension** — Payment pass provisioning to Apple Wallet
 - **Intent Extension** — Siri voice commands and Shortcuts (legacy INIntent)
 - **App Intent Extension** — Modern Siri/Shortcuts integration (iOS 16+)
 
