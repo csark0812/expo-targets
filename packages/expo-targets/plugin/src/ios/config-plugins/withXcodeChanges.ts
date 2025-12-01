@@ -400,30 +400,32 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       }
     });
 
-    // App Clips MUST have matching CFBundleVersion with their parent app
-    // Extensions can inherit from project level, but App Clips are standalone apps
-    // that require explicit version settings
-    if (props.type === 'clip') {
-      // Get version from EAS Build environment variable (highest priority)
-      // or from main app build settings, or from expo config
-      const buildNumber =
-        process.env.EAS_BUILD_IOS_BUILD_NUMBER ||
-        mainBuildSettings.CURRENT_PROJECT_VERSION?.replace(/"/g, '') ||
-        config.ios?.buildNumber ||
-        '1';
+    // All targets (extensions and App Clips) MUST have matching version numbers
+    // with their parent app. Set CURRENT_PROJECT_VERSION and MARKETING_VERSION
+    // explicitly to ensure $(CURRENT_PROJECT_VERSION) and $(MARKETING_VERSION)
+    // resolve correctly in Info.plist.
+    //
+    // Get build number from EAS Build environment variable (highest priority)
+    // or from expo config, or from main app build settings
+    const buildNumber =
+      process.env.EAS_BUILD_IOS_BUILD_NUMBER ||
+      config.ios?.buildNumber ||
+      mainBuildSettings.CURRENT_PROJECT_VERSION?.replace(/"/g, '') ||
+      '1';
 
-      const marketingVersion =
-        mainBuildSettings.MARKETING_VERSION?.replace(/"/g, '') ||
-        config.version ||
-        '1.0.0';
+    // Get marketing version from expo config (highest priority to match parent app)
+    // EAS Build uses config.version for CFBundleShortVersionString
+    const marketingVersion =
+      config.version ||
+      mainBuildSettings.MARKETING_VERSION?.replace(/"/g, '') ||
+      '1.0.0';
 
-      targetSpecificSettings.CURRENT_PROJECT_VERSION = buildNumber;
-      targetSpecificSettings.MARKETING_VERSION = marketingVersion;
+    targetSpecificSettings.CURRENT_PROJECT_VERSION = buildNumber;
+    targetSpecificSettings.MARKETING_VERSION = marketingVersion;
 
-      props.logger.log(
-        `Set App Clip version: ${marketingVersion} (${buildNumber})`
-      );
-    }
+    props.logger.log(
+      `Set target version: ${marketingVersion} (${buildNumber})`
+    );
 
     // Build final settings: target-specific + inherited + deployment target + custom overrides
     const buildSettings: Record<string, string> = {
