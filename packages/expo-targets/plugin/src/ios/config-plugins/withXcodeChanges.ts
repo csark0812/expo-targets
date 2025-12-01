@@ -385,10 +385,12 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     }
 
     // Inherit essential build settings from main app if not already set
+    // Note: For extensions, version settings (CURRENT_PROJECT_VERSION, MARKETING_VERSION)
+    // can inherit from project level. However, App Clips and standalone apps MUST have
+    // explicit version settings that match the parent app.
     const essentialSettings = [
       'CLANG_ENABLE_MODULES',
       'TARGETED_DEVICE_FAMILY',
-      'CURRENT_PROJECT_VERSION',
     ];
 
     essentialSettings.forEach((setting) => {
@@ -398,16 +400,28 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       }
     });
 
-    // Set MARKETING_VERSION from Expo config to match main app's Info.plist value
-    // Expo prebuild may truncate version in build settings but keeps full version in Info.plist
-    if (config.version) {
-      targetSpecificSettings.MARKETING_VERSION = config.version;
-      props.logger.log(`Set MARKETING_VERSION from config: ${config.version}`);
-    } else if (mainBuildSettings.MARKETING_VERSION) {
-      targetSpecificSettings.MARKETING_VERSION =
-        mainBuildSettings.MARKETING_VERSION;
+    // App Clips MUST have matching CFBundleVersion with their parent app
+    // Extensions can inherit from project level, but App Clips are standalone apps
+    // that require explicit version settings
+    if (props.type === 'clip') {
+      // Get version from EAS Build environment variable (highest priority)
+      // or from main app build settings, or from expo config
+      const buildNumber =
+        process.env.EAS_BUILD_IOS_BUILD_NUMBER ||
+        mainBuildSettings.CURRENT_PROJECT_VERSION?.replace(/"/g, '') ||
+        config.ios?.buildNumber ||
+        '1';
+
+      const marketingVersion =
+        mainBuildSettings.MARKETING_VERSION?.replace(/"/g, '') ||
+        config.version ||
+        '1.0.0';
+
+      targetSpecificSettings.CURRENT_PROJECT_VERSION = buildNumber;
+      targetSpecificSettings.MARKETING_VERSION = marketingVersion;
+
       props.logger.log(
-        `Inherited MARKETING_VERSION: ${mainBuildSettings.MARKETING_VERSION}`
+        `Set App Clip version: ${marketingVersion} (${buildNumber})`
       );
     }
 

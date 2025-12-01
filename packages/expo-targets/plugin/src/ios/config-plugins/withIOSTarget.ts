@@ -222,10 +222,15 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
       config.ios?.entitlements?.['com.apple.security.application-groups'];
     if (Array.isArray(mainAppGroups) && mainAppGroups.length > 0) {
       // Types that should inherit app groups
+      // This must include all types where shouldUseAppGroups() returns true in plist.ts
+      // Additional types here are harmless (extra capabilities), but missing ones break builds
       const APP_GROUP_TYPES: ExtensionType[] = [
         'widget',
         'clip',
         'share',
+        'bg-download',
+        'messages',
+        // These don't require App Groups by default but are included for manual configs
         'action',
         'notification-service',
         'notification-content',
@@ -263,10 +268,11 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
       }
     }
 
-    // Add Wallet extension specific entitlements
-    if (props.type === 'wallet' || props.type === 'wallet-ui') {
-      easEntitlements['com.apple.developer.payment-pass-provisioning'] = true;
-    }
+    // Note: Wallet extension entitlements (com.apple.developer.payment-pass-provisioning)
+    // are NOT added to EAS credentials because this is a restricted capability that
+    // requires manual Apple approval. The entitlement is still added to the actual
+    // .entitlements file via withTargetEntitlements, but EAS cannot auto-provision
+    // profiles with this capability. Users must manually configure this in Apple Developer Portal.
 
     config = withEASCredentials(config, {
       targetName: targetProductName,
