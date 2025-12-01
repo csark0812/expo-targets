@@ -9,11 +9,21 @@ import {
   TextInput,
   Alert,
   Platform,
+  Image,
 } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import { demoWidget, updateWidget } from './targets/demo-widget';
+import {
+  demoWidget,
+  updateWidget,
+  setWidgetAuthStatus,
+  setWidgetWeather,
+  setWidgetAvatar,
+  type WidgetData,
+} from './targets/demo-widget';
 import { demoShareTarget } from './targets/demo-share';
 import { demoActionTarget } from './targets/demo-action';
+import type { SharedItem } from './targets/demo-share/src/ShareExtension';
+import type { ProcessedItem } from './targets/demo-action/src/ActionExtension';
 
 // Configure notification handler
 Notifications.setNotificationHandler({
@@ -27,8 +37,12 @@ Notifications.setNotificationHandler({
 
 export default function App() {
   const [widgetMessage, setWidgetMessage] = useState('');
-  const [sharedData, setSharedData] = useState<any>(null);
-  const [actionData, setActionData] = useState<any>(null);
+  const [widgetLoggedIn, setWidgetLoggedIn] = useState(false);
+  const [widgetUsername, setWidgetUsername] = useState('');
+  const [widgetAvatarURL, setWidgetAvatarURL] = useState('');
+  const [widgetTemperature, setWidgetTemperature] = useState('72');
+  const [sharedItems, setSharedItems] = useState<SharedItem[]>([]);
+  const [processedItems, setProcessedItems] = useState<ProcessedItem[]>([]);
   const [notificationStatus, setNotificationStatus] = useState<string>('');
 
   useEffect(() => {
@@ -142,20 +156,47 @@ export default function App() {
   };
 
   const loadData = () => {
-    const widgetData = demoWidget.getData<{ message?: string }>();
+    const widgetData = demoWidget.getData<WidgetData>();
     if (widgetData?.message) {
       setWidgetMessage(widgetData.message);
     }
-
-    const shareData = demoShareTarget.getData();
-    if (shareData) {
-      setSharedData(shareData);
+    if (widgetData?.isLoggedIn !== undefined) {
+      setWidgetLoggedIn(widgetData.isLoggedIn);
+    }
+    if (widgetData?.username) {
+      setWidgetUsername(widgetData.username);
+    }
+    if (widgetData?.avatarURL) {
+      setWidgetAvatarURL(widgetData.avatarURL);
+    }
+    if (widgetData?.temperature !== undefined) {
+      setWidgetTemperature(String(widgetData.temperature));
     }
 
-    const actionData = demoActionTarget.getData();
-    if (actionData) {
-      setActionData(actionData);
+    const shareData = demoShareTarget.getData<{ items: SharedItem[] }>();
+    if (shareData?.items) {
+      setSharedItems(shareData.items);
     }
+
+    const actionData = demoActionTarget.getData<{ items: ProcessedItem[] }>();
+    if (actionData?.items) {
+      setProcessedItems(actionData.items);
+    }
+  };
+
+  const clearSharedItems = () => {
+    demoShareTarget.setData({ items: [] });
+    setSharedItems([]);
+  };
+
+  const clearProcessedItems = () => {
+    demoActionTarget.setData({ items: [] });
+    setProcessedItems([]);
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString();
   };
 
   const handleWidgetUpdate = () => {
@@ -165,6 +206,45 @@ export default function App() {
     }
     updateWidget(widgetMessage);
     Alert.alert('Success', 'Widget updated! Check your home screen.');
+  };
+
+  const handleToggleWidgetLogin = () => {
+    const newLoggedIn = !widgetLoggedIn;
+    setWidgetLoggedIn(newLoggedIn);
+    setWidgetAuthStatus(
+      newLoggedIn,
+      newLoggedIn ? widgetUsername || 'Demo User' : undefined,
+      newLoggedIn ? widgetAvatarURL || undefined : undefined
+    );
+    if (!widgetUsername && newLoggedIn) {
+      setWidgetUsername('Demo User');
+    }
+  };
+
+  const handleUsernameUpdate = () => {
+    if (widgetLoggedIn && widgetUsername.trim()) {
+      setWidgetAuthStatus(
+        true,
+        widgetUsername.trim(),
+        widgetAvatarURL || undefined
+      );
+      Alert.alert('Success', 'Username updated!');
+    }
+  };
+
+  const handleAvatarUpdate = () => {
+    if (widgetAvatarURL.trim()) {
+      setWidgetAvatar(widgetAvatarURL.trim());
+      Alert.alert('Success', 'Avatar URL updated! Widget will load the image.');
+    }
+  };
+
+  const handleWeatherUpdate = () => {
+    const temp = parseInt(widgetTemperature, 10);
+    if (!isNaN(temp)) {
+      setWidgetWeather('cloud.sun.fill', temp);
+      Alert.alert('Success', 'Weather updated!');
+    }
   };
 
   const handleRefreshData = () => {
@@ -248,68 +328,190 @@ export default function App() {
             <Text style={styles.testButtonText}>Update Widget</Text>
           </TouchableOpacity>
 
+          {/* Keychain + SDWebImageSwiftUI Demo Section */}
+          <View style={styles.keychainSection}>
+            <Text style={styles.keychainTitle}>🔐 Auth & Avatar Demo</Text>
+            <Text style={styles.keychainDescription}>
+              Widget uses KeychainAccess for auth + SDWebImageSwiftUI for async
+              images:
+            </Text>
+
+            <View style={styles.loginStatusRow}>
+              <Text style={styles.loginStatusLabel}>Login Status:</Text>
+              <TouchableOpacity
+                style={[
+                  styles.loginToggle,
+                  widgetLoggedIn
+                    ? styles.loginToggleActive
+                    : styles.loginToggleInactive,
+                ]}
+                onPress={handleToggleWidgetLogin}
+              >
+                <Text style={styles.loginToggleText}>
+                  {widgetLoggedIn ? '✓ Signed In' : 'Not Signed In'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {widgetLoggedIn && (
+              <>
+                <View style={styles.usernameRow}>
+                  <TextInput
+                    style={[styles.usernameInput, { flex: 1 }]}
+                    placeholder="Username"
+                    value={widgetUsername}
+                    onChangeText={setWidgetUsername}
+                    onBlur={handleUsernameUpdate}
+                  />
+                </View>
+                <View style={styles.usernameRow}>
+                  <TextInput
+                    style={[styles.usernameInput, { flex: 1 }]}
+                    placeholder="Avatar URL (https://...)"
+                    value={widgetAvatarURL}
+                    onChangeText={setWidgetAvatarURL}
+                    autoCapitalize="none"
+                    keyboardType="url"
+                  />
+                  <TouchableOpacity
+                    style={styles.smallButton}
+                    onPress={handleAvatarUpdate}
+                  >
+                    <Text style={styles.smallButtonText}>Set</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </View>
+
+          {/* Weather Demo Section */}
+          <View style={styles.keychainSection}>
+            <Text style={styles.keychainTitle}>🌤️ Weather Demo</Text>
+            <Text style={styles.keychainDescription}>
+              Demo of additional widget data with SDWebImageSwiftUI:
+            </Text>
+            <View style={styles.weatherRow}>
+              <TextInput
+                style={[styles.usernameInput, { flex: 1 }]}
+                placeholder="Temperature (°F)"
+                value={widgetTemperature}
+                onChangeText={setWidgetTemperature}
+                keyboardType="numeric"
+              />
+              <TouchableOpacity
+                style={styles.smallButton}
+                onPress={handleWeatherUpdate}
+              >
+                <Text style={styles.smallButtonText}>Update</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
           <View style={styles.infoBox}>
             <Text style={styles.infoTitle}>How to test:</Text>
             <Text style={styles.infoText}>
               1. Update message above{'\n'}
-              2. Long press home screen → tap +{'\n'}
-              3. Search for "DemoWidget"{'\n'}
-              4. Add widget to see your message
+              2. Toggle login status and set username{'\n'}
+              3. Set avatar URL (e.g. https://i.pravatar.cc/100){'\n'}
+              4. Update weather temperature{'\n'}
+              5. Long press home screen → tap + → Search "DemoWidget"{'\n'}
+              6. Widget shows avatar via SDWebImageSwiftUI async loading
             </Text>
           </View>
         </View>
 
         {/* Share Extension Testing */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>📤 Share Extension Testing</Text>
+          <Text style={styles.cardTitle}>📤 Share Extension</Text>
           <Text style={styles.description}>
-            Read data saved by the share extension:
+            Share content from other apps (Safari, Photos, etc.) to this app.
+            Supports text, URLs, and images.
           </Text>
-
-          {sharedData ? (
-            <View style={styles.dataBox}>
-              <Text style={styles.dataLabel}>Shared Data:</Text>
-              <Text style={styles.dataText}>
-                {JSON.stringify(sharedData, null, 2)}
-              </Text>
-            </View>
-          ) : (
-            <Text style={styles.noDataText}>
-              No data yet. Share something from Safari or Photos to test.
-            </Text>
-          )}
 
           <View style={styles.infoBox}>
             <Text style={styles.infoTitle}>How to test:</Text>
             <Text style={styles.infoText}>
               1. Open Safari or Photos{'\n'}
-              2. Tap Share button{'\n'}
+              2. Tap the Share button{'\n'}
               3. Select "DemoShare"{'\n'}
-              4. Tap "Save"{'\n'}
-              5. Return here and tap "Refresh Data"
+              4. Tap "Save"
             </Text>
+          </View>
+
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{sharedItems.length}</Text>
+              <Text style={styles.statLabel}>Items Shared</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.clearButton}
+              onPress={clearSharedItems}
+            >
+              <Text style={styles.clearButtonText}>Clear</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
+        {/* Shared Items List */}
+        {sharedItems.length > 0 && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Shared Items</Text>
+            {sharedItems
+              .slice()
+              .reverse()
+              .map((item) => (
+                <View key={item.id} style={styles.itemCard}>
+                  <View style={styles.itemHeader}>
+                    <Text style={styles.itemDate}>
+                      {formatDate(item.sharedAt)}
+                    </Text>
+                  </View>
+
+                  {item.content.text && (
+                    <View style={styles.itemSection}>
+                      <Text style={styles.itemLabel}>Text:</Text>
+                      <Text style={styles.itemText}>{item.content.text}</Text>
+                    </View>
+                  )}
+
+                  {item.content.url && (
+                    <View style={styles.itemSection}>
+                      <Text style={styles.itemLabel}>URL:</Text>
+                      <Text style={styles.itemUrl}>{item.content.url}</Text>
+                    </View>
+                  )}
+
+                  {item.content.images && item.content.images.length > 0 && (
+                    <View style={styles.itemSection}>
+                      <Text style={styles.itemLabel}>
+                        Images ({item.content.images.length}):
+                      </Text>
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                      >
+                        {item.content.images.map((imageUrl, index) => (
+                          <Image
+                            key={index}
+                            source={{ uri: imageUrl }}
+                            style={styles.itemImage}
+                          />
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                </View>
+              ))}
+          </View>
+        )}
+
         {/* Action Extension Testing */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>🎨 Action Extension Testing</Text>
+          <Text style={styles.cardTitle}>🎨 Action Extension</Text>
           <Text style={styles.description}>
-            Read data saved by the action extension:
+            Process images from Photos app with filters. Select an image and
+            apply transformations.
           </Text>
-
-          {actionData ? (
-            <View style={styles.dataBox}>
-              <Text style={styles.dataLabel}>Action Data:</Text>
-              <Text style={styles.dataText}>
-                {JSON.stringify(actionData, null, 2)}
-              </Text>
-            </View>
-          ) : (
-            <Text style={styles.noDataText}>
-              No data yet. Process an image from Photos to test.
-            </Text>
-          )}
 
           <View style={styles.infoBox}>
             <Text style={styles.infoTitle}>How to test:</Text>
@@ -317,11 +519,52 @@ export default function App() {
               1. Open Photos app{'\n'}
               2. Select an image{'\n'}
               3. Tap Share → "DemoAction"{'\n'}
-              4. Tap "Process"{'\n'}
-              5. Return here and tap "Refresh Data"
+              4. Choose a filter and tap "Process"
             </Text>
           </View>
+
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{processedItems.length}</Text>
+              <Text style={styles.statLabel}>Images Processed</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.clearButton}
+              onPress={clearProcessedItems}
+            >
+              <Text style={styles.clearButtonText}>Clear</Text>
+            </TouchableOpacity>
+          </View>
         </View>
+
+        {/* Processed Items List */}
+        {processedItems.length > 0 && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Processed Images</Text>
+            {processedItems
+              .slice()
+              .reverse()
+              .map((item) => (
+                <View key={item.id} style={styles.itemCard}>
+                  <View style={styles.itemHeader}>
+                    <Text style={styles.itemDate}>
+                      {formatDate(item.processedAt)}
+                    </Text>
+                    <View style={styles.filterBadge}>
+                      <Text style={styles.filterBadgeText}>
+                        {item.filter?.toUpperCase()}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <Image
+                    source={{ uri: item.originalImage }}
+                    style={styles.processedImage}
+                  />
+                </View>
+              ))}
+          </View>
+        )}
 
         {/* Refresh Button */}
         <TouchableOpacity
@@ -737,30 +980,95 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  dataBox: {
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  statItem: {
+    alignItems: 'flex-start',
+  },
+  statValue: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#007AFF',
+  },
+  statLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
+  },
+  clearButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: '#FF3B30',
+  },
+  clearButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  itemCard: {
     backgroundColor: '#f8f8f8',
     borderRadius: 8,
     padding: 12,
-    marginTop: 8,
     marginBottom: 12,
   },
-  dataLabel: {
+  itemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  itemDate: {
+    fontSize: 12,
+    color: '#999',
+  },
+  filterBadge: {
+    backgroundColor: '#007AFF',
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  filterBadgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  itemSection: {
+    marginTop: 8,
+  },
+  itemLabel: {
     fontSize: 12,
     fontWeight: '600',
     color: '#666',
-    marginBottom: 8,
+    marginBottom: 4,
   },
-  dataText: {
-    fontSize: 12,
-    fontFamily: 'monospace',
-    color: '#000',
-  },
-  noDataText: {
+  itemText: {
     fontSize: 14,
-    color: '#999',
-    fontStyle: 'italic',
-    marginVertical: 12,
-    textAlign: 'center',
+    color: '#000',
+    lineHeight: 20,
+  },
+  itemUrl: {
+    fontSize: 14,
+    color: '#007AFF',
+    lineHeight: 20,
+  },
+  itemImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    marginRight: 8,
+    backgroundColor: '#E5E5EA',
+  },
+  processedImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+    backgroundColor: '#E5E5EA',
+    marginTop: 8,
   },
   testingSection: {
     marginBottom: 16,
@@ -828,5 +1136,76 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.8)',
     fontSize: 12,
     marginTop: 4,
+  },
+  keychainSection: {
+    marginTop: 20,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
+  keychainTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  keychainDescription: {
+    fontSize: 13,
+    color: '#666',
+    marginBottom: 12,
+  },
+  loginStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  loginStatusLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  loginToggle: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  loginToggleActive: {
+    backgroundColor: '#34C759',
+  },
+  loginToggleInactive: {
+    backgroundColor: '#8E8E93',
+  },
+  loginToggleText: {
+    color: 'white',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  usernameRow: {
+    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  usernameInput: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 10,
+    fontSize: 14,
+    backgroundColor: '#fff',
+  },
+  smallButton: {
+    backgroundColor: '#007AFF',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginLeft: 8,
+  },
+  smallButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  weatherRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });

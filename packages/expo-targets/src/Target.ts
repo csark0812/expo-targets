@@ -202,7 +202,7 @@ export function createTarget<T extends ExtensionType = ExtensionType>(
   }
 
   // Build target object first so we can pass it to the component
-  const storage = new AppGroupStorage(appGroup);
+  const storage = new AppGroupStorage(appGroup, targetName);
   const baseTarget: BaseTarget = {
     name: targetName,
     type: config.type,

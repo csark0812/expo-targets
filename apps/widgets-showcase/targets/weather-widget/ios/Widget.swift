@@ -57,7 +57,7 @@ struct Provider: TimelineProvider {
 
     private func loadWeatherData() -> WeatherData? {
         guard let defaults = UserDefaults(suiteName: appGroup),
-              let jsonString = defaults.string(forKey: "weather"),
+              let jsonString = defaults.string(forKey: "WeatherWidget:weather"),
               let jsonData = jsonString.data(using: .utf8) else {
             return nil
         }

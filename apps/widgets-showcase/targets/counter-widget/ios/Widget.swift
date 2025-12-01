@@ -31,8 +31,8 @@ struct Provider: TimelineProvider {
             return CounterEntry(date: Date(), count: 0, label: nil)
         }
 
-        let count = defaults.integer(forKey: "count")
-        let label = defaults.string(forKey: "label")
+        let count = defaults.integer(forKey: "CounterWidget:count")
+        let label = defaults.string(forKey: "CounterWidget:label")
 
         return CounterEntry(date: Date(), count: count, label: label)
     }
