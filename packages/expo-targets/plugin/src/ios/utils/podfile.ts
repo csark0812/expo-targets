@@ -4,6 +4,75 @@
  */
 
 /**
+ * Ensure resource bundle targets have code signing disabled for Xcode 14+.
+ * Starting from Xcode 14, resource bundles are signed by default, which requires
+ * setting the development team for each resource bundle target. This fix disables
+ * code signing for resource bundles to avoid build failures.
+ *
+ * Uses START/END markers for reliable, idempotent injection.
+ */
+export function ensureResourceBundleCodeSigning(
+  podfileContent: string
+): string {
+  const START_MARKER = '    # [expo-targets-resource-bundle-signing-start]';
+  const END_MARKER = '    # [expo-targets-resource-bundle-signing-end]';
+
+  // Check if fix already exists
+  if (podfileContent.includes(START_MARKER)) {
+    return podfileContent;
+  }
+
+  const fixCode = `${START_MARKER}
+    # Fix Xcode 14+ code signing for resource bundles
+    installer.pods_project.targets.each do |target|
+      if target.respond_to?(:product_type) && target.product_type == "com.apple.product-type.bundle"
+        target.build_configurations.each do |config|
+          config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+        end
+      end
+    end
+${END_MARKER}`;
+
+  // Find where to inject (after react_native_post_install closing paren)
+  const lines = podfileContent.split('\n');
+  let reactNativeStartLine = -1;
+  let reactNativeEndLine = -1;
+  let parenDepth = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.includes('react_native_post_install(')) {
+      reactNativeStartLine = i;
+      parenDepth =
+        (line.match(/\(/g) || []).length - (line.match(/\)/g) || []).length;
+      continue;
+    }
+    if (reactNativeStartLine !== -1) {
+      const openParens = (line.match(/\(/g) || []).length;
+      const closeParens = (line.match(/\)/g) || []).length;
+      parenDepth += openParens - closeParens;
+      if (parenDepth === 0 && closeParens > 0) {
+        reactNativeEndLine = i;
+        break;
+      }
+    }
+  }
+
+  if (reactNativeStartLine === -1 || reactNativeEndLine === -1) {
+    console.warn(
+      '[expo-targets] Could not find react_native_post_install to inject resource bundle signing fix'
+    );
+    return podfileContent;
+  }
+
+  // Insert after react_native_post_install
+  const beforeLines = lines.slice(0, reactNativeEndLine + 1).join('\n');
+  const afterLines = lines.slice(reactNativeEndLine + 1).join('\n');
+
+  return beforeLines + '\n\n' + fixCode + '\n' + afterLines;
+}
+
+/**
  * Generate a Podfile target block for a React Native extension.
  * Extension targets only inherit search paths, with no explicit pod dependencies.
  * This avoids linking incompatible modules like Expo that contain UIApplication APIs.

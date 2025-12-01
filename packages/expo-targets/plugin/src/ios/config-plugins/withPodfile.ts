@@ -49,6 +49,10 @@ export const withTargetPodfile: ConfigPlugin<{
       // Both React Native and standalone extensions need main app to have matching setting
       podfile = Podfile.ensureMainTargetUsesFrameworks(podfile, mainTargetName);
 
+      // Ensure Xcode 14+ resource bundle code signing fix is applied
+      // This must be done before any other post_install modifications
+      podfile = Podfile.ensureResourceBundleCodeSigning(podfile);
+
       // For standalone targets, detect main app's use_frameworks! setting
       // CocoaPods requires host app and extensions to have matching use_frameworks! settings
       const mainUsesFrameworks = props.standalone

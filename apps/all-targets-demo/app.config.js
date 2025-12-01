@@ -23,6 +23,9 @@ module.exports = {
           'appclips:alltargetsdemo.example.com',
         ],
       },
+      infoPlist: {
+        ITSAppUsesNonExemptEncryption: false,
+      },
       appleTeamId: process.env.APPLE_TEAM_ID,
     },
     plugins: ['../../packages/expo-targets/app.plugin.js'],
@@ -31,6 +34,11 @@ module.exports = {
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#ffffff',
+      },
+    },
+    extra: {
+      eas: {
+        projectId: '0d1609cc-3b39-4fa2-a23f-56b49ec429ac',
       },
     },
   },

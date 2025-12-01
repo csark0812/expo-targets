@@ -385,10 +385,12 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     }
 
     // Inherit essential build settings from main app if not already set
+    // Note: For extensions, version settings (CURRENT_PROJECT_VERSION, MARKETING_VERSION)
+    // can inherit from project level. However, App Clips and standalone apps MUST have
+    // explicit version settings that match the parent app.
     const essentialSettings = [
       'CLANG_ENABLE_MODULES',
       'TARGETED_DEVICE_FAMILY',
-      'CURRENT_PROJECT_VERSION',
     ];
 
     essentialSettings.forEach((setting) => {
@@ -398,18 +400,32 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
       }
     });
 
-    // Set MARKETING_VERSION from Expo config to match main app's Info.plist value
-    // Expo prebuild may truncate version in build settings but keeps full version in Info.plist
-    if (config.version) {
-      targetSpecificSettings.MARKETING_VERSION = config.version;
-      props.logger.log(`Set MARKETING_VERSION from config: ${config.version}`);
-    } else if (mainBuildSettings.MARKETING_VERSION) {
-      targetSpecificSettings.MARKETING_VERSION =
-        mainBuildSettings.MARKETING_VERSION;
-      props.logger.log(
-        `Inherited MARKETING_VERSION: ${mainBuildSettings.MARKETING_VERSION}`
-      );
-    }
+    // All targets (extensions and App Clips) MUST have matching version numbers
+    // with their parent app. Set CURRENT_PROJECT_VERSION and MARKETING_VERSION
+    // explicitly to ensure $(CURRENT_PROJECT_VERSION) and $(MARKETING_VERSION)
+    // resolve correctly in Info.plist.
+    //
+    // Get build number from EAS Build environment variable (highest priority)
+    // or from expo config, or from main app build settings
+    const buildNumber =
+      process.env.EAS_BUILD_IOS_BUILD_NUMBER ||
+      config.ios?.buildNumber ||
+      mainBuildSettings.CURRENT_PROJECT_VERSION?.replace(/"/g, '') ||
+      '1';
+
+    // Get marketing version from expo config (highest priority to match parent app)
+    // EAS Build uses config.version for CFBundleShortVersionString
+    const marketingVersion =
+      config.version ||
+      mainBuildSettings.MARKETING_VERSION?.replace(/"/g, '') ||
+      '1.0.0';
+
+    targetSpecificSettings.CURRENT_PROJECT_VERSION = buildNumber;
+    targetSpecificSettings.MARKETING_VERSION = marketingVersion;
+
+    props.logger.log(
+      `Set target version: ${marketingVersion} (${buildNumber})`
+    );
 
     // Build final settings: target-specific + inherited + deployment target + custom overrides
     const buildSettings: Record<string, string> = {

@@ -7,8 +7,8 @@ const workspaceRoot = path.resolve(projectRoot, '../..');
 
 const config = getDefaultConfig(projectRoot);
 
-// Watch all files in the monorepo
-config.watchFolders = [workspaceRoot];
+// Watch all files in the monorepo (preserve Expo's defaults)
+config.watchFolders = [...(config.watchFolders || []), workspaceRoot];
 
 // Support symlinked packages (bun workspaces)
 config.resolver.nodeModulesPaths = [

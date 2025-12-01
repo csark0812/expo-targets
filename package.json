@@ -24,7 +24,7 @@
   },
   "version": "0.2.4",
   "dependencies": {
-    "expo": "~54.0.18",
+    "expo": "~54.0.25",
     "react": "19.1.0",
     "react-native": "0.81.5"
   }

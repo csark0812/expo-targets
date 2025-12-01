@@ -2,7 +2,7 @@
   "type": "wallet",
   "name": "DemoCombinedWallet",
   "displayName": "Demo Combined Wallet",
-  "platforms": ["ios"],
+  "platforms": [],
   "ios": {
     "wallet": {
       "ui": true
