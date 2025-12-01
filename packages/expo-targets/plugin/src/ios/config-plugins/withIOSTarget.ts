@@ -2,10 +2,12 @@ import { ConfigPlugin } from '@expo/config-plugins';
 import * as fs from 'fs';
 import * as path from 'path';
 
+import { withEASCredentials } from './withEASCredentials';
 import { withTargetEntitlements } from './withEntitlements';
 import { withTargetPodfile } from './withPodfile';
 import { withXcodeChanges } from './withXcodeChanges';
 import {
+  TYPE_BUNDLE_IDENTIFIER_SUFFIXES,
   TYPE_MINIMUM_DEPLOYMENT_TARGETS,
   type ExtensionType,
   type IOSTargetConfigWithReactNative,
@@ -197,6 +199,83 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
   // in targets/[name]/ios/build/Assets.xcassets/ (not in ios/[TargetName]/)
   // Note: Assets.xcassets is added in withXcodeChanges where we have direct access to target.uuid
   // Note: Sticker packs are also created in withXcodeChanges for proper execution order
+
+  // Configure EAS Build credentials for automatic App ID and provisioning profile creation
+  // This tells EAS CLI about this extension target so it can manage credentials automatically
+  const mainBundleId = config.ios?.bundleIdentifier;
+  if (mainBundleId) {
+    // Calculate bundle identifier (same logic as withXcodeChanges)
+    const bundleIdentifierSuffix =
+      TYPE_BUNDLE_IDENTIFIER_SUFFIXES[props.type] ||
+      Paths.sanitizeTargetName(props.name);
+    const bundleIdentifier =
+      props.bundleIdentifier || `${mainBundleId}.${bundleIdentifierSuffix}`;
+
+    // Build entitlements for EAS credentials
+    // These should match what withTargetEntitlements generates
+    const easEntitlements: Record<string, any> = {
+      ...(props.entitlements || {}),
+    };
+
+    // Add App Groups if applicable (matching withTargetEntitlements logic)
+    const mainAppGroups =
+      config.ios?.entitlements?.['com.apple.security.application-groups'];
+    if (Array.isArray(mainAppGroups) && mainAppGroups.length > 0) {
+      // Types that should inherit app groups
+      const APP_GROUP_TYPES: ExtensionType[] = [
+        'widget',
+        'clip',
+        'share',
+        'action',
+        'notification-service',
+        'notification-content',
+        'intent',
+        'intent-ui',
+      ];
+      if (APP_GROUP_TYPES.includes(props.type)) {
+        easEntitlements['com.apple.security.application-groups'] =
+          mainAppGroups;
+      }
+    }
+
+    // Add App Clip specific entitlements
+    if (props.type === 'clip') {
+      easEntitlements['com.apple.developer.parent-application-identifiers'] = [
+        `$(AppIdentifierPrefix)${mainBundleId}`,
+      ];
+      easEntitlements['com.apple.developer.on-demand-install-capable'] = true;
+
+      // Copy associated domains if present
+      const associatedDomains =
+        config.ios?.entitlements?.['com.apple.developer.associated-domains'];
+      if (Array.isArray(associatedDomains) && associatedDomains.length > 0) {
+        // Transform applinks: to appclips: for App Clips
+        const clipDomains = associatedDomains
+          .map((domain: string) => {
+            const match = domain.match(/^applinks:(.+)$/);
+            return match ? `appclips:${match[1]}` : null;
+          })
+          .filter(Boolean);
+        if (clipDomains.length > 0) {
+          easEntitlements['com.apple.developer.associated-domains'] =
+            clipDomains;
+        }
+      }
+    }
+
+    // Add Wallet extension specific entitlements
+    if (props.type === 'wallet' || props.type === 'wallet-ui') {
+      easEntitlements['com.apple.developer.payment-pass-provisioning'] = true;
+    }
+
+    config = withEASCredentials(config, {
+      targetName: targetProductName,
+      bundleIdentifier,
+      entitlements:
+        Object.keys(easEntitlements).length > 0 ? easEntitlements : undefined,
+      logger: props.logger,
+    });
+  }
 
   return config;
 };
