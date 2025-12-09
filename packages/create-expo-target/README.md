@@ -284,7 +284,7 @@ Templates are embedded in the CLI source code:
 
 ## Version
 
-Current version: **0.1.0**
+Current version: **0.2.0**
 
 See [CHANGELOG.md](../../CHANGELOG.md) for version history.
 
