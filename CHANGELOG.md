@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+## [0.2.0] - 2025-12-09
+
+### Added
+
 - iOS Wallet extension support (config-only, iOS 13+)
 - CI/CD workflows with GitHub Actions
 - Automated npm publishing on PR merge
@@ -50,5 +54,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `widget` - Home screen widgets (Glance API or RemoteViews)
 
-[Unreleased]: https://github.com/csark0812/expo-targets/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/csark0812/expo-targets/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/csark0812/expo-targets/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/csark0812/expo-targets/releases/tag/v0.1.0
