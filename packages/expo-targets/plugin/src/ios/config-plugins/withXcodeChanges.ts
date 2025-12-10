@@ -407,19 +407,35 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (
     //
     // Get build number from EAS Build environment variable (highest priority)
     // or from expo config, or from main app build settings
+    const currentProjectVersionRaw = mainBuildSettings.CURRENT_PROJECT_VERSION;
+    const marketingVersionRaw = mainBuildSettings.MARKETING_VERSION;
+    const currentProjectVersion =
+      typeof currentProjectVersionRaw === 'string'
+        ? currentProjectVersionRaw
+        : currentProjectVersionRaw != null
+          ? String(currentProjectVersionRaw)
+          : undefined;
+    const normalizedMarketingVersion =
+      typeof marketingVersionRaw === 'string'
+        ? marketingVersionRaw
+        : marketingVersionRaw != null
+          ? String(marketingVersionRaw)
+          : undefined;
+
     const buildNumber =
       process.env.EAS_BUILD_IOS_BUILD_NUMBER ||
       config.ios?.buildNumber ||
-      mainBuildSettings.CURRENT_PROJECT_VERSION?.replace(/"/g, '') ||
+      currentProjectVersion?.replace(/"/g, '') ||
       '1';
 
     // Get marketing version from expo config (highest priority to match parent app)
     // EAS Build uses config.version for CFBundleShortVersionString
     const marketingVersion =
       config.version ||
-      mainBuildSettings.MARKETING_VERSION?.replace(/"/g, '') ||
+      normalizedMarketingVersion?.replace(/"/g, '') ||
       '1.0.0';
 
+    // #region agent log
     targetSpecificSettings.CURRENT_PROJECT_VERSION = buildNumber;
     targetSpecificSettings.MARKETING_VERSION = marketingVersion;
 

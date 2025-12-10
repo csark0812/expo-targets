@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "expo-targets-monorepo",
@@ -149,7 +148,7 @@
     },
     "packages/expo-targets": {
       "name": "expo-targets",
-      "version": "0.2.5",
+      "version": "0.2.6",
       "dependencies": {
         "@babel/parser": "^7.25.0",
         "@babel/traverse": "^7.25.0",
