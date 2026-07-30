@@ -9,6 +9,11 @@ tags:
     clearState: true
 - assertVisible:
     id: screen-root
+- scrollUntilVisible:
+    element:
+      id: ks-clip-btn-seed-payload
+    direction: DOWN
+    timeout: 10000
 - tapOn:
     id: ks-clip-btn-seed-payload
 - assertVisible:
