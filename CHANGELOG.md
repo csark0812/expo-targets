@@ -7,7 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Product posture:** expo-targets leads with extensions Expo does not ship (share/action/clip/messages, etc.). Soft-deprecate native iOS widgets in favor of official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) for React/iOS widgets and Live Activities. See `docs/widgets.md` and `docs/deprecations.md`.
+- `create-expo-target`: Share/Action/Clip lead the menu; Widget demoted with an `expo-widgets` handoff confirm; React Native defaults to **Yes** for share/action/clip.
+- Docs governed by `@csark0812/skeleton` (registry + `AGENTS.md`).
+
+### Deprecated
+
+- Native `type: "widget"` scaffolding and runtime usage warn in minors (CLI + `createTarget`). Removal reserved for a future major or when Expo covers Android widgets.
+
 ### Added
+
+- Skeleton docs SSOT (`@csark0812/skeleton`), `docs/widgets.md`, `docs/deprecations.md`.
+- Sharper RN extension runtime errors when `ExpoTargetsExtension` is missing; `getExtensionNativeModule()` helper.
+- `withTargetsMetro` entry validation/logging; `scanTargetsDirectory` export; Metro unit tests.
 
 ## [0.2.0] - 2025-12-09
 

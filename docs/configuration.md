@@ -1,5 +1,11 @@
 # Configuration Reference
 
+**Source of truth for** `expo-target.config` options and extension types.
+
+<!-- doc-meta: owner=eng | last-reviewed=2026-07-30 -->
+
+> **Config-only freeze:** do not add new config-only extension types. See [deprecations.md](./deprecations.md). For widgets policy see [widgets.md](./widgets.md).
+
 Every target is configured with an `expo-target.config.json` file in its directory.
 
 ## Basic Structure
@@ -430,10 +436,10 @@ npx expo run:android
 ### 4. Update from React Native
 
 ```typescript
-import { createTarget } from 'expo-targets';
+import { createTarget } from "expo-targets";
 
-const widget = createTarget('MyWidget');
-widget.setData({ message: 'Hello from React Native!' });
+const widget = createTarget("MyWidget");
+widget.setData({ message: "Hello from React Native!" });
 widget.refresh();
 ```
 
@@ -845,7 +851,7 @@ Use `.js` or `.ts` for dynamic configs that need to access your Expo app configu
 
 ```typescript
 // expo-target.config.ts
-import type { ExpoConfig } from 'expo/config';
+import type { ExpoConfig } from "expo/config";
 
 /**
  * Dynamic config function receives the resolved Expo app config.
@@ -853,14 +859,14 @@ import type { ExpoConfig } from 'expo/config';
  */
 export default function (config: ExpoConfig) {
   return {
-    type: 'widget',
-    name: 'MyWidget',
-    platforms: ['ios'],
+    type: "widget",
+    name: "MyWidget",
+    platforms: ["ios"],
     // Derive App Group from bundle identifier
-    appGroup: `group.${config.ios?.bundleIdentifier || 'com.example.app'}`,
+    appGroup: `group.${config.ios?.bundleIdentifier || "com.example.app"}`,
     ios: {
       // Inherit deployment target from main app
-      deploymentTarget: config.ios?.deploymentTarget || '14.0',
+      deploymentTarget: config.ios?.deploymentTarget || "14.0",
     },
   };
 }
@@ -912,7 +918,7 @@ export default function (config: ExpoConfig) {
 
 **Legend:** ✅ Production ready · 📋 Config-only (bring your own Swift/Kotlin) · 🔜 Planned · — Not applicable
 
-> **Combined targets:** For `wallet` and `intent` types, you can use the `ios.wallet.ui` or `ios.intents.ui` config options to generate both the main extension and its UI companion from a single config file. The CLI generates combined wallet extensions by default. See [Wallet Extension](#wallet-extension) and [Intent Extension](#example-intent-extension-sirishortcuts--legacy) sections for details.
+> **Combined targets:** For `wallet` and `intent` types, you can use the `ios.wallet.ui` or `ios.intents.ui` config options to generate both the main extension and its UI companion from a single config file. The CLI generates combined wallet extensions by default. See [Wallet Extension](#wallet-extension) and [Intent UI Extension](#intent-ui-extension) sections for details.
 
 ### iOS Limitations
 
@@ -996,12 +1002,12 @@ That's it! The Swift handler, popup.html, manifest.json, and other resources are
 **Entry file (`src/SafariExtension.tsx`):**
 
 ```tsx
-import { createTarget, useBrowserTab, useBrowserStorage } from 'expo-targets';
-import { View, Text, Button, StyleSheet } from 'react-native';
+import { createTarget, useBrowserTab, useBrowserStorage } from "expo-targets";
+import { View, Text, Button, StyleSheet } from "react-native";
 
 function SafariPopup({ target }) {
   const tab = useBrowserTab();
-  const [count, setCount] = useBrowserStorage('clickCount', 0);
+  const [count, setCount] = useBrowserStorage("clickCount", 0);
 
   return (
     <View style={styles.container}>
@@ -1015,11 +1021,11 @@ function SafariPopup({ target }) {
 
 const styles = StyleSheet.create({
   container: { padding: 16, minWidth: 300 },
-  title: { fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
-  url: { fontSize: 12, color: '#666', marginBottom: 12 },
+  title: { fontSize: 18, fontWeight: "bold", marginBottom: 8 },
+  url: { fontSize: 12, color: "#666", marginBottom: 12 },
 });
 
-export default createTarget('MySafariExt', SafariPopup);
+export default createTarget("MySafariExt", SafariPopup);
 ```
 
 **Available Safari hooks:**
@@ -1035,7 +1041,7 @@ import {
   openTab, // Open new tab
   closePopup, // Close extension popup
   copyToClipboard, // Copy text
-} from 'expo-targets';
+} from "expo-targets";
 ```
 
 **Building the bundle:**

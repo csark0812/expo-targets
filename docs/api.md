@@ -1,19 +1,25 @@
 # API Reference
 
+**Source of truth for** the JavaScript/TypeScript runtime API.
+
+<!-- doc-meta: owner=eng | last-reviewed=2026-07-30 -->
+
+> Widget targets: soft-deprecated — see [widgets.md](./widgets.md). Prefer this API for share/action/clip/messages and shared storage.
+
 ## createTarget
 
 Creates a target instance for communicating with your extension.
 
 ```typescript
-import { createTarget } from 'expo-targets';
+import { createTarget } from "expo-targets";
 
 // For widgets and non-RN extensions
-const widget = createTarget('MyWidget');
+const widget = createTarget("MyWidget");
 
 // For React Native extensions (share, action, clip, messages)
 // Pass the component as second argument - handles AppRegistry automatically
-import ShareExtension from './ShareExtension';
-export const share = createTarget<'share'>('ShareExt', ShareExtension);
+import ShareExtension from "./ShareExtension";
+export const share = createTarget<"share">("ShareExt", ShareExtension);
 ```
 
 **Parameters:**
@@ -31,15 +37,15 @@ The `createTarget` function uses TypeScript overloads to provide the correct ret
 
 ```typescript
 // For messages extensions - returns MessagesExtensionTarget with messaging APIs
-const messages = createTarget<'messages'>('MyMessages');
-messages.sendMessage({ caption: 'Hello!' }); // ✅ Type-safe
+const messages = createTarget<"messages">("MyMessages");
+messages.sendMessage({ caption: "Hello!" }); // ✅ Type-safe
 
 // For share/action/clip extensions - returns ExtensionTarget with close/openHostApp
-const share = createTarget<'share'>('MyShare');
+const share = createTarget<"share">("MyShare");
 share.close(); // ✅ Type-safe
 
 // For widgets and other types - returns NonExtensionTarget
-const widget = createTarget<'widget'>('MyWidget');
+const widget = createTarget<"widget">("MyWidget");
 widget.close(); // ❌ TypeScript error: close doesn't exist
 ```
 
@@ -59,7 +65,7 @@ widget.close(); // ❌ TypeScript error: close doesn't exist
 
 ```typescript
 try {
-  const widget = createTarget('MyWidget');
+  const widget = createTarget("MyWidget");
 } catch (error) {
   // Possible errors:
   // - 'Target "MyWidget" not found. Ensure it's defined in app.json under "extra.targets"'
@@ -84,17 +90,17 @@ All targets (widgets, extensions, etc.) share these core methods:
 
 ```typescript
 // Set a single value
-widget.set('message', 'Hello');
-widget.set('count', 42);
-widget.set('user', { name: 'John', age: 30 });
+widget.set("message", "Hello");
+widget.set("count", 42);
+widget.set("user", { name: "John", age: 30 });
 
 // Get a value (returns undefined if not set)
-const message = widget.get<string>('message');
-const count = widget.get<number>('count');
-const user = widget.get<{ name: string }>('user');
+const message = widget.get<string>("message");
+const count = widget.get<number>("count");
+const user = widget.get<{ name: string }>("user");
 
 // Remove a value
-widget.remove('message');
+widget.remove("message");
 
 // Clear all data for this target
 widget.clear();
@@ -105,7 +111,7 @@ widget.clear();
 ```typescript
 // Set multiple values at once (more efficient than multiple set() calls)
 widget.setData({
-  message: 'Hello',
+  message: "Hello",
   count: 42,
   timestamp: Date.now(),
 });
@@ -129,11 +135,11 @@ widget.refresh();
 
 ```typescript
 // Correct pattern
-widget.setData({ message: 'Updated!' });
+widget.setData({ message: "Updated!" });
 widget.refresh(); // Widget reloads with new data
 
 // Missing refresh - widget won't update immediately
-widget.setData({ message: 'Updated!' });
+widget.setData({ message: "Updated!" });
 // Widget still shows old data until iOS decides to refresh
 ```
 
@@ -142,13 +148,13 @@ widget.setData({ message: 'Updated!' });
 ## Utility Functions
 
 ```typescript
-import { refreshAllTargets, clearSharedData } from 'expo-targets';
+import { refreshAllTargets, clearSharedData } from "expo-targets";
 
 // Refresh all widgets and controls (useful after bulk updates)
 refreshAllTargets();
 
 // Clear all data for a specific App Group
-clearSharedData('group.com.yourapp');
+clearSharedData("group.com.yourapp");
 ```
 
 ---
@@ -158,13 +164,13 @@ clearSharedData('group.com.yourapp');
 For share, action, and clip extensions running React Native:
 
 ```typescript
-import { close, openHostApp, getSharedData } from 'expo-targets';
+import { close, openHostApp, getSharedData } from "expo-targets";
 
 // Get content shared to the extension
 const data = getSharedData();
 
 // Open the main app with a deep link
-openHostApp('/shared-content');
+openHostApp("/shared-content");
 
 // Close the extension and return to the previous app
 close();
@@ -193,16 +199,16 @@ const data = getSharedData();
 const data = getSharedData();
 
 if (data?.url) {
-  console.log('Shared URL:', data.url);
+  console.log("Shared URL:", data.url);
 }
 
 if (data?.images?.length) {
-  console.log('Shared images:', data.images);
+  console.log("Shared images:", data.images);
   // images are file:// paths you can use with Image component
 }
 
 if (data?.text) {
-  console.log('Shared text:', data.text);
+  console.log("Shared text:", data.text);
 }
 ```
 
@@ -212,10 +218,10 @@ Opens your main app with a deep link. **No additional configuration required** �
 
 ```typescript
 // Opens: com.yourcompany.yourapp://shared
-openHostApp('/shared');
+openHostApp("/shared");
 
 // Opens: com.yourcompany.yourapp://item/123
-openHostApp('/item/123');
+openHostApp("/item/123");
 
 // Opens app at root (no path)
 openHostApp();
@@ -287,9 +293,9 @@ interface SharedData {
 For iMessage apps (`type: "messages"`), use the type parameter to get full API access:
 
 ```typescript
-import { createTarget } from 'expo-targets';
+import { createTarget } from "expo-targets";
 
-const messages = createTarget<'messages'>('MyMessagesApp');
+const messages = createTarget<"messages">("MyMessagesApp");
 ```
 
 ### Presentation
@@ -299,8 +305,8 @@ const messages = createTarget<'messages'>('MyMessagesApp');
 const style = messages.getPresentationStyle(); // 'compact' | 'expanded' | null
 
 // Request to expand or collapse the extension
-messages.requestPresentationStyle('expanded');
-messages.requestPresentationStyle('compact'); // Use instead of close()
+messages.requestPresentationStyle("expanded");
+messages.requestPresentationStyle("compact"); // Use instead of close()
 ```
 
 ### Sending Messages
@@ -308,9 +314,9 @@ messages.requestPresentationStyle('compact'); // Use instead of close()
 ```typescript
 // Send a message to the conversation
 messages.sendMessage({
-  caption: 'Check this out!',
-  subcaption: 'Sent from MyApp',
-  imageUrl: 'https://example.com/image.png',
+  caption: "Check this out!",
+  subcaption: "Sent from MyApp",
+  imageUrl: "https://example.com/image.png",
 });
 
 // Interactive messages with session tracking
@@ -318,10 +324,10 @@ const sessionId = messages.createSession();
 if (sessionId) {
   messages.sendUpdate(
     {
-      caption: 'Game Score: 10-5',
-      subcaption: 'Tap to play',
+      caption: "Game Score: 10-5",
+      subcaption: "Tap to play",
     },
-    sessionId
+    sessionId,
   );
 }
 ```
@@ -342,10 +348,10 @@ const info = messages.getConversationInfo();
 ```typescript
 // Listen for presentation style changes
 const subscription = messages.addEventListener(
-  'onPresentationStyleChange',
+  "onPresentationStyleChange",
   (style) => {
-    console.log('Style changed to:', style); // 'compact' | 'expanded'
-  }
+    console.log("Style changed to:", style); // 'compact' | 'expanded'
+  },
 );
 
 // Later: cleanup
@@ -367,15 +373,15 @@ interface MessagesExtensionTarget {
   getSharedData(): SharedData | null;
 
   // Messages-specific
-  getPresentationStyle(): 'compact' | 'expanded' | null;
-  requestPresentationStyle(style: 'compact' | 'expanded'): void;
+  getPresentationStyle(): "compact" | "expanded" | null;
+  requestPresentationStyle(style: "compact" | "expanded"): void;
   sendMessage(layout: MessageLayout): void;
   sendUpdate(layout: MessageLayout, sessionId: string): void;
   createSession(): string | null;
   getConversationInfo(): ConversationInfo | null;
   addEventListener(
-    eventName: 'onPresentationStyleChange',
-    listener: (style: 'compact' | 'expanded') => void
+    eventName: "onPresentationStyleChange",
+    listener: (style: "compact" | "expanded") => void,
   ): { remove: () => void };
 }
 
@@ -399,25 +405,25 @@ interface ConversationInfo {
 Low-level storage access for advanced use cases:
 
 ```typescript
-import { AppGroupStorage } from 'expo-targets';
+import { AppGroupStorage } from "expo-targets";
 
-const storage = new AppGroupStorage('group.com.yourapp');
+const storage = new AppGroupStorage("group.com.yourapp");
 
 // Individual key operations
-storage.set('key', 'value');
-storage.get<string>('key');
-storage.remove('key');
+storage.set("key", "value");
+storage.get<string>("key");
+storage.remove("key");
 storage.clear();
 
 // Batch operations
-storage.setData({ key1: 'value1', key2: 'value2' });
+storage.setData({ key1: "value1", key2: "value2" });
 storage.getData<{ key1: string; key2: string }>();
 
 // List all keys
 const keys = storage.getKeys();
 
 // Trigger refresh for a specific widget
-storage.refresh('WidgetName');
+storage.refresh("WidgetName");
 ```
 
 **When to use AppGroupStorage directly:**
@@ -529,7 +535,7 @@ import type {
   PresentationStyle,
   MessageLayout,
   ConversationInfo,
-} from 'expo-targets';
+} from "expo-targets";
 ```
 
 ### ExtensionType
@@ -538,29 +544,29 @@ All supported extension types:
 
 ```typescript
 type ExtensionType =
-  | 'widget'
-  | 'clip'
-  | 'stickers'
-  | 'messages'
-  | 'share'
-  | 'action'
-  | 'wallet'
-  | 'wallet-ui'
-  | 'safari'
-  | 'notification-content'
-  | 'notification-service'
-  | 'intent'
-  | 'intent-ui'
-  | 'app-intent'
-  | 'spotlight'
-  | 'bg-download'
-  | 'quicklook-thumbnail'
-  | 'location-push'
-  | 'credentials-provider'
-  | 'account-auth'
-  | 'device-activity-monitor'
-  | 'matter'
-  | 'watch';
+  | "widget"
+  | "clip"
+  | "stickers"
+  | "messages"
+  | "share"
+  | "action"
+  | "wallet"
+  | "wallet-ui"
+  | "safari"
+  | "notification-content"
+  | "notification-service"
+  | "intent"
+  | "intent-ui"
+  | "app-intent"
+  | "spotlight"
+  | "bg-download"
+  | "quicklook-thumbnail"
+  | "location-push"
+  | "credentials-provider"
+  | "account-auth"
+  | "device-activity-monitor"
+  | "matter"
+  | "watch";
 ```
 
 ### Target Types
