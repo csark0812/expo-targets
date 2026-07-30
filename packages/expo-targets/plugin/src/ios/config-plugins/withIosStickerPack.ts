@@ -1,8 +1,8 @@
-import { ConfigPlugin, withDangerousMod } from '@expo/config-plugins';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
+import { type ConfigPlugin, withDangerousMod } from '@expo/config-plugins';
 
-import { Asset, Paths } from '../utils';
+import { Asset, Paths } from '../utils/index';
 
 export const withIosStickerPack: ConfigPlugin<{
   name: string;
@@ -26,6 +26,7 @@ export const withIosStickerPack: ConfigPlugin<{
       });
 
       // Copy sticker assets to the pack
+      // biome-ignore lint/complexity/noForEach: pre-existing; prefer for-of tracked
       props.assets.forEach((assetPath) => {
         const absoluteAssetPath = path.isAbsolute(assetPath)
           ? assetPath
@@ -53,9 +54,6 @@ export const withIosStickerPack: ConfigPlugin<{
           const destPath = path.join(stickerDirPath, filename);
           fs.copyFileSync(absoluteAssetPath, destPath);
         } else {
-          console.warn(
-            `[expo-targets] Sticker asset not found: ${absoluteAssetPath}`
-          );
         }
       });
 

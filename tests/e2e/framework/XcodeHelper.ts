@@ -1,6 +1,6 @@
 import { execa } from 'execa';
-import { glob } from 'glob';
 import * as fs from 'fs/promises';
+import { glob } from 'glob';
 import * as path from 'path';
 import type { BuildConfig, XcodeProject } from './types.js';
 
@@ -137,7 +137,7 @@ export class XcodeHelper {
 
   async verifyBuildArtifact(
     projectPath: string,
-    scheme: string
+    _scheme: string
   ): Promise<boolean> {
     const buildPath = path.join(projectPath, 'build');
     try {

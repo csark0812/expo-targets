@@ -1,8 +1,8 @@
 const { getDefaultConfig } = require('expo/metro-config');
 const { withTargetsMetro } = require('expo-targets/metro');
-const path = require('path');
+const path = require('node:path');
 
-const projectRoot = __dirname;
+const projectRoot = import.meta.dirname;
 const workspaceRoot = path.resolve(projectRoot, '../..');
 
 const config = getDefaultConfig(projectRoot);

@@ -20,10 +20,15 @@ export const updateWidget = (message: string) => {
 export const setWidgetAuthStatus = (
   isLoggedIn: boolean,
   username?: string,
-  avatarURL?: string
+  avatarUrl?: string
 ) => {
   const currentData = demoWidget.getData<WidgetData>() || {};
-  demoWidget.setData({ ...currentData, isLoggedIn, username, avatarURL });
+  demoWidget.setData({
+    ...currentData,
+    isLoggedIn,
+    username,
+    avatarURL: avatarUrl,
+  });
   demoWidget.refresh();
 };
 
@@ -37,8 +42,8 @@ export const setWidgetWeather = (icon: string, temperature: number) => {
   demoWidget.refresh();
 };
 
-export const setWidgetAvatar = (avatarURL: string) => {
+export const setWidgetAvatar = (avatarUrl: string) => {
   const currentData = demoWidget.getData<WidgetData>() || {};
-  demoWidget.setData({ ...currentData, avatarURL });
+  demoWidget.setData({ ...currentData, avatarURL: avatarUrl });
   demoWidget.refresh();
 };

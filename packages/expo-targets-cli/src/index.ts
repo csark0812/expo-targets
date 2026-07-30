@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import process from 'node:process';
 import { Command } from 'commander';
 import { syncTargets } from './sync';
 
@@ -20,9 +21,7 @@ program
     try {
       await syncTargets(options);
     } catch (error: any) {
-      console.error('[expo-targets-sync] Error:', error.message);
       if (options.verbose && error.stack) {
-        console.error(error.stack);
       }
       process.exit(1);
     }

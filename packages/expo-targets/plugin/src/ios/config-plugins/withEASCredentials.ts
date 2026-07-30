@@ -1,9 +1,8 @@
-import { ConfigPlugin } from '@expo/config-plugins';
+import type { ConfigPlugin } from '@expo/config-plugins';
 
-import type { ExtensionType } from '../../config';
-import { Logger } from '../../logger';
+import type { Logger } from '../../logger';
 
-interface EASCredentialsProps {
+interface EasCredentialsProps {
   targetName: string;
   bundleIdentifier: string;
   entitlements?: Record<string, any>;
@@ -16,6 +15,7 @@ interface EASCredentialsProps {
 function safeSet(obj: any, key: string, value: any): void {
   const segments = key.split('.');
   const last = segments.pop();
+  // biome-ignore lint/complexity/noForEach: pre-existing; prefer for-of tracked
   segments.forEach((segment) => {
     if (!obj[segment]) {
       obj[segment] = {};
@@ -39,14 +39,14 @@ function safeSet(obj: any, key: string, value: any): void {
  *
  * @see https://docs.expo.dev/build-reference/app-extensions/
  */
-export const withEASCredentials: ConfigPlugin<EASCredentialsProps> = (
+export const withEASCredentials: ConfigPlugin<EasCredentialsProps> = (
   config,
   { targetName, bundleIdentifier, entitlements, logger }
 ) => {
   // Initialize the appExtensions array if it doesn't exist
   safeSet(config, 'extra.eas.build.experimental.ios.appExtensions', []);
 
-  const appExtensions = config.extra!.eas.build.experimental.ios
+  const appExtensions = config.extra?.eas.build.experimental.ios
     .appExtensions as {
     targetName: string;
     bundleIdentifier: string;
@@ -76,5 +76,3 @@ export const withEASCredentials: ConfigPlugin<EASCredentialsProps> = (
 
   return config;
 };
-
-export default withEASCredentials;

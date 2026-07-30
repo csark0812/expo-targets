@@ -5,7 +5,7 @@
  * These only work when running in a Safari extension context (web view).
  */
 
-import { useEffect, useState, useCallback } from 'react';
+import { useCallback, useEffect, useState } from "react";
 
 // Browser API type definitions
 declare global {
@@ -36,7 +36,7 @@ declare global {
     namespace storage {
       namespace sync {
         function get(
-          keys?: string | string[] | null
+          keys?: string | string[] | null,
         ): Promise<Record<string, any>>;
         function set(items: Record<string, any>): Promise<void>;
         function remove(keys: string | string[]): Promise<void>;
@@ -45,7 +45,7 @@ declare global {
 
       namespace local {
         function get(
-          keys?: string | string[] | null
+          keys?: string | string[] | null,
         ): Promise<Record<string, any>>;
         function set(items: Record<string, any>): Promise<void>;
         function remove(keys: string | string[]): Promise<void>;
@@ -56,20 +56,20 @@ declare global {
     namespace runtime {
       function sendNativeMessage(
         application: string,
-        message: any
+        message: any,
       ): Promise<any>;
 
       function sendMessage(message: any): Promise<any>;
 
       const onMessage: {
-        addListener(
+        addListener: (
           callback: (
             message: any,
             sender: any,
-            sendResponse: (response?: any) => void
-          ) => boolean | void | Promise<any>
-        ): void;
-        removeListener(callback: (...args: any[]) => any): void;
+            sendResponse: (response?: any) => void,
+          ) => boolean | undefined | Promise<any>,
+        ) => void;
+        removeListener: (callback: (...args: any[]) => any) => void;
       };
     }
   }
@@ -80,9 +80,9 @@ declare global {
  */
 export function isSafariExtension(): boolean {
   return (
-    typeof window !== 'undefined' &&
-    typeof window.browser !== 'undefined' &&
-    typeof document !== 'undefined'
+    typeof window !== "undefined" &&
+    typeof window.browser !== "undefined" &&
+    typeof document !== "undefined"
   );
 }
 
@@ -90,7 +90,9 @@ export function isSafariExtension(): boolean {
  * Get the browser API (Safari uses 'browser', Chrome uses 'chrome')
  */
 export function getBrowserAPI(): typeof browser | null {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === "undefined") {
+    return null;
+  }
   return window.browser || (window as any).chrome || null;
 }
 
@@ -113,7 +115,9 @@ export function useBrowserTab(): BrowserTab | null {
 
   useEffect(() => {
     const api = getBrowserAPI();
-    if (!api?.tabs?.query) return;
+    if (!api?.tabs?.query) {
+      return;
+    }
 
     api.tabs
       .query({ active: true, currentWindow: true })
@@ -121,15 +125,13 @@ export function useBrowserTab(): BrowserTab | null {
         if (tabs[0]) {
           setTab({
             id: tabs[0].id,
-            url: tabs[0].url || '',
-            title: tabs[0].title || '',
-            active: tabs[0].active || false,
+            url: tabs[0].url || "",
+            title: tabs[0].title || "",
+            active: tabs[0].active ?? false,
           });
         }
       })
-      .catch((err) => {
-        console.warn('[expo-targets/safari] Failed to get active tab:', err);
-      });
+      .catch((_err) => {});
   }, []);
 
   return tab;
@@ -140,7 +142,7 @@ export function useBrowserTab(): BrowserTab | null {
  */
 export function useBrowserStorage<T>(
   key: string,
-  defaultValue: T
+  defaultValue: T,
 ): [T, (value: T) => Promise<void>, boolean] {
   const [value, setValue] = useState<T>(defaultValue);
   const [loading, setLoading] = useState(true);
@@ -159,9 +161,7 @@ export function useBrowserStorage<T>(
           setValue(result[key]);
         }
       })
-      .catch((err) => {
-        console.warn('[expo-targets/safari] Failed to get storage:', err);
-      })
+      .catch((_err) => {})
       .finally(() => {
         setLoading(false);
       });
@@ -178,11 +178,9 @@ export function useBrowserStorage<T>(
       setValue(newValue);
       try {
         await api.storage.sync.set({ [key]: newValue });
-      } catch (err) {
-        console.warn('[expo-targets/safari] Failed to set storage:', err);
-      }
+      } catch {}
     },
-    [key]
+    [key],
   );
 
   return [value, setStoredValue, loading];
@@ -193,7 +191,7 @@ export function useBrowserStorage<T>(
  */
 export function useLocalBrowserStorage<T>(
   key: string,
-  defaultValue: T
+  defaultValue: T,
 ): [T, (value: T) => Promise<void>, boolean] {
   const [value, setValue] = useState<T>(defaultValue);
   const [loading, setLoading] = useState(true);
@@ -212,9 +210,7 @@ export function useLocalBrowserStorage<T>(
           setValue(result[key]);
         }
       })
-      .catch((err) => {
-        console.warn('[expo-targets/safari] Failed to get local storage:', err);
-      })
+      .catch((_err) => {})
       .finally(() => {
         setLoading(false);
       });
@@ -231,11 +227,9 @@ export function useLocalBrowserStorage<T>(
       setValue(newValue);
       try {
         await api.storage.local.set({ [key]: newValue });
-      } catch (err) {
-        console.warn('[expo-targets/safari] Failed to set local storage:', err);
-      }
+      } catch {}
     },
-    [key]
+    [key],
   );
 
   return [value, setStoredValue, loading];
@@ -247,14 +241,12 @@ export function useLocalBrowserStorage<T>(
 export function useSendToContentScript() {
   return useCallback(async (message: any): Promise<any> => {
     const api = getBrowserAPI();
-    if (!api?.tabs?.query || !api?.tabs?.sendMessage) {
-      console.warn('[expo-targets/safari] Browser tabs API not available');
+    if (!(api?.tabs?.query && api?.tabs?.sendMessage)) {
       return null;
     }
 
     const tabs = await api.tabs.query({ active: true, currentWindow: true });
     if (!tabs[0]?.id) {
-      console.warn('[expo-targets/safari] No active tab found');
       return null;
     }
 
@@ -269,13 +261,12 @@ export function useSendToNative() {
   return useCallback(async (message: any): Promise<any> => {
     const api = getBrowserAPI();
     if (!api?.runtime?.sendNativeMessage) {
-      console.warn('[expo-targets/safari] Native messaging not available');
       return null;
     }
 
     // The application ID is the bundle identifier of the extension
     // Safari automatically routes to the correct handler
-    return api.runtime.sendNativeMessage('', message);
+    return api.runtime.sendNativeMessage("", message);
   }, []);
 }
 
@@ -283,16 +274,18 @@ export function useSendToNative() {
  * Hook to listen for messages from content scripts or background
  */
 export function useMessageListener(
-  callback: (message: any, sender: any) => any | Promise<any>
+  callback: (message: any, sender: any) => any | Promise<any>,
 ) {
   useEffect(() => {
     const api = getBrowserAPI();
-    if (!api?.runtime?.onMessage) return;
+    if (!api?.runtime?.onMessage) {
+      return;
+    }
 
     const listener = (
       message: any,
       sender: any,
-      sendResponse: (response?: any) => void
+      sendResponse: (response?: any) => void,
     ) => {
       const result = callback(message, sender);
 
@@ -325,7 +318,7 @@ export async function openTab(url: string): Promise<void> {
   const api = getBrowserAPI();
   if (!api?.tabs?.create) {
     // Fallback to window.open
-    window.open(url, '_blank');
+    window.open(url, "_blank");
     return;
   }
 
@@ -346,8 +339,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(text);
     return true;
-  } catch (err) {
-    console.warn('[expo-targets/safari] Failed to copy to clipboard:', err);
+  } catch {
     return false;
   }
 }
@@ -361,57 +353,44 @@ export async function copyToClipboard(text: string): Promise<boolean> {
  * This is called internally by createTarget when in Safari web context
  */
 export function bootstrapSafariExtension(
-  targetName: string,
-  Component: React.ComponentType<any>
+  _targetName: string,
+  Component: React.ComponentType<any>,
 ): void {
-  if (typeof document === 'undefined') {
-    console.warn(
-      '[expo-targets/safari] Cannot bootstrap: document not available'
-    );
+  if (typeof document === "undefined") {
     return;
   }
 
-  const container = document.getElementById('root');
+  const container = document.getElementById("root");
   if (!container) {
-    console.error(
-      '[expo-targets/safari] Root element not found. Ensure popup.html has <div id="root"></div>'
-    );
     return;
   }
 
   // Dynamic import using Function constructor to avoid bundling react-dom in native builds
   // This is intentional - we need to defer module resolution to runtime for web-only code
-  /* eslint-disable no-new-func */
-  const loadReactDOM = async () => {
+  const loadReactDom = async () => {
     try {
       // Try React 18+ createRoot API
-      const dynamicImport = Function('m', 'return import(m)');
-      const ReactDOMClient = await (dynamicImport(
-        'react-dom/client'
+      // biome-ignore lint/nursery/noImpliedEval: dynamic import via Function to avoid bundling react-dom
+      const dynamicImport = Function("m", "return import(m)");
+      const ReactDomClient = await (dynamicImport(
+        "react-dom/client",
       ) as Promise<any>);
-      const React = await (dynamicImport('react') as Promise<any>);
+      const React = await (dynamicImport("react") as Promise<any>);
 
-      const root = ReactDOMClient.createRoot(container);
+      const root = ReactDomClient.createRoot(container);
       root.render(React.createElement(Component));
-      console.log(`[expo-targets/safari] ${targetName} mounted (React 18+)`);
     } catch {
       // Fallback to React 17 render API
       try {
-        const dynamicImport = Function('m', 'return import(m)');
-        const ReactDOM = await (dynamicImport('react-dom') as Promise<any>);
-        const React = await (dynamicImport('react') as Promise<any>);
+        // biome-ignore lint/nursery/noImpliedEval: dynamic import via Function to avoid bundling react-dom
+        const dynamicImport = Function("m", "return import(m)");
+        const ReactDom = await (dynamicImport("react-dom") as Promise<any>);
+        const React = await (dynamicImport("react") as Promise<any>);
 
-        ReactDOM.render(React.createElement(Component), container);
-        console.log(`[expo-targets/safari] ${targetName} mounted (React 17)`);
-      } catch (fallbackErr) {
-        console.error(
-          '[expo-targets/safari] Failed to bootstrap:',
-          fallbackErr
-        );
-      }
+        ReactDom.render(React.createElement(Component), container);
+      } catch {}
     }
   };
-  /* eslint-enable no-new-func */
 
-  loadReactDOM();
+  loadReactDom();
 }

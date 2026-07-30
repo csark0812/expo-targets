@@ -1,18 +1,18 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  Image,
+  ScrollView,
   StyleSheet,
   Text,
-  View,
-  ScrollView,
   TouchableOpacity,
-  Image,
+  View,
 } from 'react-native';
-import { shareContentTarget } from './targets/share-content';
-import { imageActionTarget } from './targets/image-action';
-import { messagesAppTarget } from './targets/messages-app';
-import type { SharedItem } from './targets/share-content/src/ShareExtension';
-import type { ProcessedItem } from './targets/image-action/src/ImageActionExtension';
+import { imageActionTarget } from './targets/image-action/index.tsx';
+import type { ProcessedItem } from './targets/image-action/src/ImageActionExtension.tsx';
+import { messagesAppTarget } from './targets/messages-app/index.tsx';
+import { shareContentTarget } from './targets/share-content/index.tsx';
+import type { SharedItem } from './targets/share-content/src/ShareExtension.tsx';
 
 interface SentMessage {
   id: string;
@@ -20,14 +20,11 @@ interface SentMessage {
   sentAt: string;
 }
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
 export default function App() {
   const [sharedItems, setSharedItems] = useState<SharedItem[]>([]);
   const [processedItems, setProcessedItems] = useState<ProcessedItem[]>([]);
   const [sentMessages, setSentMessages] = useState<SentMessage[]>([]);
-
-  useEffect(() => {
-    loadData();
-  }, []);
 
   const loadData = () => {
     const shareData = shareContentTarget.getData<{ items: SharedItem[] }>();
@@ -47,6 +44,10 @@ export default function App() {
       setSentMessages(messagesData.messages);
     }
   };
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const clearSharedItems = () => {
     shareContentTarget.setData({ items: [] });
@@ -89,10 +90,8 @@ export default function App() {
           <View style={styles.infoBox}>
             <Text style={styles.infoTitle}>How to use:</Text>
             <Text style={styles.infoText}>
-              1. Open Safari or Photos{'\n'}
-              2. Tap the Share button{'\n'}
-              3. Select "Share Content"{'\n'}
-              4. Tap "Save"
+              1. Open Safari or Photos\n 2. Tap the Share button\n 3. Select
+              "Share Content"\n 4. Tap "Save"
             </Text>
           </View>
 
@@ -145,7 +144,7 @@ export default function App() {
                         Images ({item.content.images.length}):
                       </Text>
                       <ScrollView
-                        horizontal
+                        horizontal={true}
                         showsHorizontalScrollIndicator={false}
                       >
                         {item.content.images.map((imageUrl, index) => (
@@ -174,10 +173,8 @@ export default function App() {
           <View style={styles.infoBox}>
             <Text style={styles.infoTitle}>How to use:</Text>
             <Text style={styles.infoText}>
-              1. Open Photos app{'\n'}
-              2. Select an image{'\n'}
-              3. Tap Share → "Image Action"{'\n'}
-              4. Choose a filter and tap "Process"
+              1. Open Photos app\n 2. Select an image\n 3. Tap Share → "Image
+              Action"\n 4. Choose a filter and tap "Process"
             </Text>
           </View>
 
@@ -235,10 +232,8 @@ export default function App() {
           <View style={styles.infoBox}>
             <Text style={styles.infoTitle}>How to use:</Text>
             <Text style={styles.infoText}>
-              1. Open Messages app{'\n'}
-              2. Tap the App Store icon in keyboard{'\n'}
-              3. Select "Messages App"{'\n'}
-              4. Choose a template and tap "Send"
+              1. Open Messages app\n 2. Tap the App Store icon in keyboard\n 3.
+              Select "Messages App"\n 4. Choose a template and tap "Send"
             </Text>
           </View>
 

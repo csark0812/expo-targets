@@ -1,7 +1,7 @@
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import { glob } from 'glob';
 import { execa } from 'execa';
+import * as fs from 'fs/promises';
+import { glob } from 'glob';
+import * as path from 'path';
 import type { ValidationResult } from './types.js';
 import { XcodeHelper } from './XcodeHelper.js';
 
@@ -95,7 +95,9 @@ export class TargetTypeTester {
       return { valid: false, errors, warnings };
     }
 
-    const project = await this.xcodeHelper.findProject(iosPath).catch(() => null);
+    const project = await this.xcodeHelper
+      .findProject(iosPath)
+      .catch(() => null);
     if (!project) {
       errors.push(`Xcode project not found for ${type}`);
       return { valid: false, errors, warnings };
@@ -128,7 +130,9 @@ export class TargetTypeTester {
     }
 
     const iosPath = path.join(projectPath, 'ios');
-    const project = await this.xcodeHelper.findProject(iosPath).catch(() => null);
+    const project = await this.xcodeHelper
+      .findProject(iosPath)
+      .catch(() => null);
     if (!project) {
       return false;
     }
@@ -181,20 +185,20 @@ export class TargetTypeTester {
             return true;
           }
         }
-      } catch {
-        continue;
-      }
+      } catch {}
     }
 
     return false;
   }
 
   async testProductType(
-    type: ExtensionType,
+    _type: ExtensionType,
     projectPath: string
   ): Promise<boolean> {
     const iosPath = path.join(projectPath, 'ios');
-    const project = await this.xcodeHelper.findProject(iosPath).catch(() => null);
+    const project = await this.xcodeHelper
+      .findProject(iosPath)
+      .catch(() => null);
     if (!project) {
       return false;
     }
@@ -243,4 +247,3 @@ export class TargetTypeTester {
     return 0;
   }
 }
-

@@ -1,14 +1,15 @@
 // @ts-expect-error - bun:test types
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import * as path from 'path';
+import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import * as fs from 'fs/promises';
-import { fileURLToPath } from 'url';
 import { glob } from 'glob';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
 import { WorkflowTester } from '../framework/WorkflowTester.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE_PATH = path.resolve(__dirname, '../fixtures/test-bare-rn-cli');
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
 describe('Bare React Native CLI Workflow Tests', () => {
   const workflowTester = new WorkflowTester();
   let tempProjectPath: string | null = null;
@@ -54,10 +55,12 @@ describe('Bare React Native CLI Workflow Tests', () => {
 
     if (validation.errors.length > 0) {
       console.log('   ✗ Validation errors:');
+      // biome-ignore lint/complexity/noForEach: pre-existing; prefer for-of tracked
       validation.errors.forEach((err) => console.log(`      - ${err}`));
     }
     if (validation.warnings.length > 0) {
       console.log('   ⚠ Warnings:');
+      // biome-ignore lint/complexity/noForEach: pre-existing; prefer for-of tracked
       validation.warnings.forEach((warn) => console.log(`      - ${warn}`));
     }
     if (validation.valid) {

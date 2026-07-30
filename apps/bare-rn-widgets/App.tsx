@@ -1,14 +1,14 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
+  Alert,
   StyleSheet,
   Text,
-  View,
   TextInput,
   TouchableOpacity,
-  Alert,
+  View,
 } from 'react-native';
-import { simpleWidget, updateMessage, getMessage } from './targets/simple-widget';
+import { getMessage, updateMessage } from './targets/simple-widget/index';
 
 export default function App() {
   const [message, setMessage] = useState('');
@@ -208,4 +208,3 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 });
-

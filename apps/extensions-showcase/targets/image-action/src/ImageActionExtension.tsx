@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  ActivityIndicator,
-} from 'react-native';
 import type { ExtensionTarget } from 'expo-targets';
+import { useState } from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 interface ImageActionProps {
   images?: string[];
@@ -17,6 +17,7 @@ interface ImageActionProps {
 
 type FilterType = 'original' | 'grayscale' | 'sepia' | 'invert' | 'brighten';
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
 export default function ImageActionExtension({
   target,
   ...props
@@ -34,7 +35,9 @@ export default function ImageActionExtension({
   ];
 
   const handleProcess = () => {
-    if (!imageUrl) return;
+    if (!imageUrl) {
+      return;
+    }
 
     setProcessing(true);
 

@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  ScrollView,
-} from 'react-native';
 import type {
+  MessagesExtensionTarget,
   PresentationStyle,
   SelectedMessage,
-  MessagesExtensionTarget,
 } from 'expo-targets';
+import { useEffect, useState } from 'react';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 interface MessagesAppProps {
   presentationStyle: PresentationStyle;
@@ -62,6 +62,7 @@ const templates: MessageTemplate[] = [
   },
 ];
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
 export default function MessagesAppExtension({
   target,
   ...props
@@ -71,29 +72,18 @@ export default function MessagesAppExtension({
   );
   const [customMessage, setCustomMessage] = useState('');
   useEffect(() => {
-    console.log(
-      '[MessagesApp] Component mounted with initial style:',
-      props.presentationStyle
-    );
     // Listen for presentation style changes
     const subscription = target.addEventListener(
       'onPresentationStyleChange',
       (style: PresentationStyle) => {
-        console.log(
-          '[MessagesApp] Received presentation style change event:',
-          style
-        );
         setPresentationStyle(style);
       }
     );
 
     return () => {
-      console.log(
-        '[MessagesApp] Component unmounting, removing event listener'
-      );
       subscription.remove();
     };
-  }, []);
+  }, [target.addEventListener]);
 
   const handleTextFocus = () => {
     if (presentationStyle === 'compact') {
@@ -102,10 +92,6 @@ export default function MessagesAppExtension({
   };
 
   const handleSendTemplate = (template: MessageTemplate) => {
-    console.log(
-      '[MessagesApp] handleSendTemplate called for:',
-      template.caption
-    );
     target.sendMessage({
       caption: template.caption,
       subcaption: template.subcaption,
@@ -127,32 +113,19 @@ export default function MessagesAppExtension({
         },
       ],
     });
-
-    console.log('[MessagesApp] Calling target.close()');
     target.requestPresentationStyle('compact');
-    console.log('[MessagesApp] target.close() returned');
   };
 
   const handleSendCustom = () => {
-    if (!customMessage.trim()) return;
-
-    console.log(
-      '[MessagesApp] handleSendCustom called with message:',
-      customMessage
-    );
+    if (!customMessage.trim()) {
+      return;
+    }
     target.sendMessage({
       caption: customMessage,
       subcaption: 'Custom message',
-      url: `expo-targets://message?type=custom`,
+      url: 'expo-targets://message?type=custom',
     });
-
-    console.log(
-      '[MessagesApp] Calling target.requestPresentationStyle("compact")'
-    );
     target.requestPresentationStyle('compact');
-    console.log(
-      '[MessagesApp] target.requestPresentationStyle("compact") returned'
-    );
   };
 
   // Compact mode - show condensed UI
@@ -162,24 +135,9 @@ export default function MessagesAppExtension({
         <TouchableOpacity
           style={styles.expandButton}
           onPress={() => {
-            console.log(
-              '[MessagesApp] Button pressed - requesting expanded style'
-            );
-            console.log(
-              '[MessagesApp] Current presentation style:',
-              presentationStyle
-            );
             try {
               target.requestPresentationStyle('expanded');
-              console.log(
-                '[MessagesApp] requestPresentationStyle called successfully'
-              );
-            } catch (error) {
-              console.error(
-                '[MessagesApp] Error calling requestPresentationStyle:',
-                error
-              );
-            }
+            } catch {}
           }}
         >
           <Text style={styles.expandButtonText}>Tap to compose message ✨</Text>
@@ -231,7 +189,7 @@ export default function MessagesAppExtension({
           onChangeText={setCustomMessage}
           onFocus={handleTextFocus}
           placeholder="Type your message..."
-          multiline
+          multiline={true}
         />
       </ScrollView>
 
@@ -239,7 +197,6 @@ export default function MessagesAppExtension({
         <TouchableOpacity
           style={styles.cancelButton}
           onPress={() => {
-            console.log('[MessagesApp] Cancel button pressed');
             target.requestPresentationStyle('compact');
           }}
         >

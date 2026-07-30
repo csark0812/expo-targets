@@ -1,16 +1,16 @@
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import process from 'node:process';
 import {
-  ConfigPlugin,
   AndroidConfig,
+  type ConfigPlugin,
   withAndroidManifest,
-  withDangerousMod,
-  withStringsXml,
   withAppBuildGradle,
+  withDangerousMod,
   withProjectBuildGradle,
+  withStringsXml,
 } from '@expo/config-plugins';
-import * as fs from 'fs';
-import * as path from 'path';
-
-import type { TargetConfig, AndroidTargetConfig, Color } from '../config';
+import type { AndroidTargetConfig, Color } from '../config';
 
 /**
  * Sanitize widget name for Android resource names.
@@ -29,6 +29,7 @@ interface WidgetProps {
   directory: string;
 }
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
 export const withAndroidWidget: ConfigPlugin<WidgetProps> = (config, props) => {
   const androidConfig = props.android || {};
   const widgetType = androidConfig.widgetType || 'glance';
@@ -151,8 +152,9 @@ function applyComposePlugin(buildGradleConfig: any) {
 
 function addExpoTargetsReceiver(mainApplication: any, config: any) {
   const packageName = config.android?.package;
-  if (!packageName)
+  if (!packageName) {
     throw new Error('Android package name not found in app.json');
+  }
 
   mainApplication.receiver = mainApplication.receiver || [];
 
@@ -161,7 +163,9 @@ function addExpoTargetsReceiver(mainApplication: any, config: any) {
     (r: any) => r.$['android:name'] === receiverName
   );
 
-  if (alreadyAdded) return;
+  if (alreadyAdded) {
+    return;
+  }
 
   mainApplication.receiver.push({
     $: {
@@ -203,7 +207,7 @@ function enableComposeFeatures(buildGradleConfig: any) {
     // Insert before the closing brace of android block
     contents = contents.replace(
       androidBlockMatch[0],
-      androidBlockMatch[1] + buildFeaturesBlock + '\n}'
+      `${androidBlockMatch[1] + buildFeaturesBlock}\n}`
     );
     modResults.contents = contents;
   }
@@ -278,8 +282,9 @@ function addWidgetReceiver(
   props: WidgetProps
 ) {
   const packageName = config.android?.package;
-  if (!packageName)
+  if (!packageName) {
     throw new Error('Android package name not found in app.json');
+  }
 
   const widgetType = props.android?.widgetType || 'glance';
   const widgetNameLower = sanitizeResourceName(props.name);
@@ -312,6 +317,7 @@ function addWidgetReceiver(
   }
 }
 
+// biome-ignore lint/complexity/useMaxParams: pre-existing complexity; tracked for refactor
 function registerGlanceReceiver(
   mainApplication: any,
   packageName: string,
@@ -330,7 +336,9 @@ function registerGlanceReceiver(
     (r: any) => r.$['android:name'] === widgetClassName
   );
 
-  if (alreadyAdded) return;
+  if (alreadyAdded) {
+    return;
+  }
 
   mainApplication.receiver.push({
     $: {
@@ -358,10 +366,11 @@ function registerGlanceReceiver(
   });
 }
 
+// biome-ignore lint/complexity/useMaxParams: pre-existing complexity; tracked for refactor
 function registerUpdateReceiver(
   mainApplication: any,
   packageName: string,
-  props: WidgetProps,
+  _props: WidgetProps,
   widgetNameLower: string,
   widgetNamePascal: string
 ) {
@@ -406,7 +415,9 @@ function registerAppWidgetProvider(
     (r: any) => r.$['android:name'] === providerClassName
   );
 
-  if (alreadyAdded) return;
+  if (alreadyAdded) {
+    return;
+  }
 
   mainApplication.receiver.push({
     $: {
@@ -438,6 +449,8 @@ function registerAppWidgetProvider(
   });
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
 function addWidgetSourceSets(
   buildGradleConfig: any,
   config: any,
@@ -495,6 +508,7 @@ function addWidgetSourceSets(
           // Append to existing java.srcDirs
           contents = contents.replace(
             /(sourceSets\s*\{[^}]*main\s*\{[^}]*java\.srcDirs\s*\+=\s*\[)([^\]]*)(\])/s,
+            // biome-ignore lint/complexity/useMaxParams: pre-existing complexity; tracked for refactor
             (
               match: string,
               prefix: string,
@@ -530,11 +544,13 @@ function addWidgetSourceSets(
         if (mainBlockContent.includes('res.srcDirs')) {
           contents = contents.replace(
             /(sourceSets\s*\{[^}]*main\s*\{[^}]*res\.srcDirs\s*\+=\s*\[)([^\]]*)(\])/s,
+            // biome-ignore lint/complexity/useMaxParams: pre-existing complexity; tracked for refactor
             (
               match: string,
               prefix: string,
               existingDirs: string,
               suffix: string
+              // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
             ) => {
               let updated = existingDirs;
               // Add res/ if not present
@@ -590,9 +606,10 @@ function addWidgetSourceSets(
   modResults.contents = contents;
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
 function generateWidgetResources(
   platformRoot: string,
-  config: any,
+  _config: any,
   props: WidgetProps
 ) {
   const androidConfig = props.android || {};
@@ -650,7 +667,7 @@ function generateWidgetResources(
     widgetInfo += `\n    android:targetCellHeight="${androidConfig.targetCellHeight}"`;
   }
 
-  widgetInfo += `>\n</appwidget-provider>`;
+  widgetInfo += '>\n</appwidget-provider>';
 
   fs.writeFileSync(
     path.join(xmlDir, `widgetprovider_${sanitizeResourceName(props.name)}.xml`),
@@ -742,6 +759,7 @@ function generateColorResources(
   const widgetPrefix = `${sanitizeResourceName(props.name)}_`;
 
   // Prefix color names with widget name to avoid conflicts between widgets
+  // biome-ignore lint/complexity/noForEach: pre-existing; prefer for-of tracked
   Object.entries(colors).forEach(([name, value]) => {
     const prefixedName = `${widgetPrefix}${name}`;
     if (typeof value === 'string') {

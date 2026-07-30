@@ -1,6 +1,7 @@
-import * as fs from 'fs';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import process from 'node:process';
 import type { MetroConfig } from 'metro-config';
-import * as path from 'path';
 
 interface TargetConfig {
   name: string;
@@ -11,17 +12,23 @@ function scanTargetsDirectory(projectRoot: string): Map<string, string> {
   const targetsDir = path.join(projectRoot, 'targets');
   const entryMap = new Map<string, string>();
 
-  if (!fs.existsSync(targetsDir)) return entryMap;
+  if (!fs.existsSync(targetsDir)) {
+    return entryMap;
+  }
 
   for (const dir of fs.readdirSync(targetsDir, { withFileTypes: true })) {
-    if (!dir.isDirectory()) continue;
+    if (!dir.isDirectory()) {
+      continue;
+    }
 
     const configPath = path.join(
       targetsDir,
       dir.name,
       'expo-target.config.json'
     );
-    if (!fs.existsSync(configPath)) continue;
+    if (!fs.existsSync(configPath)) {
+      continue;
+    }
 
     try {
       const config: TargetConfig = JSON.parse(
@@ -50,7 +57,6 @@ export function withTargetsMetro(
   const entryMap = scanTargetsDirectory(projectRoot);
 
   if (entryMap.size > 0) {
-    console.log(`[expo-targets] Found ${entryMap.size} target entry point(s)`);
   }
 
   return {

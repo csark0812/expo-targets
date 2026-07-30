@@ -4,9 +4,5 @@
     "strict": true,
     "jsx": "react-native"
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx"
-  ]
+  "include": ["**/*.ts", "**/*.tsx"]
 }
-

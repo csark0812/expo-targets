@@ -24,9 +24,7 @@
         ]
       }
     },
-    "plugins": [
-      "../../packages/expo-targets/app.plugin.js"
-    ],
+    "plugins": ["../../packages/expo-targets/app.plugin.js"],
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -36,4 +34,3 @@
     }
   }
 }
-

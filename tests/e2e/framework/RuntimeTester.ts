@@ -3,12 +3,21 @@ import * as path from 'path';
 import type { RuntimeTestConfig } from './types.js';
 
 export class RuntimeTester {
-  async listSimulators(): Promise<Array<{ name: string; udid: string; state: string }>> {
+  async listSimulators(): Promise<
+    Array<{ name: string; udid: string; state: string }>
+  > {
     try {
-      const result = await execa('xcrun', ['simctl', 'list', 'devices', 'available', '--json']);
+      const result = await execa('xcrun', [
+        'simctl',
+        'list',
+        'devices',
+        'available',
+        '--json',
+      ]);
       const data = JSON.parse(result.stdout);
 
-      const simulators: Array<{ name: string; udid: string; state: string }> = [];
+      const simulators: Array<{ name: string; udid: string; state: string }> =
+        [];
 
       for (const runtime of Object.keys(data.devices)) {
         const devices = data.devices[runtime];
@@ -17,7 +26,7 @@ export class RuntimeTester {
             simulators.push({
               name: device.name,
               udid: device.udid,
-              state: device.state
+              state: device.state,
             });
           }
         }
@@ -31,7 +40,9 @@ export class RuntimeTester {
 
   async bootSimulator(udid: string): Promise<boolean> {
     try {
-      const result = await execa('xcrun', ['simctl', 'boot', udid], { reject: false });
+      const result = await execa('xcrun', ['simctl', 'boot', udid], {
+        reject: false,
+      });
       return result.exitCode === 0;
     } catch {
       return false;
@@ -40,7 +51,9 @@ export class RuntimeTester {
 
   async shutdownSimulator(udid: string): Promise<boolean> {
     try {
-      const result = await execa('xcrun', ['simctl', 'shutdown', udid], { reject: false });
+      const result = await execa('xcrun', ['simctl', 'shutdown', udid], {
+        reject: false,
+      });
       return result.exitCode === 0;
     } catch {
       return false;
@@ -49,9 +62,13 @@ export class RuntimeTester {
 
   async installApp(udid: string, appPath: string): Promise<boolean> {
     try {
-      const result = await execa('xcrun', ['simctl', 'install', udid, appPath], {
-        reject: false
-      });
+      const result = await execa(
+        'xcrun',
+        ['simctl', 'install', udid, appPath],
+        {
+          reject: false,
+        }
+      );
       return result.exitCode === 0;
     } catch {
       return false;
@@ -60,9 +77,13 @@ export class RuntimeTester {
 
   async launchApp(udid: string, bundleId: string): Promise<boolean> {
     try {
-      const result = await execa('xcrun', ['simctl', 'launch', udid, bundleId], {
-        reject: false
-      });
+      const result = await execa(
+        'xcrun',
+        ['simctl', 'launch', udid, bundleId],
+        {
+          reject: false,
+        }
+      );
       return result.exitCode === 0;
     } catch {
       return false;
@@ -71,9 +92,13 @@ export class RuntimeTester {
 
   async terminateApp(udid: string, bundleId: string): Promise<boolean> {
     try {
-      const result = await execa('xcrun', ['simctl', 'terminate', udid, bundleId], {
-        reject: false
-      });
+      const result = await execa(
+        'xcrun',
+        ['simctl', 'terminate', udid, bundleId],
+        {
+          reject: false,
+        }
+      );
       return result.exitCode === 0;
     } catch {
       return false;
@@ -82,22 +107,29 @@ export class RuntimeTester {
 
   async uninstallApp(udid: string, bundleId: string): Promise<boolean> {
     try {
-      const result = await execa('xcrun', ['simctl', 'uninstall', udid, bundleId], {
-        reject: false
-      });
+      const result = await execa(
+        'xcrun',
+        ['simctl', 'uninstall', udid, bundleId],
+        {
+          reject: false,
+        }
+      );
       return result.exitCode === 0;
     } catch {
       return false;
     }
   }
 
-  async getAppContainer(udid: string, bundleId: string): Promise<string | null> {
+  async getAppContainer(
+    udid: string,
+    bundleId: string
+  ): Promise<string | null> {
     try {
       const result = await execa('xcrun', [
         'simctl',
         'get_app_container',
         udid,
-        bundleId
+        bundleId,
       ]);
       return result.stdout.trim();
     } catch {
@@ -105,7 +137,11 @@ export class RuntimeTester {
     }
   }
 
-  async readSharedData(udid: string, bundleId: string, appGroup: string): Promise<Record<string, any> | null> {
+  async readSharedData(
+    udid: string,
+    bundleId: string,
+    appGroup: string
+  ): Promise<Record<string, any> | null> {
     try {
       const containerPath = await this.getAppContainer(udid, bundleId);
       if (!containerPath) return null;
@@ -120,13 +156,20 @@ export class RuntimeTester {
         `${appGroup}.plist`
       );
 
-      const result = await execa('plutil', ['-convert', 'json', '-o', '-', dataPath]);
+      const result = await execa('plutil', [
+        '-convert',
+        'json',
+        '-o',
+        '-',
+        dataPath,
+      ]);
       return JSON.parse(result.stdout);
     } catch {
       return null;
     }
   }
 
+  // biome-ignore lint/complexity/useMaxParams: pre-existing complexity; tracked for refactor
   async writeSharedData(
     udid: string,
     bundleId: string,
@@ -157,7 +200,10 @@ export class RuntimeTester {
     }
   }
 
-  async runE2ETest(config: RuntimeTestConfig, testFn: () => Promise<void>): Promise<{
+  async runE2ETest(
+    config: RuntimeTestConfig,
+    testFn: () => Promise<void>
+  ): Promise<{
     success: boolean;
     duration: number;
     error?: Error;
@@ -165,25 +211,25 @@ export class RuntimeTester {
     const startTime = Date.now();
 
     const simulators = await this.listSimulators();
-    const simulator = simulators.find(s => s.name === config.simulator);
+    const simulator = simulators.find((s) => s.name === config.simulator);
 
     if (!simulator) {
       return {
         success: false,
         duration: Date.now() - startTime,
-        error: new Error(`Simulator ${config.simulator} not found`)
+        error: new Error(`Simulator ${config.simulator} not found`),
       };
     }
 
     try {
       if (simulator.state !== 'Booted') {
         await this.bootSimulator(simulator.udid);
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        await new Promise((resolve) => setTimeout(resolve, 5000));
       }
 
       await this.installApp(simulator.udid, config.appPath);
       await this.launchApp(simulator.udid, config.bundleId);
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      await new Promise((resolve) => setTimeout(resolve, 3000));
 
       await testFn();
 
@@ -192,15 +238,14 @@ export class RuntimeTester {
 
       return {
         success: true,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       };
     } catch (error) {
       return {
         success: false,
         duration: Date.now() - startTime,
-        error: error as Error
+        error: error as Error,
       };
     }
   }
 }
-

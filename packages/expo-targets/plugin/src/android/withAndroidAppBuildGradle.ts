@@ -1,4 +1,4 @@
-import { ConfigPlugin, withAppBuildGradle } from '@expo/config-plugins';
+import { type ConfigPlugin, withAppBuildGradle } from '@expo/config-plugins';
 
 /**
  * Ensures the Android app's build.gradle namespace matches the package name
@@ -23,9 +23,6 @@ export const withAndroidAppBuildGradle: ConfigPlugin = (config) => {
     if (match && match[1] !== packageName) {
       // Replace incorrect namespace with correct package name
       contents = contents.replace(namespaceRegex, `namespace "${packageName}"`);
-      console.log(
-        `[expo-targets] Fixed Android namespace: ${match[1]} -> ${packageName}`
-      );
     }
 
     modResults.contents = contents;

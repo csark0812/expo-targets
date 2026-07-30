@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 
 /**
  * File system utilities for iOS target plugin operations.
@@ -52,7 +52,6 @@ export function readFileIfExists(filePath: string): string | undefined {
   if (fs.existsSync(filePath)) {
     return fs.readFileSync(filePath, 'utf-8');
   }
-  return undefined;
 }
 
 /**

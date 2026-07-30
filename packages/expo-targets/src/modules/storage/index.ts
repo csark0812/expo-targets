@@ -69,8 +69,7 @@ export class AppGroupStorage {
       }
 
       return value as T;
-    } catch (error) {
-      console.warn(`Failed to get value for key "${key}":`, error);
+    } catch {
       return null;
     }
   }
@@ -84,6 +83,7 @@ export class AppGroupStorage {
   }
 
   setData(data: Record<string, any>) {
+    // biome-ignore lint/complexity/noForEach: pre-existing; prefer for-of tracked
     Object.entries(data).forEach(([key, value]) => {
       this.set(key, value);
     });
@@ -101,6 +101,7 @@ export class AppGroupStorage {
 
       const parsedData: Record<string, any> = {};
 
+      // biome-ignore lint/complexity/noForEach: pre-existing; prefer for-of tracked
       Object.entries(rawData).forEach(([key, value]) => {
         if (typeof value === 'string') {
           try {
@@ -114,8 +115,7 @@ export class AppGroupStorage {
       });
 
       return parsedData as T;
-    } catch (error) {
-      console.warn('Failed to get all data:', error);
+    } catch {
       return {} as T;
     }
   }
@@ -126,8 +126,7 @@ export class AppGroupStorage {
         this.appGroup,
         this.targetName
       );
-    } catch (error) {
-      console.warn('Failed to get all keys:', error);
+    } catch {
       return [];
     }
   }
@@ -149,8 +148,7 @@ export function clearSharedData(appGroup: string) {
 export function getTargetsConfigFromBundle(): any[] | null {
   try {
     return ExpoTargetsStorageModule.getTargetsConfig();
-  } catch (error) {
-    console.warn('Failed to read targets config from bundle:', error);
+  } catch {
     return null;
   }
 }

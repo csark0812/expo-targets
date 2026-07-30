@@ -1,12 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  ScrollView,
-} from 'react-native';
-import { shareExtensionTarget } from './targets/share-extension';
+import { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { shareExtensionTarget } from './targets/share-extension/index.tsx';
 
 interface SharedItem {
   sharedAt: string;
@@ -20,18 +15,18 @@ interface SharedItem {
 export default function App() {
   const [sharedItems, setSharedItems] = useState<SharedItem[]>([]);
 
-  useEffect(() => {
-    loadData();
-    const interval = setInterval(loadData, 2000);
-    return () => clearInterval(interval);
-  }, []);
-
   const loadData = () => {
     const data = shareExtensionTarget.getData<{ items: SharedItem[] }>();
     if (data?.items) {
       setSharedItems(data.items);
     }
   };
+
+  useEffect(() => {
+    loadData();
+    const interval = setInterval(loadData, 2000);
+    return () => clearInterval(interval);
+  }, [loadData]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -60,14 +55,20 @@ export default function App() {
             <Text style={styles.stepsTitle}>Setup Steps:</Text>
             <Text style={styles.step}>1. Create Xcode project manually</Text>
             <Text style={styles.step}>2. Run: npx expo-targets sync</Text>
-            <Text style={styles.step}>3. Configure Metro (see metro.config.js)</Text>
+            <Text style={styles.step}>
+              3. Configure Metro (see metro.config.js)
+            </Text>
             <Text style={styles.step}>4. cd ios && pod install</Text>
-            <Text style={styles.step}>5. Build in Xcode (Release mode for RN extensions)</Text>
+            <Text style={styles.step}>
+              5. Build in Xcode (Release mode for RN extensions)
+            </Text>
           </View>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Shared Items ({sharedItems.length})</Text>
+          <Text style={styles.cardTitle}>
+            Shared Items ({sharedItems.length})
+          </Text>
           <Text style={styles.description}>
             Content shared from other apps via the share extension:
           </Text>
@@ -247,4 +248,3 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 });
-

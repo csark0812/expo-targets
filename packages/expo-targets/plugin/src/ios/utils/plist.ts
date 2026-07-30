@@ -1,7 +1,6 @@
 import plist from '@expo/plist';
-
-import * as FileUtils from './file';
 import type { ExtensionType } from '../../config';
+import * as FileUtils from './file';
 
 /**
  * Plist file manipulation utilities.
@@ -53,16 +52,16 @@ export function syncAppGroups({
   targetEntitlements: Record<string, any>;
   mainAppGroups: string[] | undefined;
 }): Record<string, any> {
-  const APP_GROUP_KEY = 'com.apple.security.application-groups';
+  const AppGroupKey = 'com.apple.security.application-groups';
 
   if (
-    !targetEntitlements[APP_GROUP_KEY] &&
+    !targetEntitlements[AppGroupKey] &&
     Array.isArray(mainAppGroups) &&
     mainAppGroups.length > 0
   ) {
     return {
       ...targetEntitlements,
-      [APP_GROUP_KEY]: mainAppGroups,
+      [AppGroupKey]: mainAppGroups,
     };
   }
 
@@ -73,7 +72,7 @@ export function syncAppGroups({
  * Check if a target type should use App Groups by default.
  */
 export function shouldUseAppGroups(type: ExtensionType): boolean {
-  const SHOULD_USE_APP_GROUPS_BY_DEFAULT: Record<ExtensionType, boolean> = {
+  const ShouldUseAppGroupsByDefault: Record<ExtensionType, boolean> = {
     widget: true,
     clip: true,
     share: true,
@@ -99,5 +98,5 @@ export function shouldUseAppGroups(type: ExtensionType): boolean {
     'wallet-ui': false,
   };
 
-  return SHOULD_USE_APP_GROUPS_BY_DEFAULT[type];
+  return ShouldUseAppGroupsByDefault[type];
 }

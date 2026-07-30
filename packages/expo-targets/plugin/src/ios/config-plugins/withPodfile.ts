@@ -1,14 +1,14 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import {
-  ConfigPlugin,
-  withDangerousMod,
+  type ConfigPlugin,
   IOSConfig,
+  withDangerousMod,
 } from '@expo/config-plugins';
-import fs from 'fs';
-import path from 'path';
 
-import { type ExtensionType } from '../../config';
-import { Logger } from '../../logger';
-import { Podfile, File } from '../utils';
+import type { ExtensionType } from '../../config';
+import type { Logger } from '../../logger';
+import { File, Podfile } from '../utils/index';
 
 const { getProjectName } = IOSConfig.XcodeUtils;
 
@@ -20,9 +20,12 @@ export const withTargetPodfile: ConfigPlugin<{
   standalone?: boolean;
   targetDirectory?: string;
   logger: Logger;
+  // biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
 }> = (config, props) => {
   return withDangerousMod(config, [
     'ios',
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
+    // biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
     async (config) => {
       const podfilePath = path.join(
         config.modRequest.platformProjectRoot,
@@ -232,8 +235,10 @@ export const withTargetPodfile: ConfigPlugin<{
         if (extensionTargets.length > 0) {
           const highestDeploymentTarget = extensionTargets.reduce(
             (highest, ext) => {
-              const extVersion = parseFloat(ext.deploymentTarget);
-              const highestVersion = parseFloat(highest.deploymentTarget);
+              const extVersion = Number.parseFloat(ext.deploymentTarget);
+              const highestVersion = Number.parseFloat(
+                highest.deploymentTarget
+              );
               return extVersion > highestVersion ? ext : highest;
             }
           ).deploymentTarget;

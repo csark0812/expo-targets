@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  ActivityIndicator,
-} from 'react-native';
 import type { ExtensionTarget } from 'expo-targets';
+import { useState } from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 interface ActionExtensionProps {
   images?: string[];
@@ -24,6 +24,7 @@ export interface ProcessedItem {
   filter: FilterType;
 }
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
 export default function ActionExtension({
   target,
   ...props
@@ -41,7 +42,9 @@ export default function ActionExtension({
   ];
 
   const handleProcess = () => {
-    if (!imageUrl) return;
+    if (!imageUrl) {
+      return;
+    }
 
     setProcessing(true);
 

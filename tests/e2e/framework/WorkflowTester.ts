@@ -1,9 +1,9 @@
+import { execa } from 'execa';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import { execa } from 'execa';
-import type { ValidationResult } from './types.js';
 import { PrebuildValidator } from './PrebuildValidator.js';
+import type { ValidationResult } from './types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -14,6 +14,8 @@ export class WorkflowTester {
     this.validator = new PrebuildValidator();
   }
 
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
+  // biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
   async createManagedWorkflow(fixturePath: string): Promise<string> {
     console.log('   📁 Setting up managed workflow...');
     const tempDir = path.join(
@@ -116,7 +118,7 @@ export class WorkflowTester {
         }
       } catch (error: any) {
         // Re-throw if it's already our formatted error
-        if (error.message && error.message.includes('Failed to install')) {
+        if (error.message?.includes('Failed to install')) {
           throw error;
         }
         // Otherwise check if node_modules exists despite error
@@ -319,6 +321,8 @@ export class WorkflowTester {
     return tempDir;
   }
 
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
+  // biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
   async createBareWorkflow(fixturePath: string): Promise<string> {
     console.log('   📁 Setting up bare workflow...');
     const tempDir = path.join('/tmp', `expo-targets-test-bare-${Date.now()}`);
@@ -496,6 +500,7 @@ export class WorkflowTester {
     return tempDir;
   }
 
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
   async runExpoPrebuild(
     projectPath: string,
     platform: 'ios' | 'android' | 'all' = 'ios'

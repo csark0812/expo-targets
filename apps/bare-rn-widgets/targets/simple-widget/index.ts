@@ -11,4 +11,3 @@ export const getMessage = (): string | null => {
   const data = simpleWidget.getData<{ message: string }>();
   return data?.message || null;
 };
-

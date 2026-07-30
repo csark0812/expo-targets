@@ -16,14 +16,10 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.test.barernshare",
       "entitlements": {
-        "com.apple.security.application-groups": [
-          "group.com.test.barernshare"
-        ]
+        "com.apple.security.application-groups": ["group.com.test.barernshare"]
       }
     },
-    "plugins": [
-      "../../packages/expo-targets/app.plugin.js"
-    ],
+    "plugins": ["../../packages/expo-targets/app.plugin.js"],
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -33,4 +29,3 @@
     }
   }
 }
-

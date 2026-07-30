@@ -1,0 +1,116 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.6/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "includes": [
+      "**",
+      "!**/build",
+      "!**/dist",
+      "!**/*.d.ts",
+      "!!**/node_modules"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 80,
+    "lineEnding": "lf"
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "semicolons": "always",
+      "trailingCommas": "es5",
+      "arrowParentheses": "always",
+      "bracketSpacing": true
+    }
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "domains": {
+      "project": "all",
+      "types": "all",
+      "react": "all",
+      "reactNative": "all",
+      "test": "all"
+    },
+    "rules": {
+      "preset": "all",
+      "a11y": "off",
+      "style": "off",
+      "performance": "off",
+      "security": {
+        "noSecrets": "off"
+      },
+      "correctness": {
+        "noNodejsModules": "off",
+        "noUnresolvedImports": "off",
+        "noUndeclaredDependencies": "off",
+        "noUndeclaredVariables": "off",
+        "useExhaustiveDependencies": "off",
+        "useQwikValidLexicalScope": "off",
+        "noSolidDestructuredProps": "off",
+        "useImportExtensions": "off",
+        "noGlobalDirnameFilename": "off",
+        "noUnusedImports": "error",
+        "noUnusedVariables": "error",
+        "noUnusedFunctionParameters": "error"
+      },
+      "suspicious": {
+        "noExplicitAny": "off",
+        "noEmptyBlockStatements": "off",
+        "noConsole": "off",
+        "noShadow": "off",
+        "noBitwiseOperators": "off",
+        "noEvolvingTypes": "off",
+        "noImplicitAnyLet": "off",
+        "noLeakedRender": "off",
+        "noArrayIndexKey": "off",
+        "noForIn": "off",
+        "useAwait": "off",
+        "useIterableCallbackReturn": "off",
+        "noAssignInExpressions": "off",
+        "noUnnecessaryConditions": "off"
+      },
+      "complexity": {
+        "preset": "all",
+        "noExcessiveCognitiveComplexity": {
+          "level": "error",
+          "options": { "maxAllowedComplexity": 10 }
+        },
+        "noExcessiveLinesPerFunction": {
+          "level": "error",
+          "options": {
+            "maxLines": 40,
+            "skipBlankLines": true
+          }
+        },
+        "useMaxParams": {
+          "level": "error",
+          "options": { "max": 3 }
+        },
+        "noExcessiveNestedTestSuites": "error"
+      },
+      "nursery": {
+        "noExcessiveNestedCallbacks": {
+          "level": "error",
+          "options": { "max": 3 }
+        },
+        "noImpliedEval": "error"
+      }
+    }
+  }
+}

@@ -1,14 +1,14 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import * as parser from '@babel/parser';
 import traverse from '@babel/traverse';
 import * as t from '@babel/types';
-import fs from 'fs';
-import path from 'path';
 
 import type { TargetConfig } from './config';
 
 export function parseTargetConfigFromFile(filePath: string): TargetConfig {
   const code = fs.readFileSync(filePath, 'utf-8');
-  const directoryName = path.basename(path.dirname(filePath));
+  const _directoryName = path.basename(path.dirname(filePath));
 
   const ast = parser.parse(code, {
     sourceType: 'module',
@@ -53,8 +53,7 @@ export function parseTargetConfigFromFile(filePath: string): TargetConfig {
 
   // Validate platforms array
   if (
-    !config.platforms ||
-    !Array.isArray(config.platforms) ||
+    !(config.platforms && Array.isArray(config.platforms)) ||
     config.platforms.length === 0
   ) {
     throw new Error(
@@ -109,7 +108,4 @@ function evaluateNode(node: t.Node): any {
   if (t.isTemplateLiteral(node) && node.expressions.length === 0) {
     return node.quasis[0].value.cooked;
   }
-
-  console.warn(`[expo-targets] Unable to evaluate node type: ${node.type}`);
-  return undefined;
 }

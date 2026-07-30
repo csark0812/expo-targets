@@ -4,8 +4,8 @@
  * Generates web resources and Swift handler for Safari extensions
  */
 
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 
 import * as File from './file';
 
@@ -265,6 +265,8 @@ export function generatePlaceholderPopupScript(
 /**
  * Generate placeholder icons for Safari extension
  */
+
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
 export function generatePlaceholderIcons(resourcesPath: string): void {
   const imagesPath = path.join(resourcesPath, 'images');
   File.ensureDirectoryExists(imagesPath);

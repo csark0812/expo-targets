@@ -1,14 +1,14 @@
-import { ConfigPlugin, withDangerousMod } from '@expo/config-plugins';
+import { type ConfigPlugin, withDangerousMod } from '@expo/config-plugins';
 
-import { Asset, Paths } from '../utils';
+import { Asset, Paths } from '../utils/index';
 
 export const withIosColorset: ConfigPlugin<{
   name: string;
   color: string;
   darkColor?: string;
   targetName: string;
-}> = (config, props) => {
-  return withDangerousMod(config, [
+}> = (config, props) =>
+  withDangerousMod(config, [
     'ios',
     async (config) => {
       const colorsetPath = Paths.getColorsetPath({
@@ -26,4 +26,3 @@ export const withIosColorset: ConfigPlugin<{
       return config;
     },
   ]);
-};

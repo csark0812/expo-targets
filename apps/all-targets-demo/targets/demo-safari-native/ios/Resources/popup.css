@@ -6,7 +6,7 @@
 
 body {
   font-family:
-    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto,
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto,
     sans-serif;
   background: #f2f2f7;
   color: #000;
@@ -149,7 +149,7 @@ body {
   background: #f2f2f7;
   border-radius: 8px;
   font-size: 12px;
-  font-family: 'SF Mono', Monaco, monospace;
+  font-family: "SF Mono", Monaco, monospace;
   white-space: pre-wrap;
   word-break: break-all;
   display: none;

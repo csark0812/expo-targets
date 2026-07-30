@@ -1,7 +1,8 @@
+import process from 'node:process';
 import * as path from 'path';
-import { TestRunner } from '../framework/TestRunner.js';
 import { BuildTestRunner } from '../framework/BuildTestRunner.js';
-import type { TestSuite, BuildConfig } from '../framework/types.js';
+import { TestRunner } from '../framework/TestRunner.js';
+import type { BuildConfig, TestSuite } from '../framework/types.js';
 
 const WIDGET_APP = path.resolve(__dirname, '../../apps/widget-interactive');
 const SHARE_APP = path.resolve(__dirname, '../../apps/share-extension');
@@ -9,56 +10,49 @@ const CLIP_APP = path.resolve(__dirname, '../../apps/clip-advanced');
 
 const SIMULATOR_DESTINATION = 'platform=iOS Simulator,name=iPhone 15,OS=latest';
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
 async function runCompilationTests() {
   const runner = new TestRunner();
   const buildRunner = new BuildTestRunner();
 
   const tests: TestSuite = {
     name: 'Compilation Tests',
-    tests: []
+    tests: [],
   };
 
   const widgetConfig: BuildConfig = {
     projectPath: path.join(WIDGET_APP, 'ios'),
     scheme: 'widgetinteractive',
     configuration: 'Debug',
-    destination: SIMULATOR_DESTINATION
+    destination: SIMULATOR_DESTINATION,
   };
 
-  tests.tests.push(
-    await buildRunner.testBuildSucceeds(widgetConfig)
-  );
+  tests.tests.push(await buildRunner.testBuildSucceeds(widgetConfig));
 
   const widgetReleaseConfig: BuildConfig = {
     ...widgetConfig,
-    configuration: 'Release'
+    configuration: 'Release',
   };
 
-  tests.tests.push(
-    await buildRunner.testBuildSucceeds(widgetReleaseConfig)
-  );
+  tests.tests.push(await buildRunner.testBuildSucceeds(widgetReleaseConfig));
 
   const shareConfig: BuildConfig = {
     projectPath: path.join(SHARE_APP, 'ios'),
     scheme: 'shareextension',
     configuration: 'Debug',
-    destination: SIMULATOR_DESTINATION
+    destination: SIMULATOR_DESTINATION,
   };
 
-  tests.tests.push(
-    await buildRunner.testBuildSucceeds(shareConfig)
-  );
+  tests.tests.push(await buildRunner.testBuildSucceeds(shareConfig));
 
   const clipConfig: BuildConfig = {
     projectPath: path.join(CLIP_APP, 'ios'),
     scheme: 'clipadvanced',
     configuration: 'Debug',
-    destination: SIMULATOR_DESTINATION
+    destination: SIMULATOR_DESTINATION,
   };
 
-  tests.tests.push(
-    await buildRunner.testBuildSucceeds(clipConfig)
-  );
+  tests.tests.push(await buildRunner.testBuildSucceeds(clipConfig));
 
   tests.tests.push(
     await runner.runTest('Build performance within limits', async () => {
@@ -102,4 +96,3 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 
 export { runCompilationTests };
-

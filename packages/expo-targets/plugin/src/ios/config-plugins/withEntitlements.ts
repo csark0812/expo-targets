@@ -1,10 +1,10 @@
-import { ConfigPlugin, withDangerousMod } from '@expo/config-plugins';
-import path from 'path';
+import path from 'node:path';
+import { type ConfigPlugin, withDangerousMod } from '@expo/config-plugins';
 
 import type { ExtensionType } from '../../config';
-import { Logger } from '../../logger';
+import type { Logger } from '../../logger';
 import { TYPE_CHARACTERISTICS } from '../target';
-import { Plist, Paths } from '../utils';
+import { Paths, Plist } from '../utils/index';
 
 export const withTargetEntitlements: ConfigPlugin<{
   targetName: string;
@@ -16,6 +16,7 @@ export const withTargetEntitlements: ConfigPlugin<{
 }> = (config, props) => {
   return withDangerousMod(config, [
     'ios',
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
     async (config) => {
       const typeConfig = TYPE_CHARACTERISTICS[props.type];
 
@@ -31,10 +32,13 @@ export const withTargetEntitlements: ConfigPlugin<{
 
       // Add App Clip specific entitlements
       if (props.type === 'clip') {
-        entitlements = Plist.mergeAppClipEntitlements(
-          entitlements,
-          config.ios!.bundleIdentifier!
-        );
+        const bundleIdentifier = config.ios?.bundleIdentifier;
+        if (bundleIdentifier) {
+          entitlements = Plist.mergeAppClipEntitlements(
+            entitlements,
+            bundleIdentifier
+          );
+        }
       }
 
       // Add Wallet extension specific entitlements

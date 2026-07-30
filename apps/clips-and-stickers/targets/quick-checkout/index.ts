@@ -1,5 +1,4 @@
-import { createTarget } from 'expo-targets';
-import { AppGroupStorage } from 'expo-targets';
+import { AppGroupStorage, createTarget } from 'expo-targets';
 
 const storage = new AppGroupStorage('group.com.test.clipsandstickers');
 

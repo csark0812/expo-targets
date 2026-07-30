@@ -1,21 +1,21 @@
-import React from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  ScrollView,
-  ActivityIndicator,
-} from 'react-native';
-import {
-  createTarget,
-  useBrowserTab,
-  useBrowserStorage,
   closePopup,
   copyToClipboard,
+  createTarget,
   openTab,
   type SafariExtensionTarget,
+  useBrowserStorage,
+  useBrowserTab,
 } from 'expo-targets';
+import React from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
 interface Props {
   target: SafariExtensionTarget;

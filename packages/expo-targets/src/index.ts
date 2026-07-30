@@ -1,69 +1,65 @@
 // Target API
-export { createTarget } from './Target';
+
+// Config types
 export type {
-  Target,
-  ExtensionTarget,
-  MessagesExtensionTarget,
-  NonExtensionTarget,
-  SafariExtensionTarget,
-  BaseTarget,
-} from './Target';
-
-// Storage module
-export {
-  AppGroupStorage,
-  refreshAllTargets,
-  clearSharedData,
-} from './modules/storage';
-
+  AndroidTargetConfig,
+  Color,
+  ExtensionType,
+  IOSTargetConfig,
+  ReactNativeCompatibleType,
+  TargetConfig,
+} from '../plugin/src/config';
+export type { SharedData } from './modules/extension/index';
 // Extension module
 export {
-  Extension,
   close,
-  openHostApp,
+  Extension,
   getSharedData,
-} from './modules/extension';
-export type { SharedData } from './modules/extension';
-
+  openHostApp,
+} from './modules/extension/index';
+export type {
+  ConversationInfo,
+  MessageLayout,
+  PresentationStyle,
+  SelectedMessage,
+} from './modules/messages/index';
 // Messages module
 export {
+  addEventListener as addMessagesEventListener,
+  createSession,
+  getConversationInfo,
   getPresentationStyle,
   requestPresentationStyle,
   sendMessage,
   sendUpdate,
-  createSession,
-  getConversationInfo,
-  addEventListener as addMessagesEventListener,
-} from './modules/messages';
-export type {
-  PresentationStyle,
-  MessageLayout,
-  ConversationInfo,
-  SelectedMessage,
-} from './modules/messages';
-
+} from './modules/messages/index';
+export type { BrowserTab } from './modules/safari/index';
 // Safari module
 export {
-  isSafariExtension,
-  getBrowserAPI,
-  useBrowserTab,
-  useBrowserStorage,
-  useLocalBrowserStorage,
-  useSendToContentScript,
-  useSendToNative,
-  useMessageListener,
-  openTab,
   closePopup,
   copyToClipboard,
-} from './modules/safari';
-export type { BrowserTab } from './modules/safari';
-
-// Config types
+  getBrowserAPI,
+  isSafariExtension,
+  openTab,
+  useBrowserStorage,
+  useBrowserTab,
+  useLocalBrowserStorage,
+  useMessageListener,
+  useSendToContentScript,
+  useSendToNative,
+} from './modules/safari/index';
+// Storage module
+export {
+  AppGroupStorage,
+  clearSharedData,
+  refreshAllTargets,
+} from './modules/storage/index';
 export type {
-  TargetConfig,
-  IOSTargetConfig,
-  AndroidTargetConfig,
-  ExtensionType,
-  ReactNativeCompatibleType,
-  Color,
-} from '../plugin/src/config';
+  BaseTarget,
+  ExtensionTarget,
+  MessagesExtensionTarget,
+  NonExtensionTarget,
+  SafariExtensionTarget,
+  Target,
+} from './Target';
+export { createTarget } from './Target';

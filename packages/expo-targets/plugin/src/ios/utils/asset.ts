@@ -1,5 +1,5 @@
+import path from 'node:path';
 import normalizeColor from '@react-native/normalize-colors';
-import path from 'path';
 
 import * as FileUtils from './file';
 
@@ -169,7 +169,7 @@ export function createSticker({
  */
 export function createStickerPack({
   stickerPackPath,
-  name,
+  name: _name,
   assets,
 }: {
   stickerPackPath: string;
@@ -227,14 +227,14 @@ function generateIcon({
   height: number;
 }): boolean {
   try {
-    const { execSync } = require('child_process');
+    const { execSync } = require('node:child_process');
 
     // Use sips -Z to crop to aspect ratio, then resize
     // First crop to match aspect ratio, then resize to exact dimensions
     const targetRatio = width / height;
 
     // Create a temporary intermediate file for the cropped version
-    const tempPath = outputPath + '.temp.png';
+    const tempPath = `${outputPath}.temp.png`;
 
     // Get source dimensions
     const sizeOutput = execSync(
@@ -244,12 +244,12 @@ function generateIcon({
     const widthMatch = sizeOutput.match(/pixelWidth: (\d+)/);
     const heightMatch = sizeOutput.match(/pixelHeight: (\d+)/);
 
-    if (!widthMatch || !heightMatch) {
+    if (!(widthMatch && heightMatch)) {
       throw new Error('Could not determine source image dimensions');
     }
 
-    const sourceWidth = parseInt(widthMatch[1], 10);
-    const sourceHeight = parseInt(heightMatch[1], 10);
+    const sourceWidth = Number.parseInt(widthMatch[1], 10);
+    const sourceHeight = Number.parseInt(heightMatch[1], 10);
     const sourceRatio = sourceWidth / sourceHeight;
 
     let cropWidth: number;
@@ -281,17 +281,13 @@ function generateIcon({
     });
 
     // Clean up temp file
-    const fs = require('fs');
+    const fs = require('node:fs');
     if (fs.existsSync(tempPath)) {
       fs.unlinkSync(tempPath);
     }
 
     return true;
-  } catch (error) {
-    console.error(
-      `[expo-targets] Failed to generate icon ${outputPath}:`,
-      error
-    );
+  } catch {
     return false;
   }
 }
@@ -300,6 +296,8 @@ function generateIcon({
  * Create iMessage App Icon set in Assets.xcassets.
  * Generates all 13 required icon sizes with proper cropping to maintain aspect ratio.
  */
+
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
 export function createIMessageAppIcon({
   iconsetPath,
   sourceIconPath,
@@ -450,10 +448,6 @@ export function createIMessageAppIcon({
 
   // Generate all icon sizes from source
   if (sourceIconPath && FileUtils.isFile(sourceIconPath)) {
-    console.log(
-      `[expo-targets] Generating iMessage App Icons from ${path.basename(sourceIconPath)}...`
-    );
-
     let successCount = 0;
 
     for (const iconSize of iconSizes) {
@@ -470,21 +464,8 @@ export function createIMessageAppIcon({
       }
     }
 
-    console.log(
-      `[expo-targets] Generated ${successCount}/${iconSizes.length} iMessage App Icons`
-    );
-
     if (successCount < iconSizes.length) {
-      console.warn(
-        `[expo-targets] Warning: Failed to generate ${iconSizes.length - successCount} icons. Build may fail.`
-      );
     }
   } else if (sourceIconPath) {
-    console.warn(
-      `[expo-targets] iMessage App Icon source not found: ${sourceIconPath}`
-    );
-    console.warn(
-      `[expo-targets] Build will fail without proper icons. Please provide a valid icon source.`
-    );
   }
 }

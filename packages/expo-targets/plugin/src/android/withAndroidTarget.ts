@@ -1,7 +1,6 @@
-import { ConfigPlugin } from '@expo/config-plugins';
-
-import { withAndroidWidget } from './withAndroidWidget';
+import type { ConfigPlugin } from '@expo/config-plugins';
 import type { TargetConfig } from '../config';
+import { withAndroidWidget } from './withAndroidWidget';
 
 /**
  * Main orchestrator for Android target configuration.
@@ -18,9 +17,6 @@ export const withAndroidTarget: ConfigPlugin<
     case 'widget':
       return withAndroidWidget(config, targetConfig);
     default:
-      console.warn(
-        `[expo-targets] Android support for ${targetConfig.type} coming later`
-      );
       return config;
   }
 };

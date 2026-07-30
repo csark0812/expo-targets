@@ -4,9 +4,9 @@ import chalk from 'chalk';
 let hasLoggedTargetCount = false;
 
 export class Logger {
-  private debug: boolean;
+  private readonly debug: boolean;
 
-  constructor(debug: boolean = false) {
+  constructor(debug = false) {
     this.debug = debug;
     // Reset flag when debug is enabled to allow full logging
     if (debug) {
@@ -14,9 +14,8 @@ export class Logger {
     }
   }
 
-  log(message: string): void {
+  log(_message: string): void {
     if (this.debug) {
-      console.log(`[expo-targets] ${message}`);
     }
   }
 
@@ -33,28 +32,22 @@ export class Logger {
       hasLoggedTargetCount = true;
     }
 
-    if (!this.debug) {
-      // Match Expo's style: green checkmark + message + dimmed detail
-      const symbol = success ? chalk.green('✔') : '✖';
-      const detailStr = detail ? chalk.dim(` | ${detail}`) : '';
-      console.log(`${symbol} ${message}${detailStr}`);
-    } else {
-      console.log(`[expo-targets] ${message}${detail ? ` - ${detail}` : ''}`);
-    }
-  }
-
-  warn(message: string): void {
     if (this.debug) {
-      console.warn(`[expo-targets] ${message}`);
     } else {
-      const symbol = '⚠';
-      console.warn(`${symbol} ${message}`);
+      // Match Expo's style: green checkmark + message + dimmed detail
+      const _symbol = success ? chalk.green('✔') : '✖';
+      const _detailStr = detail ? chalk.dim(` | ${detail}`) : '';
     }
   }
 
-  error(message: string): void {
-    console.error(`[expo-targets] ${message}`);
+  warn(_message: string): void {
+    if (this.debug) {
+    } else {
+      const _symbol = '⚠';
+    }
   }
+
+  error(_message: string): void {}
 }
 
 // Reset flag for testing / new processes

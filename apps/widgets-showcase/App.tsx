@@ -1,35 +1,37 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  StyleSheet,
-  Text,
-  View,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Switch,
   Alert,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { updateMessage, getMessage } from './targets/hello-widget';
 import {
-  updateCounter,
-  incrementCounter,
   decrementCounter,
-  resetCounter,
   getCounter,
-} from './targets/counter-widget';
+  incrementCounter,
+  resetCounter,
+  updateCounter,
+} from './targets/counter-widget/index';
+import { getMessage, updateMessage } from './targets/hello-widget/index';
 import {
-  weatherWidget,
-  updateWeather,
-  getWeatherData,
-  type WeatherData,
-} from './targets/weather-widget';
-import {
-  updateWidget,
   getWidgetData,
   type SimpleRemoteviewsData,
-} from './targets/simple-remoteviews';
+  updateWidget,
+} from './targets/simple-remoteviews/index';
+import {
+  getWeatherData,
+  updateWeather,
+  type WeatherData,
+  weatherWidget,
+} from './targets/weather-widget/index';
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
 export default function App() {
   const [selectedWidget, setSelectedWidget] = useState<
     'hello' | 'counter' | 'weather' | 'simple-remoteviews'
@@ -60,20 +62,11 @@ export default function App() {
       message: 'This is a RemoteViews widget',
     });
 
-  useEffect(() => {
-    loadAllWidgetData();
-  }, []);
-
-  useEffect(() => {
-    if (autoUpdate && selectedWidget === 'weather') {
-      const interval = setInterval(simulateWeatherUpdate, 30000);
-      return () => clearInterval(interval);
-    }
-  }, [autoUpdate, selectedWidget]);
-
   const loadAllWidgetData = () => {
     const msg = getMessage();
-    if (msg) setHelloMessage(msg);
+    if (msg) {
+      setHelloMessage(msg);
+    }
 
     const counterData = getCounter();
     if (counterData) {
@@ -114,6 +107,17 @@ export default function App() {
     weatherWidget.refresh();
   };
 
+  useEffect(() => {
+    loadAllWidgetData();
+  }, [loadAllWidgetData]);
+
+  useEffect(() => {
+    if (autoUpdate && selectedWidget === 'weather') {
+      const interval = setInterval(simulateWeatherUpdate, 30_000);
+      return () => clearInterval(interval);
+    }
+  }, [autoUpdate, selectedWidget, simulateWeatherUpdate]);
+
   const handleHelloUpdate = () => {
     if (!helloMessage.trim()) {
       Alert.alert('Error', 'Please enter a message');
@@ -126,13 +130,17 @@ export default function App() {
   const handleCounterIncrement = () => {
     incrementCounter();
     const data = getCounter();
-    if (data) setCounter(data.count || 0);
+    if (data) {
+      setCounter(data.count || 0);
+    }
   };
 
   const handleCounterDecrement = () => {
     decrementCounter();
     const data = getCounter();
-    if (data) setCounter(data.count || 0);
+    if (data) {
+      setCounter(data.count || 0);
+    }
   };
 
   const handleCounterUpdate = () => {
@@ -155,8 +163,10 @@ export default function App() {
 
   const handleSimpleRemoteviewsUpdate = () => {
     if (
-      !simpleRemoteviewsData.title.trim() ||
-      !simpleRemoteviewsData.message.trim()
+      !(
+        simpleRemoteviewsData.title.trim() &&
+        simpleRemoteviewsData.message.trim()
+      )
     ) {
       Alert.alert('Error', 'Please enter both title and message');
       return;
@@ -469,7 +479,7 @@ export default function App() {
                     message: text,
                   })
                 }
-                multiline
+                multiline={true}
                 numberOfLines={3}
               />
             </View>

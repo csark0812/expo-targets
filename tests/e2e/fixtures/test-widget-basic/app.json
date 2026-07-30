@@ -18,9 +18,6 @@
         "com.apple.security.application-groups": ["group.com.test.widget"]
       }
     },
-    "plugins": [
-      "expo-targets"
-    ]
+    "plugins": ["expo-targets"]
   }
 }
-

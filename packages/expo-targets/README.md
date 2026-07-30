@@ -12,17 +12,17 @@ bun add expo-targets
 
 ```typescript
 // targets/hello-widget/index.ts
-import { defineTarget } from 'expo-targets';
+import { defineTarget } from "expo-targets";
 
 export const HelloWidget = defineTarget({
-  name: 'hello-widget',
-  appGroup: 'group.com.yourapp',
-  type: 'widget',
+  name: "hello-widget",
+  appGroup: "group.com.yourapp",
+  type: "widget",
   platforms: {
     ios: {
-      deploymentTarget: '14.0',
+      deploymentTarget: "14.0",
       colors: {
-        $accent: '#007AFF',
+        $accent: "#007AFF",
       },
     },
   },
@@ -35,9 +35,9 @@ export type HelloWidgetData = {
 
 ```typescript
 // App.tsx
-import { HelloWidget } from './targets/hello-widget';
+import { HelloWidget } from "./targets/hello-widget";
 
-HelloWidget.set('message', 'Hello Widget!');
+HelloWidget.set("message", "Hello Widget!");
 HelloWidget.refresh();
 ```
 
@@ -55,7 +55,7 @@ import {
   refreshAllTargets,
   close,
   openHostApp,
-} from 'expo-targets';
+} from "expo-targets";
 ```
 
 **Exports:**
@@ -95,15 +95,15 @@ Expo config plugin for automatic Xcode project setup.
 Metro bundler wrapper for React Native extensions.
 
 ```typescript
-import { withTargetsMetro } from 'expo-targets/metro';
+import { withTargetsMetro } from "expo-targets/metro";
 ```
 
 **Usage:**
 
 ```javascript
 // metro.config.js
-const { getDefaultConfig } = require('expo/metro-config');
-const { withTargetsMetro } = require('expo-targets/metro');
+const { getDefaultConfig } = require("expo/metro-config");
+const { withTargetsMetro } = require("expo-targets/metro");
 
 module.exports = withTargetsMetro(getDefaultConfig(__dirname));
 ```
@@ -140,7 +140,7 @@ import {
   close,
   openHostApp,
   clearSharedData,
-} from 'expo-targets';
+} from "expo-targets";
 
 // Types
 import type {
@@ -151,13 +151,13 @@ import type {
   AndroidTargetConfig,
   ExtensionType,
   Color,
-} from 'expo-targets';
+} from "expo-targets";
 ```
 
 ### Metro Subpath
 
 ```typescript
-import { withTargetsMetro } from 'expo-targets/metro';
+import { withTargetsMetro } from "expo-targets/metro";
 ```
 
 ## Development
@@ -180,7 +180,9 @@ bun run clean        # Remove all build artifacts
 ### Lint
 
 ```bash
-bun run lint         # Lint source code
+bun run lint         # Lint with Biome
+bun run format       # Format with Biome
+bun run check        # Lint + format check
 ```
 
 ## Documentation

@@ -1,26 +1,32 @@
+import process from 'node:process';
 import * as path from 'path';
-import { TestRunner } from '../../framework/TestRunner.js';
 import { BuildTestRunner } from '../../framework/BuildTestRunner.js';
+import { TestRunner } from '../../framework/TestRunner.js';
 import type { TestSuite } from '../../framework/types.js';
 
 const CLIP_APP = path.resolve(__dirname, '../../../apps/clip-advanced');
-const BUNDLE_ID = 'com.expo.clipadvanced';
-const SIMULATOR = 'iPhone 15';
+const _BUNDLE_ID = 'com.expo.clipadvanced';
+const _SIMULATOR = 'iPhone 15';
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
 async function runAppClipTests() {
   const runner = new TestRunner();
   const buildRunner = new BuildTestRunner();
-  const runtimeTester = buildRunner.getRuntimeTester();
+  const _runtimeTester = buildRunner.getRuntimeTester();
 
   const tests: TestSuite = {
     name: 'App Clip Runtime Tests',
-    tests: []
+    tests: [],
   };
 
   tests.tests.push(
     await runner.runTest('App Clip target exists', async () => {
       const validator = buildRunner.getValidator();
-      const result = await validator.validateTarget(CLIP_APP, 'checkout', 'clip');
+      const result = await validator.validateTarget(
+        CLIP_APP,
+        'checkout',
+        'clip'
+      );
       if (!result.valid) {
         throw new Error(result.errors.join(', '));
       }
@@ -40,7 +46,11 @@ async function runAppClipTests() {
   tests.tests.push(
     await runner.runTest('App Clip Info.plist configured', async () => {
       const validator = buildRunner.getValidator();
-      const result = await validator.validateTarget(CLIP_APP, 'checkout', 'clip');
+      const result = await validator.validateTarget(
+        CLIP_APP,
+        'checkout',
+        'clip'
+      );
 
       if (!result.valid) {
         throw new Error('App Clip Info.plist validation failed');
@@ -61,9 +71,13 @@ async function runAppClipTests() {
   tests.tests.push(
     await runner.runTest('App Clip parent app association', async () => {
       const validator = buildRunner.getValidator();
-      const result = await validator.validateTarget(CLIP_APP, 'checkout', 'clip');
+      const result = await validator.validateTarget(
+        CLIP_APP,
+        'checkout',
+        'clip'
+      );
 
-      if (result.warnings.some(w => w.includes('parent'))) {
+      if (result.warnings.some((w) => w.includes('parent'))) {
         throw new Error('App Clip parent app association issue');
       }
     })
@@ -79,4 +93,3 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 
 export { runAppClipTests };
-

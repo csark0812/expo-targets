@@ -1,21 +1,13 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
-  StyleSheet,
-  Text,
-  View,
-  ScrollView,
-} from 'react-native';
-import { quickCheckoutClip, getLastCheckout, type CheckoutData } from './targets/quick-checkout';
+  type CheckoutData,
+  getLastCheckout,
+} from './targets/quick-checkout/index';
 
 export default function App() {
   const [checkout, setCheckout] = useState<CheckoutData | null>(null);
-
-  useEffect(() => {
-    loadCheckout();
-    const interval = setInterval(loadCheckout, 2000);
-    return () => clearInterval(interval);
-  }, []);
 
   const loadCheckout = () => {
     const data = getLastCheckout();
@@ -23,6 +15,12 @@ export default function App() {
       setCheckout(data);
     }
   };
+
+  useEffect(() => {
+    loadCheckout();
+    const interval = setInterval(loadCheckout, 2000);
+    return () => clearInterval(interval);
+  }, [loadCheckout]);
 
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp * 1000);
@@ -50,19 +48,18 @@ export default function App() {
           <View style={styles.infoBox}>
             <Text style={styles.infoTitle}>How to test:</Text>
             <Text style={styles.infoText}>
-              1. Build and run the app{'\n'}
-              2. Launch App Clip via URL:{'\n'}
-              • Safari: clipsandstickers://checkout{'\n'}
-              • Or use associated domain:{'\n'}
-              • https://clipsandstickers.example.com{'\n'}
-              3. Complete checkout in App Clip{'\n'}
-              4. See data in main app below
+              1. Build and run the app\n 2. Launch App Clip via URL:\n• Safari:
+              clipsandstickers://checkout\n• Or use associated domain:\n •
+              https://clipsandstickers.example.com\n 3. Complete checkout in App
+              Clip\n 4. See data in main app below
             </Text>
           </View>
 
           {checkout && (
             <View style={styles.checkoutCard}>
-              <Text style={styles.checkoutTitle}>Last Checkout from App Clip</Text>
+              <Text style={styles.checkoutTitle}>
+                Last Checkout from App Clip
+              </Text>
               <Text style={styles.checkoutItem}>{checkout.itemName}</Text>
               <Text style={styles.checkoutPrice}>{checkout.price}</Text>
               <Text style={styles.checkoutDate}>
@@ -83,11 +80,9 @@ export default function App() {
           <View style={styles.infoBox}>
             <Text style={styles.infoTitle}>How to test:</Text>
             <Text style={styles.infoText}>
-              1. Build and run the app{'\n'}
-              2. Open Messages app{'\n'}
-              3. Tap App Store icon in keyboard{'\n'}
-              4. Select "Fun Stickers"{'\n'}
-              5. Send stickers in conversations
+              1. Build and run the app\n 2. Open Messages app\n 3. Tap App Store
+              icon in keyboard\n 4. Select "Fun Stickers"\n 5. Send stickers in
+              conversations
             </Text>
           </View>
         </View>
@@ -212,4 +207,3 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
-

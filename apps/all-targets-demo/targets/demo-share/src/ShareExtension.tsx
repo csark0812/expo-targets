@@ -1,13 +1,12 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-} from 'react-native';
 import type { ExtensionTarget } from 'expo-targets';
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 interface SharedData {
   text?: string;
@@ -31,7 +30,7 @@ export default function ShareExtension({
   ...props
 }: ShareExtensionProps) {
   const handleSave = () => {
-    if (props.text || props.url || props.images?.length) {
+    if (props.text || props.url || props.images?.length > 0) {
       const existingData = target.getData<{ items: SharedItem[] }>() || {
         items: [],
       };
@@ -79,7 +78,10 @@ export default function ShareExtension({
         {props.images && props.images.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.label}>Images ({props.images.length})</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <ScrollView
+              horizontal={true}
+              showsHorizontalScrollIndicator={false}
+            >
               {props.images.map((imageUrl: string, index: number) => (
                 <View key={index} style={styles.imageContainer}>
                   <Image source={{ uri: imageUrl }} style={styles.image} />
@@ -102,14 +104,16 @@ export default function ShareExtension({
           </View>
         )}
 
-        {!props.text &&
-          !props.url &&
-          !props.images?.length &&
-          !props.files?.length && (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>No content shared</Text>
-            </View>
-          )}
+        {!(
+          props.text ||
+          props.url ||
+          props.images?.length > 0 ||
+          props.files?.length > 0
+        ) && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>No content shared</Text>
+          </View>
+        )}
       </ScrollView>
 
       <View style={styles.footer}>

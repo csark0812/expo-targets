@@ -1,10 +1,9 @@
 import { execa } from 'execa';
-import * as fs from 'fs/promises';
 import * as path from 'path';
-import type { TestResult, TestSuite, BuildConfig } from './types.js';
-import { XcodeHelper } from './XcodeHelper.js';
 import { PrebuildValidator } from './PrebuildValidator.js';
 import { RuntimeTester } from './RuntimeTester.js';
+import type { BuildConfig, TestResult } from './types.js';
+import { XcodeHelper } from './XcodeHelper.js';
 
 export class BuildTestRunner {
   private xcodeHelper: XcodeHelper;
@@ -17,21 +16,23 @@ export class BuildTestRunner {
     this.runtimeTester = new RuntimeTester();
   }
 
-  async runPrebuild(projectPath: string): Promise<{ success: boolean; output: string }> {
+  async runPrebuild(
+    projectPath: string
+  ): Promise<{ success: boolean; output: string }> {
     try {
       const result = await execa('npx', ['expo', 'prebuild', '--clean'], {
         cwd: projectPath,
-        reject: false
+        reject: false,
       });
 
       return {
         success: result.exitCode === 0,
-        output: result.stdout + result.stderr
+        output: result.stdout + result.stderr,
       };
     } catch (error) {
       return {
         success: false,
-        output: error instanceof Error ? error.message : String(error)
+        output: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -46,22 +47,25 @@ export class BuildTestRunner {
         throw new Error('Prebuild failed: ' + prebuildResult.output);
       }
 
-      const validation = await this.validator.validateProjectStructure(projectPath);
+      const validation =
+        await this.validator.validateProjectStructure(projectPath);
       if (!validation.valid) {
-        throw new Error('Invalid project structure: ' + validation.errors.join(', '));
+        throw new Error(
+          'Invalid project structure: ' + validation.errors.join(', ')
+        );
       }
 
       return {
         name: testName,
         passed: true,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       };
     } catch (error) {
       return {
         name: testName,
         passed: false,
         duration: Date.now() - startTime,
-        error: error as Error
+        error: error as Error,
       };
     }
   }
@@ -75,7 +79,11 @@ export class BuildTestRunner {
     const testName = `Target ${targetName} created correctly`;
 
     try {
-      const validation = await this.validator.validateTarget(projectPath, targetName, targetType);
+      const validation = await this.validator.validateTarget(
+        projectPath,
+        targetName,
+        targetType
+      );
       if (!validation.valid) {
         throw new Error(validation.errors.join(', '));
       }
@@ -83,7 +91,7 @@ export class BuildTestRunner {
       const iosPath = path.join(projectPath, 'ios');
       const project = await this.xcodeHelper.findProject(iosPath);
 
-      const hasTarget = project.targets.some(t =>
+      const hasTarget = project.targets.some((t) =>
         t.toLowerCase().includes(targetName.toLowerCase())
       );
 
@@ -95,14 +103,14 @@ export class BuildTestRunner {
         name: testName,
         passed: true,
         duration: Date.now() - startTime,
-        details: `Warnings: ${validation.warnings.join(', ') || 'none'}`
+        details: `Warnings: ${validation.warnings.join(', ') || 'none'}`,
       };
     } catch (error) {
       return {
         name: testName,
         passed: false,
         duration: Date.now() - startTime,
-        error: error as Error
+        error: error as Error,
       };
     }
   }
@@ -123,19 +131,22 @@ export class BuildTestRunner {
         name: testName,
         passed: true,
         duration: Date.now() - startTime,
-        details: `Build time: ${(buildResult.duration / 1000).toFixed(1)}s`
+        details: `Build time: ${(buildResult.duration / 1000).toFixed(1)}s`,
       };
     } catch (error) {
       return {
         name: testName,
         passed: false,
         duration: Date.now() - startTime,
-        error: error as Error
+        error: error as Error,
       };
     }
   }
 
-  async testEntitlementsSync(projectPath: string, targetName: string): Promise<TestResult> {
+  async testEntitlementsSync(
+    projectPath: string,
+    targetName: string
+  ): Promise<TestResult> {
     const startTime = Date.now();
     const testName = `App Groups synced for ${targetName}`;
 
@@ -145,7 +156,10 @@ export class BuildTestRunner {
         throw new Error(validation.errors.join(', '));
       }
 
-      const entitlements = await this.validator.validateEntitlements(projectPath, targetName);
+      const entitlements = await this.validator.validateEntitlements(
+        projectPath,
+        targetName
+      );
       if (!entitlements.valid) {
         throw new Error(entitlements.errors.join(', '));
       }
@@ -154,39 +168,46 @@ export class BuildTestRunner {
         name: testName,
         passed: true,
         duration: Date.now() - startTime,
-        details: entitlements.warnings.join(', ') || 'All checks passed'
+        details: entitlements.warnings.join(', ') || 'All checks passed',
       };
     } catch (error) {
       return {
         name: testName,
         passed: false,
         duration: Date.now() - startTime,
-        error: error as Error
+        error: error as Error,
       };
     }
   }
 
-  async testAssetsGenerated(projectPath: string, targetName: string): Promise<TestResult> {
+  async testAssetsGenerated(
+    projectPath: string,
+    targetName: string
+  ): Promise<TestResult> {
     const startTime = Date.now();
     const testName = `Assets generated for ${targetName}`;
 
     try {
-      const validation = await this.validator.validateAssets(projectPath, targetName);
+      const validation = await this.validator.validateAssets(
+        projectPath,
+        targetName
+      );
 
       return {
         name: testName,
         passed: true,
         duration: Date.now() - startTime,
-        details: validation.warnings.length > 0
-          ? `Warnings: ${validation.warnings.join(', ')}`
-          : 'All assets present'
+        details:
+          validation.warnings.length > 0
+            ? `Warnings: ${validation.warnings.join(', ')}`
+            : 'All assets present',
       };
     } catch (error) {
       return {
         name: testName,
         passed: false,
         duration: Date.now() - startTime,
-        error: error as Error
+        error: error as Error,
       };
     }
   }
@@ -203,4 +224,3 @@ export class BuildTestRunner {
     return this.runtimeTester;
   }
 }
-

@@ -1,7 +1,7 @@
 // @ts-expect-error - bun:test types
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import * as path from 'path';
+import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import * as fs from 'fs/promises';
+import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { BuildTestRunner } from '../framework/BuildTestRunner.js';
 import { MetroTester } from '../framework/MetroTester.js';

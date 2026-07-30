@@ -2,9 +2,7 @@
 // Demo Safari Native Extension - Background Script
 
 // Handle messages from popup or content scripts
-browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log('Background received message:', message);
-
+browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   // Handle native message relay
   if (message.type === 'native') {
     browser.runtime
@@ -25,8 +23,4 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // Log when extension is installed/updated
-browser.runtime.onInstalled.addListener((details) => {
-  console.log('Demo Safari Native extension installed:', details.reason);
-});
-
-console.log('Demo Safari Native background script loaded');
+browser.runtime.onInstalled.addListener((_details) => {});

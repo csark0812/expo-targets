@@ -1,3 +1,5 @@
+import process from 'node:process';
+
 module.exports = {
   expo: {
     name: 'all-targets-demo',

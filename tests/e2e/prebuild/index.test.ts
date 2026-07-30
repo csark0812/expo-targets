@@ -1,6 +1,7 @@
+import process from 'node:process';
 import * as path from 'path';
-import { TestRunner } from '../framework/TestRunner.js';
 import { BuildTestRunner } from '../framework/BuildTestRunner.js';
+import { TestRunner } from '../framework/TestRunner.js';
 import type { TestSuite } from '../framework/types.js';
 
 const WIDGET_APP = path.resolve(__dirname, '../../apps/widget-interactive');
@@ -12,12 +13,10 @@ async function runPrebuildTests() {
 
   const tests: TestSuite = {
     name: 'Prebuild Tests',
-    tests: []
+    tests: [],
   };
 
-  tests.tests.push(
-    await buildRunner.testPrebuildGeneratesProject(WIDGET_APP)
-  );
+  tests.tests.push(await buildRunner.testPrebuildGeneratesProject(WIDGET_APP));
 
   tests.tests.push(
     await buildRunner.testTargetCreation(WIDGET_APP, 'Weather', 'widget')
@@ -59,4 +58,3 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 
 export { runPrebuildTests };
-

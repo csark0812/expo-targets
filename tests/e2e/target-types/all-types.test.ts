@@ -1,5 +1,5 @@
 // @ts-expect-error - bun:test types
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { TargetTypeTester } from '../framework/TargetTypeTester.js';
 
 type ExtensionType =

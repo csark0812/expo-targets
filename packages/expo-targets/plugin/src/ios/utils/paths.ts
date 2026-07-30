@@ -1,4 +1,4 @@
-import path from 'path';
+import path from 'node:path';
 
 /**
  * Path utilities for working with target directories and files.
@@ -10,7 +10,7 @@ import path from 'path';
  * Appends "Target" suffix to avoid conflicts with main app name.
  */
 export function sanitizeTargetName(name: string): string {
-  return name.replace(/[^a-zA-Z0-9]/g, '') + 'Target';
+  return `${name.replace(/[^a-zA-Z0-9]/g, '')}Target`;
 }
 
 /**

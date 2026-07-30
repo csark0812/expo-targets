@@ -1,21 +1,21 @@
-import { ConfigPlugin } from '@expo/config-plugins';
-import * as fs from 'fs';
-import * as path from 'path';
-
-import { withEASCredentials } from './withEASCredentials';
-import { withTargetEntitlements } from './withEntitlements';
-import { withTargetPodfile } from './withPodfile';
-import { withXcodeChanges } from './withXcodeChanges';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import process from "node:process";
+import type { ConfigPlugin } from "@expo/config-plugins";
 import {
-  TYPE_BUNDLE_IDENTIFIER_SUFFIXES,
-  TYPE_MINIMUM_DEPLOYMENT_TARGETS,
   type ExtensionType,
   type IOSTargetConfigWithReactNative,
-} from '../../config';
-import { Logger } from '../../logger';
-import { Paths } from '../utils';
+  TYPE_BUNDLE_IDENTIFIER_SUFFIXES,
+  TYPE_MINIMUM_DEPLOYMENT_TARGETS,
+} from "../../config";
+import type { Logger } from "../../logger";
+import { Paths } from "../utils/index";
+import { withEASCredentials } from "./withEASCredentials";
+import { withTargetEntitlements } from "./withEntitlements";
+import { withTargetPodfile } from "./withPodfile";
+import { withXcodeChanges } from "./withXcodeChanges";
 
-interface IOSTargetProps extends IOSTargetConfigWithReactNative {
+interface IosTargetProps extends IOSTargetConfigWithReactNative {
   type: ExtensionType;
   name: string;
   displayName?: string;
@@ -32,34 +32,36 @@ interface IOSTargetProps extends IOSTargetConfigWithReactNative {
   buildSubdirectory?: string;
 }
 
-export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
+export const withIOSTarget: ConfigPlugin<IosTargetProps> = (config, props) => {
   const targetName = props.displayName || props.name;
   props.logger.log(`Configuring iOS target: ${targetName} (${props.type})`);
 
   // Validate React Native compatibility
   // Native RN types run actual React Native with native modules
-  const REACT_NATIVE_NATIVE_TYPES: ExtensionType[] = [
-    'share',
-    'action',
-    'clip',
-    'messages',
+  const ReactNativeNativeTypes: ExtensionType[] = [
+    "share",
+    "action",
+    "clip",
+    "messages",
   ];
 
   // Web-based RN types run React Native Web in a web view
-  const REACT_NATIVE_WEB_TYPES: ExtensionType[] = ['safari'];
+  const ReactNativeWebTypes: ExtensionType[] = ["safari"];
 
   // All types that support entry field
-  const REACT_NATIVE_COMPATIBLE_TYPES: ExtensionType[] = [
-    ...REACT_NATIVE_NATIVE_TYPES,
-    ...REACT_NATIVE_WEB_TYPES,
+  const ReactNativeCompatibleTypes: ExtensionType[] = [
+    ...ReactNativeNativeTypes,
+    ...ReactNativeWebTypes,
   ];
 
   // Validate entry field
   if (props.entry) {
-    if (!REACT_NATIVE_COMPATIBLE_TYPES.includes(props.type)) {
+    if (!ReactNativeCompatibleTypes.includes(props.type)) {
       throw new Error(
         `Target '${props.name}' (type: ${props.type}) does not support React Native. ` +
-          `'entry' can only be used with: ${REACT_NATIVE_COMPATIBLE_TYPES.join(', ')}`
+          `'entry' can only be used with: ${ReactNativeCompatibleTypes.join(", ")}`,
       );
     }
 
@@ -69,7 +71,7 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
     if (!fs.existsSync(entryPath)) {
       throw new Error(
         `Target '${props.name}': Entry file not found at ${props.entry}. ` +
-          `Resolved path: ${entryPath}`
+          `Resolved path: ${entryPath}`,
       );
     }
   }
@@ -78,7 +80,7 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
   if (props.excludedPackages && !props.entry) {
     props.logger.warn(
       `excludedPackages specified for ${props.name} but no 'entry' field provided. ` +
-        `excludedPackages will be ignored.`
+        "excludedPackages will be ignored.",
     );
   }
 
@@ -86,7 +88,7 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
   let appGroup = props.appGroup;
   if (!appGroup) {
     const mainAppGroups =
-      config.ios?.entitlements?.['com.apple.security.application-groups'];
+      config.ios?.entitlements?.["com.apple.security.application-groups"];
     if (Array.isArray(mainAppGroups) && mainAppGroups.length > 0) {
       appGroup = mainAppGroups[0];
       props.logger.log(`Inherited App Group: ${appGroup}`);
@@ -94,16 +96,16 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
   }
 
   // Validate App Group for types that require it
-  const REQUIRES_APP_GROUP: ExtensionType[] = [
-    'widget',
-    'clip',
-    'share',
-    'bg-download',
+  const RequiresAppGroup: ExtensionType[] = [
+    "widget",
+    "clip",
+    "share",
+    "bg-download",
   ];
-  if (REQUIRES_APP_GROUP.includes(props.type) && !appGroup) {
+  if (RequiresAppGroup.includes(props.type) && !appGroup) {
     throw new Error(
       `Target '${props.name}' (type: ${props.type}) requires an App Group. ` +
-        `Specify 'appGroup' in defineTarget() or add App Groups to main app entitlements in app.json`
+        `Specify 'appGroup' in defineTarget() or add App Groups to main app entitlements in app.json`,
     );
   }
 
@@ -116,31 +118,34 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
   let deploymentTarget = props.deploymentTarget;
 
   if (!deploymentTarget) {
-    if (mainAppTarget && parseFloat(mainAppTarget) > parseFloat(typeMinimum)) {
+    if (
+      mainAppTarget &&
+      Number.parseFloat(mainAppTarget) > Number.parseFloat(typeMinimum)
+    ) {
       deploymentTarget = mainAppTarget;
       props.logger.log(`Inherited deployment target: ${deploymentTarget}`);
     } else {
       deploymentTarget = typeMinimum;
       props.logger.log(
-        `Using type minimum deployment target: ${deploymentTarget}`
+        `Using type minimum deployment target: ${deploymentTarget}`,
       );
     }
   }
 
   // Native React Native extensions require ExpoModulesCore, which has minimum iOS 15.1
   // Web-based extensions (safari) don't require ExpoModulesCore
-  const EXPO_MODULES_MINIMUM = '15.1';
-  const isNativeRNExtension =
-    props.entry && REACT_NATIVE_NATIVE_TYPES.includes(props.type);
+  const ExpoModulesMinimum = "15.1";
+  const isNativeRnExtension =
+    props.entry && ReactNativeNativeTypes.includes(props.type);
   if (
-    isNativeRNExtension &&
-    parseFloat(deploymentTarget!) < parseFloat(EXPO_MODULES_MINIMUM)
+    isNativeRnExtension &&
+    Number.parseFloat(deploymentTarget!) < Number.parseFloat(ExpoModulesMinimum)
   ) {
     props.logger.log(
-      `React Native extension requires ExpoModulesCore (iOS ${EXPO_MODULES_MINIMUM}), ` +
-        `raising deployment target from ${deploymentTarget} to ${EXPO_MODULES_MINIMUM}`
+      `React Native extension requires ExpoModulesCore (iOS ${ExpoModulesMinimum}), ` +
+        `raising deployment target from ${deploymentTarget} to ${ExpoModulesMinimum}`,
     );
-    deploymentTarget = EXPO_MODULES_MINIMUM;
+    deploymentTarget = ExpoModulesMinimum;
   }
 
   // Inherit accent color
@@ -164,10 +169,10 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
   // Add Podfile target only for code-based targets (skip asset-only like stickers)
   // Extensions with React Native need full RN setup, others need standalone config
   // Safari with entry uses web rendering, so it's standalone (no RN deps)
-  const { TYPE_CHARACTERISTICS } = require('../target');
+  const { TYPE_CHARACTERISTICS } = require("../target");
   const typeConfig = TYPE_CHARACTERISTICS[props.type];
   const isWebBasedEntry =
-    !!props.entry && REACT_NATIVE_WEB_TYPES.includes(props.type);
+    Boolean(props.entry) && ReactNativeWebTypes.includes(props.type);
 
   if (typeConfig.requiresCode) {
     config = withTargetPodfile(config, {
@@ -182,7 +187,7 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
     });
   } else {
     props.logger.log(
-      `Skipping Podfile for asset-only target: ${targetProductName}`
+      `Skipping Podfile for asset-only target: ${targetProductName}`,
     );
   }
 
@@ -219,40 +224,40 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
 
     // Add App Groups if applicable (matching withTargetEntitlements logic)
     const mainAppGroups =
-      config.ios?.entitlements?.['com.apple.security.application-groups'];
+      config.ios?.entitlements?.["com.apple.security.application-groups"];
     if (Array.isArray(mainAppGroups) && mainAppGroups.length > 0) {
       // Types that should inherit app groups
       // This must include all types where shouldUseAppGroups() returns true in plist.ts
       // Additional types here are harmless (extra capabilities), but missing ones break builds
-      const APP_GROUP_TYPES: ExtensionType[] = [
-        'widget',
-        'clip',
-        'share',
-        'bg-download',
-        'messages',
+      const AppGroupTypes: ExtensionType[] = [
+        "widget",
+        "clip",
+        "share",
+        "bg-download",
+        "messages",
         // These don't require App Groups by default but are included for manual configs
-        'action',
-        'notification-service',
-        'notification-content',
-        'intent',
-        'intent-ui',
+        "action",
+        "notification-service",
+        "notification-content",
+        "intent",
+        "intent-ui",
       ];
-      if (APP_GROUP_TYPES.includes(props.type)) {
-        easEntitlements['com.apple.security.application-groups'] =
+      if (AppGroupTypes.includes(props.type)) {
+        easEntitlements["com.apple.security.application-groups"] =
           mainAppGroups;
       }
     }
 
     // Add App Clip specific entitlements
-    if (props.type === 'clip') {
-      easEntitlements['com.apple.developer.parent-application-identifiers'] = [
+    if (props.type === "clip") {
+      easEntitlements["com.apple.developer.parent-application-identifiers"] = [
         `$(AppIdentifierPrefix)${mainBundleId}`,
       ];
-      easEntitlements['com.apple.developer.on-demand-install-capable'] = true;
+      easEntitlements["com.apple.developer.on-demand-install-capable"] = true;
 
       // Copy associated domains if present
       const associatedDomains =
-        config.ios?.entitlements?.['com.apple.developer.associated-domains'];
+        config.ios?.entitlements?.["com.apple.developer.associated-domains"];
       if (Array.isArray(associatedDomains) && associatedDomains.length > 0) {
         // Transform applinks: to appclips: for App Clips
         const clipDomains = associatedDomains
@@ -262,7 +267,7 @@ export const withIOSTarget: ConfigPlugin<IOSTargetProps> = (config, props) => {
           })
           .filter(Boolean);
         if (clipDomains.length > 0) {
-          easEntitlements['com.apple.developer.associated-domains'] =
+          easEntitlements["com.apple.developer.associated-domains"] =
             clipDomains;
         }
       }

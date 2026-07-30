@@ -1,4 +1,4 @@
-module.exports = function (config) {
+module.exports = (config) => {
   const bundleId =
     config.ios?.bundleIdentifier || 'com.test.nativeextensionsshowcase';
 

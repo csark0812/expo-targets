@@ -6,12 +6,9 @@
     "ios": {
       "bundleIdentifier": "com.test.barerncli",
       "entitlements": {
-        "com.apple.security.application-groups": [
-          "group.com.test.barerncli"
-        ]
+        "com.apple.security.application-groups": ["group.com.test.barerncli"]
       }
     },
     "plugins": ["expo-targets"]
   }
 }
-

@@ -1,11 +1,11 @@
-import { ConfigPlugin } from '@expo/config-plugins';
+import type { ConfigPlugin } from '@expo/config-plugins';
 
 import { withAndroidAppBuildGradle } from './android/withAndroidAppBuildGradle';
 import { withTargetsDir } from './withTargetsDir';
 
+export type { ExpoConfig } from '@expo/config-types';
 // Export types for use in config files
 export type { TargetConfig, TargetConfigFunction } from './config';
-export type { ExpoConfig } from '@expo/config-types';
 
 const withExpoTargets: ConfigPlugin<{
   debug?: boolean;

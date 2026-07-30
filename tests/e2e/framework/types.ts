@@ -39,4 +39,3 @@ export interface RuntimeTestConfig {
   targetType: 'widget' | 'share' | 'clip';
   simulator: string;
 }
-

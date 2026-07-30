@@ -1,13 +1,15 @@
+import process from 'node:process';
 import * as path from 'path';
-import { TestRunner } from '../../framework/TestRunner.js';
 import { BuildTestRunner } from '../../framework/BuildTestRunner.js';
-import type { TestSuite, RuntimeTestConfig } from '../../framework/types.js';
+import { TestRunner } from '../../framework/TestRunner.js';
+import type { RuntimeTestConfig, TestSuite } from '../../framework/types.js';
 
 const WIDGET_APP = path.resolve(__dirname, '../../../apps/widget-interactive');
 const APP_GROUP = 'group.com.expo.widgetinteractive';
 const BUNDLE_ID = 'com.expo.widgetinteractive';
 const SIMULATOR = 'iPhone 15';
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
 async function runWidgetTests() {
   const runner = new TestRunner();
   const buildRunner = new BuildTestRunner();
@@ -141,7 +143,7 @@ async function runWidgetTests() {
         BUNDLE_ID,
         APP_GROUP
       );
-      if (!currentData || currentData.counter !== 2) {
+      if (currentData?.counter !== 2) {
         throw new Error('Widget did not refresh with new data');
       }
     })

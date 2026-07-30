@@ -12,6 +12,5 @@ export const updateWidget = (data: SimpleRemoteviewsData) => {
   simpleRemoteviewsWidget.refresh();
 };
 
-export const getWidgetData = (): SimpleRemoteviewsData | null => {
-  return simpleRemoteviewsWidget.getData<SimpleRemoteviewsData>();
-};
+export const getWidgetData = (): SimpleRemoteviewsData | null =>
+  simpleRemoteviewsWidget.getData<SimpleRemoteviewsData>();

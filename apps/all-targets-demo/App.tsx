@@ -1,29 +1,29 @@
+import * as Notifications from 'expo-notifications';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  Alert,
+  Image,
+  Platform,
+  ScrollView,
   StyleSheet,
   Text,
-  View,
-  ScrollView,
-  TouchableOpacity,
   TextInput,
-  Alert,
-  Platform,
-  Image,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import * as Notifications from 'expo-notifications';
+import { demoActionTarget } from './targets/demo-action/index.tsx';
+import type { ProcessedItem } from './targets/demo-action/src/ActionExtension.tsx';
+import { demoShareTarget } from './targets/demo-share/index.tsx';
+import type { SharedItem } from './targets/demo-share/src/ShareExtension.tsx';
 import {
   demoWidget,
-  updateWidget,
   setWidgetAuthStatus,
-  setWidgetWeather,
   setWidgetAvatar,
+  setWidgetWeather,
+  updateWidget,
   type WidgetData,
-} from './targets/demo-widget';
-import { demoShareTarget } from './targets/demo-share';
-import { demoActionTarget } from './targets/demo-action';
-import type { SharedItem } from './targets/demo-share/src/ShareExtension';
-import type { ProcessedItem } from './targets/demo-action/src/ActionExtension';
+} from './targets/demo-widget/index';
 
 // Configure notification handler
 Notifications.setNotificationHandler({
@@ -35,20 +35,16 @@ Notifications.setNotificationHandler({
   }),
 });
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
 export default function App() {
   const [widgetMessage, setWidgetMessage] = useState('');
   const [widgetLoggedIn, setWidgetLoggedIn] = useState(false);
   const [widgetUsername, setWidgetUsername] = useState('');
-  const [widgetAvatarURL, setWidgetAvatarURL] = useState('');
+  const [widgetAvatarUrl, setWidgetAvatarUrl] = useState('');
   const [widgetTemperature, setWidgetTemperature] = useState('72');
   const [sharedItems, setSharedItems] = useState<SharedItem[]>([]);
   const [processedItems, setProcessedItems] = useState<ProcessedItem[]>([]);
   const [notificationStatus, setNotificationStatus] = useState<string>('');
-
-  useEffect(() => {
-    loadData();
-    setupNotifications();
-  }, []);
 
   const setupNotifications = async () => {
     const { status: existingStatus } =
@@ -63,7 +59,6 @@ export default function App() {
     setNotificationStatus(finalStatus);
 
     if (finalStatus !== 'granted') {
-      console.log('Notification permissions not granted');
     }
 
     // Register notification categories for content extension
@@ -82,6 +77,41 @@ export default function App() {
       ]);
     }
   };
+
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
+  const loadData = () => {
+    const widgetData = demoWidget.getData<WidgetData>();
+    if (widgetData?.message) {
+      setWidgetMessage(widgetData.message);
+    }
+    if (widgetData?.isLoggedIn !== undefined) {
+      setWidgetLoggedIn(widgetData.isLoggedIn);
+    }
+    if (widgetData?.username) {
+      setWidgetUsername(widgetData.username);
+    }
+    if (widgetData?.avatarURL) {
+      setWidgetAvatarUrl(widgetData.avatarURL);
+    }
+    if (widgetData?.temperature !== undefined) {
+      setWidgetTemperature(String(widgetData.temperature));
+    }
+
+    const shareData = demoShareTarget.getData<{ items: SharedItem[] }>();
+    if (shareData?.items) {
+      setSharedItems(shareData.items);
+    }
+
+    const actionData = demoActionTarget.getData<{ items: ProcessedItem[] }>();
+    if (actionData?.items) {
+      setProcessedItems(actionData.items);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+    setupNotifications();
+  }, [setupNotifications, loadData]);
 
   // Test notification that triggers the Notification Service Extension
   const triggerServiceNotification = async () => {
@@ -155,35 +185,6 @@ export default function App() {
     );
   };
 
-  const loadData = () => {
-    const widgetData = demoWidget.getData<WidgetData>();
-    if (widgetData?.message) {
-      setWidgetMessage(widgetData.message);
-    }
-    if (widgetData?.isLoggedIn !== undefined) {
-      setWidgetLoggedIn(widgetData.isLoggedIn);
-    }
-    if (widgetData?.username) {
-      setWidgetUsername(widgetData.username);
-    }
-    if (widgetData?.avatarURL) {
-      setWidgetAvatarURL(widgetData.avatarURL);
-    }
-    if (widgetData?.temperature !== undefined) {
-      setWidgetTemperature(String(widgetData.temperature));
-    }
-
-    const shareData = demoShareTarget.getData<{ items: SharedItem[] }>();
-    if (shareData?.items) {
-      setSharedItems(shareData.items);
-    }
-
-    const actionData = demoActionTarget.getData<{ items: ProcessedItem[] }>();
-    if (actionData?.items) {
-      setProcessedItems(actionData.items);
-    }
-  };
-
   const clearSharedItems = () => {
     demoShareTarget.setData({ items: [] });
     setSharedItems([]);
@@ -214,7 +215,7 @@ export default function App() {
     setWidgetAuthStatus(
       newLoggedIn,
       newLoggedIn ? widgetUsername || 'Demo User' : undefined,
-      newLoggedIn ? widgetAvatarURL || undefined : undefined
+      newLoggedIn ? widgetAvatarUrl || undefined : undefined
     );
     if (!widgetUsername && newLoggedIn) {
       setWidgetUsername('Demo User');
@@ -226,22 +227,22 @@ export default function App() {
       setWidgetAuthStatus(
         true,
         widgetUsername.trim(),
-        widgetAvatarURL || undefined
+        widgetAvatarUrl || undefined
       );
       Alert.alert('Success', 'Username updated!');
     }
   };
 
   const handleAvatarUpdate = () => {
-    if (widgetAvatarURL.trim()) {
-      setWidgetAvatar(widgetAvatarURL.trim());
+    if (widgetAvatarUrl.trim()) {
+      setWidgetAvatar(widgetAvatarUrl.trim());
       Alert.alert('Success', 'Avatar URL updated! Widget will load the image.');
     }
   };
 
   const handleWeatherUpdate = () => {
-    const temp = parseInt(widgetTemperature, 10);
-    if (!isNaN(temp)) {
+    const temp = Number.parseInt(widgetTemperature, 10);
+    if (!Number.isNaN(temp)) {
       setWidgetWeather('cloud.sun.fill', temp);
       Alert.alert('Success', 'Weather updated!');
     }
@@ -368,8 +369,8 @@ export default function App() {
                   <TextInput
                     style={[styles.usernameInput, { flex: 1 }]}
                     placeholder="Avatar URL (https://...)"
-                    value={widgetAvatarURL}
-                    onChangeText={setWidgetAvatarURL}
+                    value={widgetAvatarUrl}
+                    onChangeText={setWidgetAvatarUrl}
                     autoCapitalize="none"
                     keyboardType="url"
                   />
@@ -410,12 +411,11 @@ export default function App() {
           <View style={styles.infoBox}>
             <Text style={styles.infoTitle}>How to test:</Text>
             <Text style={styles.infoText}>
-              1. Update message above{'\n'}
-              2. Toggle login status and set username{'\n'}
-              3. Set avatar URL (e.g. https://i.pravatar.cc/100){'\n'}
-              4. Update weather temperature{'\n'}
-              5. Long press home screen → tap + → Search "DemoWidget"{'\n'}
-              6. Widget shows avatar via SDWebImageSwiftUI async loading
+              1. Update message above\n 2. Toggle login status and set
+              username\n 3. Set avatar URL (e.g. https://i.pravatar.cc/100)\n 4.
+              Update weather temperature\n 5. Long press home screen → tap + →
+              Search "DemoWidget"\n 6. Widget shows avatar via SDWebImageSwiftUI
+              async loading
             </Text>
           </View>
         </View>
@@ -431,10 +431,8 @@ export default function App() {
           <View style={styles.infoBox}>
             <Text style={styles.infoTitle}>How to test:</Text>
             <Text style={styles.infoText}>
-              1. Open Safari or Photos{'\n'}
-              2. Tap the Share button{'\n'}
-              3. Select "DemoShare"{'\n'}
-              4. Tap "Save"
+              1. Open Safari or Photos\n 2. Tap the Share button\n 3. Select
+              "DemoShare"\n 4. Tap "Save"
             </Text>
           </View>
 
@@ -487,7 +485,7 @@ export default function App() {
                         Images ({item.content.images.length}):
                       </Text>
                       <ScrollView
-                        horizontal
+                        horizontal={true}
                         showsHorizontalScrollIndicator={false}
                       >
                         {item.content.images.map((imageUrl, index) => (
@@ -516,10 +514,8 @@ export default function App() {
           <View style={styles.infoBox}>
             <Text style={styles.infoTitle}>How to test:</Text>
             <Text style={styles.infoText}>
-              1. Open Photos app{'\n'}
-              2. Select an image{'\n'}
-              3. Tap Share → "DemoAction"{'\n'}
-              4. Choose a filter and tap "Process"
+              1. Open Photos app\n 2. Select an image\n 3. Tap Share →
+              "DemoAction"\n 4. Choose a filter and tap "Process"
             </Text>
           </View>
 
@@ -633,11 +629,10 @@ export default function App() {
           <View style={styles.infoBox}>
             <Text style={styles.infoTitle}>How to test:</Text>
             <Text style={styles.infoText}>
-              1. Tap a button above to schedule notification{'\n'}
-              2. Wait 2 seconds for notification{'\n'}
-              3. Service: Look for ✨ prefix in title{'\n'}
-              4. Content: Long press notification for custom UI{'\n'}
-              5. Check Xcode console for extension logs
+              1. Tap a button above to schedule notification\n 2. Wait 2 seconds
+              for notification\n 3. Service: Look for ✨ prefix in title\n 4.
+              Content: Long press notification for custom UI\n 5. Check Xcode
+              console for extension logs
             </Text>
           </View>
         </View>
@@ -805,13 +800,11 @@ export default function App() {
           <View style={styles.infoContent}>
             <Text style={styles.infoTitle}>Testing Siri Intents</Text>
             <Text style={styles.infoText}>
-              The DemoIntent extension handles workout intents. Try saying:
-              {'\n'}
-              {'\n'}• "Hey Siri, start a workout"{'\n'}• "Hey Siri, pause my
-              workout"{'\n'}• "Hey Siri, resume my workout"{'\n'}• "Hey Siri,
-              end my workout"{'\n'}
-              {'\n'}The intent extension will handle the request and can open
-              the main app with workout context.
+              The DemoIntent extension handles workout intents. Try saying: \n
+              \n• "Hey Siri, start a workout"\n• "Hey Siri, pause my workout"\n•
+              "Hey Siri, resume my workout"\n• "Hey Siri, end my workout"\n
+              \nThe intent extension will handle the request and can open the
+              main app with workout context.
             </Text>
           </View>
         </View>

@@ -1,5 +1,5 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 import type { ExtensionType } from '../../config';
 
@@ -18,6 +18,8 @@ function readTemplate(filename: string): string {
   return fs.readFileSync(templatePath, 'utf-8');
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
 function getExtensionDataForType(
   type: ExtensionType,
   preprocessingFile?: string
@@ -86,8 +88,7 @@ function getExtensionDataForType(
                 setupReactNativeView(with: sharedData)
             }
         }`,
-        propsMethod:
-          loadMethodLines.join('\n') + '\n\n' + propsMethodLines.join('\n'),
+        propsMethod: `${loadMethodLines.join('\n')}\n\n${propsMethodLines.join('\n')}`,
       };
     }
 
@@ -133,8 +134,7 @@ function getExtensionDataForType(
                 setupReactNativeView(with: actionData)
             }
         }`,
-        propsMethod:
-          loadMethodLines.join('\n') + '\n\n' + propsMethodLines.join('\n'),
+        propsMethod: `${loadMethodLines.join('\n')}\n\n${propsMethodLines.join('\n')}`,
       };
     }
 
@@ -174,8 +174,7 @@ function getExtensionDataForType(
         loadMethod: `loadClipContent()
         let clipData = getClipDataProps()
         setupReactNativeView(with: clipData)`,
-        propsMethod:
-          loadMethodLines.join('\n') + '\n\n' + propsMethodLines.join('\n'),
+        propsMethod: `${loadMethodLines.join('\n')}\n\n${propsMethodLines.join('\n')}`,
       };
     }
 
@@ -215,8 +214,7 @@ function getExtensionDataForType(
         loadMethod: `loadMessagesContent()
         let messagesData = getMessagesDataProps()
         setupReactNativeView(with: messagesData)`,
-        propsMethod:
-          loadMethodLines.join('\n') + '\n\n' + propsMethodLines.join('\n'),
+        propsMethod: `${loadMethodLines.join('\n')}\n\n${propsMethodLines.join('\n')}`,
       };
     }
 

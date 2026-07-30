@@ -9,6 +9,7 @@ export class TestRunner {
     this.suites.push(suite);
   }
 
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
   async runAll(): Promise<boolean> {
     console.log(chalk.bold.blue('\n🧪 Running Build Test Suite\n'));
 
@@ -30,7 +31,11 @@ export class TestRunner {
 
       for (const test of suite.tests) {
         if (test.passed) {
-          console.log(chalk.green(`  ✓ ${test.name} ${chalk.gray(`(${test.duration}ms)`)}`));
+          console.log(
+            chalk.green(
+              `  ✓ ${test.name} ${chalk.gray(`(${test.duration}ms)`)}`
+            )
+          );
           totalPassed++;
         } else {
           console.log(chalk.red(`  ✗ ${test.name}`));
@@ -75,14 +80,14 @@ export class TestRunner {
       return {
         name,
         passed: true,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       };
     } catch (error) {
       return {
         name,
         passed: false,
         duration: Date.now() - startTime,
-        error: error as Error
+        error: error as Error,
       };
     }
   }
@@ -92,14 +97,14 @@ export class TestRunner {
   }
 
   getSummary() {
-    const passed = this.results.filter(r => r.passed).length;
-    const failed = this.results.filter(r => !r.passed).length;
+    const passed = this.results.filter((r) => r.passed).length;
+    const failed = this.results.filter((r) => !r.passed).length;
     return {
       total: this.results.length,
       passed,
       failed,
-      passRate: this.results.length > 0 ? (passed / this.results.length) * 100 : 0
+      passRate:
+        this.results.length > 0 ? (passed / this.results.length) * 100 : 0,
     };
   }
 }
-

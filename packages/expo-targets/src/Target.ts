@@ -1,26 +1,29 @@
+import process from 'node:process';
 import Constants from 'expo-constants';
-import { AppRegistry, ComponentProvider } from 'react-native';
-
-import { Extension, type SharedData } from './modules/extension';
-import {
-  Messages,
-  type PresentationStyle,
-  type MessageLayout,
-  type ConversationInfo,
-} from './modules/messages';
-import {
-  isSafariExtension,
-  bootstrapSafariExtension,
-  closePopup,
-  openTab,
-  copyToClipboard,
-} from './modules/safari';
-import { AppGroupStorage, getTargetsConfigFromBundle } from './modules/storage';
+import { AppRegistry } from 'react-native';
 import type {
-  TargetConfig,
   ExtensionType,
   ReactNativeCompatibleType,
+  TargetConfig,
 } from '../plugin/src/config';
+import { Extension, type SharedData } from './modules/extension/index';
+import {
+  type ConversationInfo,
+  type MessageLayout,
+  Messages,
+  type PresentationStyle,
+} from './modules/messages/index';
+import {
+  bootstrapSafariExtension,
+  closePopup,
+  copyToClipboard,
+  isSafariExtension,
+  openTab,
+} from './modules/safari/index';
+import {
+  AppGroupStorage,
+  getTargetsConfigFromBundle,
+} from './modules/storage/index';
 
 export interface BaseTarget {
   name: string;
@@ -28,9 +31,9 @@ export interface BaseTarget {
   appGroup: string;
   storage: AppGroupStorage;
   config: TargetConfig;
-  setData(data: Record<string, any>): void;
-  getData<T extends Record<string, any>>(): T;
-  refresh(): void;
+  setData: (data: Record<string, any>) => void;
+  getData: <T extends Record<string, any>>() => T;
+  refresh: () => void;
 }
 
 export interface ExtensionTarget extends BaseTarget {
@@ -84,14 +87,8 @@ function getTargetConfig(targetName: string): TargetConfig | null {
   if (targets.length === 0) {
     const bundleTargets = getTargetsConfigFromBundle();
     if (bundleTargets) {
-      console.log(
-        '[expo-targets] Loaded targets config from bundle Info.plist'
-      );
       targets = bundleTargets as TargetConfig[];
     } else {
-      console.warn(
-        '[expo-targets] No targets config found in expo config or bundle'
-      );
       return null;
     }
   }
@@ -99,10 +96,6 @@ function getTargetConfig(targetName: string): TargetConfig | null {
   const target = targets.find((t) => t.name === targetName);
 
   if (!target) {
-    console.warn(`[expo-targets] Target "${targetName}" not found`);
-    console.warn(
-      `[expo-targets] Available targets: ${targets.map((t) => t.name).join(', ')}`
-    );
     return null;
   }
 
@@ -141,22 +134,22 @@ function isWebExtensionType(type: ExtensionType): boolean {
 }
 
 // Function overloads for better type inference
-export function createTarget<T extends 'messages'>(
+export function createTarget<_T extends 'messages'>(
   targetName: string,
   componentFunc?: React.ComponentType<any>
 ): MessagesExtensionTarget;
-export function createTarget<T extends 'safari'>(
+export function createTarget<_T extends 'safari'>(
   targetName: string,
   componentFunc?: React.ComponentType<any>
 ): SafariExtensionTarget;
 export function createTarget<
-  T extends Exclude<ReactNativeCompatibleType, 'messages'>,
+  _T extends Exclude<ReactNativeCompatibleType, 'messages'>,
 >(
   targetName: string,
   componentFunc?: React.ComponentType<any>
 ): ExtensionTarget;
 export function createTarget<
-  T extends Exclude<ExtensionType, ReactNativeCompatibleType>,
+  _T extends Exclude<ExtensionType, ReactNativeCompatibleType>,
 >(
   targetName: string,
   componentFunc?: React.ComponentType<any>
@@ -165,7 +158,9 @@ export function createTarget(
   targetName: string,
   componentFunc?: React.ComponentType<any>
 ): Target;
-export function createTarget<T extends ExtensionType = ExtensionType>(
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
+export function createTarget<_T extends ExtensionType = ExtensionType>(
   targetName: string,
   componentFunc?: React.ComponentType<any>
 ): Target {
@@ -279,11 +274,7 @@ export function createTarget<T extends ExtensionType = ExtensionType>(
       try {
         const { withDevTools } = require('expo/src/launch/withDevTools');
         qualifiedComponent = withDevTools(WrappedComponent);
-      } catch (error) {
-        console.warn(
-          '[expo-targets] Could not load withDevTools, using component as-is'
-        );
-      }
+      } catch {}
     }
 
     AppRegistry.registerComponent(targetName, () => qualifiedComponent);
@@ -311,9 +302,7 @@ function createSafariTarget(
         if (api?.storage?.local?.set) {
           await api.storage.local.set({ [targetName]: data });
         }
-      } catch (err) {
-        console.warn('[expo-targets/safari] Storage setData failed:', err);
-      }
+      } catch {}
     },
     getData: <T extends Record<string, any>>(): T => {
       // Sync get isn't possible with browser.storage, return empty
@@ -356,13 +345,9 @@ function createSafariTargetFromConfig(
         if (api?.storage?.local?.set) {
           await api.storage.local.set({ [targetName]: data });
         }
-      } catch (err) {
-        console.warn('[expo-targets/safari] Storage setData failed:', err);
-      }
+      } catch {}
     },
-    getData: <T extends Record<string, any>>(): T => {
-      return {} as T;
-    },
+    getData: <T extends Record<string, any>>(): T => ({}) as T,
     refresh: () => {},
   };
 

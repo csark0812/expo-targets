@@ -143,7 +143,7 @@ export const TYPE_BUNDLE_IDENTIFIER_SUFFIXES: Record<ExtensionType, string> = {
 };
 
 // Base configuration shared by all iOS targets
-interface BaseIOSTargetConfig {
+interface BaseIosTargetConfig {
   icon?: string;
   deploymentTarget?: string;
   bundleIdentifier?: string;
@@ -254,10 +254,10 @@ export type ReactNativeCompatibleType =
 export type NativeOnlyType = Exclude<ExtensionType, ReactNativeCompatibleType>;
 
 // Config for React Native compatible types
-export interface IOSTargetConfigWithReactNative extends BaseIOSTargetConfig {}
+export interface IOSTargetConfigWithReactNative extends BaseIosTargetConfig {}
 
 // Config for native-only types (no React Native options)
-export interface IOSTargetConfigNativeOnly extends BaseIOSTargetConfig {}
+export interface IOSTargetConfigNativeOnly extends BaseIosTargetConfig {}
 
 // Union type based on target type
 export type IOSTargetConfig =
@@ -289,13 +289,13 @@ export interface AndroidTargetConfig {
 }
 
 // Base config shared by all targets
-type BaseTargetConfig = {
+interface BaseTargetConfig {
   name: string;
   displayName?: string;
   appGroup?: string;
   platforms: string[];
   android?: AndroidTargetConfig;
-};
+}
 
 // Target config for React Native compatible types
 type TargetConfigReactNativeCompatible = BaseTargetConfig & {

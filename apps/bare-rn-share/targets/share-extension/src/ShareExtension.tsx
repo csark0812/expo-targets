@@ -1,12 +1,11 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native';
 import type { ExtensionTarget } from 'expo-targets';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 interface ShareExtensionProps {
   text?: string;
@@ -64,7 +63,7 @@ export default function ShareExtension({
           </View>
         )}
 
-        {!props.text && !props.url && !props.images?.length && (
+        {!(props.text || props.url || props.images?.length > 0) && (
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>No content shared</Text>
           </View>

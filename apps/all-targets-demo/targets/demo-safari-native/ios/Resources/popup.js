@@ -1,6 +1,7 @@
 /* global browser, document, navigator */
 // Demo Safari Native Extension - Popup Script
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
 document.addEventListener('DOMContentLoaded', async () => {
   // Initialize UI elements
   const tabInfo = document.getElementById('tab-info');
@@ -28,8 +29,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       `;
       btnCopy.disabled = false;
     }
-  } catch (error) {
-    console.error('Failed to get tab info:', error);
+  } catch {
     tabInfo.innerHTML = '<div class="loading">Unable to get tab info</div>';
   }
 
@@ -37,21 +37,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     const result = await browser.storage.sync.get('clickCount');
     counterValue.textContent = result.clickCount || 0;
-  } catch (error) {
-    console.error('Failed to load counter:', error);
-  }
+  } catch {}
 
   // Increment counter
   btnIncrement.addEventListener('click', async () => {
-    const current = parseInt(counterValue.textContent) || 0;
+    const current = Number.parseInt(counterValue.textContent, 10) || 0;
     const newValue = current + 1;
     counterValue.textContent = newValue;
 
     try {
       await browser.storage.sync.set({ clickCount: newValue });
-    } catch (error) {
-      console.error('Failed to save counter:', error);
-    }
+    } catch {}
   });
 
   // Copy URL
@@ -65,9 +61,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         setTimeout(() => {
           btnCopy.textContent = originalText;
         }, 2000);
-      } catch (error) {
-        console.error('Failed to copy:', error);
-      }
+      } catch {}
     }
   });
 

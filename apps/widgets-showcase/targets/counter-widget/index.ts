@@ -26,6 +26,5 @@ export const resetCounter = () => {
   updateCounter(0);
 };
 
-export const getCounter = (): CounterData | null => {
-  return counterWidget.getData<CounterData>();
-};
+export const getCounter = (): CounterData | null =>
+  counterWidget.getData<CounterData>();

@@ -7,8 +7,9 @@ export class APITester {
     this.runtimeTester = new RuntimeTester();
   }
 
+  // biome-ignore lint/complexity/useMaxParams: pre-existing complexity; tracked for refactor
   async testTargetStorage(
-    targetName: string,
+    _targetName: string,
     appGroup: string,
     simulatorUdid: string,
     bundleId: string
@@ -64,6 +65,7 @@ export class APITester {
     return terminated;
   }
 
+  // biome-ignore lint/complexity/useMaxParams: pre-existing complexity; tracked for refactor
   async testDataSharing(
     mainAppBundleId: string,
     extensionBundleId: string,
