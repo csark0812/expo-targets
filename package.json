@@ -1,6 +1,9 @@
 {
   "name": "expo-targets-monorepo",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "workspaces": [
     "packages/*",
     "apps/*"
@@ -9,9 +12,10 @@
     "build": "bun run --filter './packages/*' build",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test": "cd tests/e2e && bun test",
-    "test:prebuild": "cd tests/e2e && bun test prebuild",
-    "test:runtime": "cd tests/e2e && bun test runtime",
+    "typecheck": "tsc -p packages/expo-targets --noEmit && tsc -p packages/create-expo-target --noEmit && tsc -p packages/expo-targets-cli --noEmit",
+    "test": "bun install --frozen-lockfile --cwd tests/e2e && bun test --cwd tests/e2e",
+    "test:prebuild": "bun test --cwd tests/e2e prebuild",
+    "test:runtime": "bun test --cwd tests/e2e runtime",
     "android": "expo run:android",
     "ios": "expo run:ios"
   },
