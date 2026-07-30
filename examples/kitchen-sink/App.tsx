@@ -101,6 +101,13 @@ export default function App() {
       {sections.map((section) => (
         <View key={section.prefix} style={styles.section}>
           <Text style={styles.sectionTitle}>{section.prefix}</Text>
+          {/* Payload above actions so Maestro can assert it after scrolling to Seed */}
+          <Text
+            testID={`${section.prefix}-text-last-payload`}
+            style={styles.payload}
+          >
+            {payloads[section.prefix] ?? "none"}
+          </Text>
           <TouchableOpacity
             testID={`${section.prefix}-btn-seed-payload`}
             style={styles.button}
@@ -121,12 +128,6 @@ export default function App() {
           >
             <Text style={styles.buttonText}>Clear</Text>
           </TouchableOpacity>
-          <Text
-            testID={`${section.prefix}-text-last-payload`}
-            style={styles.payload}
-          >
-            {payloads[section.prefix] ?? "none"}
-          </Text>
         </View>
       ))}
     </ScrollView>
