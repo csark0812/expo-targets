@@ -1,0 +1,17 @@
+appId: com.expotargets.example.kitchensink
+name: kitchen-sink messages smoke
+tags:
+  - smoke
+  - kitchen-sink
+  - messages
+---
+- launchApp:
+    clearState: true
+- assertVisible:
+    id: screen-root
+- tapOn:
+    id: ks-messages-btn-seed-payload
+- assertVisible:
+    id: ks-messages-text-last-payload
+- tapOn:
+    id: ks-messages-btn-clear-payload

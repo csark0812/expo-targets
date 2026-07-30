@@ -1,0 +1,13 @@
+{
+  "type": "share",
+  "name": "KsShare",
+  "displayName": "KS Share",
+  "platforms": ["ios"],
+  "entry": "./targets/ks-share/index.tsx",
+  "appGroup": "group.com.expotargets.example.kitchensink",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.kitchensink.ks-share",
+    "displayName": "KS Share",
+    "activationRules": [{ "type": "text" }, { "type": "url" }]
+  }
+}

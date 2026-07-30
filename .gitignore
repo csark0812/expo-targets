@@ -30,15 +30,17 @@ Thumbs.db
 .expo/
 .expo-shared/
 
-# iOS - auto-generated app code (but keep package native code and target templates)
-examples/**/ios/
+# iOS - auto-generated Expo prebuild projects (keep targets/*/ios templates)
+examples/*/ios/
+examples/native/*/ios/
 *.xcworkspace
 *.xcuserdata
 Pods/
 Podfile.lock
 
-# Android - auto-generated app code (but keep package native code and target templates)
-examples/**/android/
+# Android - auto-generated Expo prebuild projects (keep targets/*/android templates)
+examples/*/android/
+examples/native/*/android/
 *.apk
 *.aab
 .gradle/
@@ -64,5 +66,5 @@ coverage/
 # Target generated resources (regenerated from expo-target.config.json)
 **/targets/*/android/res/
 
-.cursor/
+.cursor/*
 !.cursor/mcp.json

@@ -1,0 +1,17 @@
+appId: com.expotargets.example.kitchensink
+name: kitchen-sink clip smoke
+tags:
+  - smoke
+  - kitchen-sink
+  - clip
+---
+- launchApp:
+    clearState: true
+- assertVisible:
+    id: screen-root
+- tapOn:
+    id: ks-clip-btn-seed-payload
+- assertVisible:
+    id: ks-clip-text-last-payload
+- tapOn:
+    id: ks-clip-btn-clear-payload

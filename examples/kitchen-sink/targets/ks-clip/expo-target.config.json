@@ -1,0 +1,17 @@
+{
+  "type": "clip",
+  "name": "KsClip",
+  "displayName": "KS Clip",
+  "platforms": ["ios"],
+  "entry": "./targets/ks-clip/index.tsx",
+  "appGroup": "group.com.expotargets.example.kitchensink",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.kitchensink.ks-clip",
+    "displayName": "KS Clip",
+    "entitlements": {
+      "com.apple.developer.associated-domains": [
+        "appclips:kitchensink.example.expotargets.dev"
+      ]
+    }
+  }
+}

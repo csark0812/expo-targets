@@ -1,22 +1,62 @@
 # Examples
 
-Thin Expo SDK 54 hosts for exercising expo-targets. Packages land in the follow-up `feat/examples-maestro-suite` PR.
+Thin Expo SDK 54 hosts for exercising expo-targets. Each package is Maestro-ready with host-contract `testID`s.
 
-## Planned packages
+> **Agent constraint:** Humans boot the iOS Simulator and run `expo run:ios` (or Maestro) locally. Do not treat Maestro YAML as CI-proven without a built `.app` on a simulator.
 
-| Package | Target story |
-| --- | --- |
-| [`share`](./share) | React Native share extension |
-| [`action`](./action) | React Native action extension |
-| [`clip`](./clip) | React Native App Clip |
-| [`stickers`](./stickers) | Asset-only sticker pack |
-| [`widgets`](./widgets) | iOS WidgetKit only (soft-deprecated path → [`docs/widgets.md`](../docs/widgets.md)) |
-| [`messages`](./messages) | React Native messages extension |
-| [`kitchen-sink`](./kitchen-sink) | Six primary types in one host |
-| [`native/share`](./native/share) | Swift share target + RN host |
-| [`native/action`](./native/action) | Swift action target + RN host |
-| [`native/clip`](./native/clip) | SwiftUI App Clip + RN host |
+## Packages
 
-Host-contract Maestro YAML and runbooks ship with those packages. Do not treat this empty tree as runtime-proven until that PR lands.
+| Package | NPM name | Target story | Maestro |
+| --- | --- | --- | --- |
+| [`share`](./share) | `@expo-targets/example-share` | React Native share extension | `smoke.yaml` (automated host) |
+| [`action`](./action) | `@expo-targets/example-action` | React Native action extension | `smoke.yaml` (automated host) |
+| [`messages`](./messages) | `@expo-targets/example-messages` | React Native messages extension | `smoke.yaml` (automated host) |
+| [`clip`](./clip) | `@expo-targets/example-clip` | React Native App Clip + `expotargets-clip` scheme | `smoke.yaml` (host + `openLink`) |
+| [`stickers`](./stickers) | `@expo-targets/example-stickers` | Asset-only sticker pack (no `withTargetsMetro`) | `smoke.yaml` (automated host) |
+| [`widgets`](./widgets) | `@expo-targets/example-widgets` | iOS WidgetKit only — **soft-deprecated** → [`docs/widgets.md`](../docs/widgets.md) | `smoke.yaml` (automated host) |
+| [`kitchen-sink`](./kitchen-sink) | `@expo-targets/example-kitchen-sink` | Six targets, one App Group | `smoke-{share,action,clip,stickers,widgets,messages}.yaml` |
+| [`native/share`](./native/share) | `@expo-targets/example-native-share` | Swift share + RN host (`AppGroupStorage`) | `smoke.yaml` (automated host) |
+| [`native/action`](./native/action) | `@expo-targets/example-native-action` | Swift action + RN host | `smoke.yaml` (automated host) |
+| [`native/clip`](./native/clip) | `@expo-targets/example-native-clip` | SwiftUI App Clip + RN host (`expotargets-native-clip`) | `smoke.yaml` (host + `openLink`) |
 
-After cloning locally, remove any leftover multi-GB `apps/` folders from older checkouts (`rm -rf apps`).
+## Maestro prerequisites
+
+1. [Maestro CLI](https://maestro.mobile.dev/) installed (`maestro --version`)
+2. iOS Simulator booted with the example app installed (`cd examples/<pkg> && bun run ios`)
+3. Optional: [Maestro MCP](https://maestro.mobile.dev/) via `.cursor/mcp.json` for agent-driven flows
+
+Shared subflow: [`examples/.maestro/subflows/ios-open-security-dialog.yaml`](./.maestro/subflows/ios-open-security-dialog.yaml) — dismisses an “Open” security prompt when present.
+
+## Automated vs manual matrix
+
+| Flow | Automated (Maestro host smoke) | Manual (OS / extension UI) |
+| --- | --- | --- |
+| Host seed/clear payload | Yes — all packages | — |
+| Share extension save | — | Photos → Share sheet |
+| Action extension process | — | Photos → action sheet |
+| Messages extension send | — | Messages → Apps |
+| App Clip checkout | Partial — `openLink` only | Full clip UI in clip target |
+| Sticker pack | — | Messages → Stickers drawer |
+| Widget on Home Screen | — | Add widget, verify message |
+| Native Swift extensions | — | Share/action/clip native UI |
+
+## Widgets soft-deprecation
+
+New React/iOS widgets and Live Activities should use official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/). The [`widgets`](./widgets) and kitchen-sink `ks-widgets` examples remain for WidgetKit spine testing only. See [`docs/widgets.md`](../docs/widgets.md) and [`docs/deprecations.md`](../docs/deprecations.md).
+
+## Quick start
+
+```bash
+bun install
+cd examples/share
+bun run ios
+maestro test .maestro/smoke.yaml
+```
+
+From the repo root:
+
+```bash
+bun run examples:maestro:share
+```
+
+Do not commit generated `ios/` or `android/` folders from example prebuilds.

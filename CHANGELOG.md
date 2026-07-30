@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Automated Bun e2e / build-test harness under `tests/e2e`.
 - iOS XCTest suite under `packages/expo-targets/ios/Tests`.
-- Legacy `apps/*` example suite; replaced by `examples/*` in follow-up.
+- Legacy `apps/*` example suite (replaced by `examples/*`).
 
 ### Deprecated
 
@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Thin `examples/*` Maestro-ready suite (10 SDK 54 hosts: share, action, messages, clip, stickers, widgets, kitchen-sink, native/share, native/action, native/clip).
 - Skeleton docs SSOT (`@csark0812/skeleton`), `docs/widgets.md`, `docs/deprecations.md`.
 - Sharper RN extension runtime errors when `ExpoTargetsExtension` is missing; `getExtensionNativeModule()` helper.
 - `withTargetsMetro` entry validation/logging; `scanTargetsDirectory` export.

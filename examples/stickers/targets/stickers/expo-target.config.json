@@ -1,0 +1,19 @@
+{
+  "type": "stickers",
+  "name": "Stickers",
+  "displayName": "Fun Stickers",
+  "platforms": ["ios"],
+  "ios": {
+    "targetIcon": "./assets/icon-iphone-60x45@3x.png",
+    "stickerPacks": [
+      {
+        "name": "Fun Stickers",
+        "assets": [
+          "stickers/brutus.png",
+          "stickers/happy.png",
+          "stickers/excited.png"
+        ]
+      }
+    ]
+  }
+}
