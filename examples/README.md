@@ -65,10 +65,10 @@ Do not commit generated `ios/` or `android/` folders from example prebuilds.
 
 Host Maestro (PR B) is **not** full runtime proof. PR C adds:
 
-| Layer | Packages | Harness |
-| --- | --- | --- |
-| System Share Sheet | `share`, `action`, `native/share`, `native/action` | XCUITest under [`_harness/uitests/`](./_harness/uitests/) |
-| Clip real launch | `clip`, `native/clip` | Maestro [`clip/.maestro/launch.yaml`](./clip/.maestro/launch.yaml) / [`native/clip/.maestro/launch.yaml`](./native/clip/.maestro/launch.yaml) |
+| Layer              | Packages                                           | Harness                                                                                                                                       |
+| ------------------ | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| System Share Sheet | `share`, `action`, `native/share`, `native/action` | XCUITest under [`_harness/uitests/`](./_harness/uitests/)                                                                                     |
+| Clip real launch   | `clip`, `native/clip`                              | Maestro [`clip/.maestro/launch.yaml`](./clip/.maestro/launch.yaml) / [`native/clip/.maestro/launch.yaml`](./native/clip/.maestro/launch.yaml) |
 
 **Release builds required.** See [`_harness/uitests/README.md`](./_harness/uitests/README.md) for C1 attach-after-prebuild spike, C2 failure gates (re-grill, no silent downgrade), and path to later non-blocking macOS CI.
 
