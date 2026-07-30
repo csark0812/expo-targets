@@ -19,6 +19,10 @@ Thin Expo SDK 54 hosts for exercising expo-targets. Each package is Maestro-read
 | [`native/action`](./native/action) | `@expo-targets/example-native-action` | Swift action + RN host                                                             | `smoke.yaml` (automated host)                     |
 | [`native/clip`](./native/clip)     | `@expo-targets/example-native-clip`   | SwiftUI App Clip + RN host (`expotargets-native-clip`)                             | `smoke.yaml` (host + `openLink`)                  |
 
+## App icons
+
+Hosts share a target + extension-slot mark under [`_brand/`](./_brand) with per-package accent colors. Regenerate with `examples/_brand/render_icons.py` (see that folder’s README). Native AppIcon catalogs update on the next prebuild.
+
 ## Maestro prerequisites
 
 1. [Maestro CLI](https://maestro.mobile.dev/) installed (`maestro --version`)

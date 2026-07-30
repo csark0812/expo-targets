@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "example-clip",
+    "name": "ET Clip",
     "slug": "example-clip",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -24,6 +24,9 @@
         "com.apple.developer.associated-domains": [
           "appclips:clip.example.expotargets.dev"
         ]
+      },
+      "infoPlist": {
+        "CFBundleDisplayName": "ET Clip"
       }
     },
     "plugins": [

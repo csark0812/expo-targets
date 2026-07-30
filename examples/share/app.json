@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "example-share",
+    "name": "ET Share",
     "slug": "example-share",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -20,6 +20,9 @@
         "com.apple.security.application-groups": [
           "group.com.expotargets.example.share"
         ]
+      },
+      "infoPlist": {
+        "CFBundleDisplayName": "ET Share"
       }
     },
     "plugins": [

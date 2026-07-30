@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "example-widgets",
+    "name": "ET Widgets",
     "slug": "example-widgets",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -20,6 +20,9 @@
         "com.apple.security.application-groups": [
           "group.com.expotargets.example.widgets"
         ]
+      },
+      "infoPlist": {
+        "CFBundleDisplayName": "ET Widgets"
       }
     },
     "plugins": [

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "example-native-share",
+    "name": "ET N Share",
     "slug": "example-native-share",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -21,6 +21,9 @@
         "com.apple.security.application-groups": [
           "group.com.expotargets.example.native.share"
         ]
+      },
+      "infoPlist": {
+        "CFBundleDisplayName": "ET N Share"
       }
     },
     "plugins": [

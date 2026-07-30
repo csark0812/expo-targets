@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "example-action",
+    "name": "ET Action",
     "slug": "example-action",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -20,6 +20,9 @@
         "com.apple.security.application-groups": [
           "group.com.expotargets.example.action"
         ]
+      },
+      "infoPlist": {
+        "CFBundleDisplayName": "ET Action"
       }
     },
     "plugins": [
