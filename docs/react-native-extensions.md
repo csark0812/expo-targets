@@ -578,11 +578,12 @@ sub.remove(); // Cleanup
 
 See working examples in the repository:
 
-- **[extensions-showcase](../apps/extensions-showcase/)** — React Native share and action extensions
-- **[bare-rn-share](../apps/bare-rn-share/)** — Share extension in bare RN workflow
+- **[share](../examples/share/)** — React Native share extension
+- **[action](../examples/action/)** — React Native action extension
+- **[kitchen-sink](../examples/kitchen-sink/)** — Six primary types in one host
 
 ```bash
-cd apps/extensions-showcase
+cd examples/share
 npm install
 npx expo prebuild
 npx expo run:ios

@@ -8,7 +8,7 @@ scan:
     - "AGENTS.md"
   exclude:
     - "refs/**"
-    - "apps/**"
+    - "examples/**"
     - "packages/**/README.md"
     - "packages/**/__fixtures__/**"
     - "CHANGELOG.md"

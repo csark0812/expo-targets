@@ -129,20 +129,28 @@ expo-targets uses **App Groups** to share data between your app and extensions, 
 
 ## Examples
 
+Thin hosts live under [`examples/`](./examples/). Start with share once the suite lands:
+
 ```bash
 git clone https://github.com/csark0812/expo-targets.git
-cd expo-targets/apps/extensions-showcase
+cd expo-targets/examples/share
 npm install && npx expo run:ios
 ```
 
-| Example                                           | What it shows                         |
-| ------------------------------------------------- | ------------------------------------- |
-| [extensions-showcase](./apps/extensions-showcase) | React Native share/action extensions  |
-| [clips-and-stickers](./apps/clips-and-stickers)   | App Clips + iMessage stickers         |
-| [widgets-showcase](./apps/widgets-showcase)       | Native widgets (legacy / bridge path) |
-| [bare-rn-share](./apps/bare-rn-share)             | Share extension on bare RN            |
+| Example | What it shows |
+| --- | --- |
+| [share](./examples/share) | React Native share extension |
+| [action](./examples/action) | React Native action extension |
+| [clip](./examples/clip) | React Native App Clip |
+| [stickers](./examples/stickers) | Asset-only sticker pack |
+| [widgets](./examples/widgets) | iOS WidgetKit (soft-deprecated; prefer [`expo-widgets`](./docs/widgets.md)) |
+| [messages](./examples/messages) | React Native messages extension |
+| [kitchen-sink](./examples/kitchen-sink) | Six primary types in one host |
+| [native/share](./examples/native/share) | Swift share + RN host |
+| [native/action](./examples/native/action) | Swift action + RN host |
+| [native/clip](./examples/native/clip) | SwiftUI App Clip + RN host |
 
-See [apps/README.md](./apps/README.md) for the full list.
+See [examples/README.md](./examples/README.md) for Maestro vs manual coverage.
 
 ---
 

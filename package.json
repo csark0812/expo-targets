@@ -6,7 +6,8 @@
   },
   "workspaces": [
     "packages/*",
-    "apps/*"
+    "examples/*",
+    "examples/native/*"
   ],
   "scripts": {
     "build": "bun run --filter './packages/*' build",

@@ -31,14 +31,14 @@ Thumbs.db
 .expo-shared/
 
 # iOS - auto-generated app code (but keep package native code and target templates)
-apps/*/ios/
+examples/**/ios/
 *.xcworkspace
 *.xcuserdata
 Pods/
 Podfile.lock
 
 # Android - auto-generated app code (but keep package native code and target templates)
-apps/*/android/
+examples/**/android/
 *.apk
 *.aab
 .gradle/
@@ -65,3 +65,4 @@ coverage/
 **/targets/*/android/res/
 
 .cursor/
+!.cursor/mcp.json

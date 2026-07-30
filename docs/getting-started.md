@@ -173,7 +173,7 @@ Match App Group IDs in `app.json`, `expo-target.config.json`, and any native sui
 - **[Configuration](./configuration.md)** — All options and extension types
 - **[API Reference](./api.md)** — JavaScript/TypeScript API
 - **[Widgets handoff](./widgets.md)** — When to use `expo-widgets`
-- **[Examples](../apps/)** — Working apps (start with `extensions-showcase`)
+- **[Examples](../examples/)** — Thin hosts (start with [`examples/share`](../examples/share))
 
 ## Workflows: Managed vs Bare
 
@@ -192,4 +192,4 @@ cd ios && pod install
 npx react-native run-ios
 ```
 
-> See [bare-rn-share](../apps/bare-rn-share/) for a complete bare example.
+> Bare RN demos are out of the v1 `examples/` set; use `npx expo-targets sync` with the managed share example as the config reference.
