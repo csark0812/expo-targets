@@ -191,7 +191,9 @@ export function planBuildSettings({
     settings.ASSETCATALOG_COMPILER_APPICON_NAME = '"iMessage App Icon"';
   }
 
-  if (typeConfig.needsIsolatedSearchPaths) {
+  // SwiftUI App Clips isolate search paths from the host Pods tree. RN clips
+  // (`entry` set) need those Pods paths to `import React`.
+  if (typeConfig.needsIsolatedSearchPaths && !props.entry) {
     Object.assign(settings, planIsolatedSearchPathSettings());
   }
 

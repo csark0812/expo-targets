@@ -297,6 +297,23 @@ describe('planSwiftSources per type', () => {
     expect(plans[0].generate?.template).toBe('safariWebExtensionHandler');
   });
 
+  test('clip with React Native entry generates @main app plus view controller', () => {
+    const plans = swiftSourcesFor({
+      type: 'clip',
+      name: 'MyClip',
+      entry: './index.tsx',
+    });
+
+    expect(plans.map((plan) => plan.file)).toEqual([
+      'ReactNativeClipApp.swift',
+      'ReactNativeViewController.swift',
+    ]);
+    expect(plans.map((plan) => plan.generate?.template)).toEqual([
+      'reactNativeClipApp',
+      'reactNativeViewController',
+    ]);
+  });
+
   test('asset-only targets plan no Swift files', () => {
     const plans = swiftSourcesFor({ type: 'stickers', name: 'MyStickers' });
 

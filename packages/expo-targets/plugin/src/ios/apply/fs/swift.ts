@@ -9,6 +9,8 @@ function renderSwiftTemplate(plan: SwiftTemplatePlan): string {
   switch (plan.template) {
     case 'messagesViewController':
       return ReactNativeSwift.generateMessagesViewController();
+    case 'reactNativeClipApp':
+      return ReactNativeSwift.generateReactNativeClipApp();
     case 'safariWebExtensionHandler':
       return Safari.generateSafariSwiftHandler(plan.options.targetName);
     default:

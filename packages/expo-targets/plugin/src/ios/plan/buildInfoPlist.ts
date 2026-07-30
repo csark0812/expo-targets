@@ -42,14 +42,11 @@ const REACT_NATIVE_PRINCIPAL_CLASS =
   '$(PRODUCT_MODULE_NAME).ReactNativeViewController';
 
 /**
- * Types whose React Native entry is hosted by `ReactNativeViewController`.
- * Messages extensions are excluded: they MUST extend MSMessagesAppViewController.
+ * Types whose React Native entry is hosted by `ReactNativeViewController` as
+ * an NSExtension principal class. Messages is excluded (MSMessagesAppViewController).
+ * Clip is excluded: App Clips are applications and use `@main` + RN VC, not NSExtension.
  */
-const REACT_NATIVE_ENTRY_TYPES = new Set<ExtensionType>([
-  'share',
-  'action',
-  'clip',
-]);
+const REACT_NATIVE_ENTRY_TYPES = new Set<ExtensionType>(['share', 'action']);
 
 function isObject(item: any): boolean {
   return item && typeof item === 'object' && !Array.isArray(item);

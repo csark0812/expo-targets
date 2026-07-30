@@ -86,6 +86,15 @@ describe('getTargetInfoPlistForType (characterization)', () => {
       '$(PRODUCT_MODULE_NAME).ReactNativeViewController'
     );
   });
+
+  test('clip with React Native entry stays an application (no NSExtension)', () => {
+    const parsed = plist.parse(
+      getTargetInfoPlistForType('clip', { entry: './index.tsx' })
+    ) as any;
+
+    expect(parsed.NSExtension).toBeUndefined();
+    expect(parsed.NSAppClip).toBeDefined();
+  });
 });
 
 describe('buildShareExtensionActivationRules', () => {
