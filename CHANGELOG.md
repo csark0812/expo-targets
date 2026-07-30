@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - Automated Bun e2e / build-test harness under `tests/e2e`.
+- iOS XCTest suite under `packages/expo-targets/ios/Tests`.
 
 ### Deprecated
 
