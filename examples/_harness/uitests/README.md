@@ -4,21 +4,21 @@
 
 ## Failure gates (no silent downgrade)
 
-| Spike | Gate | On failure |
-| --- | --- | --- |
-| **C1** XCUITest attach-after-prebuild | UI tests survive `npx expo prebuild --platform ios` regenerate and still drive Share Sheet for share/action | **Stop and re-grill** before merging PR C. Do not fall back to in-process-only, Maestro-Share-Sheet, or clip-only. |
-| **C2** Maestro clip real launch | `openLink` / `simctl openurl` / `_XCAppClipURL` launches clip and host shows handoff | **Stop and re-grill** before merging PR C. |
+| Spike                                 | Gate                                                                                                                                                                                                                                           | On failure                                                                                                         |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **C1** XCUITest attach-after-prebuild | UI tests survive `npx expo prebuild --platform ios` regenerate and prove the system Share Sheet is **interactable** for share/action (open sheet, extension row hittable, dismiss). Appex launch/JS success is **out of scope** for this gate. | **Stop and re-grill** before merging PR C. Do not fall back to in-process-only, Maestro-Share-Sheet, or clip-only. |
+| **C2** Maestro clip real launch       | `openLink` / `simctl openurl` / `_XCAppClipURL` launches clip and host shows handoff                                                                                                                                                           | **Stop and re-grill** before merging PR C.                                                                         |
 
 ## Coverage target (after C1 spike green)
 
-| Package | Harness |
-| --- | --- |
-| `examples/share` | XCUITest Share Sheet |
-| `examples/action` | XCUITest Share Sheet |
-| `examples/native/share` | XCUITest Share Sheet |
-| `examples/native/action` | XCUITest Share Sheet |
-| `examples/clip` | Maestro `launch.yaml` |
-| `examples/native/clip` | Maestro `launch.yaml` |
+| Package                  | Harness               |
+| ------------------------ | --------------------- |
+| `examples/share`         | XCUITest Share Sheet  |
+| `examples/action`        | XCUITest Share Sheet  |
+| `examples/native/share`  | XCUITest Share Sheet  |
+| `examples/native/action` | XCUITest Share Sheet  |
+| `examples/clip`          | Maestro `launch.yaml` |
+| `examples/native/clip`   | Maestro `launch.yaml` |
 
 Kitchen-sink is **not** a second XCUITest matrix — use discrete packages for process proof.
 
@@ -43,11 +43,13 @@ npx expo prebuild --platform ios --clean
 npx expo run:ios --configuration Release
 ```
 
-2. Attach the UI test target (idempotent script):
+2. Attach the UI test target + host scheme Test action (idempotent):
 
 ```bash
 ./examples/_harness/uitests/scripts/attach-after-prebuild.sh examples/share
 ```
+
+The script copies `ShareSheetSmoke.swift`, adds `ExpoTargetsShareSheetUITests` if missing, and registers it as a **TestableReference** on the host `.xcscheme` (Expo’s template only ships unit tests). It also sets Release + `UITEST_*` on the Test action.
 
 3. Re-run prebuild **without** `--clean` and confirm the UI test target / sources still exist:
 
@@ -56,13 +58,18 @@ cd examples/share && npx expo prebuild --platform ios
 # then re-run attach script if needed; note whether sources were wiped
 ```
 
-4. Run tests from Xcode or:
+4. Run UI tests (host `btn-open-share-sheet` → system Share Sheet; Release required):
 
 ```bash
+UDID=0E7FA53F-23B3-4F10-BAE1-AED7515401B2   # pin in PR body
+xcrun simctl bootstatus "$UDID" -b
+
+cd examples/share
 xcodebuild test \
   -workspace ios/*.xcworkspace \
-  -scheme <HostScheme> \
-  -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.0' \
+  -scheme ETShare \
+  -configuration Release \
+  -destination "platform=iOS Simulator,id=$UDID" \
   -only-testing:ExpoTargetsShareSheetUITests
 ```
 
