@@ -151,8 +151,10 @@ const BASE_TYPE_CHARACTERISTICS: Record<
     requiresEntitlements: true,
     basePlist: {
       NSExtension: {
-        // NSExtensionMainStoryboard or NSExtensionPrincipalClass set conditionally
-        // NSExtensionActivationRule set from activationRules config
+        // Native Swift path (no `entry`). When `entry` is set, applyPrincipalClass
+        // replaces this with ReactNativeViewController.
+        NSExtensionPrincipalClass:
+          '$(PRODUCT_MODULE_NAME).ActionViewController',
       },
     },
     supportsActivationRules: true,

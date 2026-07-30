@@ -1,4 +1,3 @@
-import process from "node:process";
 import Constants from "expo-constants";
 import { AppRegistry } from "react-native";
 import type {
@@ -296,7 +295,8 @@ export function createTarget<_T extends ExtensionType = ExtensionType>(
 
     let qualifiedComponent = WrappedComponent;
 
-    if (process.env.NODE_ENV !== "production") {
+    // Avoid `node:process` so Metro/Release host bundles resolve in RN.
+    if (globalThis.process?.env?.NODE_ENV !== "production") {
       try {
         const { withDevTools } = require("expo/src/launch/withDevTools");
         qualifiedComponent = withDevTools(WrappedComponent);

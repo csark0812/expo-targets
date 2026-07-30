@@ -191,6 +191,10 @@ export function generateMessagesViewController(): string {
   return readTemplate('MessagesViewController.swift');
 }
 
+export function generateReactNativeClipApp(): string {
+  return readTemplate('ReactNativeClipApp.swift');
+}
+
 export function generateReactNativeViewController(
   options: ReactNativeViewControllerOptions
 ): string {

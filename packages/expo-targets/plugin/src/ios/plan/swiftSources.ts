@@ -12,6 +12,7 @@ import type {
 type UnresolvedSwiftFilePlan = Omit<SwiftFilePlan, 'referencePath'>;
 
 const REACT_NATIVE_VIEW_CONTROLLER = 'ReactNativeViewController.swift';
+const REACT_NATIVE_CLIP_APP = 'ReactNativeClipApp.swift';
 const MESSAGES_VIEW_CONTROLLER = 'MessagesViewController.swift';
 const SAFARI_HANDLER = 'SafariWebExtensionHandler.swift';
 
@@ -56,9 +57,14 @@ function resolveSwiftFileNames(
   if (props.entry && files.length === 0) {
     // Messages extensions need both MessagesViewController (which must extend
     // MSMessagesAppViewController) and the ReactNativeViewController child.
-    return props.type === 'messages'
-      ? [MESSAGES_VIEW_CONTROLLER, REACT_NATIVE_VIEW_CONTROLLER]
-      : [REACT_NATIVE_VIEW_CONTROLLER];
+    if (props.type === 'messages') {
+      return [MESSAGES_VIEW_CONTROLLER, REACT_NATIVE_VIEW_CONTROLLER];
+    }
+    // App Clips are applications: they need `@main` plus the RN host VC.
+    if (props.type === 'clip') {
+      return [REACT_NATIVE_CLIP_APP, REACT_NATIVE_VIEW_CONTROLLER];
+    }
+    return [REACT_NATIVE_VIEW_CONTROLLER];
   }
 
   return files;
@@ -161,6 +167,18 @@ function planSwiftFile({
       hasUserFile: workspace.hasUserMessagesViewController,
       workspace,
       template: { template: 'messagesViewController' },
+    });
+  }
+
+  if (props.entry && isNamed(file, REACT_NATIVE_CLIP_APP)) {
+    return planGeneratedFile({
+      file,
+      fileName: REACT_NATIVE_CLIP_APP,
+      hasUserFile: workspace.swiftFiles.some((f) =>
+        isNamed(f, REACT_NATIVE_CLIP_APP)
+      ),
+      workspace,
+      template: { template: 'reactNativeClipApp' },
     });
   }
 

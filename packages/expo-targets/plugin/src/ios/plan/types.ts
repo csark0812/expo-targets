@@ -62,6 +62,7 @@ export type SwiftTemplatePlan =
         entry?: string;
       };
     }
+  | { template: 'reactNativeClipApp' }
   | { template: 'messagesViewController' }
   | {
       template: 'safariWebExtensionHandler';
