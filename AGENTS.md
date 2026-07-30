@@ -25,7 +25,7 @@ bun run validate:changed
 
 ## Safe commands
 
-- `bun install`, `bun run lint`, `bun run typecheck`, `bun test`, Skeleton audits
+- `bun install`, `bun run lint`, `bun run typecheck`, Skeleton audits
 - Do **not** start/stop/restart dev servers (`bun run dev`, `expo start`, etc.)
 
 ## Packages

@@ -12,7 +12,6 @@ scan:
     - "packages/**/README.md"
     - "CHANGELOG.md"
     - "**/node_modules/**"
-    - "tests/**"
   banned: []
   retiredSkills: []
 

@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Product posture:** expo-targets leads with extensions Expo does not ship (share/action/clip/messages, etc.). Soft-deprecate native iOS widgets in favor of official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) for React/iOS widgets and Live Activities. See `docs/widgets.md` and `docs/deprecations.md`.
 - `create-expo-target`: Share/Action/Clip lead the menu; Widget demoted with an `expo-widgets` handoff confirm; React Native defaults to **Yes** for share/action/clip.
 - Docs governed by `@csark0812/skeleton` (registry + `AGENTS.md`).
+- Removed the Bun e2e suite (`tests/`) and CI/publish `bun run test` gates.
+
+### Removed
+
+- Automated Bun e2e / build-test harness under `tests/e2e`.
 
 ### Deprecated
 
@@ -21,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Skeleton docs SSOT (`@csark0812/skeleton`), `docs/widgets.md`, `docs/deprecations.md`.
 - Sharper RN extension runtime errors when `ExpoTargetsExtension` is missing; `getExtensionNativeModule()` helper.
-- `withTargetsMetro` entry validation/logging; `scanTargetsDirectory` export; Metro unit tests.
+- `withTargetsMetro` entry validation/logging; `scanTargetsDirectory` export.
 
 ## [0.2.0] - 2025-12-09
 
