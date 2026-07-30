@@ -228,6 +228,10 @@ describe('planSwiftSources', () => {
     expect(plans).toHaveLength(1);
     expect(plans[0].file).toBe('ReactNativeViewController.swift');
     expect(plans[0].generate?.template).toBe('reactNativeViewController');
+    expect(plans[0].generate).toMatchObject({
+      template: 'reactNativeViewController',
+      options: { moduleName: 'MyShare' },
+    });
     expect(plans[0].sourcePath).toContain(
       path.join('targets/my-share/ios/build', 'ReactNativeViewController.swift')
     );
@@ -514,6 +518,7 @@ describe('composeXcodeTargetPlan', () => {
     expect(plan.buildSettings.MARKETING_VERSION).toBe('1.2.3');
     expect(plan.infoPlist.contents).toContain('ReactNativeViewController');
     expect(plan.safari).toBeUndefined();
+    expect(plan.bundleReactNative).toEqual({ entryFile: 'index.tsx' });
   });
 
   test('plans Safari resources for safari targets with an entry', () => {
@@ -531,5 +536,6 @@ describe('composeXcodeTargetPlan', () => {
 
     expect(plan.safari?.useCustomResources).toBe(false);
     expect(plan.safari?.resourcesPath).toContain('build/Resources');
+    expect(plan.bundleReactNative).toBeUndefined();
   });
 });

@@ -8,6 +8,7 @@ import {
   removeBuildPhases,
 } from './buildPhases';
 import { applyBuildSettings, removeBuildSetting } from './buildSettings';
+import { ensureBundleReactNativePhase } from './bundleReactNative';
 import { configureAppClipEmbed, configureAppExtensionEmbed } from './embed';
 import { addExternalFileReference } from './fileRefs';
 import { addTargetToVirtualGroup, ensureExpoTargetsGroup } from './groups';
@@ -231,6 +232,15 @@ export function applyXcodeTargetPlan(
   });
 
   applyEmbed(project, plan, { target, mainTargetUuid: mainTarget.uuid });
+
+  if (plan.bundleReactNative) {
+    ensureBundleReactNativePhase({
+      project,
+      targetUuid: target.uuid,
+      plan: plan.bundleReactNative,
+      logger,
+    });
+  }
 
   logger.log(`Configured target ${plan.identity.targetProductName}`);
   return target;

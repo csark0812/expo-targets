@@ -148,6 +148,15 @@ export interface EmbedPlan {
   kind: 'foundation-extension' | 'app-clip' | 'none';
 }
 
+/**
+ * When set, the apply step adds a "Bundle React Native code and images" shell
+ * phase so Release embeds `main.jsbundle` into the appex/clip product.
+ * `entryFile` is project-root relative (no leading `./`).
+ */
+export interface BundleReactNativePlan {
+  entryFile: string;
+}
+
 export interface PodfilePlan {
   targetName: string;
   deploymentTarget: string;
@@ -172,6 +181,8 @@ export interface XcodeTargetPlan {
   assets: AssetPlan;
   safari?: SafariResourcesPlan;
   embed: EmbedPlan;
+  /** Present for React Native targets that ship a JS `entry`. */
+  bundleReactNative?: BundleReactNativePlan;
 }
 
 /** Inputs every planner shares. */

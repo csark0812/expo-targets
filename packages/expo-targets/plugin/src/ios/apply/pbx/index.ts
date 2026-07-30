@@ -13,6 +13,10 @@ export {
   removeBuildPhases,
 } from './buildPhases';
 export {
+  buildExtensionBundleShellScript,
+  ensureBundleReactNativePhase,
+} from './bundleReactNative';
+export {
   applyBuildSettings,
   getMainAppBuildSettings,
   removeBuildSetting,

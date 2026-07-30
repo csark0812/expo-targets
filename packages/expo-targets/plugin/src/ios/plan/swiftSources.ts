@@ -72,13 +72,14 @@ function resolveSwiftFileNames(
 
 function reactNativeTemplate(
   props: IOSTargetProps,
-  identity: TargetIdentity
+  _identity: TargetIdentity
 ): SwiftTemplatePlan {
   return {
     template: 'reactNativeViewController',
     options: {
       type: props.type,
-      moduleName: identity.targetProductName.replace('Target', ''),
+      // Must match `createTarget(name)` / AppRegistry.registerComponent(name).
+      moduleName: props.name,
       targetName: props.name,
       preprocessingFile: props.preprocessingFile,
       entry: props.entry,

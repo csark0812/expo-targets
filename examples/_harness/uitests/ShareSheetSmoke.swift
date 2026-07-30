@@ -19,6 +19,11 @@ final class ShareSheetSmoke: XCTestCase {
       ?? "ET Share"
   }
 
+  private var extensionBundleId: String {
+    ProcessInfo.processInfo.environment["UITEST_EXTENSION_BUNDLE_ID"]
+      ?? "com.expotargets.example.share.share"
+  }
+
   /// Alternate Share Sheet row titles seen across iOS / containing-app naming.
   private var extensionNameCandidates: [String] {
     let primary = extensionName
@@ -94,6 +99,45 @@ final class ShareSheetSmoke: XCTestCase {
       element(in: app, id: "screen-root").waitForExistence(timeout: 10),
       "Host did not remain usable after dismissing Share Sheet"
     )
+  }
+
+  /// Opens the share extension process and asserts its UI appears (Release + embedded JS).
+  func testShareExtensionLaunches() throws {
+    let app = XCUIApplication(bundleIdentifier: hostBundleId)
+    app.launch()
+    XCTAssertTrue(element(in: app, id: "screen-root").waitForExistence(timeout: 20))
+
+    let openShare = element(in: app, id: "btn-open-share-sheet")
+    XCTAssertTrue(openShare.waitForExistence(timeout: 10))
+    safeTap(openShare)
+    XCTAssertTrue(activityUIExists(in: app), "Share Sheet missing")
+
+    let extensionRow = findExtensionRow(in: app, named: extensionNameCandidates)
+    XCTAssertTrue(extensionRow.waitForExistence(timeout: 15), "Extension row missing")
+    safeTap(extensionRow)
+
+    let ext = XCUIApplication(bundleIdentifier: extensionBundleId)
+    let save = firstExisting(
+      [
+        ext.buttons["Save"],
+        ext.staticTexts["Save"],
+        ext.descendants(matching: .any)["Save"],
+      ],
+      timeout: 20
+    )
+    XCTAssertNotNil(
+      save,
+      "Share appex UI did not appear — likely missing embedded main.jsbundle or module name mismatch"
+    )
+    // Dismiss without requiring host payload round-trip.
+    if let cancel = firstExisting(
+      [ext.buttons["Cancel"], ext.staticTexts["Cancel"]],
+      timeout: 3
+    ) {
+      safeTap(cancel)
+    } else if let save {
+      safeTap(save)
+    }
   }
 
   // MARK: - Activity sheet helpers
