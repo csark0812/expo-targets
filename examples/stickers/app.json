@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "example-stickers",
+    "name": "ET Stickers",
     "slug": "example-stickers",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -15,7 +15,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.expotargets.example.stickers",
-      "deploymentTarget": "15.1"
+      "deploymentTarget": "15.1",
+      "infoPlist": {
+        "CFBundleDisplayName": "ET Stickers"
+      }
     },
     "plugins": [
       [

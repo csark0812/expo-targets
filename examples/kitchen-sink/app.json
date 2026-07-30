@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "example-kitchen-sink",
+    "name": "ET Kitchen",
     "slug": "example-kitchen-sink",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -24,6 +24,9 @@
         "com.apple.developer.associated-domains": [
           "appclips:kitchensink.example.expotargets.dev"
         ]
+      },
+      "infoPlist": {
+        "CFBundleDisplayName": "ET Kitchen"
       }
     },
     "plugins": [

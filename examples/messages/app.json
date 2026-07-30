@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "example-messages",
+    "name": "ET Messages",
     "slug": "example-messages",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -20,6 +20,9 @@
         "com.apple.security.application-groups": [
           "group.com.expotargets.example.messages"
         ]
+      },
+      "infoPlist": {
+        "CFBundleDisplayName": "ET Messages"
       }
     },
     "plugins": [

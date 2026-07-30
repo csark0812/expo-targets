@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "example-native-action",
+    "name": "ET N Action",
     "slug": "example-native-action",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -20,6 +20,9 @@
         "com.apple.security.application-groups": [
           "group.com.expotargets.example.native.action"
         ]
+      },
+      "infoPlist": {
+        "CFBundleDisplayName": "ET N Action"
       }
     },
     "plugins": [
