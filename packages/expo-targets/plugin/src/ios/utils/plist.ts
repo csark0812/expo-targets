@@ -1,5 +1,6 @@
 import plist from '@expo/plist';
 import type { ExtensionType } from '../../config';
+import { shouldUseAppGroups as domainShouldUseAppGroups } from '../../domain/appGroups';
 import * as FileUtils from './file';
 
 /**
@@ -70,33 +71,8 @@ export function syncAppGroups({
 
 /**
  * Check if a target type should use App Groups by default.
+ * Delegates to the domain layer so the answer has a single source of truth.
  */
 export function shouldUseAppGroups(type: ExtensionType): boolean {
-  const ShouldUseAppGroupsByDefault: Record<ExtensionType, boolean> = {
-    widget: true,
-    clip: true,
-    share: true,
-    'bg-download': true,
-    stickers: false,
-    messages: true,
-    action: false,
-    safari: false,
-    'notification-content': false,
-    'notification-service': false,
-    intent: false,
-    'intent-ui': false,
-    spotlight: false,
-    'quicklook-thumbnail': false,
-    'location-push': false,
-    'credentials-provider': false,
-    'account-auth': false,
-    'app-intent': false,
-    'device-activity-monitor': false,
-    matter: false,
-    watch: false,
-    wallet: false,
-    'wallet-ui': false,
-  };
-
-  return ShouldUseAppGroupsByDefault[type];
+  return domainShouldUseAppGroups(type);
 }

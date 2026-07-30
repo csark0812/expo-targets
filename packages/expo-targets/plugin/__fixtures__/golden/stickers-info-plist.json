@@ -1,0 +1,16 @@
+{
+  "CFBundleDisplayName": "$(PRODUCT_NAME)",
+  "CFBundleName": "$(PRODUCT_NAME)",
+  "CFBundleIdentifier": "$(PRODUCT_BUNDLE_IDENTIFIER)",
+  "CFBundlePackageType": "$(PRODUCT_BUNDLE_PACKAGE_TYPE)",
+  "CFBundleDevelopmentRegion": "$(DEVELOPMENT_LANGUAGE)",
+  "CFBundleShortVersionString": "$(MARKETING_VERSION)",
+  "CFBundleInfoDictionaryVersion": "6.0",
+  "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)",
+  "CFBundleExecutable": "$(EXECUTABLE_NAME)",
+  "NSStickerSharingLevel": "OS",
+  "NSExtension": {
+    "NSExtensionPointIdentifier": "com.apple.message-payload-provider",
+    "NSExtensionPrincipalClass": "StickerBrowserViewController"
+  }
+}

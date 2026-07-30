@@ -1,0 +1,40 @@
+/**
+ * Plan layer: pure decisions.
+ *
+ * Planners take resolved props, the Expo config and an observed workspace, and
+ * return data describing what the apply layer should do. No file system access,
+ * no Xcode project access.
+ */
+
+export { planAssets } from './assets';
+export {
+  buildShareExtensionActivationRules,
+  getTargetInfoPlistForType,
+} from './buildInfoPlist';
+export { planBuildSettings } from './buildSettings';
+export { composeXcodeTargetPlan } from './compose';
+export { planEmbed } from './embed';
+export { planEntitlements } from './entitlements';
+export { resolveIdentity } from './identity';
+export { planInfoPlist } from './infoPlist';
+export { planPodfile } from './podfile';
+export { planSafariResources } from './safari';
+export { planSwiftSources } from './swiftSources';
+export type {
+  AssetPlan,
+  ColorsetPlan,
+  EmbedPlan,
+  EntitlementsPlan,
+  InfoPlistPlan,
+  IOSTargetProps,
+  PodfilePlan,
+  ProjectPaths,
+  SafariResourcesPlan,
+  StickerPackPlan,
+  StickersPlan,
+  SwiftFilePlan,
+  SwiftTemplatePlan,
+  TargetIdentity,
+  TargetPlanInput,
+  XcodeTargetPlan,
+} from './types';

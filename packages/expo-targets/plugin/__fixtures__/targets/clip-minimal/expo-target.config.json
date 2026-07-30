@@ -1,0 +1,6 @@
+{
+  "type": "clip",
+  "name": "ClipMinimal",
+  "displayName": "Clip",
+  "entry": "./index.tsx"
+}

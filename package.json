@@ -20,7 +20,10 @@
     "audit:skills": "skeleton audit skills",
     "audit:self": "skeleton audit self",
     "android": "expo run:android",
-    "ios": "expo run:ios"
+    "ios": "expo run:ios",
+    "test": "bun test packages/expo-targets",
+    "test:unit": "bun test packages/expo-targets",
+    "test:integration": "bun test packages/expo-targets/plugin/src/ios/config-plugins/withXcodeChanges.integration.test.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.6",

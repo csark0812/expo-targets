@@ -20,7 +20,20 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bunx biome ci . --error-on-warnings
       - run: bun run typecheck
+      - run: bun run test:unit
       - run: bun run build
+
+  # L3: drives the real iOS pipeline against a stripped pbxproj fixture.
+  # Runs on Linux without Xcode; blocking because it is green and fast.
+  test-l3:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run test:integration
 
   security:
     runs-on: ubuntu-latest

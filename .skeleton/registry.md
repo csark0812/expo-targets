@@ -16,3 +16,4 @@
 | Configuration | [configuration.md](../docs/configuration.md) |
 | API | [api.md](../docs/api.md) |
 | Roadmap / deprecation policy | [deprecations.md](../docs/deprecations.md) |
+| Config plugin architecture | [plugin/README.md](../packages/expo-targets/plugin/README.md) |
