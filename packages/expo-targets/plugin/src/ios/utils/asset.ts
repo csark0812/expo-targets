@@ -293,11 +293,124 @@ function generateIcon({
 }
 
 /**
+ * All required icon sizes for iMessage sticker packs.
+ */
+const IMESSAGE_ICON_SIZES: IconSize[] = [
+  {
+    filename: 'icon-iphone-29x29@2x.png',
+    width: 58,
+    height: 58,
+    size: '29x29',
+    idiom: 'iphone',
+    scale: '2x',
+  },
+  {
+    filename: 'icon-iphone-29x29@3x.png',
+    width: 87,
+    height: 87,
+    size: '29x29',
+    idiom: 'iphone',
+    scale: '3x',
+  },
+  {
+    filename: 'icon-iphone-60x45@2x.png',
+    width: 120,
+    height: 90,
+    size: '60x45',
+    idiom: 'iphone',
+    scale: '2x',
+  },
+  {
+    filename: 'icon-iphone-60x45@3x.png',
+    width: 180,
+    height: 135,
+    size: '60x45',
+    idiom: 'iphone',
+    scale: '3x',
+  },
+  {
+    filename: 'icon-ipad-29x29@2x.png',
+    width: 58,
+    height: 58,
+    size: '29x29',
+    idiom: 'ipad',
+    scale: '2x',
+  },
+  {
+    filename: 'icon-ipad-67x50@2x.png',
+    width: 134,
+    height: 100,
+    size: '67x50',
+    idiom: 'ipad',
+    scale: '2x',
+  },
+  {
+    filename: 'icon-ipad-74x55@2x.png',
+    width: 148,
+    height: 110,
+    size: '74x55',
+    idiom: 'ipad',
+    scale: '2x',
+  },
+  {
+    filename: 'icon-ios-marketing-1024x1024.png',
+    width: 1024,
+    height: 1024,
+    size: '1024x1024',
+    idiom: 'ios-marketing',
+    scale: '1x',
+  },
+  {
+    filename: 'icon-ios-27x20@2x.png',
+    width: 54,
+    height: 40,
+    size: '27x20',
+    idiom: 'universal',
+    scale: '2x',
+    platform: 'ios',
+  },
+  {
+    filename: 'icon-ios-27x20@3x.png',
+    width: 81,
+    height: 60,
+    size: '27x20',
+    idiom: 'universal',
+    scale: '3x',
+    platform: 'ios',
+  },
+  {
+    filename: 'icon-ios-32x24@2x.png',
+    width: 64,
+    height: 48,
+    size: '32x24',
+    idiom: 'universal',
+    scale: '2x',
+    platform: 'ios',
+  },
+  {
+    filename: 'icon-ios-32x24@3x.png',
+    width: 96,
+    height: 72,
+    size: '32x24',
+    idiom: 'universal',
+    scale: '3x',
+    platform: 'ios',
+  },
+  {
+    filename: 'icon-ios-1024x768.png',
+    width: 1024,
+    height: 768,
+    size: '1024x768',
+    idiom: 'ios-marketing',
+    scale: '1x',
+    platform: 'ios',
+  },
+];
+
+/**
  * Create iMessage App Icon set in Assets.xcassets.
  * Generates all 13 required icon sizes with proper cropping to maintain aspect ratio.
  */
-
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
 export function createIMessageAppIcon({
   iconsetPath,
   sourceIconPath,
@@ -307,121 +420,8 @@ export function createIMessageAppIcon({
 }): void {
   FileUtils.ensureDirectoryExists(iconsetPath);
 
-  // All required icon sizes for iMessage sticker packs
-  const iconSizes: IconSize[] = [
-    {
-      filename: 'icon-iphone-29x29@2x.png',
-      width: 58,
-      height: 58,
-      size: '29x29',
-      idiom: 'iphone',
-      scale: '2x',
-    },
-    {
-      filename: 'icon-iphone-29x29@3x.png',
-      width: 87,
-      height: 87,
-      size: '29x29',
-      idiom: 'iphone',
-      scale: '3x',
-    },
-    {
-      filename: 'icon-iphone-60x45@2x.png',
-      width: 120,
-      height: 90,
-      size: '60x45',
-      idiom: 'iphone',
-      scale: '2x',
-    },
-    {
-      filename: 'icon-iphone-60x45@3x.png',
-      width: 180,
-      height: 135,
-      size: '60x45',
-      idiom: 'iphone',
-      scale: '3x',
-    },
-    {
-      filename: 'icon-ipad-29x29@2x.png',
-      width: 58,
-      height: 58,
-      size: '29x29',
-      idiom: 'ipad',
-      scale: '2x',
-    },
-    {
-      filename: 'icon-ipad-67x50@2x.png',
-      width: 134,
-      height: 100,
-      size: '67x50',
-      idiom: 'ipad',
-      scale: '2x',
-    },
-    {
-      filename: 'icon-ipad-74x55@2x.png',
-      width: 148,
-      height: 110,
-      size: '74x55',
-      idiom: 'ipad',
-      scale: '2x',
-    },
-    {
-      filename: 'icon-ios-marketing-1024x1024.png',
-      width: 1024,
-      height: 1024,
-      size: '1024x1024',
-      idiom: 'ios-marketing',
-      scale: '1x',
-    },
-    {
-      filename: 'icon-ios-27x20@2x.png',
-      width: 54,
-      height: 40,
-      size: '27x20',
-      idiom: 'universal',
-      scale: '2x',
-      platform: 'ios',
-    },
-    {
-      filename: 'icon-ios-27x20@3x.png',
-      width: 81,
-      height: 60,
-      size: '27x20',
-      idiom: 'universal',
-      scale: '3x',
-      platform: 'ios',
-    },
-    {
-      filename: 'icon-ios-32x24@2x.png',
-      width: 64,
-      height: 48,
-      size: '32x24',
-      idiom: 'universal',
-      scale: '2x',
-      platform: 'ios',
-    },
-    {
-      filename: 'icon-ios-32x24@3x.png',
-      width: 96,
-      height: 72,
-      size: '32x24',
-      idiom: 'universal',
-      scale: '3x',
-      platform: 'ios',
-    },
-    {
-      filename: 'icon-ios-1024x768.png',
-      width: 1024,
-      height: 768,
-      size: '1024x768',
-      idiom: 'ios-marketing',
-      scale: '1x',
-      platform: 'ios',
-    },
-  ];
-
   // Create Contents.json with all icon references
-  const images = iconSizes.map((iconSize) => {
+  const images = IMESSAGE_ICON_SIZES.map((iconSize) => {
     const entry: any = {
       size: iconSize.size,
       idiom: iconSize.idiom,
@@ -436,36 +436,22 @@ export function createIMessageAppIcon({
     return entry;
   });
 
-  const contentsJson = {
-    images,
-    info: { author: 'xcode', version: 1 },
-  };
-
   FileUtils.writeFileSafe(
     path.join(iconsetPath, 'Contents.json'),
-    JSON.stringify(contentsJson, null, 2)
+    JSON.stringify({ images, info: { author: 'xcode', version: 1 } }, null, 2)
   );
 
+  if (!(sourceIconPath && FileUtils.isFile(sourceIconPath))) {
+    return;
+  }
+
   // Generate all icon sizes from source
-  if (sourceIconPath && FileUtils.isFile(sourceIconPath)) {
-    let successCount = 0;
-
-    for (const iconSize of iconSizes) {
-      const outputPath = path.join(iconsetPath, iconSize.filename);
-      const success = generateIcon({
-        sourceIconPath,
-        outputPath,
-        width: iconSize.width,
-        height: iconSize.height,
-      });
-
-      if (success) {
-        successCount++;
-      }
-    }
-
-    if (successCount < iconSizes.length) {
-    }
-  } else if (sourceIconPath) {
+  for (const iconSize of IMESSAGE_ICON_SIZES) {
+    generateIcon({
+      sourceIconPath,
+      outputPath: path.join(iconsetPath, iconSize.filename),
+      width: iconSize.width,
+      height: iconSize.height,
+    });
   }
 }

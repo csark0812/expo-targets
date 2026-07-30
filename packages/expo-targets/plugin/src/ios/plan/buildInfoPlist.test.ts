@@ -79,7 +79,7 @@ describe('getTargetInfoPlistForType (characterization)', () => {
 
   test('share extension with React Native entry uses ReactNativeViewController', () => {
     const parsed = plist.parse(
-      getTargetInfoPlistForType('share', undefined, undefined, './index.tsx')
+      getTargetInfoPlistForType('share', { entry: './index.tsx' })
     ) as any;
 
     expect(parsed.NSExtension.NSExtensionPrincipalClass).toBe(

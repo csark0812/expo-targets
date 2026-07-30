@@ -1,8 +1,8 @@
 import path from 'node:path';
 import type { ExpoConfig } from '@expo/config-types';
 
-import { getTargetInfoPlistForType } from './buildInfoPlist';
 import * as Paths from '../utils/paths';
+import { getTargetInfoPlistForType } from './buildInfoPlist';
 import type {
   InfoPlistPlan,
   IOSTargetProps,
@@ -49,16 +49,15 @@ function buildInfoPlistContents({
         }
       : undefined;
 
-  return getTargetInfoPlistForType(
-    props.type,
-    props.infoPlist,
+  return getTargetInfoPlistForType(props.type, {
+    customProperties: props.infoPlist,
     shareExtensionConfig,
-    props.entry,
-    mainAppSchemes.length > 0 ? mainAppSchemes : undefined,
+    entry: props.entry,
+    mainAppSchemes: mainAppSchemes.length > 0 ? mainAppSchemes : undefined,
     targetsConfig,
-    props.targetIcon,
-    props.intents
-  );
+    targetIcon: props.targetIcon,
+    intentsConfig: props.intents,
+  });
 }
 
 /**

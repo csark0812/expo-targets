@@ -119,12 +119,10 @@ export function applyPodfilePlan(
   // Must run before any other post_install modification.
   next = ensureResourceBundleCodeSigning(next);
 
-  next = insertTargetBlock(
-    next,
-    targetBlockFor(next, plan, mainTargetName),
-    plan.standalone,
-    logger
-  );
+  next = insertTargetBlock(next, targetBlockFor(next, plan, mainTargetName), {
+    standalone: plan.standalone,
+    logger,
+  });
 
   logger.log(
     `Updated Podfile for ${plan.standalone ? 'standalone' : 'React Native'} target: ${plan.targetName}`

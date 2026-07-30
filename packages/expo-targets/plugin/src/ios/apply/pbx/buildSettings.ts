@@ -7,6 +7,32 @@ import type { XcodeTarget } from './types';
  */
 
 /**
+ * Settings worth naming individually in verbose output — they are the two that
+ * commonly break an extension build when they drift from the host app.
+ */
+const VERBOSE_LOGGED_SETTINGS = new Set([
+  'SWIFT_VERSION',
+  'IPHONEOS_DEPLOYMENT_TARGET',
+]);
+
+function writeBuildSettings({
+  configSection,
+  buildSettings,
+  verboseLogger,
+}: {
+  configSection: any;
+  buildSettings: Record<string, string | string[]>;
+  verboseLogger?: { log: (message: string) => void };
+}): void {
+  for (const [key, value] of Object.entries(buildSettings)) {
+    configSection.buildSettings[key] = value;
+    if (VERBOSE_LOGGED_SETTINGS.has(key)) {
+      verboseLogger?.log(`    Set ${key}=${value} to ${configSection.name}`);
+    }
+  }
+}
+
+/**
  * Apply build settings to all configurations of a target.
  */
 export function applyBuildSettings({
@@ -32,42 +58,22 @@ export function applyBuildSettings({
     xcodeProject.pbxXCConfigurationList()[targetBuildConfigId];
 
   if (!buildConfigList?.buildConfigurations) {
-    if (logger) {
-      logger.log('No build configurations found for target');
-    } else {
-    }
+    logger?.log('No build configurations found for target');
     return;
   }
 
-  // biome-ignore lint/complexity/noForEach: pre-existing; prefer for-of tracked
-  buildConfigList.buildConfigurations.forEach((config: any) => {
+  const verboseLogger = verbose ? logger : undefined;
+
+  for (const config of buildConfigList.buildConfigurations) {
     const configSection =
       xcodeProject.pbxXCBuildConfigurationSection()[config.value];
-    const configName = configSection?.name;
 
-    if (verbose) {
-      if (logger) {
-        logger.log(`  Configuring ${configName} build settings`);
-      } else {
-      }
-    }
+    verboseLogger?.log(`  Configuring ${configSection?.name} build settings`);
 
     if (configSection?.buildSettings) {
-      // biome-ignore lint/complexity/noForEach: pre-existing; prefer for-of tracked
-      Object.entries(buildSettings).forEach(([key, value]) => {
-        configSection.buildSettings[key] = value;
-        if (
-          verbose &&
-          (key === 'SWIFT_VERSION' || key === 'IPHONEOS_DEPLOYMENT_TARGET')
-        ) {
-          if (logger) {
-            logger.log(`    Set ${key}=${value} to ${configName}`);
-          } else {
-          }
-        }
-      });
+      writeBuildSettings({ configSection, buildSettings, verboseLogger });
     }
-  });
+  }
 }
 
 /**
@@ -99,21 +105,19 @@ export function removeBuildSetting({
     return;
   }
 
-  // biome-ignore lint/complexity/noForEach: pre-existing; prefer for-of tracked
-  buildConfigList.buildConfigurations.forEach((config: any) => {
+  const verboseLogger = verbose ? logger : undefined;
+
+  for (const config of buildConfigList.buildConfigurations) {
     const configSection =
       xcodeProject.pbxXCBuildConfigurationSection()[config.value];
 
     if (configSection?.buildSettings?.[settingKey]) {
       delete configSection.buildSettings[settingKey];
-      if (verbose) {
-        if (logger) {
-          logger.log(`    Removed ${settingKey} from ${configSection.name}`);
-        } else {
-        }
-      }
+      verboseLogger?.log(
+        `    Removed ${settingKey} from ${configSection.name}`
+      );
     }
-  });
+  }
 }
 
 /**

@@ -4,6 +4,102 @@
  */
 
 /**
+ * Locate the line that closes `react_native_post_install(...)`, which is where
+ * generated post_install code has to be injected. Returns -1 when the call is
+ * not present.
+ */
+function findReactNativePostInstallEndLine(lines: string[]): number {
+  let startLine = -1;
+  let parenDepth = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const openParens = (line.match(/\(/g) || []).length;
+    const closeParens = (line.match(/\)/g) || []).length;
+
+    if (line.includes('react_native_post_install(')) {
+      startLine = i;
+      parenDepth = openParens - closeParens;
+      continue;
+    }
+
+    if (startLine === -1) {
+      continue;
+    }
+
+    parenDepth += openParens - closeParens;
+    if (parenDepth === 0 && closeParens > 0) {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+/**
+ * Locate the line holding the `end` that closes `post_install do`.
+ * Ruby closes many keywords with `end`, so all openers have to be counted.
+ */
+function findPostInstallEndLine(lines: string[]): number {
+  const blockOpenRegex =
+    /\b(do|if|unless|def|class|module|begin|case|while|until)\b/g;
+  let startLine = -1;
+  let depth = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    if (line.includes('post_install do')) {
+      startLine = i;
+      depth = 1;
+      continue;
+    }
+
+    if (startLine === -1) {
+      continue;
+    }
+
+    const openMatches = (line.match(blockOpenRegex) || []).length;
+    const endMatches = (line.match(/\bend\b/g) || []).length;
+    depth += openMatches - endMatches;
+
+    if (depth === 0 && endMatches > 0) {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+/**
+ * Drop a previously injected block so injection stays idempotent.
+ */
+function removeMarkedBlock(
+  podfileContent: string,
+  startMarker: string,
+  endMarker: string
+): string {
+  const startIndex = podfileContent.indexOf(startMarker);
+  if (startIndex === -1) {
+    return podfileContent;
+  }
+
+  const endIndex = podfileContent.indexOf(endMarker, startIndex);
+  if (endIndex === -1) {
+    return podfileContent;
+  }
+
+  const beforeBlock = podfileContent.substring(0, startIndex);
+  const afterBlock = podfileContent.substring(endIndex + endMarker.length);
+  return `${beforeBlock.trimEnd()}\n${afterBlock.trimStart()}`;
+}
+
+const RESOURCE_BUNDLE_SIGNING_START =
+  '    # [expo-targets-resource-bundle-signing-start]';
+const RESOURCE_BUNDLE_SIGNING_END =
+  '    # [expo-targets-resource-bundle-signing-end]';
+
+/**
  * Ensure resource bundle targets have code signing disabled for Xcode 14+.
  * Starting from Xcode 14, resource bundles are signed by default, which requires
  * setting the development team for each resource bundle target. This fix disables
@@ -11,19 +107,14 @@
  *
  * Uses START/END markers for reliable, idempotent injection.
  */
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
 export function ensureResourceBundleCodeSigning(
   podfileContent: string
 ): string {
-  const StartMarker = '    # [expo-targets-resource-bundle-signing-start]';
-  const EndMarker = '    # [expo-targets-resource-bundle-signing-end]';
-
-  // Check if fix already exists
-  if (podfileContent.includes(StartMarker)) {
+  if (podfileContent.includes(RESOURCE_BUNDLE_SIGNING_START)) {
     return podfileContent;
   }
 
-  const fixCode = `${StartMarker}
+  const fixCode = `${RESOURCE_BUNDLE_SIGNING_START}
     # Fix Xcode 14+ code signing for resource bundles
     installer.pods_project.targets.each do |target|
       if target.respond_to?(:product_type) && target.product_type == "com.apple.product-type.bundle"
@@ -32,42 +123,35 @@ export function ensureResourceBundleCodeSigning(
         end
       end
     end
-${EndMarker}`;
+${RESOURCE_BUNDLE_SIGNING_END}`;
 
-  // Find where to inject (after react_native_post_install closing paren)
   const lines = podfileContent.split('\n');
-  let reactNativeStartLine = -1;
-  let reactNativeEndLine = -1;
-  let parenDepth = 0;
+  const endLine = findReactNativePostInstallEndLine(lines);
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (line.includes('react_native_post_install(')) {
-      reactNativeStartLine = i;
-      parenDepth =
-        (line.match(/\(/g) || []).length - (line.match(/\)/g) || []).length;
-      continue;
-    }
-    if (reactNativeStartLine !== -1) {
-      const openParens = (line.match(/\(/g) || []).length;
-      const closeParens = (line.match(/\)/g) || []).length;
-      parenDepth += openParens - closeParens;
-      if (parenDepth === 0 && closeParens > 0) {
-        reactNativeEndLine = i;
-        break;
-      }
-    }
-  }
-
-  if (reactNativeStartLine === -1 || reactNativeEndLine === -1) {
+  if (endLine === -1) {
     return podfileContent;
   }
 
-  // Insert after react_native_post_install
-  const beforeLines = lines.slice(0, reactNativeEndLine + 1).join('\n');
-  const afterLines = lines.slice(reactNativeEndLine + 1).join('\n');
+  const beforeLines = lines.slice(0, endLine + 1).join('\n');
+  const afterLines = lines.slice(endLine + 1).join('\n');
 
   return `${beforeLines}\n\n${fixCode}\n${afterLines}`;
+}
+
+/**
+ * Indent pods.rb content to match target block indentation.
+ */
+function indentCustomPods(podsRbContent?: string): string {
+  if (!podsRbContent) {
+    return '';
+  }
+
+  const indented = podsRbContent
+    .split('\n')
+    .map((line) => (line.trim() ? `    ${line}` : ''))
+    .join('\n');
+
+  return `\n${indented}\n`;
 }
 
 /**
@@ -93,15 +177,7 @@ export function generateReactNativeTargetBlock({
   extensionType: string;
   podsRbContent?: string;
 }): string {
-  // Indent pods.rb content to match target block indentation
-  const customPods = podsRbContent
-    ? '\n' +
-      podsRbContent
-        .split('\n')
-        .map((line) => (line.trim() ? `    ${line}` : ''))
-        .join('\n') +
-      '\n'
-    : '';
+  const customPods = indentCustomPods(podsRbContent);
 
   return `
   target '${targetName}' do
@@ -155,16 +231,7 @@ export function generateStandaloneTargetBlock({
   const frameworksLine = useFrameworks
     ? '    use_frameworks! :linkage => :static\n'
     : '';
-
-  // Indent pods.rb content to match target block indentation
-  const customPods = podsRbContent
-    ? '\n' +
-      podsRbContent
-        .split('\n')
-        .map((line) => (line.trim() ? `    ${line}` : ''))
-        .join('\n') +
-      '\n'
-    : '';
+  const customPods = indentCustomPods(podsRbContent);
 
   return `
 target '${targetName}' do
@@ -174,51 +241,56 @@ ${frameworksLine}    platform :ios, '${deploymentTarget}'${customPods}
 }
 
 /**
+ * Standalone targets are inserted as siblings AFTER the main target's closing
+ * `end`, which prevents CocoaPods from auto-generating Expo module providers.
+ */
+function insertStandaloneTargetBlock(
+  podfileContent: string,
+  targetBlock: string,
+  logger?: { log: (message: string) => void }
+): string {
+  // The main target is the outermost block in a standard Expo Podfile, so its
+  // closing 'end' is the last one in the file.
+  const lastEndMatch = podfileContent.match(/\bend\b(?!.*\bend\b)/s);
+
+  if (!lastEndMatch) {
+    throw new Error('Could not find any end keyword in Podfile');
+  }
+
+  const mainTargetEndIndex = lastEndMatch.index! + lastEndMatch[0].length;
+
+  logger?.log(
+    `Inserting standalone target after main target's closing 'end' at position ${mainTargetEndIndex}`
+  );
+
+  return (
+    podfileContent.slice(0, mainTargetEndIndex) +
+    '\n\n' +
+    targetBlock.trim() +
+    podfileContent.slice(mainTargetEndIndex)
+  );
+}
+
+/**
  * Insert a target block into a Podfile.
  * React Native targets are nested inside main app to inherit dependencies.
  * Standalone targets are inserted as siblings to avoid Expo module autolinking.
  */
-// biome-ignore lint/complexity/useMaxParams: pre-existing complexity; tracked for refactor
 export function insertTargetBlock(
   podfileContent: string,
   targetBlock: string,
-  standalone = false,
-  logger?: { log: (message: string) => void }
+  options: {
+    standalone?: boolean;
+    logger?: { log: (message: string) => void };
+  } = {}
 ): string {
+  const { standalone = false, logger } = options;
+
   if (standalone) {
-    // Standalone targets: insert as sibling AFTER main target's closing 'end'
-    // This prevents CocoaPods from auto-generating Expo module providers
-
-    // Find the last 'end' in the Podfile - this should be the main target's closing 'end'
-    // since the main target is the outermost block in a standard Expo Podfile
-    const lastEndMatch = podfileContent.match(/\bend\b(?!.*\bend\b)/s);
-
-    if (!lastEndMatch) {
-      throw new Error('Could not find any end keyword in Podfile');
-    }
-
-    const mainTargetEndIndex = lastEndMatch.index! + lastEndMatch[0].length;
-
-    if (logger) {
-      logger.log(
-        `Inserting standalone target after main target's closing 'end' at position ${mainTargetEndIndex}`
-      );
-    } else {
-    }
-
-    // Insert after main target's closing 'end'
-    return (
-      podfileContent.slice(0, mainTargetEndIndex) +
-      '\n\n' +
-      targetBlock.trim() +
-      podfileContent.slice(mainTargetEndIndex)
-    );
+    return insertStandaloneTargetBlock(podfileContent, targetBlock, logger);
   }
 
-  if (logger) {
-    logger.log('Inserting React Native target nested inside main target');
-  } else {
-  }
+  logger?.log('Inserting React Native target nested inside main target');
 
   // React Native targets: nest inside main target before post_install
   const postInstallIndex = podfileContent.indexOf('post_install do');
@@ -253,15 +325,43 @@ export function hasTargetBlock(
 }
 
 /**
+ * Find the index just past the `end` that closes the block opened at
+ * `afterDoIndex`, counting every Ruby keyword that requires an `end`.
+ */
+function findBlockEndIndex(
+  podfileContent: string,
+  afterDoIndex: number
+): number {
+  const blockRegex = /\b(do|if|unless|case|begin|class|module|def|end)\b/g;
+  blockRegex.lastIndex = afterDoIndex;
+
+  // Start at depth 1 because we're already inside the block (after 'do').
+  let depth = 1;
+  let match = blockRegex.exec(podfileContent);
+
+  while (match !== null) {
+    if (match[1] === 'end') {
+      depth--;
+      if (depth === 0) {
+        return match.index + match[0].length;
+      }
+    } else {
+      depth++;
+    }
+    match = blockRegex.exec(podfileContent);
+  }
+
+  return -1;
+}
+
+/**
  * Remove an existing target block from a Podfile.
  * Finds the target declaration and removes it along with its entire do/end block.
  */
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
 export function removeTargetBlock(
   podfileContent: string,
   targetName: string
 ): string {
-  // Find the target block
   const targetRegex = new RegExp(`target\\s+['"]${targetName}['"]\\s+do`, 'g');
   const targetMatch = targetRegex.exec(podfileContent);
 
@@ -269,53 +369,27 @@ export function removeTargetBlock(
     return podfileContent; // Target doesn't exist, nothing to remove
   }
 
-  // Find the corresponding closing 'end' by counting nested block pairs
   const startIndex = targetMatch.index;
-  const afterDoIndex = targetMatch.index + targetMatch[0].length;
-  // Start at depth 1 because we're already inside the target block (after 'do')
-  let depth = 1;
-
-  // Match all Ruby block keywords that require 'end'
-  const blockRegex = /\b(do|if|unless|case|begin|class|module|def|end)\b/g;
-  blockRegex.lastIndex = afterDoIndex;
-
-  let match;
-  let targetEndIndex = -1;
-
-  while ((match = blockRegex.exec(podfileContent)) !== null) {
-    if (match[1] === 'end') {
-      depth--;
-      if (depth === 0) {
-        // Found the matching 'end' for target
-        targetEndIndex = match.index + match[0].length;
-        break;
-      }
-    } else {
-      // All other keywords open a block
-      depth++;
-    }
-  }
+  const targetEndIndex = findBlockEndIndex(
+    podfileContent,
+    targetMatch.index + targetMatch[0].length
+  );
 
   if (targetEndIndex === -1) {
     throw new Error(`Could not find closing end for target '${targetName}'`);
   }
 
-  // Remove the target block including surrounding whitespace
-  // Look back to remove leading whitespace/newlines
+  // Remove the target block including leading whitespace/newlines
   let removeStart = startIndex;
   while (removeStart > 0 && /[\s\n]/.test(podfileContent[removeStart - 1])) {
     removeStart--;
   }
 
-  // Look forward to remove trailing newlines (but keep one newline if present)
-  let removeEnd = targetEndIndex;
-  while (
-    removeEnd < podfileContent.length &&
-    podfileContent[removeEnd] === '\n'
-  ) {
-    removeEnd++;
-    break; // Keep only one trailing newline
-  }
+  // Drop at most one trailing newline
+  const removeEnd =
+    podfileContent[targetEndIndex] === '\n'
+      ? targetEndIndex + 1
+      : targetEndIndex;
 
   return podfileContent.slice(0, removeStart) + podfileContent.slice(removeEnd);
 }
@@ -400,6 +474,49 @@ export function updatePodfilePlatform(
   return podfileContent;
 }
 
+const STANDALONE_DEPLOYMENT_START = '    # [expo-targets-standalone-start]';
+const STANDALONE_DEPLOYMENT_END = '    # [expo-targets-standalone-end]';
+
+/**
+ * Ruby that pins one extension target's deployment target, both in the Pods
+ * project and in the xcconfig the extension references.
+ */
+const DEPLOYMENT_TARGET_RULE = `      if target.name.include?('{{TARGET_NAME}}')
+        target.build_configurations.each do |config|
+          config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '{{DEPLOYMENT_TARGET}}'
+          # Also update the xcconfig file
+          xcconfig_path = config.base_configuration_reference.real_path
+          if xcconfig_path && File.exist?(xcconfig_path)
+            xcconfig_content = File.read(xcconfig_path)
+            # Remove existing IPHONEOS_DEPLOYMENT_TARGET if present
+            xcconfig_content.gsub!(/^IPHONEOS_DEPLOYMENT_TARGET = .*$/, '')
+            # Add deployment target
+            xcconfig_content += "\\nIPHONEOS_DEPLOYMENT_TARGET = {{DEPLOYMENT_TARGET}}\\n"
+            File.write(xcconfig_path, xcconfig_content)
+          end
+        end
+      end`;
+
+function buildDeploymentTargetFix(
+  extensions: { targetName: string; deploymentTarget: string }[]
+): string {
+  const rules = extensions
+    .map((ext) =>
+      DEPLOYMENT_TARGET_RULE.replace(
+        /{{TARGET_NAME}}/g,
+        ext.targetName
+      ).replace(/{{DEPLOYMENT_TARGET}}/g, ext.deploymentTarget)
+    )
+    .join('\n');
+
+  return `${STANDALONE_DEPLOYMENT_START}
+    # Fix standalone extension deployment targets
+    installer.pods_project.targets.each do |target|
+${rules}
+    end
+${STANDALONE_DEPLOYMENT_END}`;
+}
+
 /**
  * Inject deployment target fixes into the main app's existing post_install hook.
  * This ensures extension targets maintain their correct deployment targets even after
@@ -407,7 +524,6 @@ export function updatePodfilePlatform(
  *
  * Fixes both the Pods Xcode project targets AND the xcconfig files that extensions reference.
  */
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
 export function ensureExtensionDeploymentTargets(
   podfileContent: string,
   extensions: { targetName: string; deploymentTarget: string }[]
@@ -416,131 +532,38 @@ export function ensureExtensionDeploymentTargets(
     return podfileContent;
   }
 
-  const StartMarker = '    # [expo-targets-standalone-start]';
-  const EndMarker = '    # [expo-targets-standalone-end]';
+  const content = removeMarkedBlock(
+    podfileContent,
+    STANDALONE_DEPLOYMENT_START,
+    STANDALONE_DEPLOYMENT_END
+  );
 
-  // Remove any existing block between markers (idempotent)
-  const startIndex = podfileContent.indexOf(StartMarker);
-  if (startIndex !== -1) {
-    const endIndex = podfileContent.indexOf(EndMarker, startIndex);
-    if (endIndex !== -1) {
-      const beforeBlock = podfileContent.substring(0, startIndex);
-      const afterBlock = podfileContent.substring(endIndex + EndMarker.length);
-      podfileContent = `${beforeBlock.trimEnd()}\n${afterBlock.trimStart()}`;
-    }
-  }
+  const lines = content.split('\n');
+  const postInstallEndLine = findPostInstallEndLine(lines);
 
-  // Generate the deployment target fix code to inject
-  const fixCode = `${StartMarker}
-    # Fix standalone extension deployment targets
-    installer.pods_project.targets.each do |target|
-${extensions
-  .map(
-    (ext) => `      if target.name.include?('${ext.targetName}')
-        target.build_configurations.each do |config|
-          config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '${ext.deploymentTarget}'
-          # Also update the xcconfig file
-          xcconfig_path = config.base_configuration_reference.real_path
-          if xcconfig_path && File.exist?(xcconfig_path)
-            xcconfig_content = File.read(xcconfig_path)
-            # Remove existing IPHONEOS_DEPLOYMENT_TARGET if present
-            xcconfig_content.gsub!(/^IPHONEOS_DEPLOYMENT_TARGET = .*$/, '')
-            # Add deployment target
-            xcconfig_content += "\\nIPHONEOS_DEPLOYMENT_TARGET = ${ext.deploymentTarget}\\n"
-            File.write(xcconfig_path, xcconfig_content)
-          end
-        end
-      end`
-  )
-  .join('\n')}
-    end
-${EndMarker}`;
-
-  // Find the post_install block and its closing 'end' by counting Ruby block keywords
-  // Ruby uses 'end' to close: do, if, unless, def, class, module, begin, case, while, until
-  const lines = podfileContent.split('\n');
-  let postInstallStartLine = -1;
-  let postInstallEndLine = -1;
-  let depth = 0;
-
-  // Ruby keywords that open blocks requiring 'end'
-  const blockOpenRegex =
-    /\b(do|if|unless|def|class|module|begin|case|while|until)\b/g;
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-
-    if (line.includes('post_install do')) {
-      postInstallStartLine = i;
-      depth = 1;
-      continue;
-    }
-
-    if (postInstallStartLine !== -1) {
-      // Count all Ruby block openers and 'end' to find the matching end
-      const openMatches = (line.match(blockOpenRegex) || []).length;
-      const endMatches = (line.match(/\bend\b/g) || []).length;
-      depth += openMatches - endMatches;
-
-      if (depth === 0 && endMatches > 0) {
-        postInstallEndLine = i;
-        break;
-      }
-    }
-  }
-
-  if (postInstallStartLine === -1 || postInstallEndLine === -1) {
-    return podfileContent;
+  if (postInstallEndLine === -1) {
+    return content;
   }
 
   // Insert before the closing 'end' of post_install
   const beforeLines = lines.slice(0, postInstallEndLine).join('\n');
   const afterLines = lines.slice(postInstallEndLine).join('\n');
 
-  return `${beforeLines}\n${fixCode}\n${afterLines}`;
+  return `${beforeLines}\n${buildDeploymentTargetFix(extensions)}\n${afterLines}`;
 }
 
+const REACT_NATIVE_PATHS_START = '    # [expo-targets-start]';
+const REACT_NATIVE_PATHS_END = '    # [expo-targets-end]';
+
 /**
- * Ensure React Native extension targets have proper framework search paths.
- * Uses START/END markers for reliable, idempotent injection.
+ * Ruby that copies the Swift-relevant search paths from the main app's Pods
+ * target (and its xcconfig) onto one React Native extension target.
  */
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
-export function ensureReactNativeExtensionFrameworkPaths(
-  podfileContent: string,
-  extensions: { targetName: string; deploymentTarget: string }[],
-  mainTargetName: string
-): string {
-  if (extensions.length === 0) {
-    return podfileContent;
-  }
-
-  const StartMarker = '    # [expo-targets-start]';
-  const EndMarker = '    # [expo-targets-end]';
-
-  // Remove any existing block between markers (idempotent)
-  const startIndex = podfileContent.indexOf(StartMarker);
-  if (startIndex !== -1) {
-    const endIndex = podfileContent.indexOf(EndMarker, startIndex);
-    if (endIndex !== -1) {
-      const beforeBlock = podfileContent.substring(0, startIndex);
-      const afterBlock = podfileContent.substring(endIndex + EndMarker.length);
-      podfileContent = `${beforeBlock.trimEnd()}\n${afterBlock.trimStart()}`;
-    }
-  }
-
-  // Generate fresh code with markers
-  const mainPodsTarget = `Pods-${mainTargetName}`;
-  const fixCode = `${StartMarker}
-    # Fix React Native extension framework search paths
-    installer.pods_project.targets.each do |target|
-${extensions
-  .map(
-    (ext) => `      if target.name.include?('${ext.targetName}')
+const FRAMEWORK_PATHS_RULE = `      if target.name.include?('{{TARGET_NAME}}')
         target.build_configurations.each do |config|
-          config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '${ext.deploymentTarget}'
+          config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '{{DEPLOYMENT_TARGET}}'
           # Copy framework search paths from main app target
-          main_target = installer.pods_project.targets.find { |t| t.name == '${mainPodsTarget}' }
+          main_target = installer.pods_project.targets.find { |t| t.name == '{{MAIN_PODS_TARGET}}' }
           if main_target
             main_config = main_target.build_configurations.find { |c| c.name == config.name }
             if main_config && main_config.build_settings['FRAMEWORK_SEARCH_PATHS']
@@ -558,7 +581,7 @@ ${extensions
             # Remove existing IPHONEOS_DEPLOYMENT_TARGET if present
             xcconfig_content.gsub!(/^IPHONEOS_DEPLOYMENT_TARGET = .*$/, '')
             # Add deployment target
-            xcconfig_content += "\\nIPHONEOS_DEPLOYMENT_TARGET = ${ext.deploymentTarget}\\n"
+            xcconfig_content += "\\nIPHONEOS_DEPLOYMENT_TARGET = {{DEPLOYMENT_TARGET}}\\n"
             # Copy framework search paths and other Swift-related settings from main app's xcconfig
             if main_target
               main_config = main_target.build_configurations.find { |c| c.name == config.name }
@@ -596,63 +619,67 @@ ${extensions
             File.write(xcconfig_path, xcconfig_content)
           end
         end
-      end`
-  )
-  .join('\n')}
+      end`;
+
+function buildFrameworkPathsFix(
+  extensions: { targetName: string; deploymentTarget: string }[],
+  mainTargetName: string
+): string {
+  const mainPodsTarget = `Pods-${mainTargetName}`;
+  const rules = extensions
+    .map((ext) =>
+      FRAMEWORK_PATHS_RULE.replace(/{{TARGET_NAME}}/g, ext.targetName)
+        .replace(/{{DEPLOYMENT_TARGET}}/g, ext.deploymentTarget)
+        .replace(/{{MAIN_PODS_TARGET}}/g, mainPodsTarget)
+    )
+    .join('\n');
+
+  return `${REACT_NATIVE_PATHS_START}
+    # Fix React Native extension framework search paths
+    installer.pods_project.targets.each do |target|
+${rules}
     end
-${EndMarker}`;
+${REACT_NATIVE_PATHS_END}`;
+}
 
-  // Find where to inject (after react_native_post_install closing paren)
-  // Use line-by-line approach to find the closing paren properly
-  const lines = podfileContent.split('\n');
-  let reactNativeStartLine = -1;
-  let reactNativeEndLine = -1;
-  let parenDepth = 0;
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (line.includes('react_native_post_install(')) {
-      reactNativeStartLine = i;
-      parenDepth =
-        (line.match(/\(/g) || []).length - (line.match(/\)/g) || []).length;
-      continue;
-    }
-    if (reactNativeStartLine !== -1) {
-      const openParens = (line.match(/\(/g) || []).length;
-      const closeParens = (line.match(/\)/g) || []).length;
-      parenDepth += openParens - closeParens;
-      if (parenDepth === 0 && closeParens > 0) {
-        reactNativeEndLine = i;
-        break;
-      }
-    }
-  }
-
-  if (reactNativeStartLine === -1 || reactNativeEndLine === -1) {
+/**
+ * Ensure React Native extension targets have proper framework search paths.
+ * Uses START/END markers for reliable, idempotent injection.
+ */
+export function ensureReactNativeExtensionFrameworkPaths(
+  podfileContent: string,
+  extensions: { targetName: string; deploymentTarget: string }[],
+  mainTargetName: string
+): string {
+  if (extensions.length === 0) {
     return podfileContent;
   }
 
-  // Find the position after the closing paren
-  const beforeLines = lines.slice(0, reactNativeEndLine + 1).join('\n');
-  const insertPosition = beforeLines.length;
-  const beforeInsert = podfileContent.substring(0, insertPosition);
-  const afterInsert = podfileContent.substring(insertPosition);
+  const content = removeMarkedBlock(
+    podfileContent,
+    REACT_NATIVE_PATHS_START,
+    REACT_NATIVE_PATHS_END
+  );
 
-  // Insert our code with proper newlines
-  // Ensure newline before our code
+  const lines = content.split('\n');
+  const endLine = findReactNativePostInstallEndLine(lines);
+
+  if (endLine === -1) {
+    return content;
+  }
+
+  // Insert right after the closing paren of react_native_post_install
+  const insertPosition = lines.slice(0, endLine + 1).join('\n').length;
+  const beforeInsert = content.substring(0, insertPosition);
+  const afterInsert = content.substring(insertPosition);
   const needsNewlineBefore = !beforeInsert.endsWith('\n');
 
-  // Check what comes after - preserve any existing closing 'end' for post_install
-  const afterTrimmed = afterInsert.trimStart();
-  const _hasPostInstallEnd = afterTrimmed.startsWith('end');
-
-  // Insert: newline + our code + newline (preserve existing post_install end if present)
-  // Important: preserve indentation of afterInsert to maintain valid Podfile structure
-  // Using trimStart() would break the "  end" indentation that ensureExtensionDeploymentTargets relies on
+  // Keep the indentation of what follows: trimming it would break the "  end"
+  // of post_install that ensureExtensionDeploymentTargets relies on.
   return (
     beforeInsert.trimEnd() +
     (needsNewlineBefore ? '\n' : '') +
-    fixCode +
+    buildFrameworkPathsFix(extensions, mainTargetName) +
     '\n' +
     afterInsert
   );

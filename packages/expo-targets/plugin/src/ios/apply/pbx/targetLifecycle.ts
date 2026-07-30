@@ -91,49 +91,56 @@ export function removeDuplicateTargets({
     return 0;
   }
 
-  const xcodeProject = project as any;
   const [_keepTarget, ...duplicates] = allTargets;
 
-  // biome-ignore lint/complexity/noForEach: pre-existing; prefer for-of tracked
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
-  duplicates.forEach((targetUuid) => {
-    // Remove from PBXNativeTarget section
-    const pbxNativeTargetSection =
-      xcodeProject.hash.project.objects.PBXNativeTarget;
-    if (pbxNativeTargetSection) {
-      delete pbxNativeTargetSection[targetUuid];
-      delete pbxNativeTargetSection[`${targetUuid}_comment`];
-    }
-
-    // Remove from project targets list
-    const project = xcodeProject.hash.project.objects.PBXProject;
-    for (const projectKey in project) {
-      if (projectKey.endsWith('_comment')) {
-        continue;
-      }
-      const projectObj = project[projectKey];
-      if (projectObj?.targets) {
-        projectObj.targets = projectObj.targets.filter(
-          (t: any) => t.value !== targetUuid
-        );
-      }
-    }
-
-    // Remove build configuration list
-    const target =
-      xcodeProject.hash.project.objects.PBXNativeTarget?.[targetUuid];
-    if (target?.buildConfigurationList) {
-      const configListUuid = target.buildConfigurationList;
-      const configListSection =
-        xcodeProject.hash.project.objects.XCConfigurationList;
-      if (configListSection) {
-        delete configListSection[configListUuid];
-        delete configListSection[`${configListUuid}_comment`];
-      }
-    }
-  });
+  for (const targetUuid of duplicates) {
+    removeTarget(project, targetUuid);
+  }
 
   return duplicates.length;
+}
+
+function removeTarget(project: XcodeProject, targetUuid: string): void {
+  const objects = (project as any).hash.project.objects;
+
+  if (objects.PBXNativeTarget) {
+    delete objects.PBXNativeTarget[targetUuid];
+    delete objects.PBXNativeTarget[`${targetUuid}_comment`];
+  }
+
+  detachTargetFromProject(objects.PBXProject, targetUuid);
+  removeBuildConfigurationList(objects, targetUuid);
+}
+
+function removeBuildConfigurationList(
+  objects: Record<string, any>,
+  targetUuid: string
+): void {
+  const configListUuid =
+    objects.PBXNativeTarget?.[targetUuid]?.buildConfigurationList;
+  if (!(configListUuid && objects.XCConfigurationList)) {
+    return;
+  }
+
+  delete objects.XCConfigurationList[configListUuid];
+  delete objects.XCConfigurationList[`${configListUuid}_comment`];
+}
+
+function detachTargetFromProject(
+  projectSection: Record<string, any> | undefined,
+  targetUuid: string
+): void {
+  for (const projectKey in projectSection) {
+    if (projectKey.endsWith('_comment')) {
+      continue;
+    }
+    const projectObj = projectSection[projectKey];
+    if (projectObj?.targets) {
+      projectObj.targets = projectObj.targets.filter(
+        (t: any) => t.value !== targetUuid
+      );
+    }
+  }
 }
 
 /**

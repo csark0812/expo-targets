@@ -6,11 +6,11 @@
  * those modules directly.
  */
 
+export * as Xcode from '../apply/pbx';
+export * as Podfile from '../apply/podfile';
 export * as Asset from './asset';
 export * as File from './file';
 export * as Paths from './paths';
 export * as Plist from './plist';
 export * as ReactNativeSwift from './reactNativeSwift';
 export * as Safari from './safari';
-export * as Podfile from '../apply/podfile';
-export * as Xcode from '../apply/pbx';

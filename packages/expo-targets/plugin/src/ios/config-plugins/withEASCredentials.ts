@@ -15,15 +15,17 @@ interface EasCredentialsProps {
 function safeSet(obj: any, key: string, value: any): void {
   const segments = key.split('.');
   const last = segments.pop();
-  // biome-ignore lint/complexity/noForEach: pre-existing; prefer for-of tracked
-  segments.forEach((segment) => {
-    if (!obj[segment]) {
-      obj[segment] = {};
+
+  let current = obj;
+  for (const segment of segments) {
+    if (!current[segment]) {
+      current[segment] = {};
     }
-    obj = obj[segment];
-  });
-  if (last && !obj[last]) {
-    obj[last] = value;
+    current = current[segment];
+  }
+
+  if (last && !current[last]) {
+    current[last] = value;
   }
 }
 

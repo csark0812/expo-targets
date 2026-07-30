@@ -8,12 +8,247 @@ import type { XcodeTarget } from './types';
  * embed phase or a duplicate build file for the same product.
  */
 
+const APP_EXTENSION_DST_SUBFOLDER_SPEC = 13;
+const EMBED_PHASE_NAME = 'Embed App Extensions';
+const EMBED_ATTRIBUTES = ['RemoveHeadersOnCopy', 'CodeSignOnCopy'];
+
+interface PbxSections {
+  buildFileSection: Record<string, any>;
+  fileRefSection: Record<string, any>;
+}
+
+function ensureEmbedAttributes(buildFile: any): void {
+  if (!Array.isArray(buildFile.settings?.ATTRIBUTES)) {
+    buildFile.settings = { ATTRIBUTES: [...EMBED_ATTRIBUTES] };
+    return;
+  }
+
+  const attrs: string[] = buildFile.settings.ATTRIBUTES;
+  for (const attr of EMBED_ATTRIBUTES) {
+    if (!attrs.includes(attr)) {
+      attrs.push(attr);
+    }
+  }
+}
+
+/**
+ * A product is identified by either the `path` or the `name` of its file
+ * reference, both of which may be quoted in the pbxproj.
+ */
+function productNamesForBuildFile(
+  { fileRefSection }: PbxSections,
+  buildFile: any
+): string[] {
+  const fileRef = fileRefSection?.[buildFile.fileRef];
+  return [fileRef?.path, fileRef?.name]
+    .filter((value): value is string => typeof value === 'string')
+    .map((value) => value.replace(/"/g, ''));
+}
+
+/**
+ * Give the extension's own build file the copy attributes it needs, wherever
+ * in the project it happens to live.
+ */
+function configureExtensionBuildFile(
+  sections: PbxSections,
+  targetFileName: string
+): void {
+  for (const buildFileKey in sections.buildFileSection) {
+    if (buildFileKey.endsWith('_comment')) {
+      continue;
+    }
+
+    const buildFile = sections.buildFileSection[buildFileKey];
+    if (!buildFile?.fileRef) {
+      continue;
+    }
+
+    const names = productNamesForBuildFile(sections, buildFile);
+    if (names.includes(targetFileName)) {
+      ensureEmbedAttributes(buildFile);
+      return;
+    }
+  }
+}
+
+function findNamedEmbedPhase(
+  copyFilesPhases: Record<string, any>
+): string | undefined {
+  for (const phaseKey in copyFilesPhases) {
+    if (phaseKey.endsWith('_comment')) {
+      continue;
+    }
+    const phase = copyFilesPhases[phaseKey];
+    if (
+      phase?.dstSubfolderSpec === APP_EXTENSION_DST_SUBFOLDER_SPEC &&
+      (phase.name === `"${EMBED_PHASE_NAME}"` ||
+        copyFilesPhases[`${phaseKey}_comment`] === EMBED_PHASE_NAME)
+    ) {
+      return phaseKey;
+    }
+  }
+}
+
+/**
+ * Attributes every `.appex` build file in a phase and records its UUID.
+ * Returns whether the phase embeds an app extension at all.
+ */
+function registerAppExtensionFiles(
+  sections: PbxSections,
+  phase: any,
+  extensionBuildFiles: Set<string>
+): boolean {
+  let found = false;
+
+  for (const file of phase.files) {
+    const buildFile = sections.buildFileSection?.[file.value];
+    if (!buildFile?.fileRef) {
+      continue;
+    }
+    const isAppExtension = productNamesForBuildFile(sections, buildFile).some(
+      (name) => name.endsWith('.appex')
+    );
+    if (isAppExtension) {
+      found = true;
+      extensionBuildFiles.add(file.value);
+      ensureEmbedAttributes(buildFile);
+    }
+  }
+
+  return found;
+}
+
+function isExtensionEmbedPhase(
+  copyFilesPhases: Record<string, any>,
+  phaseKey: string,
+  primaryPhaseKey?: string
+): boolean {
+  if (phaseKey.endsWith('_comment') || phaseKey === primaryPhaseKey) {
+    return false;
+  }
+  const phase = copyFilesPhases[phaseKey];
+  return (
+    phase?.dstSubfolderSpec === APP_EXTENSION_DST_SUBFOLDER_SPEC &&
+    Boolean(phase.files)
+  );
+}
+
+/**
+ * Locate every phase that embeds app extensions. The first one either already
+ * carries the standard name or is promoted to primary; the rest get merged.
+ */
+function collectEmbedPhases({
+  sections,
+  copyFilesPhases,
+}: {
+  sections: PbxSections;
+  copyFilesPhases: Record<string, any>;
+}): {
+  primaryPhaseKey?: string;
+  phasesToMerge: string[];
+  extensionBuildFiles: Set<string>;
+} {
+  let primaryPhaseKey = findNamedEmbedPhase(copyFilesPhases);
+  const phasesToMerge: string[] = [];
+  const extensionBuildFiles = new Set<string>();
+
+  for (const phaseKey in copyFilesPhases) {
+    if (!isExtensionEmbedPhase(copyFilesPhases, phaseKey, primaryPhaseKey)) {
+      continue;
+    }
+
+    const embedsExtensions = registerAppExtensionFiles(
+      sections,
+      copyFilesPhases[phaseKey],
+      extensionBuildFiles
+    );
+    if (!embedsExtensions) {
+      continue;
+    }
+
+    if (primaryPhaseKey) {
+      phasesToMerge.push(phaseKey);
+    } else {
+      primaryPhaseKey = phaseKey;
+    }
+  }
+
+  return { primaryPhaseKey, phasesToMerge, extensionBuildFiles };
+}
+
+function mergeEmbedPhases({
+  copyFilesPhases,
+  primaryPhaseKey,
+  phasesToMerge,
+  extensionBuildFiles,
+}: {
+  copyFilesPhases: Record<string, any>;
+  primaryPhaseKey: string;
+  phasesToMerge: string[];
+  extensionBuildFiles: Set<string>;
+}): void {
+  const primaryPhase = copyFilesPhases[primaryPhaseKey];
+  primaryPhase.name = `"${EMBED_PHASE_NAME}"`;
+  copyFilesPhases[`${primaryPhaseKey}_comment`] = EMBED_PHASE_NAME;
+
+  if (!primaryPhase.files) {
+    primaryPhase.files = [];
+  }
+
+  const existingFiles = new Set(primaryPhase.files.map((f: any) => f.value));
+
+  for (const phaseKey of phasesToMerge) {
+    for (const file of copyFilesPhases[phaseKey]?.files || []) {
+      if (
+        extensionBuildFiles.has(file.value) &&
+        !existingFiles.has(file.value)
+      ) {
+        primaryPhase.files.push(file);
+        existingFiles.add(file.value);
+      }
+    }
+  }
+}
+
+function findMainAppTarget(
+  nativeTargets: Record<string, any> | undefined
+): any {
+  for (const targetKey in nativeTargets) {
+    if (targetKey.endsWith('_comment')) {
+      continue;
+    }
+    const target = nativeTargets[targetKey];
+    if (target?.productType === '"com.apple.product-type.application"') {
+      return target;
+    }
+  }
+}
+
+/**
+ * The merged-away phases are dropped by detaching them from the host app.
+ */
+function detachMergedPhases(
+  project: XcodeProject,
+  phasesToMerge: string[]
+): void {
+  if (phasesToMerge.length === 0) {
+    return;
+  }
+
+  const objects = (project as any).hash.project.objects;
+  const mainAppTarget = findMainAppTarget(objects.PBXNativeTarget);
+
+  if (mainAppTarget?.buildPhases) {
+    mainAppTarget.buildPhases = mainAppTarget.buildPhases.filter(
+      (phase: any) => !phasesToMerge.includes(phase.value)
+    );
+  }
+}
+
 /**
  * Configure embed settings for app extension.
  * Consolidates all app extensions into a SINGLE "Embed App Extensions" phase.
  */
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
 export function configureAppExtensionEmbed({
   project,
   targetProductName,
@@ -21,171 +256,29 @@ export function configureAppExtensionEmbed({
   project: XcodeProject;
   targetProductName: string;
 }): void {
-  const xcodeProject = project as any;
-  const buildFileSection = xcodeProject.hash.project.objects.PBXBuildFile;
-  const fileRefSection = xcodeProject.hash.project.objects.PBXFileReference;
-  const targetFileName = `${targetProductName}.appex`;
-
-  const ensureAttributes = (buildFile: any) => {
-    const desired = ['RemoveHeadersOnCopy', 'CodeSignOnCopy'];
-    if (!(buildFile.settings && Array.isArray(buildFile.settings.ATTRIBUTES))) {
-      buildFile.settings = { ATTRIBUTES: desired };
-      return;
-    }
-    const attrs: string[] = buildFile.settings.ATTRIBUTES;
-    // biome-ignore lint/complexity/noForEach: pre-existing; prefer for-of tracked
-    desired.forEach((attr) => {
-      if (!attrs.includes(attr)) {
-        attrs.push(attr);
-      }
-    });
+  const objects = (project as any).hash.project.objects;
+  const sections: PbxSections = {
+    buildFileSection: objects.PBXBuildFile,
+    fileRefSection: objects.PBXFileReference,
   };
 
-  // Find and configure the PBXBuildFile for the extension (global scan)
-  let foundBuildFile = false;
-  for (const buildFileKey in buildFileSection) {
-    if (buildFileKey.endsWith('_comment')) {
-      continue;
-    }
+  configureExtensionBuildFile(sections, `${targetProductName}.appex`);
 
-    const buildFile = buildFileSection[buildFileKey];
-    if (buildFile?.fileRef) {
-      const fileRef = fileRefSection[buildFile.fileRef];
-      const refPath = fileRef?.path?.replace(/"/g, '');
-      const refName = fileRef?.name?.replace(/"/g, '');
+  const copyFilesPhases = objects.PBXCopyFilesBuildPhase;
+  const { primaryPhaseKey, phasesToMerge, extensionBuildFiles } =
+    collectEmbedPhases({ sections, copyFilesPhases });
 
-      if (refPath === targetFileName || refName === targetFileName) {
-        ensureAttributes(buildFile);
-        foundBuildFile = true;
-        break;
-      }
-    }
+  if (!(primaryPhaseKey && copyFilesPhases[primaryPhaseKey])) {
+    return;
   }
 
-  if (!foundBuildFile) {
-  }
-
-  // Find or create a SINGLE "Embed App Extensions" phase
-  const copyFilesPhases =
-    xcodeProject.hash.project.objects.PBXCopyFilesBuildPhase;
-
-  // Step 1: Find existing "Embed App Extensions" phase (with proper name)
-  let primaryPhaseKey: string | null = null;
-  let primaryPhase: any = null;
-
-  for (const phaseKey in copyFilesPhases) {
-    if (phaseKey.endsWith('_comment')) {
-      continue;
-    }
-    const phase = copyFilesPhases[phaseKey];
-    if (
-      phase?.dstSubfolderSpec === 13 &&
-      (phase.name === '"Embed App Extensions"' ||
-        copyFilesPhases[`${phaseKey}_comment`] === 'Embed App Extensions')
-    ) {
-      primaryPhaseKey = phaseKey;
-      primaryPhase = phase;
-      break;
-    }
-  }
-
-  // Step 2: Consolidate - find all extension embedding phases and merge into primary
-  const phasesToMerge: string[] = [];
-  const extensionBuildFiles: Set<string> = new Set();
-
-  for (const phaseKey in copyFilesPhases) {
-    if (phaseKey.endsWith('_comment') || phaseKey === primaryPhaseKey) {
-      continue;
-    }
-    const phase = copyFilesPhases[phaseKey];
-
-    if (phase?.dstSubfolderSpec === 13 && phase.files) {
-      // Check if this phase contains any .appex files
-      let hasAppExtension = false;
-      // biome-ignore lint/complexity/noForEach: pre-existing; prefer for-of tracked
-      phase.files.forEach((file: any) => {
-        const buildFileKey = file.value;
-        const buildFile = buildFileSection?.[buildFileKey];
-        if (!buildFile?.fileRef) {
-          return;
-        }
-        const fileRef = fileRefSection?.[buildFile.fileRef];
-        const refPath = fileRef?.path?.replace(/"/g, '');
-        const refName = fileRef?.name?.replace(/"/g, '');
-        if (refPath?.endsWith('.appex') || refName?.endsWith('.appex')) {
-          hasAppExtension = true;
-          extensionBuildFiles.add(buildFileKey);
-          ensureAttributes(buildFile);
-        }
-      });
-
-      if (hasAppExtension) {
-        if (primaryPhaseKey) {
-          phasesToMerge.push(phaseKey);
-        } else {
-          // Use this as the primary phase
-          primaryPhaseKey = phaseKey;
-          primaryPhase = phase;
-        }
-      }
-    }
-  }
-
-  // Step 3: If we found a primary phase, merge all extensions into it
-  if (primaryPhaseKey && primaryPhase) {
-    // Rename to standard name
-    primaryPhase.name = '"Embed App Extensions"';
-    copyFilesPhases[`${primaryPhaseKey}_comment`] = 'Embed App Extensions';
-
-    // Merge build files from other phases
-    if (!primaryPhase.files) {
-      primaryPhase.files = [];
-    }
-
-    const existingFiles = new Set(primaryPhase.files.map((f: any) => f.value));
-
-    // biome-ignore lint/complexity/noForEach: pre-existing; prefer for-of tracked
-    phasesToMerge.forEach((phaseKey) => {
-      const phase = copyFilesPhases[phaseKey];
-      if (phase?.files) {
-        // biome-ignore lint/complexity/noForEach: pre-existing; prefer for-of tracked
-        phase.files.forEach((file: any) => {
-          const buildFileKey = file.value;
-          if (
-            extensionBuildFiles.has(buildFileKey) &&
-            !existingFiles.has(buildFileKey)
-          ) {
-            primaryPhase.files.push(file);
-            existingFiles.add(buildFileKey);
-          }
-        });
-      }
-    });
-
-    // Step 4: Remove duplicate phases (mark for deletion by removing from main app build phases)
-    if (phasesToMerge.length > 0) {
-      // Get the main app target by finding the first application target
-      const nativeTargets = xcodeProject.hash.project.objects.PBXNativeTarget;
-      let mainAppTarget: any = null;
-
-      for (const targetKey in nativeTargets) {
-        if (targetKey.endsWith('_comment')) {
-          continue;
-        }
-        const target = nativeTargets[targetKey];
-        if (target?.productType === '"com.apple.product-type.application"') {
-          mainAppTarget = target;
-          break;
-        }
-      }
-
-      if (mainAppTarget?.buildPhases) {
-        mainAppTarget.buildPhases = mainAppTarget.buildPhases.filter(
-          (phase: any) => !phasesToMerge.includes(phase.value)
-        );
-      }
-    }
-  }
+  mergeEmbedPhases({
+    copyFilesPhases,
+    primaryPhaseKey,
+    phasesToMerge,
+    extensionBuildFiles,
+  });
+  detachMergedPhases(project, phasesToMerge);
 }
 
 const APP_CLIP_DST_SUBFOLDER_SPEC = 16;

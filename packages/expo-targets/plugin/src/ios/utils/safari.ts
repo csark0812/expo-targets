@@ -263,93 +263,92 @@ export function generatePlaceholderPopupScript(
 }
 
 /**
+ * A minimal valid PNG: a 1x1 transparent pixel, used as an icon placeholder.
+ */
+const MINIMAL_PNG_BYTES = [
+  0x89,
+  0x50,
+  0x4e,
+  0x47,
+  0x0d,
+  0x0a,
+  0x1a,
+  0x0a, // PNG signature
+  0x00,
+  0x00,
+  0x00,
+  0x0d, // IHDR length
+  0x49,
+  0x48,
+  0x44,
+  0x52, // IHDR
+  0x00,
+  0x00,
+  0x00,
+  0x01, // width: 1
+  0x00,
+  0x00,
+  0x00,
+  0x01, // height: 1
+  0x08,
+  0x06, // bit depth: 8, color type: RGBA
+  0x00,
+  0x00,
+  0x00, // compression, filter, interlace
+  0x1f,
+  0x15,
+  0xc4,
+  0x89, // IHDR CRC
+  0x00,
+  0x00,
+  0x00,
+  0x0a, // IDAT length
+  0x49,
+  0x44,
+  0x41,
+  0x54, // IDAT
+  0x78,
+  0x9c,
+  0x63,
+  0x00,
+  0x01,
+  0x00,
+  0x00,
+  0x05,
+  0x00,
+  0x01, // compressed data
+  0x0d,
+  0x0a,
+  0x2d,
+  0xb4, // IDAT CRC
+  0x00,
+  0x00,
+  0x00,
+  0x00, // IEND length
+  0x49,
+  0x45,
+  0x4e,
+  0x44, // IEND
+  0xae,
+  0x42,
+  0x60,
+  0x82, // IEND CRC
+];
+
+const PLACEHOLDER_ICON_SIZES = [16, 32, 48, 128];
+
+/**
  * Generate placeholder icons for Safari extension
  */
-
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
 export function generatePlaceholderIcons(resourcesPath: string): void {
   const imagesPath = path.join(resourcesPath, 'images');
   File.ensureDirectoryExists(imagesPath);
 
-  // Generate simple placeholder SVG-based icons at different sizes
-  const sizes = [16, 32, 48, 128];
-
-  for (const size of sizes) {
+  for (const size of PLACEHOLDER_ICON_SIZES) {
     const iconPath = path.join(imagesPath, `icon-${size}.png`);
     // Only create if doesn't exist - don't overwrite user icons
     if (!fs.existsSync(iconPath)) {
-      // Create a minimal valid PNG (1x1 transparent pixel as placeholder)
-      // This is a minimal valid PNG file
-      const minimalPng = Buffer.from([
-        0x89,
-        0x50,
-        0x4e,
-        0x47,
-        0x0d,
-        0x0a,
-        0x1a,
-        0x0a, // PNG signature
-        0x00,
-        0x00,
-        0x00,
-        0x0d, // IHDR length
-        0x49,
-        0x48,
-        0x44,
-        0x52, // IHDR
-        0x00,
-        0x00,
-        0x00,
-        0x01, // width: 1
-        0x00,
-        0x00,
-        0x00,
-        0x01, // height: 1
-        0x08,
-        0x06, // bit depth: 8, color type: RGBA
-        0x00,
-        0x00,
-        0x00, // compression, filter, interlace
-        0x1f,
-        0x15,
-        0xc4,
-        0x89, // IHDR CRC
-        0x00,
-        0x00,
-        0x00,
-        0x0a, // IDAT length
-        0x49,
-        0x44,
-        0x41,
-        0x54, // IDAT
-        0x78,
-        0x9c,
-        0x63,
-        0x00,
-        0x01,
-        0x00,
-        0x00,
-        0x05,
-        0x00,
-        0x01, // compressed data
-        0x0d,
-        0x0a,
-        0x2d,
-        0xb4, // IDAT CRC
-        0x00,
-        0x00,
-        0x00,
-        0x00, // IEND length
-        0x49,
-        0x45,
-        0x4e,
-        0x44, // IEND
-        0xae,
-        0x42,
-        0x60,
-        0x82, // IEND CRC
-      ]);
-      fs.writeFileSync(iconPath, minimalPng);
+      fs.writeFileSync(iconPath, Buffer.from(MINIMAL_PNG_BYTES));
     }
   }
 }

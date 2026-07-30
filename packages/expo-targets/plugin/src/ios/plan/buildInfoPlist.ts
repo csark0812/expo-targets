@@ -1,63 +1,77 @@
 import plist from '@expo/plist';
 
 import type { ExtensionType } from '../../config';
-import { TYPE_CHARACTERISTICS } from '../../domain/characteristics';
+import {
+  TYPE_CHARACTERISTICS,
+  type TypeCharacteristics,
+} from '../../domain/characteristics';
 
 /**
  * Build the Info.plist XML string for a given extension type.
  * Pure: no filesystem I/O. Called by `planInfoPlist`.
  */
 
-function deepMerge(target: any, source: any): any {
-  const output = { ...target };
-
-  if (isObject(target) && isObject(source)) {
-    // biome-ignore lint/complexity/noForEach: pre-existing; prefer for-of tracked
-    Object.keys(source).forEach((key) => {
-      if (isObject(source[key])) {
-        if (key in target) {
-          output[key] = deepMerge(target[key], source[key]);
-        } else {
-          output[key] = source[key];
-        }
-      } else {
-        output[key] = source[key];
-      }
-    });
-  }
-
-  return output;
+export interface TargetInfoPlistOptions {
+  customProperties?: Record<string, any>;
+  shareExtensionConfig?: {
+    activationRules?: { type: string; maxCount?: number }[];
+    preprocessingFile?: string;
+  };
+  entry?: string;
+  mainAppSchemes?: string[];
+  targetsConfig?: any[];
+  targetIcon?: string;
+  intentsConfig?: {
+    intentsSupported?: string[];
+    intentsRestrictedWhileLocked?: string[];
+  };
 }
+
+/**
+ * Everything the `apply*` helpers below need. `basePlist` is mutated in place;
+ * only `applyCustomProperties` returns a new dictionary because it merges.
+ */
+interface PlistContext {
+  basePlist: Record<string, any>;
+  characteristics: TypeCharacteristics;
+  type: ExtensionType;
+  options: TargetInfoPlistOptions;
+}
+
+const REACT_NATIVE_PRINCIPAL_CLASS =
+  '$(PRODUCT_MODULE_NAME).ReactNativeViewController';
+
+/**
+ * Types whose React Native entry is hosted by `ReactNativeViewController`.
+ * Messages extensions are excluded: they MUST extend MSMessagesAppViewController.
+ */
+const REACT_NATIVE_ENTRY_TYPES = new Set<ExtensionType>([
+  'share',
+  'action',
+  'clip',
+]);
 
 function isObject(item: any): boolean {
   return item && typeof item === 'object' && !Array.isArray(item);
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
-// biome-ignore lint/complexity/useMaxParams: pre-existing complexity; tracked for refactor
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
-export function getTargetInfoPlistForType(
-  type: ExtensionType,
-  customProperties?: Record<string, any>,
-  shareExtensionConfig?: {
-    activationRules?: { type: string; maxCount?: number }[];
-    preprocessingFile?: string;
-  },
-  entry?: string,
-  mainAppSchemes?: string[],
-  targetsConfig?: any[],
-  targetIcon?: string,
-  intentsConfig?: {
-    intentsSupported?: string[];
-    intentsRestrictedWhileLocked?: string[];
-  }
-): string {
-  const typeCharacteristics = TYPE_CHARACTERISTICS[type];
-  if (!typeCharacteristics) {
-    throw new Error(`Unknown extension type: ${type}`);
+function deepMerge(target: any, source: any): any {
+  const output = { ...target };
+
+  if (isObject(target) && isObject(source)) {
+    for (const key of Object.keys(source)) {
+      output[key] =
+        isObject(source[key]) && key in target
+          ? deepMerge(target[key], source[key])
+          : source[key];
+    }
   }
 
-  let basePlist: Record<string, any> = {
+  return output;
+}
+
+function createBasePlist(): Record<string, any> {
+  return {
     CFBundleDisplayName: '$(PRODUCT_NAME)',
     CFBundleName: '$(PRODUCT_NAME)',
     CFBundleIdentifier: '$(PRODUCT_BUNDLE_IDENTIFIER)',
@@ -68,224 +82,287 @@ export function getTargetInfoPlistForType(
     CFBundleVersion: '$(CURRENT_PROJECT_VERSION)',
     CFBundleExecutable: '$(EXECUTABLE_NAME)',
   };
+}
 
-  // Merge type-specific basePlist properties
-  basePlist = deepMerge(basePlist, typeCharacteristics.basePlist);
-
-  // Automatically add NSExtensionPointIdentifier if specified
-  if (typeCharacteristics.extensionPointIdentifier) {
-    basePlist.NSExtension = {
-      NSExtensionPointIdentifier: typeCharacteristics.extensionPointIdentifier,
-      ...(basePlist.NSExtension || {}),
-    };
+function applyExtensionPointIdentifier({
+  basePlist,
+  characteristics,
+}: PlistContext): void {
+  if (!characteristics.extensionPointIdentifier) {
+    return;
   }
 
-  // Handle activation rules for types that support them
-  if (typeCharacteristics.supportsActivationRules) {
-    const activationRules = shareExtensionConfig
-      ? buildShareExtensionActivationRules(
-          shareExtensionConfig.activationRules,
-          shareExtensionConfig.preprocessingFile
-        )
-      : typeCharacteristics.activationRulesLocation === 'direct'
-        ? { TRUEPREDICATE: true } // Default for action extensions
-        : {
-            // Default for share extensions
-            NSExtensionActivationSupportsText: true,
-            NSExtensionActivationSupportsWebURLWithMaxCount: 1,
-          };
+  basePlist.NSExtension = {
+    NSExtensionPointIdentifier: characteristics.extensionPointIdentifier,
+    ...(basePlist.NSExtension || {}),
+  };
+}
 
-    if (typeCharacteristics.activationRulesLocation === 'attributes') {
-      // Share extensions use NSExtensionAttributes
-      basePlist.NSExtension = {
-        ...basePlist.NSExtension,
-        NSExtensionAttributes: {
-          NSExtensionActivationRule: activationRules,
-          ...(shareExtensionConfig?.preprocessingFile && {
-            NSExtensionJavaScriptPreprocessingFile:
-              shareExtensionConfig.preprocessingFile.replace(/\.[^/.]+$/, ''), // Remove extension
-          }),
-        },
-      };
-    } else if (typeCharacteristics.activationRulesLocation === 'direct') {
-      // Action extensions use NSExtensionActivationRule directly
-      basePlist.NSExtension = {
-        ...basePlist.NSExtension,
-        NSExtensionActivationRule:
-          Object.keys(activationRules).length === 1 &&
-          'TRUEPREDICATE' in activationRules
-            ? 'TRUEPREDICATE'
-            : activationRules,
-      };
-    }
+function resolveActivationRules({
+  characteristics,
+  options,
+}: PlistContext): Record<string, any> {
+  if (options.shareExtensionConfig) {
+    return buildShareExtensionActivationRules(
+      options.shareExtensionConfig.activationRules,
+      options.shareExtensionConfig.preprocessingFile
+    );
   }
 
-  // Handle IntentsSupported for intent and intent-ui types
-  if ((type === 'intent' || type === 'intent-ui') && intentsConfig) {
-    const nsExtension = basePlist.NSExtension || {};
-    const nsExtensionAttributes = nsExtension.NSExtensionAttributes || {};
-
-    if (
-      intentsConfig.intentsSupported &&
-      intentsConfig.intentsSupported.length > 0
-    ) {
-      nsExtensionAttributes.IntentsSupported = intentsConfig.intentsSupported;
-    }
-
-    if (
-      type === 'intent' &&
-      intentsConfig.intentsRestrictedWhileLocked &&
-      intentsConfig.intentsRestrictedWhileLocked.length > 0
-    ) {
-      nsExtensionAttributes.IntentsRestrictedWhileLocked =
-        intentsConfig.intentsRestrictedWhileLocked;
-    }
-
-    basePlist.NSExtension = {
-      ...nsExtension,
-      NSExtensionAttributes: nsExtensionAttributes,
-    };
+  if (characteristics.activationRulesLocation === 'direct') {
+    return { TRUEPREDICATE: true };
   }
 
-  // Override NSExtensionPrincipalClass for React Native extensions
-  // Note: Messages extensions keep MessagesViewController as it MUST extend MSMessagesAppViewController
-  if (entry && (type === 'share' || type === 'action' || type === 'clip')) {
-    const nsExtension = { ...basePlist.NSExtension };
+  return {
+    NSExtensionActivationSupportsText: true,
+    NSExtensionActivationSupportsWebURLWithMaxCount: 1,
+  };
+}
 
-    // Remove NSExtensionMainStoryboard for action extensions using React Native
-    if (
-      typeCharacteristics.activationRulesLocation === 'direct' &&
-      nsExtension.NSExtensionMainStoryboard
-    ) {
-      nsExtension.NSExtensionMainStoryboard = undefined;
-    }
+function applyActivationRules(context: PlistContext): void {
+  const { basePlist, characteristics, options } = context;
+  if (!characteristics.supportsActivationRules) {
+    return;
+  }
 
-    // For action extensions, ensure NSExtensionActivationRule stays directly under NSExtension
-    // but preserve NSExtensionAttributes if it contains other keys like NSExtensionIcon
-    if (typeCharacteristics.activationRulesLocation === 'direct') {
-      const activationRule = nsExtension.NSExtensionActivationRule;
-      const existingAttributes = nsExtension.NSExtensionAttributes || {};
+  const activationRules = resolveActivationRules(context);
+  const preprocessingFile = options.shareExtensionConfig?.preprocessingFile;
 
-      // Build NSExtensionAttributes with icon if provided, preserving other attributes
-      const finalAttributes: Record<string, any> = { ...existingAttributes };
-
-      // Remove NSExtensionActivationRule from attributes if it exists (should be direct)
-      if (finalAttributes.NSExtensionActivationRule) {
-        finalAttributes.NSExtensionActivationRule = undefined;
-      }
-
-      // Add NSExtensionIcon if targetIcon is provided (for action extensions)
-      if (targetIcon && type === 'action') {
-        finalAttributes.NSExtensionIcon = {
-          // NSExtensionIconName can be an SF Symbol name (e.g., "photo.fill")
-          // or an image asset name. iOS automatically detects SF Symbols vs image assets.
-          NSExtensionIconName: targetIcon,
-        };
-      }
-
-      // Only include NSExtensionAttributes if there are remaining attributes
-      const extensionDict: Record<string, any> = {
-        ...nsExtension,
-        NSExtensionActivationRule: activationRule,
-        NSExtensionPrincipalClass:
-          '$(PRODUCT_MODULE_NAME).ReactNativeViewController',
-      };
-
-      if (Object.keys(finalAttributes).length > 0) {
-        extensionDict.NSExtensionAttributes = finalAttributes;
-      }
-
-      basePlist.NSExtension = extensionDict;
-    } else {
-      basePlist.NSExtension = {
-        ...nsExtension,
-        NSExtensionPrincipalClass:
-          '$(PRODUCT_MODULE_NAME).ReactNativeViewController',
-      };
-    }
-  } else if (
-    typeCharacteristics.activationRulesLocation === 'direct' &&
-    !entry
-  ) {
-    // Native action extension needs NSExtensionMainStoryboard
+  if (characteristics.activationRulesLocation === 'attributes') {
     basePlist.NSExtension = {
       ...basePlist.NSExtension,
-      NSExtensionMainStoryboard: 'MainInterface',
+      NSExtensionAttributes: {
+        NSExtensionActivationRule: activationRules,
+        ...(preprocessingFile && {
+          NSExtensionJavaScriptPreprocessingFile: preprocessingFile.replace(
+            /\.[^/.]+$/,
+            ''
+          ),
+        }),
+      },
+    };
+    return;
+  }
+
+  if (characteristics.activationRulesLocation === 'direct') {
+    basePlist.NSExtension = {
+      ...basePlist.NSExtension,
+      NSExtensionActivationRule:
+        Object.keys(activationRules).length === 1 &&
+        'TRUEPREDICATE' in activationRules
+          ? 'TRUEPREDICATE'
+          : activationRules,
+    };
+  }
+}
+
+function applyIntentsConfig({ basePlist, type, options }: PlistContext): void {
+  const intentsConfig = options.intentsConfig;
+  if (!intentsConfig || (type !== 'intent' && type !== 'intent-ui')) {
+    return;
+  }
+
+  const nsExtension = basePlist.NSExtension || {};
+  const nsExtensionAttributes = nsExtension.NSExtensionAttributes || {};
+
+  if (intentsConfig.intentsSupported?.length) {
+    nsExtensionAttributes.IntentsSupported = intentsConfig.intentsSupported;
+  }
+
+  if (type === 'intent' && intentsConfig.intentsRestrictedWhileLocked?.length) {
+    nsExtensionAttributes.IntentsRestrictedWhileLocked =
+      intentsConfig.intentsRestrictedWhileLocked;
+  }
+
+  basePlist.NSExtension = {
+    ...nsExtension,
+    NSExtensionAttributes: nsExtensionAttributes,
+  };
+}
+
+/**
+ * Attributes for an action extension: the activation rule has to sit directly
+ * under NSExtension, but other attributes (like the icon) must survive.
+ */
+function buildDirectAttributes(
+  { type, options }: PlistContext,
+  nsExtension: Record<string, any>
+): Record<string, any> {
+  const attributes: Record<string, any> = {
+    ...(nsExtension.NSExtensionAttributes || {}),
+  };
+
+  if (attributes.NSExtensionActivationRule) {
+    attributes.NSExtensionActivationRule = undefined;
+  }
+
+  if (options.targetIcon && type === 'action') {
+    attributes.NSExtensionIcon = {
+      // NSExtensionIconName can be an SF Symbol name (e.g., "photo.fill")
+      // or an image asset name. iOS automatically detects which it is.
+      NSExtensionIconName: options.targetIcon,
     };
   }
 
-  // Auto-inject LSApplicationQueriesSchemes from main app's URL schemes
-  // This allows extensions to query/open the main app via URL schemes
-  if (mainAppSchemes && mainAppSchemes.length > 0) {
-    const existingSchemes = customProperties?.LSApplicationQueriesSchemes || [];
-    const allSchemes = [...new Set([...mainAppSchemes, ...existingSchemes])];
+  return attributes;
+}
 
-    basePlist.LSApplicationQueriesSchemes = allSchemes;
-    // Note: Logged at caller level in withXcodeChanges for better context
+function applyNativeStoryboard({
+  basePlist,
+  characteristics,
+  options,
+}: PlistContext): void {
+  if (characteristics.activationRulesLocation !== 'direct' || options.entry) {
+    return;
   }
 
-  // Embed targets config for runtime access via expo-constants
-  // This makes Constants.expoConfig.extra.targets available in extensions
-  if (targetsConfig && targetsConfig.length > 0) {
-    basePlist.ExpoTargetsConfig = targetsConfig;
-    // Note: Logged at caller level in withXcodeChanges for better context
+  basePlist.NSExtension = {
+    ...basePlist.NSExtension,
+    NSExtensionMainStoryboard: 'MainInterface',
+  };
+}
+
+function applyPrincipalClass(context: PlistContext): void {
+  const { basePlist, characteristics, type, options } = context;
+
+  if (!(options.entry && REACT_NATIVE_ENTRY_TYPES.has(type))) {
+    applyNativeStoryboard(context);
+    return;
   }
 
-  if (customProperties) {
-    basePlist = deepMerge(basePlist, customProperties);
+  const nsExtension = { ...basePlist.NSExtension };
 
-    // Ensure NSExtensionPrincipalClass has $(PRODUCT_MODULE_NAME). prefix for Swift classes
-    // This is required for iOS to find the Swift class at runtime
-    if (basePlist.NSExtension?.NSExtensionPrincipalClass) {
-      const principalClass = basePlist.NSExtension.NSExtensionPrincipalClass;
-      // Add prefix if not already present and not using a storyboard
-      if (
-        typeof principalClass === 'string' &&
-        !principalClass.startsWith('$(PRODUCT_MODULE_NAME).') &&
-        !principalClass.includes('.')
-      ) {
-        basePlist.NSExtension.NSExtensionPrincipalClass = `$(PRODUCT_MODULE_NAME).${principalClass}`;
-      }
-    }
-
-    // For action extensions, ensure NSExtensionActivationRule structure is correct
-    // Custom properties might have added NSExtensionAttributes with NSExtensionActivationRule
-    // Move it to direct level, but preserve other attributes like NSExtensionIcon
-    if (
-      typeCharacteristics.activationRulesLocation === 'direct' &&
-      basePlist.NSExtension?.NSExtensionAttributes?.NSExtensionActivationRule
-    ) {
-      // Move NSExtensionActivationRule from NSExtensionAttributes to directly under NSExtension
-      const activationRule =
-        basePlist.NSExtension.NSExtensionAttributes.NSExtensionActivationRule;
-      basePlist.NSExtension.NSExtensionAttributes.NSExtensionActivationRule =
-        undefined;
-
-      // Only remove NSExtensionAttributes if it's now empty (preserve other attributes like NSExtensionIcon)
-      if (
-        Object.keys(basePlist.NSExtension.NSExtensionAttributes).length === 0
-      ) {
-        basePlist.NSExtension.NSExtensionAttributes = undefined;
-      }
-
-      basePlist.NSExtension.NSExtensionActivationRule = activationRule;
-    }
-
-    // Merge actionIcon from customProperties if provided (allows override via infoPlist)
-    if (
-      typeCharacteristics.activationRulesLocation === 'direct' &&
-      customProperties.NSExtension?.NSExtensionAttributes?.NSExtensionIcon
-    ) {
-      // Custom icon already set via infoPlist, use it
-      if (!basePlist.NSExtension.NSExtensionAttributes) {
-        basePlist.NSExtension.NSExtensionAttributes = {};
-      }
-      basePlist.NSExtension.NSExtensionAttributes.NSExtensionIcon =
-        customProperties.NSExtension.NSExtensionAttributes.NSExtensionIcon;
-    }
+  if (characteristics.activationRulesLocation !== 'direct') {
+    basePlist.NSExtension = {
+      ...nsExtension,
+      NSExtensionPrincipalClass: REACT_NATIVE_PRINCIPAL_CLASS,
+    };
+    return;
   }
 
-  return plist.build(basePlist);
+  if (nsExtension.NSExtensionMainStoryboard) {
+    nsExtension.NSExtensionMainStoryboard = undefined;
+  }
+
+  const activationRule = nsExtension.NSExtensionActivationRule;
+  const attributes = buildDirectAttributes(context, nsExtension);
+
+  const extensionDict: Record<string, any> = {
+    ...nsExtension,
+    NSExtensionActivationRule: activationRule,
+    NSExtensionPrincipalClass: REACT_NATIVE_PRINCIPAL_CLASS,
+  };
+
+  if (Object.keys(attributes).length > 0) {
+    extensionDict.NSExtensionAttributes = attributes;
+  }
+
+  basePlist.NSExtension = extensionDict;
+}
+
+/**
+ * iOS only finds a Swift principal class when it is module-qualified.
+ */
+function qualifyPrincipalClass(basePlist: Record<string, any>): void {
+  const principalClass = basePlist.NSExtension?.NSExtensionPrincipalClass;
+  if (
+    typeof principalClass === 'string' &&
+    !principalClass.startsWith('$(PRODUCT_MODULE_NAME).') &&
+    !principalClass.includes('.')
+  ) {
+    basePlist.NSExtension.NSExtensionPrincipalClass = `$(PRODUCT_MODULE_NAME).${principalClass}`;
+  }
+}
+
+/**
+ * Custom properties may nest NSExtensionActivationRule under
+ * NSExtensionAttributes; action extensions need it one level up.
+ */
+function hoistActivationRule(basePlist: Record<string, any>): void {
+  const attributes = basePlist.NSExtension?.NSExtensionAttributes;
+  if (!attributes?.NSExtensionActivationRule) {
+    return;
+  }
+
+  const activationRule = attributes.NSExtensionActivationRule;
+  attributes.NSExtensionActivationRule = undefined;
+
+  if (Object.keys(attributes).length === 0) {
+    basePlist.NSExtension.NSExtensionAttributes = undefined;
+  }
+
+  basePlist.NSExtension.NSExtensionActivationRule = activationRule;
+}
+
+function applyCustomIcon(
+  basePlist: Record<string, any>,
+  customProperties: Record<string, any>
+): void {
+  const icon =
+    customProperties.NSExtension?.NSExtensionAttributes?.NSExtensionIcon;
+  if (!icon) {
+    return;
+  }
+
+  if (!basePlist.NSExtension.NSExtensionAttributes) {
+    basePlist.NSExtension.NSExtensionAttributes = {};
+  }
+  basePlist.NSExtension.NSExtensionAttributes.NSExtensionIcon = icon;
+}
+
+function applyCustomProperties({
+  basePlist,
+  characteristics,
+  options,
+}: PlistContext): Record<string, any> {
+  const customProperties = options.customProperties;
+  if (!customProperties) {
+    return basePlist;
+  }
+
+  const merged = deepMerge(basePlist, customProperties);
+  qualifyPrincipalClass(merged);
+
+  if (characteristics.activationRulesLocation === 'direct') {
+    hoistActivationRule(merged);
+    applyCustomIcon(merged, customProperties);
+  }
+
+  return merged;
+}
+
+export function getTargetInfoPlistForType(
+  type: ExtensionType,
+  options: TargetInfoPlistOptions = {}
+): string {
+  const characteristics = TYPE_CHARACTERISTICS[type];
+  if (!characteristics) {
+    throw new Error(`Unknown extension type: ${type}`);
+  }
+
+  const basePlist = deepMerge(createBasePlist(), characteristics.basePlist);
+  const context: PlistContext = { basePlist, characteristics, type, options };
+
+  applyExtensionPointIdentifier(context);
+  applyActivationRules(context);
+  applyIntentsConfig(context);
+  applyPrincipalClass(context);
+
+  // Extensions query/open the host app through its URL schemes.
+  if (options.mainAppSchemes?.length) {
+    const existing =
+      options.customProperties?.LSApplicationQueriesSchemes || [];
+    basePlist.LSApplicationQueriesSchemes = [
+      ...new Set([...options.mainAppSchemes, ...existing]),
+    ];
+  }
+
+  // Makes Constants.expoConfig.extra.targets available inside extensions.
+  if (options.targetsConfig?.length) {
+    basePlist.ExpoTargetsConfig = options.targetsConfig;
+  }
+
+  return plist.build(applyCustomProperties(context));
 }
 
 /**

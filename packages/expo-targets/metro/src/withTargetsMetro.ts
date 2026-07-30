@@ -13,6 +13,53 @@ export interface ScanResult {
   warnings: string[];
 }
 
+function loadTargetConfig(
+  configPath: string,
+  dirName: string,
+  warnings: string[],
+): TargetConfig | undefined {
+  try {
+    return JSON.parse(fs.readFileSync(configPath, "utf-8")) as TargetConfig;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    warnings.push(
+      `[expo-targets/metro] targets/${dirName}: invalid expo-target.config.json (${message})`,
+    );
+  }
+}
+
+function registerTargetEntry(opts: {
+  projectRoot: string;
+  dirName: string;
+  config: TargetConfig;
+  entryMap: Map<string, string>;
+  warnings: string[];
+}): void {
+  const { projectRoot, dirName, config, entryMap, warnings } = opts;
+  if (!config.entry) {
+    return;
+  }
+
+  if (!config.name) {
+    warnings.push(
+      `[expo-targets/metro] targets/${dirName}: config has "entry" but missing "name"`,
+    );
+  }
+
+  const entryPath = path.resolve(projectRoot, config.entry);
+  if (!fs.existsSync(entryPath)) {
+    warnings.push(
+      `[expo-targets/metro] targets/${dirName}: entry "${config.entry}" does not exist (resolved: ${entryPath})`,
+    );
+    return;
+  }
+
+  const bundleRoot = config.entry
+    .replace(/^\.\//, "")
+    .replace(/\.(tsx?|jsx?)$/, "");
+  entryMap.set(bundleRoot, entryPath);
+}
+
 /**
  * Scan each target's expo-target.config.json for RN entry fields.
  * Exported for tests and tooling.
@@ -40,52 +87,36 @@ export function scanTargetsDirectory(projectRoot: string): ScanResult {
       continue;
     }
 
-    try {
-      const config: TargetConfig = JSON.parse(
-        fs.readFileSync(configPath, "utf-8"),
-      );
-      if (!config.entry) {
-        continue;
-      }
-
-      if (!config.name) {
-        warnings.push(
-          "[expo-targets/metro] targets/" +
-            dir.name +
-            ': config has "entry" but missing "name"',
-        );
-      }
-
-      const entryPath = path.resolve(projectRoot, config.entry);
-      if (!fs.existsSync(entryPath)) {
-        warnings.push(
-          "[expo-targets/metro] targets/" +
-            dir.name +
-            ': entry "' +
-            config.entry +
-            '" does not exist (resolved: ' +
-            entryPath +
-            ")",
-        );
-        continue;
-      }
-
-      const bundleRoot = config.entry
-        .replace(/^\.\//, "")
-        .replace(/\.(tsx?|jsx?)$/, "");
-      entryMap.set(bundleRoot, entryPath);
-    } catch (error) {
-      warnings.push(
-        "[expo-targets/metro] targets/" +
-          dir.name +
-          ": invalid expo-target.config.json (" +
-          (error instanceof Error ? error.message : String(error)) +
-          ")",
-      );
+    const config = loadTargetConfig(configPath, dir.name, warnings);
+    if (config) {
+      registerTargetEntry({
+        projectRoot,
+        dirName: dir.name,
+        config,
+        entryMap,
+        warnings,
+      });
     }
   }
 
   return { entryMap, warnings };
+}
+
+function logScanSummary(
+  entryMap: Map<string, string>,
+  warnings: string[],
+): void {
+  for (const warning of warnings) {
+    console.warn(warning);
+  }
+  if (entryMap.size === 0) {
+    return;
+  }
+  const roots = [...new Set(entryMap.values())];
+  const noun = roots.length === 1 ? "y" : "ies";
+  console.log(
+    `[expo-targets/metro] Resolved ${roots.length} RN extension entr${noun}`,
+  );
 }
 
 export function withTargetsMetro(
@@ -96,18 +127,7 @@ export function withTargetsMetro(
   const { entryMap, warnings } = scanTargetsDirectory(projectRoot);
 
   if (!options?.silent) {
-    for (const warning of warnings) {
-      console.warn(warning);
-    }
-    if (entryMap.size > 0) {
-      const roots = [...new Set(entryMap.values())];
-      console.log(
-        "[expo-targets/metro] Resolved " +
-          roots.length +
-          " RN extension entr" +
-          (roots.length === 1 ? "y" : "ies"),
-      );
-    }
+    logScanSummary(entryMap, warnings);
   }
 
   const previousResolveRequest = metroConfig.resolver?.resolveRequest;

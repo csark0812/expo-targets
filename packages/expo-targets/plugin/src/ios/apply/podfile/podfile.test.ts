@@ -60,7 +60,9 @@ describe('insertTargetBlock + removeTargetBlock', () => {
       deploymentTarget: '15.1',
     });
 
-    const result = insertTargetBlock(plainPodfile, block, true);
+    const result = insertTargetBlock(plainPodfile, block, {
+      standalone: true,
+    });
 
     expect(hasTargetBlock(result, 'ShareExtensionTarget')).toBe(true);
     expect(hasTargetBlock(result, 'App')).toBe(true);
@@ -72,7 +74,9 @@ describe('insertTargetBlock + removeTargetBlock', () => {
       deploymentTarget: '15.1',
     });
 
-    const inserted = insertTargetBlock(plainPodfile, block, true);
+    const inserted = insertTargetBlock(plainPodfile, block, {
+      standalone: true,
+    });
     const removed = removeTargetBlock(inserted, 'ShareExtensionTarget');
 
     expect(normalizePodfile(removed)).toBe(normalizePodfile(plainPodfile));

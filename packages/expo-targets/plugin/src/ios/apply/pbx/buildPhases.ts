@@ -60,13 +60,11 @@ export function removeBuildPhases({
 
   // Find matching phase UUIDs
   const phasesToRemove: string[] = [];
-  // biome-ignore lint/complexity/noForEach: pre-existing; prefer for-of tracked
-  target.buildPhases.forEach((phase: any) => {
-    const phaseUuid = phase.value;
-    if (phaseSection[phaseUuid]) {
-      phasesToRemove.push(phaseUuid);
+  for (const phase of target.buildPhases) {
+    if (phaseSection[phase.value]) {
+      phasesToRemove.push(phase.value);
     }
-  });
+  }
 
   // Remove phases from target's buildPhases array
   target.buildPhases = target.buildPhases.filter(
@@ -74,11 +72,10 @@ export function removeBuildPhases({
   );
 
   // Remove phase objects and comments from section
-  // biome-ignore lint/complexity/noForEach: pre-existing; prefer for-of tracked
-  phasesToRemove.forEach((phaseUuid) => {
+  for (const phaseUuid of phasesToRemove) {
     delete phaseSection[phaseUuid];
     delete phaseSection[`${phaseUuid}_comment`];
-  });
+  }
 }
 
 /**
