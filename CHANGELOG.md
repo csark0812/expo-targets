@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Thin `examples/*` Maestro-ready suite (10 SDK 54 hosts: share, action, messages, clip, stickers, widgets, kitchen-sink, native/share, native/action, native/clip).
+- PR C local harness: XCUITest Share Sheet attach-after-prebuild under `examples/_harness/uitests/` + Maestro clip `launch.yaml` (Release; not Ubuntu CI).
 - Skeleton docs SSOT (`@csark0812/skeleton`), `docs/widgets.md`, `docs/deprecations.md`.
 - Sharper RN extension runtime errors when `ExpoTargetsExtension` is missing; `getExtensionNativeModule()` helper.
 - `withTargetsMetro` entry validation/logging; `scanTargetsDirectory` export.

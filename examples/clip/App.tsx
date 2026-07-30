@@ -48,6 +48,13 @@ export default function App() {
       >
         <Text style={styles.buttonText}>Clear payload</Text>
       </TouchableOpacity>
+      <TouchableOpacity
+        testID="btn-refresh"
+        style={styles.button}
+        onPress={refresh}
+      >
+        <Text style={styles.buttonText}>Refresh</Text>
+      </TouchableOpacity>
       <Text testID="text-last-payload" style={styles.payload}>
         {payload}
       </Text>

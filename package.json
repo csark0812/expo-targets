@@ -34,7 +34,9 @@
     "examples:maestro:kitchen-sink": "maestro test examples/kitchen-sink/.maestro/smoke-share.yaml examples/kitchen-sink/.maestro/smoke-action.yaml examples/kitchen-sink/.maestro/smoke-clip.yaml examples/kitchen-sink/.maestro/smoke-stickers.yaml examples/kitchen-sink/.maestro/smoke-widgets.yaml examples/kitchen-sink/.maestro/smoke-messages.yaml",
     "examples:maestro:native-share": "maestro test examples/native/share/.maestro/smoke.yaml",
     "examples:maestro:native-action": "maestro test examples/native/action/.maestro/smoke.yaml",
-    "examples:maestro:native-clip": "maestro test examples/native/clip/.maestro/smoke.yaml"
+    "examples:maestro:native-clip": "maestro test examples/native/clip/.maestro/smoke.yaml",
+    "examples:maestro:clip-launch": "maestro test examples/clip/.maestro/launch.yaml",
+    "examples:maestro:native-clip-launch": "maestro test examples/native/clip/.maestro/launch.yaml"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.6",

@@ -60,3 +60,27 @@ bun run examples:maestro:share
 ```
 
 Do not commit generated `ios/` or `android/` folders from example prebuilds.
+
+## PR C — process proof (Release, local / MCP only)
+
+Host Maestro (PR B) is **not** full runtime proof. PR C adds:
+
+| Layer | Packages | Harness |
+| --- | --- | --- |
+| System Share Sheet | `share`, `action`, `native/share`, `native/action` | XCUITest under [`_harness/uitests/`](./_harness/uitests/) |
+| Clip real launch | `clip`, `native/clip` | Maestro [`clip/.maestro/launch.yaml`](./clip/.maestro/launch.yaml) / [`native/clip/.maestro/launch.yaml`](./native/clip/.maestro/launch.yaml) |
+
+**Release builds required.** See [`_harness/uitests/README.md`](./_harness/uitests/README.md) for C1 attach-after-prebuild spike, C2 failure gates (re-grill, no silent downgrade), and path to later non-blocking macOS CI.
+
+```bash
+# Share Sheet (after prebuild + attach)
+./examples/_harness/uitests/scripts/attach-after-prebuild.sh examples/share
+
+# Clip launch
+cd examples/clip && npx expo run:ios --configuration Release
+maestro test .maestro/launch.yaml
+```
+
+### Post-C deferred spikes
+
+Messages / stickers / widgets real-process automation remains separate best-effort spikes (OS-owned entry: Messages, Stickers drawer, Home Screen widgets).

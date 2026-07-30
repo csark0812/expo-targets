@@ -1,0 +1,27 @@
+appId: com.expotargets.example.native.clip
+name: native clip real launch
+tags:
+  - launch
+  - clip
+  - process
+  - native
+---
+# PR C — SwiftUI clip launch (Release). Failure gate: stop and re-grill if this cannot green.
+- launchApp:
+    clearState: true
+- assertVisible:
+    id: screen-root
+- tapOn:
+    id: btn-clear-payload
+- openLink: expotargets-native-clip://demo?item=launch&price=1
+- runFlow:
+    when:
+      visible: "Open"
+    file: ../../../.maestro/subflows/ios-open-security-dialog.yaml
+- launchApp
+- assertVisible:
+    id: screen-root
+- tapOn:
+    id: btn-refresh
+- assertVisible:
+    id: text-last-payload
