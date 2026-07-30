@@ -1,12 +1,12 @@
-import type { ExtensionType } from '../../config';
-import type { BundleReactNativePlan, IOSTargetProps } from './types';
+import type { ExtensionType } from "../../config";
+import type { BundleReactNativePlan, IOSTargetProps } from "./types";
 
 /** Extension types that host a React Native JS entry in the product bundle. */
 const REACT_NATIVE_ENTRY_TYPES = new Set<ExtensionType>([
-  'share',
-  'action',
-  'clip',
-  'messages',
+  "share",
+  "action",
+  "clip",
+  "messages",
 ]);
 
 /**
@@ -14,7 +14,7 @@ const REACT_NATIVE_ENTRY_TYPES = new Set<ExtensionType>([
  * entry file so Release builds ship `main.jsbundle` inside the appex/clip.
  */
 export function planBundleReactNative(
-  props: IOSTargetProps
+  props: IOSTargetProps,
 ): BundleReactNativePlan | undefined {
   if (!props.entry) {
     return undefined;
@@ -24,6 +24,6 @@ export function planBundleReactNative(
   }
 
   return {
-    entryFile: props.entry.replace(/^\.\//, ''),
+    entryFile: props.entry.replace(/^\.\//, ""),
   };
 }

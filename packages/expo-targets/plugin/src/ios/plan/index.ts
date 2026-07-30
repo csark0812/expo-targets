@@ -6,21 +6,21 @@
  * no Xcode project access.
  */
 
-export { planAssets } from './assets';
+export { planAssets } from "./assets";
 export {
   buildShareExtensionActivationRules,
   getTargetInfoPlistForType,
-} from './buildInfoPlist';
-export { planBuildSettings } from './buildSettings';
-export { planBundleReactNative } from './bundleReactNative';
-export { composeXcodeTargetPlan } from './compose';
-export { planEmbed } from './embed';
-export { planEntitlements } from './entitlements';
-export { resolveIdentity } from './identity';
-export { planInfoPlist } from './infoPlist';
-export { planPodfile } from './podfile';
-export { planSafariResources } from './safari';
-export { planSwiftSources } from './swiftSources';
+} from "./buildInfoPlist";
+export { planBuildSettings } from "./buildSettings";
+export { planBundleReactNative } from "./bundleReactNative";
+export { composeXcodeTargetPlan } from "./compose";
+export { planEmbed } from "./embed";
+export { planEntitlements } from "./entitlements";
+export { resolveIdentity } from "./identity";
+export { planInfoPlist } from "./infoPlist";
+export { planPodfile } from "./podfile";
+export { planSafariResources } from "./safari";
+export { planSwiftSources } from "./swiftSources";
 export type {
   AssetPlan,
   BundleReactNativePlan,
@@ -39,4 +39,4 @@ export type {
   TargetIdentity,
   TargetPlanInput,
   XcodeTargetPlan,
-} from './types';
+} from "./types";

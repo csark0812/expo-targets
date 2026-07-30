@@ -1,20 +1,20 @@
-import path from 'node:path';
+import path from "node:path";
 
-import type { TargetWorkspace } from '../observe/workspace';
+import type { TargetWorkspace } from "../observe/workspace";
 import type {
   IOSTargetProps,
   SwiftFilePlan,
   SwiftTemplatePlan,
   TargetIdentity,
-} from './types';
+} from "./types";
 
 /** A file plan before its project-relative reference path is resolved. */
-type UnresolvedSwiftFilePlan = Omit<SwiftFilePlan, 'referencePath'>;
+type UnresolvedSwiftFilePlan = Omit<SwiftFilePlan, "referencePath">;
 
-const REACT_NATIVE_VIEW_CONTROLLER = 'ReactNativeViewController.swift';
-const REACT_NATIVE_CLIP_APP = 'ReactNativeClipApp.swift';
-const MESSAGES_VIEW_CONTROLLER = 'MessagesViewController.swift';
-const SAFARI_HANDLER = 'SafariWebExtensionHandler.swift';
+const REACT_NATIVE_VIEW_CONTROLLER = "ReactNativeViewController.swift";
+const REACT_NATIVE_CLIP_APP = "ReactNativeClipApp.swift";
+const MESSAGES_VIEW_CONTROLLER = "MessagesViewController.swift";
+const SAFARI_HANDLER = "SafariWebExtensionHandler.swift";
 
 /** Match a well-known file name at the root or nested in a subdirectory. */
 function isNamed(file: string, fileName: string): boolean {
@@ -27,10 +27,10 @@ function isNamed(file: string, fileName: string): boolean {
 
 function isTestFile(file: string): boolean {
   return (
-    file.includes('Tests/') ||
-    file.includes('/Tests') ||
-    file.endsWith('.test.swift') ||
-    file.endsWith('Tests.swift')
+    file.includes("Tests/") ||
+    file.includes("/Tests") ||
+    file.endsWith(".test.swift") ||
+    file.endsWith("Tests.swift")
   );
 }
 
@@ -43,11 +43,11 @@ function isTestFile(file: string): boolean {
  */
 function resolveSwiftFileNames(
   workspace: TargetWorkspace,
-  props: IOSTargetProps
+  props: IOSTargetProps,
 ): string[] {
   const files = [...workspace.swiftFiles];
 
-  if (props.type === 'safari') {
+  if (props.type === "safari") {
     if (!files.some((file) => isNamed(file, SAFARI_HANDLER))) {
       files.push(SAFARI_HANDLER);
     }
@@ -57,11 +57,11 @@ function resolveSwiftFileNames(
   if (props.entry && files.length === 0) {
     // Messages extensions need both MessagesViewController (which must extend
     // MSMessagesAppViewController) and the ReactNativeViewController child.
-    if (props.type === 'messages') {
+    if (props.type === "messages") {
       return [MESSAGES_VIEW_CONTROLLER, REACT_NATIVE_VIEW_CONTROLLER];
     }
     // App Clips are applications: they need `@main` plus the RN host VC.
-    if (props.type === 'clip') {
+    if (props.type === "clip") {
       return [REACT_NATIVE_CLIP_APP, REACT_NATIVE_VIEW_CONTROLLER];
     }
     return [REACT_NATIVE_VIEW_CONTROLLER];
@@ -72,10 +72,10 @@ function resolveSwiftFileNames(
 
 function reactNativeTemplate(
   props: IOSTargetProps,
-  _identity: TargetIdentity
+  _identity: TargetIdentity,
 ): SwiftTemplatePlan {
   return {
-    template: 'reactNativeViewController',
+    template: "reactNativeViewController",
     options: {
       type: props.type,
       // Must match `createTarget(name)` / AppRegistry.registerComponent(name).
@@ -135,7 +135,7 @@ function planUserFile({
   ) {
     throw new Error(
       `Swift file is outside target directory: ${file}\n` +
-        `Expected in: ${path.relative(workspace.projectRoot, workspace.targetDirectory)}`
+        `Expected in: ${path.relative(workspace.projectRoot, workspace.targetDirectory)}`,
     );
   }
 
@@ -159,7 +159,7 @@ function planSwiftFile({
 }): UnresolvedSwiftFilePlan | undefined {
   if (
     props.entry &&
-    props.type === 'messages' &&
+    props.type === "messages" &&
     isNamed(file, MESSAGES_VIEW_CONTROLLER)
   ) {
     return planGeneratedFile({
@@ -167,7 +167,7 @@ function planSwiftFile({
       fileName: MESSAGES_VIEW_CONTROLLER,
       hasUserFile: workspace.hasUserMessagesViewController,
       workspace,
-      template: { template: 'messagesViewController' },
+      template: { template: "messagesViewController" },
     });
   }
 
@@ -176,10 +176,10 @@ function planSwiftFile({
       file,
       fileName: REACT_NATIVE_CLIP_APP,
       hasUserFile: workspace.swiftFiles.some((f) =>
-        isNamed(f, REACT_NATIVE_CLIP_APP)
+        isNamed(f, REACT_NATIVE_CLIP_APP),
       ),
       workspace,
-      template: { template: 'reactNativeClipApp' },
+      template: { template: "reactNativeClipApp" },
     });
   }
 
@@ -193,14 +193,14 @@ function planSwiftFile({
     });
   }
 
-  if (props.type === 'safari' && isNamed(file, SAFARI_HANDLER)) {
+  if (props.type === "safari" && isNamed(file, SAFARI_HANDLER)) {
     return planGeneratedFile({
       file,
       fileName: SAFARI_HANDLER,
       hasUserFile: workspace.hasUserSafariSwiftHandler,
       workspace,
       template: {
-        template: 'safariWebExtensionHandler',
+        template: "safariWebExtensionHandler",
         options: { targetName: identity.targetName },
       },
     });

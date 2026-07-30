@@ -6,30 +6,30 @@
  * `ios/observe`; nothing in this folder reads user config.
  */
 
-export { applyXcodeTargetPlan } from './applyTargetPlan';
+export { applyXcodeTargetPlan } from "./applyTargetPlan";
 export {
   addFileToBuildPhase,
   hasBuildPhase,
   removeBuildPhases,
-} from './buildPhases';
+} from "./buildPhases";
 export {
   buildExtensionBundleShellScript,
   ensureBundleReactNativePhase,
-} from './bundleReactNative';
+} from "./bundleReactNative";
 export {
   applyBuildSettings,
   getMainAppBuildSettings,
   removeBuildSetting,
-} from './buildSettings';
-export { configureAppClipEmbed, configureAppExtensionEmbed } from './embed';
-export { addExternalFileReference, addTargetAssets } from './fileRefs';
+} from "./buildSettings";
+export { configureAppClipEmbed, configureAppExtensionEmbed } from "./embed";
+export { addExternalFileReference, addTargetAssets } from "./fileRefs";
 export {
   addBuildSourceFileToGroup,
   addResourceFileToGroup,
   addTargetToVirtualGroup,
   ensureExpoTargetsGroup,
   ensureGroupRecursively,
-} from './groups';
+} from "./groups";
 export {
   addTargetDependency,
   findAllTargetsByProductName,
@@ -39,5 +39,5 @@ export {
   hasTargetDependency,
   removeDuplicateTargets,
   setProductType,
-} from './targetLifecycle';
-export type { XcodeTarget } from './types';
+} from "./targetLifecycle";
+export type { XcodeTarget } from "./types";

@@ -1,9 +1,9 @@
-import type { XcodeProject } from '@expo/config-plugins';
+import type { XcodeProject } from "@expo/config-plugins";
 
-import type { Logger } from '../../../logger';
-import type { BundleReactNativePlan } from '../../plan/types';
+import type { Logger } from "../../../logger";
+import type { BundleReactNativePlan } from "../../plan/types";
 
-const PHASE_NAME = 'Bundle React Native code and images';
+const PHASE_NAME = "Bundle React Native code and images";
 
 /**
  * Shell phase for RN extension/clip targets. Mirrors the Expo host script, but
@@ -12,7 +12,7 @@ const PHASE_NAME = 'Bundle React Native code and images';
  */
 export function buildExtensionBundleShellScript(entryFile: string): string {
   // entryFile is project-root relative; keep it free of shell metacharacters.
-  const safeEntry = entryFile.replace(/"/g, '');
+  const safeEntry = entryFile.replace(/"/g, "");
   return `if [[ -f "$PODS_ROOT/../.xcode.env" ]]; then
   source "$PODS_ROOT/../.xcode.env"
 fi
@@ -57,9 +57,9 @@ fi
 /** Quote a string the way Expo writes host Bundle RN phases (single-line + \\n). */
 function toPbxString(value: string): string {
   return `"${value
-    .replace(/\\/g, '\\\\')
+    .replace(/\\/g, "\\\\")
     .replace(/"/g, '\\"')
-    .replace(/\n/g, '\\n')}"`;
+    .replace(/\n/g, "\\n")}"`;
 }
 
 function findShellScriptPhase({
@@ -91,7 +91,7 @@ function findShellScriptPhase({
 
 function applyPhaseFields(phase: any, shellScript: string): void {
   phase.name = `"${PHASE_NAME}"`;
-  phase.shellPath = '/bin/sh';
+  phase.shellPath = "/bin/sh";
   phase.shellScript = toPbxString(shellScript);
   phase.alwaysOutOfDate = 1;
   phase.inputPaths = [
@@ -133,15 +133,15 @@ export function ensureBundleReactNativePhase({
   // Create the phase shell, then overwrite fields so quoting matches Expo host.
   const { buildPhase } = xcodeProject.addBuildPhase(
     [],
-    'PBXShellScriptBuildPhase',
+    "PBXShellScriptBuildPhase",
     PHASE_NAME,
     targetUuid,
     {
-      shellPath: '/bin/sh',
-      shellScript: ':',
+      shellPath: "/bin/sh",
+      shellScript: ":",
       inputPaths: [],
       outputPaths: [],
-    }
+    },
   );
   applyPhaseFields(buildPhase, shellScript);
   logger?.log(`Added ${PHASE_NAME} for entry ${plan.entryFile}`);

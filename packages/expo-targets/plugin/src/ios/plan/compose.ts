@@ -1,13 +1,13 @@
-import { TYPE_CHARACTERISTICS } from '../../domain';
-import { planAssets } from './assets';
-import { planBuildSettings } from './buildSettings';
-import { planBundleReactNative } from './bundleReactNative';
-import { planEmbed } from './embed';
-import { resolveIdentity } from './identity';
-import { planInfoPlist } from './infoPlist';
-import { planSafariResources } from './safari';
-import { planSwiftSources } from './swiftSources';
-import type { TargetPlanInput, XcodeTargetPlan } from './types';
+import { TYPE_CHARACTERISTICS } from "../../domain";
+import { planAssets } from "./assets";
+import { planBuildSettings } from "./buildSettings";
+import { planBundleReactNative } from "./bundleReactNative";
+import { planEmbed } from "./embed";
+import { resolveIdentity } from "./identity";
+import { planInfoPlist } from "./infoPlist";
+import { planSafariResources } from "./safari";
+import { planSwiftSources } from "./swiftSources";
+import type { TargetPlanInput, XcodeTargetPlan } from "./types";
 
 /**
  * Turn resolved props plus an observed workspace into a complete target plan.

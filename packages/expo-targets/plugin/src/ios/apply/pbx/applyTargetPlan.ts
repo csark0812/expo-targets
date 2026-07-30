@@ -1,24 +1,24 @@
-import type { XcodeProject } from '@expo/config-plugins';
+import type { XcodeProject } from "@expo/config-plugins";
 
-import type { Logger } from '../../../logger';
-import type { XcodeTargetPlan } from '../../plan/types';
+import type { Logger } from "../../../logger";
+import type { XcodeTargetPlan } from "../../plan/types";
 import {
   addFileToBuildPhase,
   hasBuildPhase,
   removeBuildPhases,
-} from './buildPhases';
-import { applyBuildSettings, removeBuildSetting } from './buildSettings';
-import { ensureBundleReactNativePhase } from './bundleReactNative';
-import { configureAppClipEmbed, configureAppExtensionEmbed } from './embed';
-import { addExternalFileReference } from './fileRefs';
-import { addTargetToVirtualGroup, ensureExpoTargetsGroup } from './groups';
+} from "./buildPhases";
+import { applyBuildSettings, removeBuildSetting } from "./buildSettings";
+import { ensureBundleReactNativePhase } from "./bundleReactNative";
+import { configureAppClipEmbed, configureAppExtensionEmbed } from "./embed";
+import { addExternalFileReference } from "./fileRefs";
+import { addTargetToVirtualGroup, ensureExpoTargetsGroup } from "./groups";
 import {
   addTargetDependency,
   findTargetByProductName,
   removeDuplicateTargets,
   setProductType,
-} from './targetLifecycle';
-import type { XcodeTarget } from './types';
+} from "./targetLifecycle";
+import type { XcodeTarget } from "./types";
 
 interface ApplyContext {
   mainTarget: { uuid: string; target: any };
@@ -31,7 +31,7 @@ interface ApplyContext {
 function createOrReuseTarget(
   project: XcodeProject,
   plan: XcodeTargetPlan,
-  logger: Logger
+  logger: Logger,
 ): { target: XcodeTarget; reused: boolean } {
   const xcodeProject = project as any;
   const { targetProductName, targetName, targetType, bundleIdentifier } =
@@ -60,7 +60,7 @@ function createOrReuseTarget(
     targetProductName,
     targetType,
     targetProductName,
-    bundleIdentifier
+    bundleIdentifier,
   );
 
   if (!target?.uuid) {
@@ -78,22 +78,22 @@ function createOrReuseTarget(
 function ensureBuildPhases(
   project: XcodeProject,
   plan: XcodeTargetPlan,
-  target: XcodeTarget
+  target: XcodeTarget,
 ): void {
   const xcodeProject = project as any;
   const phases = plan.requiresCode
     ? [
-        'PBXSourcesBuildPhase',
-        'PBXFrameworksBuildPhase',
-        'PBXResourcesBuildPhase',
+        "PBXSourcesBuildPhase",
+        "PBXFrameworksBuildPhase",
+        "PBXResourcesBuildPhase",
       ]
-    : ['PBXResourcesBuildPhase'];
+    : ["PBXResourcesBuildPhase"];
 
   for (const phaseType of phases) {
     if (hasBuildPhase({ project, targetUuid: target.uuid, phaseType })) {
       continue;
     }
-    const name = phaseType.replace('PBX', '').replace('BuildPhase', '');
+    const name = phaseType.replace("PBX", "").replace("BuildPhase", "");
     xcodeProject.addBuildPhase([], phaseType, name, target.uuid);
   }
 }
@@ -101,7 +101,7 @@ function ensureBuildPhases(
 function referenceSwiftFiles(
   project: XcodeProject,
   plan: XcodeTargetPlan,
-  { target, groupUuid }: { target: XcodeTarget; groupUuid: string }
+  { target, groupUuid }: { target: XcodeTarget; groupUuid: string },
 ): void {
   for (const file of plan.swiftFiles) {
     const fileRefUuid = addExternalFileReference({
@@ -115,7 +115,7 @@ function referenceSwiftFiles(
       project,
       targetUuid: target.uuid,
       fileRefUuid,
-      phaseType: 'PBXSourcesBuildPhase',
+      phaseType: "PBXSourcesBuildPhase",
     });
   }
 }
@@ -123,28 +123,28 @@ function referenceSwiftFiles(
 function referenceAssets(
   project: XcodeProject,
   plan: XcodeTargetPlan,
-  { target, groupUuid }: { target: XcodeTarget; groupUuid: string }
+  { target, groupUuid }: { target: XcodeTarget; groupUuid: string },
 ): void {
   const fileRefUuid = addExternalFileReference({
     project,
     groupUuid,
     filePath: plan.assets.referencePath,
-    fileName: plan.assets.isStickers ? 'Stickers.xcassets' : 'Assets.xcassets',
-    fileType: 'folder.assetcatalog',
+    fileName: plan.assets.isStickers ? "Stickers.xcassets" : "Assets.xcassets",
+    fileType: "folder.assetcatalog",
   });
 
   addFileToBuildPhase({
     project,
     targetUuid: target.uuid,
     fileRefUuid,
-    phaseType: 'PBXResourcesBuildPhase',
+    phaseType: "PBXResourcesBuildPhase",
   });
 }
 
 function linkFrameworks(
   project: XcodeProject,
   plan: XcodeTargetPlan,
-  target: XcodeTarget
+  target: XcodeTarget,
 ): void {
   if (!plan.requiresCode) {
     return;
@@ -162,16 +162,16 @@ function linkFrameworks(
 function applyEmbed(
   project: XcodeProject,
   plan: XcodeTargetPlan,
-  { target, mainTargetUuid }: { target: XcodeTarget; mainTargetUuid: string }
+  { target, mainTargetUuid }: { target: XcodeTarget; mainTargetUuid: string },
 ): void {
   const { targetProductName } = plan.identity;
 
-  if (plan.embed.kind === 'foundation-extension') {
+  if (plan.embed.kind === "foundation-extension") {
     configureAppExtensionEmbed({ project, targetProductName });
     return;
   }
 
-  if (plan.embed.kind === 'app-clip') {
+  if (plan.embed.kind === "app-clip") {
     configureAppClipEmbed({
       project,
       mainTargetUuid,
@@ -189,7 +189,7 @@ function applyEmbed(
 export function applyXcodeTargetPlan(
   project: XcodeProject,
   plan: XcodeTargetPlan,
-  { mainTarget, logger }: ApplyContext
+  { mainTarget, logger }: ApplyContext,
 ): XcodeTarget {
   const { target, reused } = createOrReuseTarget(project, plan, logger);
 
@@ -197,8 +197,8 @@ export function applyXcodeTargetPlan(
 
   if (!(plan.requiresCode || reused)) {
     for (const phaseType of [
-      'PBXSourcesBuildPhase',
-      'PBXFrameworksBuildPhase',
+      "PBXSourcesBuildPhase",
+      "PBXFrameworksBuildPhase",
     ]) {
       removeBuildPhases({ project, targetUuid: target.uuid, phaseType });
     }
@@ -211,7 +211,7 @@ export function applyXcodeTargetPlan(
     logger,
   });
   // Standalone apps and extensions should not inherit SKIP_INSTALL
-  removeBuildSetting({ project, target, settingKey: 'SKIP_INSTALL' });
+  removeBuildSetting({ project, target, settingKey: "SKIP_INSTALL" });
 
   ensureBuildPhases(project, plan, target);
 

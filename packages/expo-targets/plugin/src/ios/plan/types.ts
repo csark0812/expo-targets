@@ -1,11 +1,11 @@
-import type { ExpoConfig } from '@expo/config-types';
+import type { ExpoConfig } from "@expo/config-types";
 
 import type {
   ExtensionType,
   IOSTargetConfigWithReactNative,
-} from '../../config';
-import type { Logger } from '../../logger';
-import type { TargetWorkspace } from '../observe/workspace';
+} from "../../config";
+import type { Logger } from "../../logger";
+import type { TargetWorkspace } from "../observe/workspace";
 
 /**
  * Resolved props for a single iOS target, as produced by `withIOSTarget`.
@@ -46,14 +46,14 @@ export interface TargetIdentity {
   bundleIdentifier: string;
   deploymentTarget: string;
   productType: string;
-  targetType: 'application' | 'app_extension';
+  targetType: "application" | "app_extension";
   frameworks: string[];
 }
 
 /** A Swift file the plugin generates, plus the data its template needs. */
 export type SwiftTemplatePlan =
   | {
-      template: 'reactNativeViewController';
+      template: "reactNativeViewController";
       options: {
         type: ExtensionType;
         moduleName: string;
@@ -62,10 +62,10 @@ export type SwiftTemplatePlan =
         entry?: string;
       };
     }
-  | { template: 'reactNativeClipApp' }
-  | { template: 'messagesViewController' }
+  | { template: "reactNativeClipApp" }
+  | { template: "messagesViewController" }
   | {
-      template: 'safariWebExtensionHandler';
+      template: "safariWebExtensionHandler";
       options: { targetName: string };
     };
 
@@ -145,7 +145,7 @@ export interface EntitlementsPlan {
 }
 
 export interface EmbedPlan {
-  kind: 'foundation-extension' | 'app-clip' | 'none';
+  kind: "foundation-extension" | "app-clip" | "none";
 }
 
 /**
