@@ -89,18 +89,18 @@ close(); // Dismiss the extension
 
 ## Supported Extensions
 
-| Type                   | iOS  | Android | Description             |
-| ---------------------- | ---- | ------- | ----------------------- |
-| `share`                | ✅   | 🔜      | Share extensions        |
-| `action`               | ✅   | 🔜      | Action extensions       |
+| Type                   | iOS | Android | Description             |
+| ---------------------- | --- | ------- | ----------------------- |
+| `share`                | ✅   | 🔜       | Share extensions        |
+| `action`               | ✅   | 🔜       | Action extensions       |
 | `clip`                 | ✅   | —       | App Clips               |
 | `stickers`             | ✅   | —       | iMessage sticker packs  |
 | `messages`             | ✅   | —       | iMessage apps           |
 | `wallet`               | ✅   | —       | Wallet extensions       |
-| `widget`               | ✅\* | ✅†     | Home screen widgets     |
+| `widget`               | ✅\* | ✅†      | Home screen widgets     |
 | `safari`               | 📋   | —       | Safari web extensions   |
-| `notification-content` | 📋   | 🔜      | Rich notification UI    |
-| `notification-service` | 📋   | 🔜      | Notification processing |
+| `notification-content` | 📋   | 🔜       | Rich notification UI    |
+| `notification-service` | 📋   | 🔜       | Notification processing |
 | `intent`               | 📋   | —       | Siri intents            |
 | `intent-ui`            | 📋   | —       | Siri intent UI          |
 
@@ -137,18 +137,18 @@ cd expo-targets/examples/share
 npm install && npx expo run:ios
 ```
 
-| Example | What it shows |
-| --- | --- |
-| [share](./examples/share) | React Native share extension |
-| [action](./examples/action) | React Native action extension |
-| [clip](./examples/clip) | React Native App Clip |
-| [stickers](./examples/stickers) | Asset-only sticker pack |
-| [widgets](./examples/widgets) | iOS WidgetKit (soft-deprecated; prefer [`expo-widgets`](./docs/widgets.md)) |
-| [messages](./examples/messages) | React Native messages extension |
-| [kitchen-sink](./examples/kitchen-sink) | Six primary types in one host |
-| [native/share](./examples/native/share) | Swift share + RN host |
-| [native/action](./examples/native/action) | Swift action + RN host |
-| [native/clip](./examples/native/clip) | SwiftUI App Clip + RN host |
+| Example                                   | What it shows                                                               |
+| ----------------------------------------- | --------------------------------------------------------------------------- |
+| [share](./examples/share)                 | React Native share extension                                                |
+| [action](./examples/action)               | React Native action extension                                               |
+| [clip](./examples/clip)                   | React Native App Clip                                                       |
+| [stickers](./examples/stickers)           | Asset-only sticker pack                                                     |
+| [widgets](./examples/widgets)             | iOS WidgetKit (soft-deprecated; prefer [`expo-widgets`](./docs/widgets.md)) |
+| [messages](./examples/messages)           | React Native messages extension                                             |
+| [kitchen-sink](./examples/kitchen-sink)   | Six primary types in one host                                               |
+| [native/share](./examples/native/share)   | Swift share + RN host                                                       |
+| [native/action](./examples/native/action) | Swift action + RN host                                                      |
+| [native/clip](./examples/native/clip)     | SwiftUI App Clip + RN host                                                  |
 
 See [examples/README.md](./examples/README.md) for Maestro vs manual coverage.
 
