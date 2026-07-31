@@ -299,4 +299,22 @@ export class AndroidDriver implements DeviceDriver {
   async swipe(options: SwipeOptions): Promise<void> {
     swipeAdb(this.deviceId, options, this.adbPath);
   }
+
+  async pressKey(): Promise<void> {
+    throw new Error(
+      "pressKey is not supported on Android in Devicewright yet (iOS Simulator via idb).",
+    );
+  }
+
+  async pressButton(): Promise<void> {
+    throw new Error(
+      "pressButton is not supported on Android in Devicewright yet (iOS Simulator via idb).",
+    );
+  }
+
+  async shake(): Promise<void> {
+    throw new Error(
+      "shake is not supported on Android in Devicewright yet (iOS Simulator only).",
+    );
+  }
 }

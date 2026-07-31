@@ -235,6 +235,82 @@ export async function swipe(
   await idbAsync(args, { ...options, udid });
 }
 
+/** Buttons accepted by `idb ui button` (pinned via local idb --help). */
+export const IDB_HARDWARE_BUTTONS = [
+  "APPLE_PAY",
+  "HOME",
+  "LOCK",
+  "SIDE_BUTTON",
+  "SIRI",
+] as const;
+
+export type IdbHardwareButton = (typeof IDB_HARDWARE_BUTTONS)[number];
+
+export function normalizeHardwareButton(button: string): IdbHardwareButton {
+  const normalized = button.trim().toUpperCase().replace(/-/g, "_");
+  if (!(IDB_HARDWARE_BUTTONS as readonly string[]).includes(normalized)) {
+    throw new Error(
+      `invalid hardware button: ${button} (expected one of ${IDB_HARDWARE_BUTTONS.join(", ")})`,
+    );
+  }
+  return normalized as IdbHardwareButton;
+}
+
+/**
+ * Named keys → HID keycodes for `idb ui key` (pinned: key is integer keycode).
+ * @see https://fbidb.io/docs/accessibility/
+ */
+const NAMED_KEYCODES: Record<string, number> = {
+  enter: 40,
+  return: 40,
+  escape: 41,
+  esc: 41,
+  delete: 42,
+  backspace: 42,
+  tab: 43,
+  space: 44,
+};
+
+export function resolveKeycode(key: string): number {
+  const trimmed = key.trim();
+  const named = NAMED_KEYCODES[trimmed.toLowerCase()];
+  if (named !== undefined) return named;
+  if (/^\d+$/.test(trimmed)) {
+    const n = Number(trimmed);
+    if (!Number.isFinite(n) || n < 0) {
+      throw new Error(`invalid keycode: ${key}`);
+    }
+    return n;
+  }
+  throw new Error(
+    `unsupported key: ${key} (use enter|return|escape|delete|backspace|tab|space or a numeric HID keycode)`,
+  );
+}
+
+export async function pressButton(
+  udid: string,
+  options: { button: string; duration?: number } & IdbRunOptions,
+): Promise<void> {
+  const button = normalizeHardwareButton(options.button);
+  const args = ["ui", "button", button];
+  if (options.duration !== undefined) {
+    args.push("--duration", String(options.duration));
+  }
+  await idbAsync(args, { ...options, udid });
+}
+
+export async function pressKey(
+  udid: string,
+  options: { key: string; duration?: number } & IdbRunOptions,
+): Promise<void> {
+  const keycode = resolveKeycode(options.key);
+  const args = ["ui", "key", String(keycode)];
+  if (options.duration !== undefined) {
+    args.push("--duration", String(options.duration));
+  }
+  await idbAsync(args, { ...options, udid });
+}
+
 function flatten(nodes: AccessibilityNode[]): AccessibilityNode[] {
   const out: AccessibilityNode[] = [];
   const walk = (n: AccessibilityNode) => {

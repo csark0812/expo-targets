@@ -228,6 +228,79 @@ function registerUiTools(server: McpServer, registry: SessionRegistry): void {
   );
 
   server.registerTool(
+    "ui_press_key",
+    {
+      description:
+        "Press a key via idb (named: enter|return|escape|delete|backspace|tab|space, or numeric HID keycode). iOS only.",
+      inputSchema: {
+        key: z.string(),
+        duration: z.union([z.string(), z.number()]).optional(),
+        udid: z.string().optional(),
+        platform: z.enum(["ios", "android"]).optional(),
+      },
+    },
+    async ({ key, duration, udid, platform }) => {
+      if (platform === "android") {
+        return textResult(
+          "ui_press_key: Android not supported yet. Use platform: ios.",
+        );
+      }
+      return withDevice(registry, "ios", udid, async (s) => {
+        await s.pressKey({ key, duration: optDuration(duration) });
+        return textResult(`pressed key ${key}`);
+      });
+    },
+  );
+
+  server.registerTool(
+    "ui_press_button",
+    {
+      description:
+        "Press a hardware button via idb: APPLE_PAY|HOME|LOCK|SIDE_BUTTON|SIRI. iOS only.",
+      inputSchema: {
+        button: z.string(),
+        duration: z.union([z.string(), z.number()]).optional(),
+        udid: z.string().optional(),
+        platform: z.enum(["ios", "android"]).optional(),
+      },
+    },
+    async ({ button, duration, udid, platform }) => {
+      if (platform === "android") {
+        return textResult(
+          "ui_press_button: Android not supported yet. Use platform: ios.",
+        );
+      }
+      return withDevice(registry, "ios", udid, async (s) => {
+        await s.pressButton({ button, duration: optDuration(duration) });
+        return textResult(`pressed button ${button}`);
+      });
+    },
+  );
+
+  server.registerTool(
+    "ui_shake",
+    {
+      description:
+        "Shake the iOS Simulator (Simulator.app Device → Shake; idb has no shake). Requires Simulator focused; may need Accessibility for System Events.",
+      inputSchema: {
+        udid: z.string().optional(),
+        platform: z.enum(["ios", "android"]).optional(),
+      },
+    },
+    async ({ udid, platform }) => {
+      if (platform === "android") {
+        return textResult(
+          "ui_shake: Android not supported yet. Use platform: ios.",
+        );
+      }
+      return withDevice(registry, "ios", udid, async (s) => {
+        await s.shake();
+        return textResult("shook");
+      });
+    },
+  );
+
+  server.registerTool(
     "ui_describe_point",
     {
       description: "Returns the accessibility element at coordinates",
@@ -357,7 +430,7 @@ function registerAppTools(server: McpServer, registry: SessionRegistry): void {
     "record_video",
     {
       description:
-        "Start iOS Simulator screen recording (simctl). Optional max_seconds auto-stops. Android not supported yet.",
+        "Start iOS Simulator screen recording (simctl). Optional max_seconds auto-stops. While recording, DW/idb actions are journaled to a sibling .actions.json on stop. Android not supported yet.",
       inputSchema: {
         output_path: z.string().optional(),
         udid: z.string().optional(),
@@ -385,7 +458,7 @@ function registerAppTools(server: McpServer, registry: SessionRegistry): void {
     "stop_recording",
     {
       description:
-        "Stop iOS Simulator screen recording (SIGINT). Pass udid when multiple sims are held or booted.",
+        "Stop iOS Simulator screen recording and return the DW act journal co-recorded with the video (Devicewright/idb actions only — not Simulator.app mouse HID). Returns JSON: { path, actionsPath, actions, truncated? }. Inline actions are capped at 500; if truncated is true, read actionsPath for the full journal — do not treat inline actions as complete. Pass udid when multiple sims are held or booted.",
       inputSchema: {
         udid: z.string().optional(),
         platform: z.enum(["ios", "android"]).optional(),
@@ -399,8 +472,21 @@ function registerAppTools(server: McpServer, registry: SessionRegistry): void {
       }
       const id = resolveRecordingSessionUdid(registry, udid);
       return withDevice(registry, "ios", id, async (s) => {
-        const saved = await s.stopRecording();
-        return textResult(`saved ${saved}`);
+        const result = await s.stopRecording();
+        const MAX_INLINE = 500;
+        const truncated = result.actions.length > MAX_INLINE;
+        const payload = {
+          path: result.path,
+          actionsPath: result.actionsPath,
+          actions: truncated
+            ? result.actions.slice(0, MAX_INLINE)
+            : result.actions,
+          ...(truncated ? { truncated: true as const } : {}),
+        };
+        const text = truncated
+          ? `saved ${result.path}; actions truncated (${result.actions.length} total) — read full journal at ${result.actionsPath}\n${JSON.stringify(payload, null, 2)}`
+          : JSON.stringify(payload, null, 2);
+        return textResult(text);
       });
     },
   );

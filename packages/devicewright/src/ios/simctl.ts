@@ -224,3 +224,29 @@ export function assertRecordingFile(outputPath: string): string {
   }
   return out;
 }
+
+/**
+ * idb has no shake command — drive Simulator.app Device → Shake via AppleScript.
+ * Fails loud if Simulator is missing or Accessibility permissions block System Events.
+ */
+export function shakeSimulator(): void {
+  const script = [
+    'tell application "Simulator" to activate',
+    "delay 0.2",
+    'tell application "System Events"',
+    '  tell process "Simulator"',
+    '    click menu item "Shake" of menu "Device" of menu bar 1',
+    "  end tell",
+    "end tell",
+  ].join("\n");
+  const result = runSync("osascript", ["-e", script]);
+  if (result.status !== 0) {
+    const detail = [result.stderr, result.stdout]
+      .filter(Boolean)
+      .join("\n")
+      .trim();
+    throw new Error(
+      `shake failed (Simulator Device → Shake via AppleScript)${detail ? `: ${detail}` : ""}`,
+    );
+  }
+}

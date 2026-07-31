@@ -30,12 +30,16 @@ await device.screenshot({ path: "settings.png" });
 await device.close();
 ```
 
-### Screen recording (iOS Simulator)
+### Screen recording + DW act journal (iOS Simulator)
+
+Video captures whatever appears on the Simulator (including mouse HID as pixels). The **act journal** only logs Devicewright/idb-driven actions (tap/type/swipe/key/button/shake + install/launch/terminate) co-recorded with the video — not a transcript of Simulator.app mouse clicks.
 
 ```ts
 await device.startRecording({ path: "flow.mp4" }); // optional maxSeconds
-// …interact…
-const videoPath = await device.stopRecording();
+await device.tap({ x: 100, y: 200 });
+await device.type("hello");
+const { path: videoPath, actionsPath, actions } = await device.stopRecording();
+// actions[].t — host-schedule seconds from startRecording (may skew vs encoded video)
 const viewed = await device.viewRecording({ fps: 10, maxFrames: 60 });
 // viewed.frames[].t — seconds from start; thinned=true when long clip
 // zoom a 200ms slice at ~100ms spacing:
@@ -48,9 +52,11 @@ const push = await device.viewRecording({
 await device.close(); // prefer stop_recording before close_device
 ```
 
-**ffmpeg:** optional soft dependency. `record_video` / `stop_recording` use simctl only. `ui_view_recording` needs `ffmpeg` + `ffprobe` on PATH (`brew install ffmpeg`). `doctor` **warns** if missing — it does not fail the preflight. Frame JPEGs are deleted after MCP returns images; `.mp4` files stay in `os.tmpdir()` as `devicewright-*` (24h GC on close) unless you pass `output_path` / `path`.
+Sibling journal: `flow.mp4` → `flow.actions.json` (same stem). Default tmp names use the `devicewright-` prefix so GC picks them up with the video.
 
-MCP: `record_video` → interact → `stop_recording` → `ui_view_recording` (`fps`, `max_frames`, optional `start_seconds` / `end_seconds`). Prefer `stop_recording` before `close_device` (force-close may SIGKILL and truncate). Android recording deferred. Manual Simulator demos are video/frames only — no gesture log.
+**ffmpeg:** optional soft dependency. `record_video` / `stop_recording` use simctl only. `ui_view_recording` needs `ffmpeg` + `ffprobe` on PATH (`brew install ffmpeg`). `doctor` **warns** if missing — it does not fail the preflight. Frame JPEGs are deleted after MCP returns images; `.mp4` / `.actions.json` files stay in `os.tmpdir()` as `devicewright-*` (24h GC on close) unless you pass `output_path` / `path`.
+
+MCP: `record_video` → interact (`ui_tap` / `ui_type` / `ui_press_key` / `ui_press_button` / `ui_shake` / …) → `stop_recording` (JSON with `path`, `actionsPath`, `actions`; if `truncated`, read `actionsPath`) → `ui_view_recording`. Prefer `stop_recording` before `close_device` (force-close may SIGKILL and truncate). Android recording / act journal deferred. Manual Simulator mouse demos are video/frames only — empty or sparse act journal.
 
 Cross-OS happy path (same script shape):
 

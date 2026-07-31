@@ -9,6 +9,8 @@ import type {
   DeviceDriver,
   DeviceKind,
   FindCriteria,
+  PressButtonOptions,
+  PressKeyOptions,
   RecordVideoOptions,
   RecordingHandle,
   ScreenshotOptions,
@@ -39,11 +41,19 @@ export class IosDriver implements DeviceDriver {
   private readonly idbPath?: string;
   private recording: ActiveRecording | null = null;
   private lastFinalizedPath: string | null = null;
+  private onRecordingEnded: ((path: string, reason: string) => void) | null =
+    null;
 
   constructor(options: IosDriverOptions) {
     this.deviceId = options.deviceId;
     this.kind = options.kind ?? "simulator";
     this.idbPath = options.idbPath;
+  }
+
+  setOnRecordingEnded(
+    cb: ((path: string, reason: string) => void) | null,
+  ): void {
+    this.onRecordingEnded = cb;
   }
 
   async boot(): Promise<void> {
@@ -168,6 +178,13 @@ export class IosDriver implements DeviceDriver {
       return active.path;
     } finally {
       this.recording = null;
+      if (reason !== "error" && this.lastFinalizedPath) {
+        try {
+          this.onRecordingEnded?.(this.lastFinalizedPath, reason);
+        } catch {
+          // session finalize must not break driver teardown
+        }
+      }
     }
   }
 
@@ -198,6 +215,24 @@ export class IosDriver implements DeviceDriver {
 
   async swipe(options: SwipeOptions): Promise<void> {
     await idb.swipe(this.deviceId, { ...options, idbPath: this.idbPath });
+  }
+
+  async pressKey(options: PressKeyOptions): Promise<void> {
+    await idb.pressKey(this.deviceId, { ...options, idbPath: this.idbPath });
+  }
+
+  async pressButton(options: PressButtonOptions): Promise<void> {
+    await idb.pressButton(this.deviceId, {
+      ...options,
+      idbPath: this.idbPath,
+    });
+  }
+
+  async shake(): Promise<void> {
+    if (this.kind !== "simulator") {
+      throw new Error("shake is only supported on iOS Simulator");
+    }
+    simctl.shakeSimulator();
   }
 
   async viewCompressed(): Promise<Buffer> {

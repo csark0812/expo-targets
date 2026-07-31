@@ -49,6 +49,62 @@ export type RecordingHandle = {
   startedAt: number;
 };
 
+/** Hardware buttons supported by `idb ui button`. */
+export type HardwareButton =
+  | "APPLE_PAY"
+  | "HOME"
+  | "LOCK"
+  | "SIDE_BUTTON"
+  | "SIRI";
+
+export type PressButtonOptions = {
+  button: HardwareButton | string;
+  duration?: number;
+};
+
+export type PressKeyOptions = {
+  /** Named key (enter, delete, …) or numeric HID keycode string. */
+  key: string;
+  duration?: number;
+};
+
+/**
+ * DW act journal row — host-schedule seconds from RecordingHandle.startedAt.
+ * Co-recorded with video; not a transcript of Simulator.app mouse HID.
+ */
+export type RecordingAction =
+  | {
+      t: number;
+      type: "tap";
+      x: number;
+      y: number;
+      duration?: number;
+      error?: string;
+    }
+  | { t: number; type: "type"; text: string; error?: string }
+  | {
+      t: number;
+      type: "swipe";
+      xStart: number;
+      yStart: number;
+      xEnd: number;
+      yEnd: number;
+      duration?: number;
+      error?: string;
+    }
+  | { t: number; type: "press_key"; key: string; error?: string }
+  | { t: number; type: "press_button"; button: string; error?: string }
+  | { t: number; type: "shake"; error?: string }
+  | { t: number; type: "install"; appPath: string; error?: string }
+  | { t: number; type: "launchApp"; bundleId: string; error?: string }
+  | { t: number; type: "terminateApp"; bundleId: string; error?: string };
+
+export type StopRecordingResult = {
+  path: string;
+  actionsPath: string;
+  actions: RecordingAction[];
+};
+
 export type ExtractedFrame = {
   path: string;
   /** Seconds from video start. */
@@ -130,12 +186,23 @@ export interface DeviceDriver {
   terminateApp?(bundleId: string): Promise<void>;
   screenshot(options?: ScreenshotOptions): Promise<Buffer | string>;
   startRecording(options?: RecordVideoOptions): Promise<RecordingHandle>;
+  /** Path to finalized mp4. Session wraps this with the act journal. */
   stopRecording(): Promise<string>;
+  /**
+   * Optional: notified when recording ends (explicit stop, maxSeconds timer, or close).
+   * Session uses this to finalize the act buffer when the driver auto-stops.
+   */
+  setOnRecordingEnded?(
+    cb: ((path: string, reason: string) => void) | null,
+  ): void;
   accessibilityTree(): Promise<AccessibilityNode[]>;
   describePoint?(x: number, y: number): Promise<AccessibilityNode | null>;
   findElements(criteria: FindCriteria): Promise<AccessibilityNode[]>;
   tap(options: TapOptions): Promise<void>;
   type(text: string): Promise<void>;
   swipe(options: SwipeOptions): Promise<void>;
+  pressKey?(options: PressKeyOptions): Promise<void>;
+  pressButton?(options: PressButtonOptions): Promise<void>;
+  shake?(): Promise<void>;
   close?(): Promise<void>;
 }
