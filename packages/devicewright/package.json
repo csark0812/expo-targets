@@ -1,0 +1,57 @@
+{
+  "name": "@expo-targets/devicewright",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Playwright-shaped device control plane (agents MCP + TS API). Working name Devicewright.",
+  "main": "./build/index.js",
+  "types": "./build/index.d.ts",
+  "bin": {
+    "devicewright": "./build/bin/cli.js",
+    "devicewright-mcp": "./build/bin/mcp.js",
+    "devicewright-doctor": "./build/bin/doctor.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./build/index.d.ts",
+      "default": "./build/index.js"
+    },
+    "./ios": {
+      "types": "./build/ios/index.d.ts",
+      "default": "./build/ios/index.js"
+    },
+    "./android": {
+      "types": "./build/android/index.d.ts",
+      "default": "./build/android/index.js"
+    },
+    "./test": {
+      "types": "./build/test/index.d.ts",
+      "default": "./build/test/index.js"
+    },
+    "./hosts": {
+      "types": "./build/hosts/index.d.ts",
+      "default": "./build/hosts/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf build",
+    "test:unit": "bun test src",
+    "doctor": "bun src/bin/doctor.ts",
+    "mcp": "bun src/bin/mcp.ts",
+    "cli": "bun src/bin/cli.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "~5.3.3"
+  },
+  "files": [
+    "build",
+    "README.md",
+    "EXTRACT.md",
+    "HARNESS.md"
+  ]
+}
