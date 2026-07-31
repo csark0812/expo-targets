@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { UITEST_TARGET_NAME, type UitestEnvKey } from './constants';
+import { type UitestEnvKey } from './constants';
 
 export type SchemeTestable = {
   blueprintId: string;
@@ -172,12 +172,13 @@ export function findHostSchemePath(opts: {
 }
 
 /**
- * Idempotent scheme wiring for Share Sheet UI tests (parity with bash attach).
+ * Idempotent scheme wiring for a UITest suite (Release + UITEST_*).
  */
 export function updateHostScheme(opts: {
   schemePath: string;
   projectFileName: string;
   knownTargetNames: Set<string>;
+  uiTestTargetName: string;
   uiTest: SchemeTestable;
   env: Partial<Record<UitestEnvKey, string>>;
 }): { path: string; addedTestable: boolean; removedStale: number } {
@@ -192,10 +193,10 @@ export function updateHostScheme(opts: {
     opts.knownTargetNames.has(t.blueprintName)
   );
   const removedStale = existing.length - kept.length;
-  const already = kept.some((t) => t.blueprintName === UITEST_TARGET_NAME);
+  const already = kept.some((t) => t.blueprintName === opts.uiTestTargetName);
   const next = already
     ? kept.map((t) =>
-        t.blueprintName === UITEST_TARGET_NAME ? opts.uiTest : t
+        t.blueprintName === opts.uiTestTargetName ? opts.uiTest : t
       )
     : [...kept, opts.uiTest];
 

@@ -4,13 +4,9 @@ import path from 'node:path';
 // @ts-expect-error - no types available for xcode package
 import xcode from 'xcode';
 
-import {
-  SMOKE_FILE_NAME,
-  UITEST_TARGET_NAME,
-  type UitestEnvKey,
-} from './constants';
+import type { UitestEnvKey } from './constants';
 import type { MatrixEntry } from './matrix';
-import { exampleIosDir, findXcodeproj, fixtureSmokePath } from './paths';
+import { exampleIosDir, findXcodeproj, fixturePath } from './paths';
 import {
   findHostApplication,
   hostBundleId,
@@ -30,23 +26,87 @@ export type AttachResult = {
   removedStale: number;
 };
 
-function copyFixture(destDir: string): void {
+function copyFixture(destDir: string, smokeFileName: string): void {
+  const src = fixturePath(smokeFileName);
+  if (!fs.existsSync(src)) {
+    throw new Error(`missing fixture ${src}`);
+  }
   fs.mkdirSync(destDir, { recursive: true });
-  fs.copyFileSync(fixtureSmokePath(), path.join(destDir, SMOKE_FILE_NAME));
+  fs.copyFileSync(src, path.join(destDir, smokeFileName));
 }
 
-function productReferenceName(project: PbxProject, targetUuid: string): string {
+function productReferenceName(
+  project: PbxProject,
+  targetUuid: string,
+  targetName: string
+): string {
   const target = project.pbxNativeTargetSection()[targetUuid];
   const productRef = target?.productReference;
   const fileRefs = project.hash.project.objects.PBXFileReference ?? {};
   const ref = fileRefs[productRef];
-  const name = String(ref?.path ?? ref?.name ?? `${UITEST_TARGET_NAME}.xctest`);
+  const name = String(ref?.path ?? ref?.name ?? `${targetName}.xctest`);
   return name.replace(/^"/, '').replace(/"$/, '');
 }
 
-/**
- * Idempotent post-prebuild attach (parity with former bash/ruby script).
- */
+function openProject(pbxprojPath: string): PbxProject {
+  const project = xcode.project(pbxprojPath) as PbxProject;
+  project.parseSync();
+  return project;
+}
+
+function wirePbx(opts: { project: PbxProject; entry: MatrixEntry }): {
+  uuid: string;
+  created: boolean;
+  hostName: string;
+} {
+  const host = findHostApplication(opts.project);
+  const bundleId = hostBundleId(opts.project, host);
+  const uiTest = ensureUiTestNativeTarget({
+    project: opts.project,
+    targetName: opts.entry.uiTestTargetName,
+    hostUuid: host.uuid,
+    hostName: host.name,
+    hostBundleId: bundleId,
+  });
+  ensureSmokeSourceFile({
+    project: opts.project,
+    targetUuid: uiTest.uuid,
+    targetName: opts.entry.uiTestTargetName,
+    smokeFileName: opts.entry.smokeFileName,
+  });
+  return { uuid: uiTest.uuid, created: uiTest.created, hostName: host.name };
+}
+
+function wireScheme(opts: {
+  entry: MatrixEntry;
+  project: PbxProject;
+  xcodeprojPath: string;
+  hostName: string;
+  uiTestUuid: string;
+}): ReturnType<typeof updateHostScheme> {
+  const schemePath = findHostSchemePath({
+    xcodeprojPath: opts.xcodeprojPath,
+    hostName: opts.hostName,
+  });
+  return updateHostScheme({
+    schemePath,
+    projectFileName: path.basename(opts.xcodeprojPath),
+    knownTargetNames: knownTargetNames(opts.project),
+    uiTestTargetName: opts.entry.uiTestTargetName,
+    uiTest: {
+      blueprintId: opts.uiTestUuid,
+      blueprintName: opts.entry.uiTestTargetName,
+      buildableName: productReferenceName(
+        opts.project,
+        opts.uiTestUuid,
+        opts.entry.uiTestTargetName
+      ),
+    },
+    env: opts.entry.env as Partial<Record<UitestEnvKey, string>>,
+  });
+}
+
+/** Idempotent post-prebuild attach for a matrix suite entry. */
 export function attachExample(entry: MatrixEntry): AttachResult {
   const iosDir = exampleIosDir(entry.exampleRel);
   if (!fs.existsSync(iosDir)) {
@@ -54,47 +114,24 @@ export function attachExample(entry: MatrixEntry): AttachResult {
       `missing ${iosDir} — run: cd ${entry.exampleRel} && npx expo prebuild --platform ios`
     );
   }
-
-  const destDir = path.join(iosDir, UITEST_TARGET_NAME);
-  copyFixture(destDir);
-
+  copyFixture(path.join(iosDir, entry.uiTestTargetName), entry.smokeFileName);
   const xcodeprojPath = findXcodeproj(iosDir);
   const pbxprojPath = path.join(xcodeprojPath, 'project.pbxproj');
-  const project = xcode.project(pbxprojPath) as PbxProject;
-  project.parseSync();
-
-  const host = findHostApplication(project);
-  const bundleId = hostBundleId(project, host);
-  const uiTest = ensureUiTestNativeTarget({
-    project,
-    hostUuid: host.uuid,
-    hostName: host.name,
-    hostBundleId: bundleId,
-  });
-  ensureSmokeSourceFile({ project, targetUuid: uiTest.uuid });
+  const project = openProject(pbxprojPath);
+  const wired = wirePbx({ project, entry });
   fs.writeFileSync(pbxprojPath, project.writeSync());
-
-  const schemePath = findHostSchemePath({
+  const schemeUpdate = wireScheme({
+    entry,
+    project,
     xcodeprojPath,
-    hostName: host.name,
+    hostName: wired.hostName,
+    uiTestUuid: wired.uuid,
   });
-  const schemeUpdate = updateHostScheme({
-    schemePath,
-    projectFileName: path.basename(xcodeprojPath),
-    knownTargetNames: knownTargetNames(project),
-    uiTest: {
-      blueprintId: uiTest.uuid,
-      blueprintName: UITEST_TARGET_NAME,
-      buildableName: productReferenceName(project, uiTest.uuid),
-    },
-    env: entry.env as Record<UitestEnvKey, string>,
-  });
-
   return {
     exampleRel: entry.exampleRel,
     xcodeprojPath,
     schemePath: schemeUpdate.path,
-    uiTestCreated: uiTest.created,
+    uiTestCreated: wired.created,
     testableAdded: schemeUpdate.addedTestable,
     removedStale: schemeUpdate.removedStale,
   };

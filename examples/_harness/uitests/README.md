@@ -16,5 +16,14 @@ See [`packages/expo-targets-ios-harness/README.md`](../../../packages/expo-targe
 | --------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | **C1** XCUITest Share Sheet | Sheet interactable; extension complete → host `text-last-payload` | **Stop and re-grill.** No in-process-only / Maestro Share Sheet fallback. |
 | **C2** Maestro clip launch  | `openLink` / simctl launches clip + host handoff                  | **Stop and re-grill.**                                                    |
+| **Post-C Messages**         | MobileSMS → Send template → host App Group marker                 | **Stop and re-grill.**                                                    |
+| **Post-C Stickers**         | MobileSMS → Fun Stickers visible + tappable (no App Group)        | **Stop and re-grill.**                                                    |
+
+```bash
+bun run test:messages
+bun run test:stickers
+# serial runner alias (asymmetric bars — not one proof class):
+bun run test:imessage-surface
+```
 
 Clip Maestro flows remain under each example’s `.maestro/launch.yaml`.

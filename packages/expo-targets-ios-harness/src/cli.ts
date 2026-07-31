@@ -1,19 +1,31 @@
 #!/usr/bin/env bun
 import process from 'node:process';
+
 import { attachExample } from './attach';
 import {
   type ExampleRel,
+  imessageSurfaceMatrix,
   isExampleRel,
+  messagesMatrix,
   resolveMatrixEntry,
   shareSheetMatrix,
+  stickersMatrix,
 } from './matrix';
-import { runShareSheetMatrix } from './run';
+import { runMatrix } from './run';
 
 function usage(): never {
   console.error(`Usage:
-  expo-targets-ios-harness attach <examples/share|action|native/share|native/action>
+  expo-targets-ios-harness attach <exampleRel>
   expo-targets-ios-harness test [exampleRel...]
   expo-targets-ios-harness test:share-sheet
+  expo-targets-ios-harness test:messages
+  expo-targets-ios-harness test:stickers
+  expo-targets-ios-harness test:imessage-surface
+
+  exampleRel: examples/share|action|native/share|native/action|messages|stickers
+
+  test:imessage-surface is a serial runner alias (Messages ag-handoff then
+  Stickers pack-interact) — not a single proof bar.
 
 Env:
   UITEST_SIM_UDID   override pinned simulator (default: machine-local iPhone Air)
@@ -22,9 +34,12 @@ Env:
   process.exit(2);
 }
 
-function parseExamples(args: string[]): ExampleRel[] {
+function parseExamples(
+  args: string[],
+  fallback: () => ExampleRel[]
+): ExampleRel[] {
   if (args.length === 0) {
-    return shareSheetMatrix();
+    return fallback();
   }
   const out: ExampleRel[] = [];
   for (const arg of args) {
@@ -60,7 +75,7 @@ function cmdAttach(rest: string[]): void {
 }
 
 function cmdTest(examples: ExampleRel[]): void {
-  const result = runShareSheetMatrix({ exampleRels: examples });
+  const result = runMatrix({ exampleRels: examples });
   if (!result.ok) {
     process.exit(result.failed?.exitCode ?? 1);
   }
@@ -76,11 +91,23 @@ function main(argv: string[]): void {
     return;
   }
   if (cmd === 'test') {
-    cmdTest(parseExamples(rest));
+    cmdTest(parseExamples(rest, shareSheetMatrix));
     return;
   }
   if (cmd === 'test:share-sheet') {
     cmdTest(shareSheetMatrix());
+    return;
+  }
+  if (cmd === 'test:messages') {
+    cmdTest(messagesMatrix());
+    return;
+  }
+  if (cmd === 'test:stickers') {
+    cmdTest(stickersMatrix());
+    return;
+  }
+  if (cmd === 'test:imessage-surface') {
+    cmdTest(imessageSurfaceMatrix());
     return;
   }
   console.error(`unknown command: ${cmd}`);

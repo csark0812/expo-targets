@@ -3,6 +3,13 @@
     "maestro": {
       "command": "maestro",
       "args": ["mcp"]
+    },
+    "ios-simulator": {
+      "command": "npx",
+      "args": ["-y", "ios-simulator-mcp"],
+      "env": {
+        "IOS_SIMULATOR_MCP_IDB_PATH": "/Users/christophersarkissian/Library/Python/3.9/bin/idb"
+      }
     }
   }
 }

@@ -53,7 +53,7 @@ describe('resolveMatrixEntry', () => {
     expect(entry.env.UITEST_EXTENSION_NAME).toBe('Example Action');
     expect(entry.env.UITEST_EXTENSION_ALIASES).not.toContain(',Action');
     expect(
-      entry.env.UITEST_EXTENSION_ALIASES.split(',').includes('Action')
+      (entry.env.UITEST_EXTENSION_ALIASES ?? '').split(',').includes('Action')
     ).toBe(false);
   });
 

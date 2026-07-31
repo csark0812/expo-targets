@@ -1,15 +1,30 @@
-import { UI_TESTING_PRODUCT_TYPE, UITEST_TARGET_NAME } from './constants';
+import { UI_TESTING_PRODUCT_TYPE } from './constants';
 import { findUiTestTarget, type PbxProject, unquote } from './pbx';
 
-const BUILD_SETTINGS: Record<string, string> = {
-  PRODUCT_NAME: UITEST_TARGET_NAME,
+const SHARED_BUILD_SETTINGS: Record<string, string> = {
   SWIFT_VERSION: '5.0',
   IPHONEOS_DEPLOYMENT_TARGET: '15.1',
   GENERATE_INFOPLIST_FILE: 'YES',
   TARGETED_DEVICE_FAMILY: '"1,2"',
   CODE_SIGNING_ALLOWED: 'YES',
   CODE_SIGNING_REQUIRED: 'NO',
+  SDKROOT: 'iphoneos',
 };
+
+const DROP_SETTINGS = [
+  'INFOPLIST_FILE',
+  'LD_RUNPATH_SEARCH_PATHS',
+  'SKIP_INSTALL',
+  'GCC_PREPROCESSOR_DEFINITIONS',
+] as const;
+
+function configListUuid(target: any): string {
+  const raw = target.buildConfigurationList;
+  if (raw && typeof raw === 'object' && 'value' in raw) {
+    return String(raw.value);
+  }
+  return unquote(raw);
+}
 
 function ensureBuildPhases(project: PbxProject, targetUuid: string): void {
   const target = project.pbxNativeTargetSection()[targetUuid];
@@ -77,21 +92,51 @@ function ensureUiTestDependsOnHost(opts: {
   }
 }
 
-const DROP_SETTINGS = [
-  'INFOPLIST_FILE',
-  'LD_RUNPATH_SEARCH_PATHS',
-  'SKIP_INSTALL',
-  'GCC_PREPROCESSOR_DEFINITIONS',
-] as const;
-
-function dropUnitTestDefaults(project: PbxProject): void {
-  const target = project.pbxTargetByName(UITEST_TARGET_NAME);
+/** xcode.addTarget quotes names; pbxTargetByName matches comments literally. */
+function normalizeUiTestTargetIdentity(
+  project: PbxProject,
+  targetUuid: string,
+  targetName: string
+): void {
+  const section = project.pbxNativeTargetSection();
+  const target = section[targetUuid];
   if (!target) {
     return;
   }
-  const listUuid = target.buildConfigurationList;
+  target.name = targetName;
+  target.productName = targetName;
+  section[`${targetUuid}_comment`] = targetName;
+
+  const productRef = unquote(target.productReference);
+  const fileRefs = project.hash.project.objects.PBXFileReference ?? {};
+  const ref = fileRefs[productRef];
+  if (!ref) {
+    return;
+  }
+  const xctest = `${targetName}.xctest`;
+  ref.path = xctest;
+  ref.name = xctest;
+  ref.explicitFileType = 'wrapper.cfbundle';
+  fileRefs[`${productRef}_comment`] = xctest;
+}
+
+function syncUiTestBuildSettings(opts: {
+  project: PbxProject;
+  targetUuid: string;
+  targetName: string;
+  hostName: string;
+  hostBundleId: string;
+}): void {
+  const { project, targetUuid, targetName, hostName, hostBundleId } = opts;
+  normalizeUiTestTargetIdentity(project, targetUuid, targetName);
+  const target = project.pbxNativeTargetSection()[targetUuid];
+  target.productType = `"${UI_TESTING_PRODUCT_TYPE}"`;
+
+  const listUuid = configListUuid(target);
   const list = project.pbxXCConfigurationList()[listUuid];
   const configs = project.pbxXCBuildConfigurationSection();
+  const bundleId = `${hostBundleId}.uitests`;
+
   for (const entry of list?.buildConfigurations ?? []) {
     const settings = configs[entry.value]?.buildSettings;
     if (!settings) {
@@ -100,51 +145,26 @@ function dropUnitTestDefaults(project: PbxProject): void {
     for (const key of DROP_SETTINGS) {
       delete settings[key];
     }
-  }
-}
-
-function syncUiTestBuildSettings(opts: {
-  project: PbxProject;
-  hostName: string;
-  hostBundleId: string;
-}): void {
-  const { project, hostName, hostBundleId } = opts;
-  const bundleId = `${hostBundleId}.uitests`;
-  for (const [key, value] of Object.entries(BUILD_SETTINGS)) {
-    project.updateBuildProperty(key, value, undefined, UITEST_TARGET_NAME);
-  }
-  project.updateBuildProperty(
-    'PRODUCT_BUNDLE_IDENTIFIER',
-    bundleId,
-    undefined,
-    UITEST_TARGET_NAME
-  );
-  project.updateBuildProperty(
-    'TEST_TARGET_NAME',
-    hostName,
-    undefined,
-    UITEST_TARGET_NAME
-  );
-  dropUnitTestDefaults(project);
-  const target = project.pbxTargetByName(UITEST_TARGET_NAME);
-  if (target) {
-    target.productType = `"${UI_TESTING_PRODUCT_TYPE}"`;
+    Object.assign(settings, SHARED_BUILD_SETTINGS);
+    settings.PRODUCT_NAME = targetName;
+    settings.PRODUCT_BUNDLE_IDENTIFIER = bundleId;
+    settings.TEST_TARGET_NAME = hostName;
   }
 }
 
 function createUiTestTarget(opts: {
   project: PbxProject;
+  targetName: string;
   hostUuid: string;
   hostBundleId: string;
 }): { uuid: string; created: boolean } {
-  const { project, hostUuid, hostBundleId } = opts;
+  const { project, targetName, hostUuid, hostBundleId } = opts;
   const created = project.addTarget(
-    UITEST_TARGET_NAME,
+    targetName,
     'unit_test_bundle',
-    UITEST_TARGET_NAME,
+    targetName,
     `${hostBundleId}.uitests`
   );
-  // addTarget wires first-target → new target; flip to UITest → host.
   removeHostDependencyOnUiTest({
     project,
     hostUuid,
@@ -161,11 +181,12 @@ function createUiTestTarget(opts: {
 
 export function ensureUiTestNativeTarget(opts: {
   project: PbxProject;
+  targetName: string;
   hostUuid: string;
   hostName: string;
   hostBundleId: string;
 }): { uuid: string; created: boolean } {
-  const existing = findUiTestTarget(opts.project);
+  const existing = findUiTestTarget(opts.project, opts.targetName);
   if (existing) {
     ensureBuildPhases(opts.project, existing.uuid);
     ensureUiTestDependsOnHost({
@@ -173,10 +194,22 @@ export function ensureUiTestNativeTarget(opts: {
       hostUuid: opts.hostUuid,
       uiTestUuid: existing.uuid,
     });
-    syncUiTestBuildSettings(opts);
+    syncUiTestBuildSettings({
+      project: opts.project,
+      targetUuid: existing.uuid,
+      targetName: opts.targetName,
+      hostName: opts.hostName,
+      hostBundleId: opts.hostBundleId,
+    });
     return { uuid: existing.uuid, created: false };
   }
   const result = createUiTestTarget(opts);
-  syncUiTestBuildSettings(opts);
+  syncUiTestBuildSettings({
+    project: opts.project,
+    targetUuid: result.uuid,
+    targetName: opts.targetName,
+    hostName: opts.hostName,
+    hostBundleId: opts.hostBundleId,
+  });
   return result;
 }

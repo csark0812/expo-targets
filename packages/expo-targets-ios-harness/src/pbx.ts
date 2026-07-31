@@ -121,12 +121,10 @@ export function findHostApplication(project: PbxProject): {
 }
 
 export function findUiTestTarget(
-  project: PbxProject
+  project: PbxProject,
+  targetName: string = UITEST_TARGET_NAME
 ): { uuid: string; name: string; target: any } | null {
-  return (
-    listNativeTargets(project).find((t) => t.name === UITEST_TARGET_NAME) ??
-    null
-  );
+  return listNativeTargets(project).find((t) => t.name === targetName) ?? null;
 }
 
 export function knownTargetNames(project: PbxProject): Set<string> {

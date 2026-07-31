@@ -1,37 +1,49 @@
 # @expo-targets/ios-harness
 
-**Local / MCP only.** Private Share Sheet XCUITest orchestration for expo-targets examples. Not a Ubuntu CI merge gate. **Release** simulator builds required.
+**Local / MCP only.** Private XCUITest orchestration for expo-targets examples. Not a Ubuntu CI merge gate. **Release** simulator builds required.
+
+## Package boundary
+
+Hosts **Share Sheet** + **MobileSMS** (Messages / Stickers) only. Other OS hosts (SpringBoard widgets, Wallet, Clip-via-XCUITest) need an **explicit fork decision** — do not treat suite generalization as an all-types platform.
+
+| Surface | Harness | Proof bar |
+|---------|---------|-----------|
+| Share / action (RN + native) | XCUITest Share Sheet | App Group via Share Sheet |
+| Messages | XCUITest MobileSMS | `ag-handoff` (Send → host payload) |
+| Stickers | XCUITest MobileSMS | `pack-interact` (visible + tappable; **no** App Group) |
+| Clip | Maestro `launch.yaml` | URL → host handoff |
+| Widgets | Deferred | Soft-deprecated → `expo-widgets` |
 
 ## Commands
 
 ```bash
-# Attach UITest target + scheme env after prebuild (idempotent)
-bun run --filter @expo-targets/ios-harness attach -- examples/share
-
-# Serial fail-fast matrix (share, action, native/share, native/action)
+# Share Sheet matrix (C1)
 bun run --filter @expo-targets/ios-harness test:share-sheet
 
-# Subset
-bun run --filter @expo-targets/ios-harness test:share-sheet
-# or:
-bun packages/expo-targets-ios-harness/src/cli.ts test examples/share examples/action
+# Messages (ag-handoff) / Stickers (pack-interact)
+bun run --filter @expo-targets/ios-harness test:messages
+bun run --filter @expo-targets/ios-harness test:stickers
+
+# Serial MobileSMS runner alias (orchestration only — asymmetric bars)
+bun run --filter @expo-targets/ios-harness test:imessage-surface
+
+bun run --filter @expo-targets/ios-harness attach -- examples/messages
+bun run --filter @expo-targets/ios-harness test:unit
 ```
 
-Env:
+Env: `UITEST_SIM_UDID`, `UITEST_*_OVERRIDE`. Hard PID lock: `os.tmpdir()/expo-targets-ios-harness-<udid>.lock`.
 
-| Var                 | Role                                                            |
-| ------------------- | --------------------------------------------------------------- |
-| `UITEST_SIM_UDID`   | Override pinned simulator (default is machine-local iPhone Air) |
-| `UITEST_*_OVERRIDE` | Override matrix env keys for attach/test                        |
+MobileSMS flake class ≠ Share Sheet — prefer **2×** green on the pinned sim.
 
-## Flow
+## Attach
 
-1. `npx expo prebuild --platform ios` (and Release install) for the example
-2. `attach` copies `fixtures/ShareSheetSmoke.swift`, ensures `ExpoTargetsShareSheetUITests`, wires host `.xcscheme` Test action (Release + `UITEST_*`)
-3. `test` / `test:share-sheet` takes a UDID file lock, attaches if needed, runs `xcodebuild test` serially; fail-fast on first failure (full log under `.ios-harness/`)
-
-`prebuild --clean` may wipe the UITest target — re-attach.
+Post-prebuild, idempotent. Suite config picks UITest target name + fixture (`ExpoTargetsShareSheetUITests` / `ExpoTargetsMessagesUITests` / `ExpoTargetsStickersUITests`).
 
 ## Failure gates
 
-Do not silently downgrade to in-process-only or Maestro Share Sheet. On C1 fail → re-grill.
+Do not silently downgrade to in-process-only or Maestro Share Sheet. On fail → re-grill.
+
+## Roadmap (not this package yet)
+
+- Custom sticker browser + App Group (`MSStickerBrowserViewController`)
+- Widgets SpringBoard gallery XCUITest (fork decision)

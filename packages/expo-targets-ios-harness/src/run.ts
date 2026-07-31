@@ -2,8 +2,8 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+
 import { attachExample } from './attach';
-import { UITEST_TARGET_NAME } from './constants';
 import { acquireSimLock } from './lock';
 import {
   type ExampleRel,
@@ -50,7 +50,7 @@ function runXcodebuildTest(opts: {
     'Release',
     '-destination',
     `platform=iOS Simulator,id=${opts.udid}`,
-    `-only-testing:${UITEST_TARGET_NAME}`,
+    `-only-testing:${opts.entry.uiTestTargetName}`,
   ];
   fs.mkdirSync(path.dirname(opts.logPath), { recursive: true });
   const out = fs.openSync(opts.logPath, 'w');
@@ -106,10 +106,8 @@ function testOne(opts: {
   return { ok: true };
 }
 
-/**
- * Serial fail-fast Share Sheet matrix run under a UDID lock.
- */
-export function runShareSheetMatrix(options: RunOptions = {}): RunResult {
+/** Serial fail-fast matrix run under a UDID lock. */
+export function runMatrix(options: RunOptions = {}): RunResult {
   const udid = resolveUdid(options.udid);
   const entries = resolveMatrixEntries(options.exampleRels);
   const logDir =
@@ -142,4 +140,9 @@ export function runShareSheetMatrix(options: RunOptions = {}): RunResult {
   } finally {
     lock.release();
   }
+}
+
+/** @deprecated Prefer runMatrix({ exampleRels: shareSheetMatrix() }). */
+export function runShareSheetMatrix(options: RunOptions = {}): RunResult {
+  return runMatrix(options);
 }
