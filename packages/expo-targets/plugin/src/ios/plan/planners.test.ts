@@ -375,7 +375,7 @@ describe("planAssets for sticker targets", () => {
       "iMessage App Icon.stickersiconset",
     );
     expect(plan.stickers?.sourceIconPath).toBe(
-      path.join(PROJECT_ROOT, "assets/icon.png"),
+      path.join(PROJECT_ROOT, "targets/my-share/assets/icon.png"),
     );
   });
 
@@ -387,6 +387,15 @@ describe("planAssets for sticker targets", () => {
         "targets/my-share/stickers/hello.png",
       ),
     });
+  });
+
+  test("writes sticker packs into the referenced build Stickers.xcassets", () => {
+    expect(plan.stickers?.packs[0].stickerPackPath).toBe(
+      path.join(
+        PROJECT_ROOT,
+        "targets/my-share/ios/build/Stickers.xcassets/Pack.stickerpack",
+      ),
+    );
   });
 });
 

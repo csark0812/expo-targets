@@ -1,8 +1,8 @@
-import path from 'node:path';
+import path from "node:path";
 
-import type { Color } from '../../config';
-import type { TargetWorkspace } from '../observe/workspace';
-import * as Paths from '../utils/paths';
+import type { Color } from "../../config";
+import type { TargetWorkspace } from "../observe/workspace";
+import * as Paths from "../utils/paths";
 import type {
   AssetPlan,
   ColorsetPlan,
@@ -11,9 +11,9 @@ import type {
   StickerPackPlan,
   StickersPlan,
   TargetIdentity,
-} from './types';
+} from "./types";
 
-const IMESSAGE_APP_ICON = 'iMessage App Icon.stickersiconset';
+const IMESSAGE_APP_ICON = "iMessage App Icon.stickersiconset";
 
 function resolveProjectPath(projectRoot: string, filePath: string): string {
   return path.isAbsolute(filePath)
@@ -36,7 +36,7 @@ function planColorsets({
       buildSubdirectory: props.buildSubdirectory,
     });
 
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       return { name, colorsetPath, color: value };
     }
 
@@ -52,19 +52,20 @@ function planColorsets({
 
 function planStickerPacks({
   props,
-  identity,
   paths,
+  buildAssetsPath,
 }: {
   props: IOSTargetProps;
-  identity: TargetIdentity;
   paths: ProjectPaths;
+  buildAssetsPath: string;
 }): StickerPackPlan[] {
   return (props.stickerPacks || []).map((pack) => {
-    const stickerPackPath = Paths.getStickerPackPath({
-      platformProjectRoot: paths.platformProjectRoot,
-      targetName: identity.targetName,
-      stickerPackName: pack.name,
-    });
+    // Packs must live in the same Stickers.xcassets Xcode references
+    // (targets/.../ios/build/), not the legacy ios/<Target>/ catalog.
+    const stickerPackPath = path.join(
+      buildAssetsPath,
+      `${pack.name}.stickerpack`,
+    );
     const assets = pack.assets.map((assetPath) => {
       const sourcePath = path.isAbsolute(assetPath)
         ? assetPath
@@ -85,22 +86,24 @@ function planStickerPacks({
 
 function planStickers({
   props,
-  identity,
   paths,
   buildAssetsPath,
 }: {
   props: IOSTargetProps;
-  identity: TargetIdentity;
   paths: ProjectPaths;
   buildAssetsPath: string;
 }): StickersPlan {
   return {
     assetsPath: buildAssetsPath,
     iconsetPath: path.join(buildAssetsPath, IMESSAGE_APP_ICON),
+    // Match stickerPacks: paths in expo-target.config.json are relative to the
+    // target directory (e.g. targets/stickers/assets/...), not the app root.
     sourceIconPath: props.targetIcon
-      ? resolveProjectPath(paths.projectRoot, props.targetIcon)
+      ? path.isAbsolute(props.targetIcon)
+        ? props.targetIcon
+        : path.join(paths.projectRoot, props.directory, props.targetIcon)
       : undefined,
-    packs: planStickerPacks({ props, identity, paths }),
+    packs: planStickerPacks({ props, paths, buildAssetsPath }),
   };
 }
 
@@ -119,7 +122,7 @@ export function planAssets({
   identity: TargetIdentity;
   paths: ProjectPaths;
 }): AssetPlan {
-  const isStickers = props.type === 'stickers';
+  const isStickers = props.type === "stickers";
   const buildAssetsPath = Paths.getTargetAssetsPath({
     projectRoot: paths.projectRoot,
     targetDirectory: props.directory,
@@ -135,7 +138,7 @@ export function planAssets({
     copyUserAssets: workspace.hasUserAssets,
     colorsets: planColorsets({ props, projectRoot: paths.projectRoot }),
     stickers: isStickers
-      ? planStickers({ props, identity, paths, buildAssetsPath })
+      ? planStickers({ props, paths, buildAssetsPath })
       : undefined,
   };
 }

@@ -67,25 +67,34 @@ Do not commit generated `ios/` or `android/` folders from example prebuilds.
 
 ## PR C — process proof (Release, local / MCP only)
 
-Host Maestro (PR B) is **not** full runtime proof. PR C adds:
+Host Maestro (PR B) is **not** full runtime proof. PR C + Post-C add:
 
-| Layer              | Packages                                           | Harness                                                                                                                                       |
-| ------------------ | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| System Share Sheet | `share`, `action`, `native/share`, `native/action` | [`@expo-targets/ios-harness`](../packages/expo-targets-ios-harness/README.md)                                                                 |
-| Clip real launch   | `clip`, `native/clip`                              | Maestro [`clip/.maestro/launch.yaml`](./clip/.maestro/launch.yaml) / [`native/clip/.maestro/launch.yaml`](./native/clip/.maestro/launch.yaml) |
+| Layer              | Packages                                           | Harness / proof bar                                                                 |
+| ------------------ | -------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| System Share Sheet | `share`, `action`, `native/share`, `native/action` | [`@expo-targets/ios-harness`](../packages/expo-targets-ios-harness/README.md) Share Sheet |
+| Clip real launch   | `clip`, `native/clip`                              | Maestro [`launch.yaml`](./clip/.maestro/launch.yaml)                                |
+| Messages           | `messages`                                         | ios-harness MobileSMS `ag-handoff` (`test:messages`)                                |
+| Stickers           | `stickers`                                         | ios-harness MobileSMS `pack-interact` (`test:stickers`; no App Group)               |
 
-**Release builds required.** See [`packages/expo-targets-ios-harness/README.md`](../packages/expo-targets-ios-harness/README.md) for C1 attach/run, C2 failure gates (re-grill, no silent downgrade), and path to later non-blocking macOS CI.
+**Release builds required.** Package boundary: Share Sheet + MobileSMS only — other OS hosts need a fork decision. See [`packages/expo-targets-ios-harness/README.md`](../packages/expo-targets-ios-harness/README.md).
 
 ```bash
 # Share Sheet (after prebuild + Release install)
 bun run --filter @expo-targets/ios-harness attach -- examples/share
 bun run test:share-sheet
 
+# Messages / Stickers (MobileSMS; serial alias is orchestration only)
+bun run test:messages
+bun run test:stickers
+bun run test:imessage-surface
+
 # Clip launch
 cd examples/clip && npx expo run:ios --configuration Release
 maestro test .maestro/launch.yaml
 ```
 
-### Post-C deferred spikes
+### Post-C+ roadmap (document only)
 
-Messages / stickers / widgets real-process automation remains separate best-effort spikes (OS-owned entry: Messages, Stickers drawer, Home Screen widgets).
+- Custom sticker browser + App Group (`MSStickerBrowserViewController`) — not asset-only `type: "stickers"`.
+- Widgets Home Screen gallery XCUITest — separate spike; soft-deprecated → [`docs/widgets.md`](../docs/widgets.md).
+- Further OS hosts (Wallet, Clip-via-XCUITest, …) — explicit harness fork, not silent expansion of ios-harness.

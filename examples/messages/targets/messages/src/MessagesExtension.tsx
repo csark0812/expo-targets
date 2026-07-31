@@ -35,7 +35,12 @@ export default function MessagesExtension({
     <View style={styles.container}>
       <Text style={styles.title}>Messages</Text>
       <Text>Participants: {participantCount}</Text>
-      <TouchableOpacity style={styles.button} onPress={send}>
+      <TouchableOpacity
+        testID="btn-send-template"
+        accessibilityLabel="Send template"
+        style={styles.button}
+        onPress={send}
+      >
         <Text style={styles.buttonText}>Send template</Text>
       </TouchableOpacity>
     </View>

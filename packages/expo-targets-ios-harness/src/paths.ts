@@ -11,8 +11,13 @@ export function repoRoot(): string {
   return path.resolve(packageRoot(), '..', '..');
 }
 
+export function fixturePath(smokeFileName: string): string {
+  return path.join(packageRoot(), 'fixtures', smokeFileName);
+}
+
+/** @deprecated Prefer fixturePath(entry.smokeFileName). */
 export function fixtureSmokePath(): string {
-  return path.join(packageRoot(), 'fixtures', 'ShareSheetSmoke.swift');
+  return fixturePath('ShareSheetSmoke.swift');
 }
 
 export function exampleIosDir(exampleRel: string): string {

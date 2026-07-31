@@ -10,8 +10,11 @@
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf build",
-    "test:unit": "bun test src/matrix.test.ts src/lock.test.ts src/scheme.test.ts",
+    "test:unit": "bun test src",
     "test:share-sheet": "bun src/cli.ts test:share-sheet",
+    "test:messages": "bun src/cli.ts test:messages",
+    "test:stickers": "bun src/cli.ts test:stickers",
+    "test:imessage-surface": "bun src/cli.ts test:imessage-surface",
     "attach": "bun src/cli.ts attach",
     "test": "bun src/cli.ts test"
   },

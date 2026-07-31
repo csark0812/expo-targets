@@ -50,6 +50,7 @@ describe('updateHostScheme', () => {
       schemePath,
       projectFileName: 'ETShare.xcodeproj',
       knownTargetNames: new Set(['ETShare', UITEST_TARGET_NAME]),
+      uiTestTargetName: UITEST_TARGET_NAME,
       uiTest: {
         blueprintId: 'ABCDEF',
         blueprintName: UITEST_TARGET_NAME,

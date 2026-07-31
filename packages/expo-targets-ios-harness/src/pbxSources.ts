@@ -1,22 +1,16 @@
-import { SMOKE_FILE_NAME, UITEST_TARGET_NAME } from './constants';
 import type { PbxProject } from './pbx';
 import { unquote } from './pbx';
 
-function ensureUiTestGroup(project: PbxProject): string {
+function ensureUiTestGroup(project: PbxProject, targetName: string): string {
   const existing =
     project.findPBXGroupKey({
-      name: UITEST_TARGET_NAME,
-      path: UITEST_TARGET_NAME,
-    }) ?? project.findPBXGroupKey({ name: UITEST_TARGET_NAME });
+      name: targetName,
+      path: targetName,
+    }) ?? project.findPBXGroupKey({ name: targetName });
   if (existing) {
     return existing;
   }
-  const created = project.addPbxGroup(
-    [],
-    UITEST_TARGET_NAME,
-    UITEST_TARGET_NAME,
-    '"<group>"'
-  );
+  const created = project.addPbxGroup([], targetName, targetName, '"<group>"');
   const main = project.getFirstProject().firstProject.mainGroup;
   project.addToPbxGroup(created.uuid, main);
   return created.uuid;
@@ -28,7 +22,8 @@ function refPath(ref: any): string {
 
 function smokeChildren(
   project: PbxProject,
-  groupKey: string
+  groupKey: string,
+  smokeFileName: string
 ): Array<{ value: string; path: string }> {
   const group = project.hash.project.objects.PBXGroup?.[groupKey];
   const fileRefs = project.hash.project.objects.PBXFileReference ?? {};
@@ -39,7 +34,7 @@ function smokeChildren(
       continue;
     }
     const p = refPath(ref);
-    if (p === SMOKE_FILE_NAME || p.endsWith(`/${SMOKE_FILE_NAME}`)) {
+    if (p === smokeFileName || p.endsWith(`/${smokeFileName}`)) {
       out.push({ value: child.value, path: p });
     }
   }
@@ -50,9 +45,14 @@ function dropBadSmokeRefs(opts: {
   project: PbxProject;
   groupKey: string;
   targetUuid: string;
+  smokeFileName: string;
 }): void {
-  for (const child of smokeChildren(opts.project, opts.groupKey)) {
-    if (child.path === SMOKE_FILE_NAME) {
+  for (const child of smokeChildren(
+    opts.project,
+    opts.groupKey,
+    opts.smokeFileName
+  )) {
+    if (child.path === opts.smokeFileName) {
       continue;
     }
     opts.project.removeSourceFile(
@@ -63,21 +63,23 @@ function dropBadSmokeRefs(opts: {
   }
 }
 
-/** Ensure ShareSheetSmoke.swift is in the UITest group Sources (basename path). */
+/** Ensure smoke Swift file is in the UITest group Sources (basename path). */
 export function ensureSmokeSourceFile(opts: {
   project: PbxProject;
   targetUuid: string;
+  targetName: string;
+  smokeFileName: string;
 }): void {
-  const groupKey = ensureUiTestGroup(opts.project);
+  const groupKey = ensureUiTestGroup(opts.project, opts.targetName);
   dropBadSmokeRefs({ ...opts, groupKey });
-  const ok = smokeChildren(opts.project, groupKey).some(
-    (c) => c.path === SMOKE_FILE_NAME
+  const ok = smokeChildren(opts.project, groupKey, opts.smokeFileName).some(
+    (c) => c.path === opts.smokeFileName
   );
   if (ok) {
     return;
   }
   opts.project.addSourceFile(
-    SMOKE_FILE_NAME,
+    opts.smokeFileName,
     { target: opts.targetUuid },
     groupKey
   );
