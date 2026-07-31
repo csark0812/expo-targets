@@ -1,6 +1,6 @@
-import { SMOKE_FILE_NAME, UITEST_TARGET_NAME } from "./constants";
-import type { PbxProject } from "./pbx";
-import { unquote } from "./pbx";
+import { SMOKE_FILE_NAME, UITEST_TARGET_NAME } from './constants';
+import type { PbxProject } from './pbx';
+import { unquote } from './pbx';
 
 function ensureUiTestGroup(project: PbxProject): string {
   const existing =
@@ -15,7 +15,7 @@ function ensureUiTestGroup(project: PbxProject): string {
     [],
     UITEST_TARGET_NAME,
     UITEST_TARGET_NAME,
-    '"<group>"',
+    '"<group>"'
   );
   const main = project.getFirstProject().firstProject.mainGroup;
   project.addToPbxGroup(created.uuid, main);
@@ -23,12 +23,12 @@ function ensureUiTestGroup(project: PbxProject): string {
 }
 
 function refPath(ref: any): string {
-  return unquote(ref?.path ?? ref?.name ?? "");
+  return unquote(ref?.path ?? ref?.name ?? '');
 }
 
 function smokeChildren(
   project: PbxProject,
-  groupKey: string,
+  groupKey: string
 ): Array<{ value: string; path: string }> {
   const group = project.hash.project.objects.PBXGroup?.[groupKey];
   const fileRefs = project.hash.project.objects.PBXFileReference ?? {};
@@ -58,7 +58,7 @@ function dropBadSmokeRefs(opts: {
     opts.project.removeSourceFile(
       child.path,
       { target: opts.targetUuid },
-      opts.groupKey,
+      opts.groupKey
     );
   }
 }
@@ -71,7 +71,7 @@ export function ensureSmokeSourceFile(opts: {
   const groupKey = ensureUiTestGroup(opts.project);
   dropBadSmokeRefs({ ...opts, groupKey });
   const ok = smokeChildren(opts.project, groupKey).some(
-    (c) => c.path === SMOKE_FILE_NAME,
+    (c) => c.path === SMOKE_FILE_NAME
   );
   if (ok) {
     return;
@@ -79,6 +79,6 @@ export function ensureSmokeSourceFile(opts: {
   opts.project.addSourceFile(
     SMOKE_FILE_NAME,
     { target: opts.targetUuid },
-    groupKey,
+    groupKey
   );
 }

@@ -1,13 +1,13 @@
 #!/usr/bin/env bun
-import process from "node:process";
-import { attachExample } from "./attach";
+import process from 'node:process';
+import { attachExample } from './attach';
 import {
   type ExampleRel,
   isExampleRel,
   resolveMatrixEntry,
   shareSheetMatrix,
-} from "./matrix";
-import { runShareSheetMatrix } from "./run";
+} from './matrix';
+import { runShareSheetMatrix } from './run';
 
 function usage(): never {
   console.error(`Usage:
@@ -40,7 +40,7 @@ function parseExamples(args: string[]): ExampleRel[] {
 function cmdAttach(rest: string[]): void {
   const example = rest[0];
   if (!(example && isExampleRel(example))) {
-    console.error("attach requires a matrix exampleRel");
+    console.error('attach requires a matrix exampleRel');
     usage();
   }
   const result = attachExample(resolveMatrixEntry(example));
@@ -54,8 +54,8 @@ function cmdAttach(rest: string[]): void {
         removedStale: result.removedStale,
       },
       null,
-      2,
-    ),
+      2
+    )
   );
 }
 
@@ -68,18 +68,18 @@ function cmdTest(examples: ExampleRel[]): void {
 
 function main(argv: string[]): void {
   const [cmd, ...rest] = argv;
-  if (!cmd || cmd === "-h" || cmd === "--help") {
+  if (!cmd || cmd === '-h' || cmd === '--help') {
     usage();
   }
-  if (cmd === "attach") {
+  if (cmd === 'attach') {
     cmdAttach(rest);
     return;
   }
-  if (cmd === "test") {
+  if (cmd === 'test') {
     cmdTest(parseExamples(rest));
     return;
   }
-  if (cmd === "test:share-sheet") {
+  if (cmd === 'test:share-sheet') {
     cmdTest(shareSheetMatrix());
     return;
   }
