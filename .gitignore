@@ -32,6 +32,8 @@ Thumbs.db
 
 # iOS - auto-generated app code (but keep package native code and target templates)
 apps/*/ios/
+examples/*/ios/
+examples/native/*/ios/
 *.xcworkspace
 *.xcuserdata
 Pods/
@@ -39,6 +41,8 @@ Podfile.lock
 
 # Android - auto-generated app code (but keep package native code and target templates)
 apps/*/android/
+examples/*/android/
+examples/native/*/android/
 *.apk
 *.aab
 .gradle/
