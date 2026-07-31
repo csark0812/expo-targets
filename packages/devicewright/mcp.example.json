@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "devicewright": {
+      "command": "bun",
+      "args": ["run", "--cwd", "packages/devicewright", "mcp"],
+      "env": {
+        "DEVICEWRIGHT_IDB_PATH": "/path/to/idb"
+      }
+    },
+    "maestro": {
+      "command": "maestro",
+      "args": ["mcp"]
+    },
+    "ios-simulator": {
+      "command": "npx",
+      "args": ["-y", "ios-simulator-mcp"],
+      "env": {
+        "IOS_SIMULATOR_MCP_IDB_PATH": "/path/to/idb"
+      }
+    }
+  }
+}
