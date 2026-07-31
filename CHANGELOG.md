@@ -27,7 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Thin `examples/*` Maestro-ready suite (10 SDK 54 hosts: share, action, messages, clip, stickers, widgets, kitchen-sink, native/share, native/action, native/clip).
-- PR C local harness: XCUITest Share Sheet attach-after-prebuild under `examples/_harness/uitests/` + Maestro clip `launch.yaml` (Release; not Ubuntu CI).
+- Private `@expo-targets/ios-harness` package: pure-TS Share Sheet XCUITest attach + serial fail-fast `test:share-sheet` (local/MCP; not Ubuntu CI). Replaces `examples/_harness/uitests` bash/ruby attach.
+- Maestro clip `launch.yaml` for real clip launch (Release; not Ubuntu CI).
+- Action extensions default to App Groups; target `appGroup` always written; `CFBundleDisplayName` from target `displayName` for Share Sheet row titles.
 - Skeleton docs SSOT (`@csark0812/skeleton`), `docs/widgets.md`, `docs/deprecations.md`.
 - Sharper RN extension runtime errors when `ExpoTargetsExtension` is missing; `getExtensionNativeModule()` helper.
 - `withTargetsMetro` entry validation/logging; `scanTargetsDirectory` export.

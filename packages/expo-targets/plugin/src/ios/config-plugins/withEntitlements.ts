@@ -15,6 +15,7 @@ export const withTargetEntitlements: ConfigPlugin<{
   targetDirectory: string;
   type: ExtensionType;
   entitlements?: Record<string, any>;
+  appGroup?: string;
   logger: Logger;
   buildSubdirectory?: string;
 }> = (config, props) =>
@@ -30,6 +31,7 @@ export const withTargetEntitlements: ConfigPlugin<{
         mainAppGroups: config.ios?.entitlements?.[APP_GROUP_ENTITLEMENT_KEY] as
           | string[]
           | undefined,
+        appGroup: props.appGroup,
         paths: {
           projectRoot,
           targetDirectory: props.targetDirectory,

@@ -1,7 +1,17 @@
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useState } from "react";
-import { Share, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  AppState,
+  Share,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { shareTarget } from "./targets/share";
+
+/** Marker string asserted by ShareSheetSmoke after Save. */
+export const UITEST_SHARE_MARKER = "expo-targets uitest share payload";
 
 export default function App() {
   const [payload, setPayload] = useState("none");
@@ -15,6 +25,10 @@ export default function App() {
 
   useEffect(() => {
     refresh();
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") refresh();
+    });
+    return () => sub.remove();
   }, [refresh]);
 
   return (
@@ -55,12 +69,19 @@ export default function App() {
         style={styles.button}
         onPress={() => {
           void Share.share({
-            message: "expo-targets uitest share payload",
+            message: UITEST_SHARE_MARKER,
             url: "https://example.com/expo-targets-share",
           });
         }}
       >
         <Text style={styles.buttonText}>Open Share Sheet</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        testID="btn-refresh"
+        style={styles.button}
+        onPress={refresh}
+      >
+        <Text style={styles.buttonText}>Refresh</Text>
       </TouchableOpacity>
       <Text testID="text-last-payload" style={styles.payload}>
         {payload}

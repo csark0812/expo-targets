@@ -319,6 +319,7 @@ export const withIOSTarget: ConfigPlugin<IosTargetProps> = (config, props) => {
     targetDirectory: props.directory,
     type: props.type,
     entitlements: props.entitlements,
+    appGroup: props.appGroup,
     logger: props.logger,
     buildSubdirectory: props.buildSubdirectory,
   });

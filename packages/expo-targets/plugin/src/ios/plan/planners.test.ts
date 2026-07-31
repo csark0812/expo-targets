@@ -444,9 +444,36 @@ describe("planEntitlements app groups", () => {
     expect(plan.path).toContain("build/generated.entitlements");
   });
 
-  test("does not sync App Groups for types that opt out", () => {
+  test("syncs App Groups for action (shared storage with host)", () => {
     const plan = planEntitlements({
       type: "action",
+      mainAppGroups: ["group.com.example.app"],
+      paths: entitlementPaths,
+    });
+
+    expect(plan.syncedAppGroups).toBe(true);
+    expect(plan.entitlements["com.apple.security.application-groups"]).toEqual([
+      "group.com.example.app",
+    ]);
+  });
+
+  test("writes explicit appGroup even when type opts out of main sync", () => {
+    const plan = planEntitlements({
+      type: "intent",
+      appGroup: "group.com.example.explicit",
+      mainAppGroups: ["group.com.example.app"],
+      paths: entitlementPaths,
+    });
+
+    expect(plan.syncedAppGroups).toBe(true);
+    expect(plan.entitlements["com.apple.security.application-groups"]).toEqual([
+      "group.com.example.explicit",
+    ]);
+  });
+
+  test("does not sync App Groups for types that opt out", () => {
+    const plan = planEntitlements({
+      type: "intent",
       mainAppGroups: ["group.com.example.app"],
       paths: entitlementPaths,
     });

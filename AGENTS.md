@@ -30,8 +30,9 @@ bun run validate:changed
 
 ## Packages
 
-| Package                       | Role                                                 |
-| ----------------------------- | ---------------------------------------------------- |
-| `packages/expo-targets`       | Config plugin, runtime, Metro helper, native modules |
-| `packages/create-expo-target` | Interactive scaffolder                               |
-| `packages/expo-targets-cli`   | Bare RN `expo-targets sync`                          |
+| Package                         | Role                                                 |
+| ------------------------------- | ---------------------------------------------------- |
+| `packages/expo-targets`         | Config plugin, runtime, Metro helper, native modules |
+| `packages/create-expo-target`   | Interactive scaffolder                               |
+| `packages/expo-targets-cli`     | Bare RN `expo-targets sync`                          |
+| `packages/expo-targets-ios-harness` | Local/MCP Share Sheet XCUITest harness (private) |

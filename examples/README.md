@@ -71,14 +71,15 @@ Host Maestro (PR B) is **not** full runtime proof. PR C adds:
 
 | Layer              | Packages                                           | Harness                                                                                                                                       |
 | ------------------ | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| System Share Sheet | `share`, `action`, `native/share`, `native/action` | XCUITest under [`_harness/uitests/`](./_harness/uitests/)                                                                                     |
+| System Share Sheet | `share`, `action`, `native/share`, `native/action` | [`@expo-targets/ios-harness`](../packages/expo-targets-ios-harness/README.md)                                                                 |
 | Clip real launch   | `clip`, `native/clip`                              | Maestro [`clip/.maestro/launch.yaml`](./clip/.maestro/launch.yaml) / [`native/clip/.maestro/launch.yaml`](./native/clip/.maestro/launch.yaml) |
 
-**Release builds required.** See [`_harness/uitests/README.md`](./_harness/uitests/README.md) for C1 attach-after-prebuild spike, C2 failure gates (re-grill, no silent downgrade), and path to later non-blocking macOS CI.
+**Release builds required.** See [`packages/expo-targets-ios-harness/README.md`](../packages/expo-targets-ios-harness/README.md) for C1 attach/run, C2 failure gates (re-grill, no silent downgrade), and path to later non-blocking macOS CI.
 
 ```bash
-# Share Sheet (after prebuild + attach)
-./examples/_harness/uitests/scripts/attach-after-prebuild.sh examples/share
+# Share Sheet (after prebuild + Release install)
+bun run --filter @expo-targets/ios-harness attach -- examples/share
+bun run test:share-sheet
 
 # Clip launch
 cd examples/clip && npx expo run:ios --configuration Release

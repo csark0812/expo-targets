@@ -50,6 +50,7 @@ function buildInfoPlistContents({
       : undefined;
 
   return getTargetInfoPlistForType(props.type, {
+    displayName: props.displayName,
     customProperties: props.infoPlist,
     shareExtensionConfig,
     entry: props.entry,

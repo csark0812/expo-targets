@@ -25,12 +25,15 @@ class ShareViewController: UIViewController {
         detailLabel.textAlignment = .center
         detailLabel.textColor = .secondaryLabel
         saveButton.setTitle("Save to App", for: .normal)
+        saveButton.accessibilityIdentifier = "btn-complete"
         saveButton.backgroundColor = UIColor(named: "AccentColor")
         saveButton.setTitleColor(.white, for: .normal)
         saveButton.layer.cornerRadius = 8
         saveButton.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
         closeButton.setTitle("Close", for: .normal)
+        closeButton.accessibilityIdentifier = "btn-close"
         closeButton.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
+        detailLabel.accessibilityIdentifier = "text-shared-content"
         [titleLabel, detailLabel, saveButton, closeButton].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview($0)
@@ -95,8 +98,9 @@ class ShareViewController: UIViewController {
         if let data = try? JSONEncoder().encode(Array(saved.prefix(50))),
            let json = String(data: data, encoding: .utf8) {
             defaults.set(json, forKey: "nativeShare:items")
+            defaults.synchronize()
         }
-        saveButton.setTitle("Saved", for: .normal)
+        extensionContext?.completeRequest(returningItems: nil)
     }
 
     @objc private func closeTapped() {

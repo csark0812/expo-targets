@@ -27,13 +27,18 @@ export default function ActionExtension({ target, images }: Props) {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} testID="screen-extension">
       <Text style={styles.title}>Action</Text>
-      <Text>Images: {images?.length ?? 0}</Text>
-      <TouchableOpacity style={styles.button} onPress={save}>
+      <Text testID="text-shared-content">Images: {images?.length ?? 0}</Text>
+      <TouchableOpacity
+        testID="btn-complete"
+        accessibilityRole="button"
+        style={styles.button}
+        onPress={save}
+      >
         <Text style={styles.buttonText}>Process</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => target.close()}>
+      <TouchableOpacity testID="btn-close" onPress={() => target.close()}>
         <Text>Cancel</Text>
       </TouchableOpacity>
     </View>

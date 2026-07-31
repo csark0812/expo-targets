@@ -18,12 +18,15 @@ export function planEntitlements({
   entitlements: configured,
   mainBundleIdentifier,
   mainAppGroups,
+  appGroup,
   paths,
 }: {
   type: ExtensionType;
   entitlements?: Record<string, any>;
   mainBundleIdentifier?: string;
   mainAppGroups?: string[];
+  /** Explicit target `appGroup` — always written when present. */
+  appGroup?: string;
   paths: {
     projectRoot: string;
     targetDirectory: string;
@@ -57,11 +60,6 @@ export function planEntitlements({
     entitlements['com.apple.developer.payment-pass-provisioning'] = true;
   }
 
-  const syncsAppGroups =
-    shouldUseAppGroups(type) &&
-    Array.isArray(mainAppGroups) &&
-    mainAppGroups.length > 0;
-
   if (shouldUseAppGroups(type)) {
     entitlements = Plist.syncAppGroups({
       targetEntitlements: entitlements,
@@ -69,12 +67,28 @@ export function planEntitlements({
     });
   }
 
+  // Target-level appGroup wins even when the type does not default to syncing.
+  if (appGroup) {
+    const existing = entitlements[APP_GROUP_ENTITLEMENT_KEY];
+    if (Array.isArray(existing)) {
+      if (!existing.includes(appGroup)) {
+        entitlements = {
+          ...entitlements,
+          [APP_GROUP_ENTITLEMENT_KEY]: [...existing, appGroup],
+        };
+      }
+    } else {
+      entitlements = {
+        ...entitlements,
+        [APP_GROUP_ENTITLEMENT_KEY]: [appGroup],
+      };
+    }
+  }
+
   return {
     required,
     path: entitlementsPath,
     entitlements,
-    syncedAppGroups: Boolean(
-      syncsAppGroups && entitlements[APP_GROUP_ENTITLEMENT_KEY]
-    ),
+    syncedAppGroups: Boolean(entitlements[APP_GROUP_ENTITLEMENT_KEY]),
   };
 }

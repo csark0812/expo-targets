@@ -147,7 +147,9 @@ const BASE_TYPE_CHARACTERISTICS: Record<
     frameworks: [],
     productType: 'com.apple.product-type.app-extension',
     extensionPointIdentifier: 'com.apple.ui-services',
-    defaultUsesAppGroups: false,
+    // Action extensions that use App Group storage (RN + native examples) need
+    // the suite entitlement; without it UserDefaults(suiteName:) is a no-op.
+    defaultUsesAppGroups: true,
     requiresEntitlements: true,
     basePlist: {
       NSExtension: {

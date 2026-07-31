@@ -12,6 +12,8 @@ import {
  */
 
 export interface TargetInfoPlistOptions {
+  /** Written into CFBundleDisplayName (Share Sheet row title). */
+  displayName?: string;
   customProperties?: Record<string, any>;
   shareExtensionConfig?: {
     activationRules?: { type: string; maxCount?: number }[];
@@ -67,9 +69,10 @@ function deepMerge(target: any, source: any): any {
   return output;
 }
 
-function createBasePlist(): Record<string, any> {
+function createBasePlist(displayName?: string): Record<string, any> {
   return {
-    CFBundleDisplayName: '$(PRODUCT_NAME)',
+    // Prefer configured displayName so Share Sheet does not show PRODUCT_NAME.
+    CFBundleDisplayName: displayName || '$(PRODUCT_NAME)',
     CFBundleName: '$(PRODUCT_NAME)',
     CFBundleIdentifier: '$(PRODUCT_BUNDLE_IDENTIFIER)',
     CFBundlePackageType: '$(PRODUCT_BUNDLE_PACKAGE_TYPE)',
@@ -337,7 +340,10 @@ export function getTargetInfoPlistForType(
     throw new Error(`Unknown extension type: ${type}`);
   }
 
-  const basePlist = deepMerge(createBasePlist(), characteristics.basePlist);
+  const basePlist = deepMerge(
+    createBasePlist(options.displayName),
+    characteristics.basePlist
+  );
   const context: PlistContext = { basePlist, characteristics, type, options };
 
   applyExtensionPointIdentifier(context);

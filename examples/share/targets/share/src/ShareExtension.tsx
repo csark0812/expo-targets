@@ -26,13 +26,18 @@ export default function ShareExtension({ target, text, url }: Props) {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} testID="screen-extension">
       <Text style={styles.title}>Share</Text>
-      <Text>{text || url || 'No content'}</Text>
-      <TouchableOpacity style={styles.button} onPress={save}>
+      <Text testID="text-shared-content">{text || url || 'No content'}</Text>
+      <TouchableOpacity
+        testID="btn-complete"
+        accessibilityRole="button"
+        style={styles.button}
+        onPress={save}
+      >
         <Text style={styles.buttonText}>Save</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => target.close()}>
+      <TouchableOpacity testID="btn-close" onPress={() => target.close()}>
         <Text>Cancel</Text>
       </TouchableOpacity>
     </View>

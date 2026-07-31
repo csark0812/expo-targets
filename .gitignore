@@ -68,3 +68,6 @@ coverage/
 
 .cursor/*
 !.cursor/mcp.json
+
+# Local XCUITest harness logs
+.ios-harness/

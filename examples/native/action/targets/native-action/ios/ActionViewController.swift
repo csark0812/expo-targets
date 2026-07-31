@@ -19,12 +19,16 @@ class ActionViewController: UIViewController {
         imageView.contentMode = .scaleAspectFit
         imageView.backgroundColor = .secondarySystemBackground
         processButton.setTitle("Process Image", for: .normal)
+        processButton.accessibilityIdentifier = "btn-complete"
         processButton.backgroundColor = UIColor(named: "AccentColor")
         processButton.setTitleColor(.white, for: .normal)
         processButton.layer.cornerRadius = 8
         processButton.addTarget(self, action: #selector(processTapped), for: .touchUpInside)
         closeButton.setTitle("Close", for: .normal)
+        closeButton.accessibilityIdentifier = "btn-close"
         closeButton.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
+        filterControl.accessibilityIdentifier = "control-filter"
+        filterControl.selectedSegmentIndex = 0
         [imageView, filterControl, processButton, closeButton].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview($0)
@@ -59,8 +63,12 @@ class ActionViewController: UIViewController {
     }
 
     @objc private func processTapped() {
-        let filter = filterControl.titleForSegment(at: filterControl.selectedSegmentIndex) ?? "Original"
-        guard let defaults = UserDefaults(suiteName: appGroup) else { return }
+        let index = max(filterControl.selectedSegmentIndex, 0)
+        let filter = filterControl.titleForSegment(at: index) ?? "Original"
+        guard let defaults = UserDefaults(suiteName: appGroup) else {
+            extensionContext?.completeRequest(returningItems: nil)
+            return
+        }
         struct Processed: Codable { let filter: String; let timestamp: Double }
         var items: [Processed] = []
         if let json = defaults.string(forKey: "nativeAction:items"),
@@ -72,8 +80,11 @@ class ActionViewController: UIViewController {
         if let data = try? JSONEncoder().encode(Array(items.prefix(50))),
            let json = String(data: data, encoding: .utf8) {
             defaults.set(json, forKey: "nativeAction:items")
+            defaults.synchronize()
         }
-        processButton.setTitle("Processed", for: .normal)
+        // Ensure App Group flush before tearing down the extension process.
+        CFPreferencesAppSynchronize(appGroup as CFString)
+        extensionContext?.completeRequest(returningItems: nil)
     }
 
     @objc private func closeTapped() {

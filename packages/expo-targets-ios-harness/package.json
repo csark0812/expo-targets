@@ -1,0 +1,30 @@
+{
+  "name": "@expo-targets/ios-harness",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Local/MCP Share Sheet XCUITest harness for expo-targets examples",
+  "main": "./build/cli.js",
+  "bin": {
+    "expo-targets-ios-harness": "./build/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf build",
+    "test:unit": "bun test src/matrix.test.ts src/lock.test.ts",
+    "test:share-sheet": "bun src/cli.ts test:share-sheet",
+    "attach": "bun src/cli.ts attach",
+    "test": "bun src/cli.ts test"
+  },
+  "dependencies": {
+    "xcode": "3.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "~5.3.3"
+  },
+  "files": [
+    "build",
+    "fixtures",
+    "README.md"
+  ]
+}
