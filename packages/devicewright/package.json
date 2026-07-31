@@ -36,6 +36,7 @@
     "build": "tsc",
     "clean": "rm -rf build",
     "test:unit": "bun test src",
+    "smoke:parallel-sessions": "bun src/examples/parallel-sessions-smoke.ts",
     "doctor": "bun src/bin/doctor.ts",
     "mcp": "bun src/bin/mcp.ts",
     "cli": "bun src/bin/cli.ts"

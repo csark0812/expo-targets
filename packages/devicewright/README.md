@@ -42,13 +42,13 @@ await android.close();
 
 ## MCP
 
-Point Cursor at the workspace MCP (replaces `ios-simulator-mcp` after hardening):
+Point Cursor at the workspace MCP (replaces `ios-simulator-mcp` after hardening). Prefer an **absolute** `bun` path if `spawn bun ENOENT`:
 
 ```json
 {
   "mcpServers": {
     "devicewright": {
-      "command": "bun",
+      "command": "/Users/YOU/.bun/bin/bun",
       "args": ["run", "--filter", "@expo-targets/devicewright", "mcp"],
       "env": {
         "DEVICEWRIGHT_IDB_PATH": "/path/to/idb"
@@ -58,9 +58,21 @@ Point Cursor at the workspace MCP (replaces `ios-simulator-mcp` after hardening)
 }
 ```
 
+**Host assumption:** one stdio MCP process + concurrent tools. The session registry (Map by UDID) lives in that process. Cross-process exclusive hold is the existing PID lock file (`lock: true`) — second agent/process fails loud (B1). Do not add a second Cursor MCP server entry per sim.
+
+**Multi-sim agents (A):** omit `udid` only when exactly one simulator is booted (MCP soft-omit). With 2+ booted, pass `udid` or call `list_booted_sims`. Sessions stay warm until `close_device` or process exit (`releaseAll` unlocks **this process** only). `heldByThisMcp` is map membership (zombie OK until close if the sim dies externally).
+
+**Soft-omit vs scripts:** MCP soft-omit is MCP-only. TS scripts / `runOnDevices` still use shared `resolveSimulatorId` (first-booted when omit). One lock plane: both use PID locks when `lock: true`.
+
 **Rollback:** restore `npx -y ios-simulator-mcp` (+ `IOS_SIMULATOR_MCP_IDB_PATH`).
 
-Tool names stay compatible with `ios-simulator-mcp` (`ui_tap`, `ui_describe_all`, `screenshot`, …) plus `doctor` and optional `platform: android`.
+Tool names stay compatible with `ios-simulator-mcp` (`ui_tap`, `ui_describe_all`, `screenshot`, …) plus `doctor`, `list_booted_sims`, `close_device`, and optional `platform: android`.
+
+Local multi-sim smoke (two booted sims, not CI):
+
+```bash
+bun packages/devicewright/src/examples/parallel-sessions-smoke.ts
+```
 
 ## Security
 

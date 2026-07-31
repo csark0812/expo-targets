@@ -1,13 +1,31 @@
+import type { ChildProcess } from 'node:child_process';
 import process from 'node:process';
 import { matchesAccessibilityCriteria } from '../a11yMatch';
 import { assertSafeDeviceId } from '../allowlist';
-import { runSync, runSyncOrThrow } from '../exec';
+import { runAsync, runSync, runSyncOrThrow } from '../exec';
 import type {
   AccessibilityNode,
   FindCriteria,
   SwipeOptions,
   TapOptions,
 } from '../types';
+
+export type IdbRunOptions = {
+  idbPath?: string;
+  udid?: string;
+  signal?: AbortSignal;
+  onSpawn?: (child: ChildProcess) => void;
+  timeoutMs?: number;
+};
+
+/** Optional MCP registry hook — killable children for force-close. */
+let childTracker: ((udid: string, child: ChildProcess) => void) | null = null;
+
+export function setIdbChildTracker(
+  tracker: ((udid: string, child: ChildProcess) => void) | null
+): void {
+  childTracker = tracker;
+}
 
 function resolveIdb(idbPath?: string): string {
   return (
@@ -18,7 +36,11 @@ function resolveIdb(idbPath?: string): string {
   );
 }
 
-function idb(
+function intCoord(n: number): string {
+  return String(Math.round(n));
+}
+
+function idbSync(
   args: string[],
   options: { idbPath?: string; udid?: string } = {}
 ): string {
@@ -28,6 +50,34 @@ function idb(
     full.push('--udid', assertSafeDeviceId(options.udid));
   }
   return runSyncOrThrow(bin, full);
+}
+
+async function idbAsync(
+  args: string[],
+  options: IdbRunOptions = {}
+): Promise<string> {
+  const bin = resolveIdb(options.idbPath);
+  const full = [...args];
+  const udid = options.udid ? assertSafeDeviceId(options.udid) : undefined;
+  if (udid) {
+    full.push('--udid', udid);
+  }
+  const result = await runAsync(bin, full, {
+    signal: options.signal,
+    timeoutMs: options.timeoutMs,
+    onSpawn: (child) => {
+      if (udid) childTracker?.(udid, child);
+      options.onSpawn?.(child);
+    },
+  });
+  if (result.status !== 0) {
+    throw new Error(
+      `${bin} ${full.join(' ')} failed (${result.status}): ${
+        result.stderr || result.stdout || 'unknown'
+      }`
+    );
+  }
+  return result.stdout;
 }
 
 export function idbAvailable(idbPath?: string): boolean {
@@ -99,61 +149,70 @@ function normalizeNode(input: unknown): AccessibilityNode {
   };
 }
 
-export function describeAll(
+export async function describeAll(
   udid: string,
-  options: { idbPath?: string } = {}
-): AccessibilityNode[] {
-  const raw = idb(['ui', 'describe-all'], { ...options, udid });
+  options: IdbRunOptions = {}
+): Promise<AccessibilityNode[]> {
+  const raw = await idbAsync(['ui', 'describe-all'], { ...options, udid });
   return parseDescribeAll(raw);
 }
 
-export function describePoint(options: {
+export async function describePoint(options: {
   udid: string;
   x: number;
   y: number;
   idbPath?: string;
-}): AccessibilityNode | null {
-  const raw = idb(
-    ['ui', 'describe-point', String(options.x), String(options.y)],
-    { idbPath: options.idbPath, udid: options.udid }
+  signal?: AbortSignal;
+  onSpawn?: (child: ChildProcess) => void;
+  timeoutMs?: number;
+}): Promise<AccessibilityNode | null> {
+  const raw = await idbAsync(
+    ['ui', 'describe-point', intCoord(options.x), intCoord(options.y)],
+    {
+      idbPath: options.idbPath,
+      udid: options.udid,
+      signal: options.signal,
+      onSpawn: options.onSpawn,
+      timeoutMs: options.timeoutMs,
+    }
   );
   const nodes = parseDescribeAll(raw);
   return nodes[0] ?? null;
 }
 
-export function tap(
+export async function tap(
   udid: string,
-  options: TapOptions & { idbPath?: string }
-): void {
-  const args = ['ui', 'tap', String(options.x), String(options.y)];
+  options: TapOptions & IdbRunOptions
+): Promise<void> {
+  const args = ['ui', 'tap', intCoord(options.x), intCoord(options.y)];
   if (options.duration !== undefined) {
     args.push('--duration', String(options.duration));
   }
-  idb(args, { idbPath: options.idbPath, udid });
+  await idbAsync(args, { ...options, udid });
 }
 
-export function typeText(
+export async function typeText(
   udid: string,
   text: string,
-  options: { idbPath?: string } = {}
-): void {
+  options: IdbRunOptions = {}
+): Promise<void> {
   if (!/^[\x20-\x7E]*$/.test(text)) {
     throw new Error('ui type supports ASCII printable characters only');
   }
-  idb(['ui', 'text', text], { ...options, udid });
+  await idbAsync(['ui', 'text', text], { ...options, udid });
 }
 
-export function swipe(
+export async function swipe(
   udid: string,
-  options: SwipeOptions & { idbPath?: string }
-): void {
+  options: SwipeOptions & IdbRunOptions
+): Promise<void> {
   const args = [
     'ui',
     'swipe',
-    String(options.xStart),
-    String(options.yStart),
-    String(options.xEnd),
-    String(options.yEnd),
+    intCoord(options.xStart),
+    intCoord(options.yStart),
+    intCoord(options.xEnd),
+    intCoord(options.yEnd),
   ];
   if (options.duration !== undefined) {
     args.push('--duration', String(options.duration));
@@ -161,7 +220,7 @@ export function swipe(
   if (options.delta !== undefined) {
     args.push('--delta', String(options.delta));
   }
-  idb(args, { idbPath: options.idbPath, udid });
+  await idbAsync(args, { ...options, udid });
 }
 
 function flatten(nodes: AccessibilityNode[]): AccessibilityNode[] {
@@ -174,12 +233,21 @@ function flatten(nodes: AccessibilityNode[]): AccessibilityNode[] {
   return out;
 }
 
-export function findElements(
+export async function findElements(
   udid: string,
   criteria: FindCriteria,
-  options: { idbPath?: string } = {}
-): AccessibilityNode[] {
-  return flatten(describeAll(udid, options)).filter((node) =>
+  options: IdbRunOptions = {}
+): Promise<AccessibilityNode[]> {
+  return flatten(await describeAll(udid, options)).filter((node) =>
     matchesAccessibilityCriteria(node, criteria)
   );
+}
+
+/** Sync helpers kept for non-UI / doctor paths that need immediate argv. */
+export function describeAllSync(
+  udid: string,
+  options: { idbPath?: string } = {}
+): AccessibilityNode[] {
+  const raw = idbSync(['ui', 'describe-all'], { ...options, udid });
+  return parseDescribeAll(raw);
 }

@@ -2,13 +2,26 @@
  * Safe process execution — structured argv only, never shell interpolation.
  */
 
-import { type SpawnSyncOptions, spawn, spawnSync } from 'node:child_process';
+import {
+  type ChildProcess,
+  type SpawnSyncOptions,
+  spawn,
+  spawnSync,
+} from 'node:child_process';
 import process from 'node:process';
 
 export type ExecResult = {
   status: number;
   stdout: string;
   stderr: string;
+};
+
+export type RunAsyncOptions = {
+  cwd?: string;
+  env?: NodeJS.ProcessEnv;
+  timeoutMs?: number;
+  signal?: AbortSignal;
+  onSpawn?: (child: ChildProcess) => void;
 };
 
 export function runSync(
@@ -46,25 +59,50 @@ export function runSyncOrThrow(
 export async function runAsync(
   command: string,
   args: string[],
-  options: { cwd?: string; env?: NodeJS.ProcessEnv; timeoutMs?: number } = {}
+  options: RunAsyncOptions = {}
 ): Promise<ExecResult> {
+  if (options.signal?.aborted) {
+    throw abortError(command);
+  }
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       cwd: options.cwd,
       env: options.env ?? process.env,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
+    options.onSpawn?.(child);
+
     let stdout = '';
     let stderr = '';
+    let settled = false;
+
+    const settle = (fn: () => void) => {
+      if (settled) return;
+      settled = true;
+      if (timer) clearTimeout(timer);
+      options.signal?.removeEventListener('abort', onAbort);
+      fn();
+    };
+
+    const onAbort = () => {
+      child.kill('SIGKILL');
+      settle(() => reject(abortError(command)));
+    };
+
     const timer =
-      options.timeoutMs !== null
+      options.timeoutMs !== undefined
         ? setTimeout(() => {
             child.kill('SIGKILL');
-            reject(
-              new Error(`${command} timed out after ${options.timeoutMs}ms`)
+            settle(() =>
+              reject(
+                new Error(`${command} timed out after ${options.timeoutMs}ms`)
+              )
             );
           }, options.timeoutMs)
         : null;
+
+    options.signal?.addEventListener('abort', onAbort, { once: true });
+
     child.stdout?.on('data', (chunk: Buffer) => {
       stdout += chunk.toString('utf8');
     });
@@ -72,12 +110,16 @@ export async function runAsync(
       stderr += chunk.toString('utf8');
     });
     child.on('error', (err) => {
-      if (timer) clearTimeout(timer);
-      reject(err);
+      settle(() => reject(err));
     });
     child.on('close', (code) => {
-      if (timer) clearTimeout(timer);
-      resolve({ status: code ?? 1, stdout, stderr });
+      settle(() => resolve({ status: code ?? 1, stdout, stderr }));
     });
   });
+}
+
+function abortError(command: string): Error {
+  const err = new Error(`${command} aborted`);
+  err.name = 'AbortError';
+  return err;
 }

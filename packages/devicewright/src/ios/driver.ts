@@ -95,15 +95,15 @@ export class IosDriver implements DeviceDriver {
   }
 
   async tap(options: TapOptions): Promise<void> {
-    idb.tap(this.deviceId, { ...options, idbPath: this.idbPath });
+    await idb.tap(this.deviceId, { ...options, idbPath: this.idbPath });
   }
 
   async type(text: string): Promise<void> {
-    idb.typeText(this.deviceId, text, { idbPath: this.idbPath });
+    await idb.typeText(this.deviceId, text, { idbPath: this.idbPath });
   }
 
   async swipe(options: SwipeOptions): Promise<void> {
-    idb.swipe(this.deviceId, { ...options, idbPath: this.idbPath });
+    await idb.swipe(this.deviceId, { ...options, idbPath: this.idbPath });
   }
 
   async viewCompressed(): Promise<Buffer> {

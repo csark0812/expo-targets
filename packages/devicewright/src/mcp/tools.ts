@@ -15,6 +15,10 @@ import { devices } from '../devices';
 import { formatDoctor, runDoctor } from '../doctor';
 import { openSimulatorApp } from '../ios/simctl';
 import type { DeviceSession } from '../session';
+import {
+  discoverBootedSimId,
+  type SessionRegistry,
+} from './sessions';
 
 function textResult(text: string) {
   return { content: [{ type: 'text' as const, text }] };
@@ -31,33 +35,14 @@ function optDuration(
   return typeof duration === 'number' ? duration : Number(duration);
 }
 
-type SessionHolder = { current: DeviceSession | null };
-
-async function ensureIos(
-  holder: SessionHolder,
-  udid?: string
-): Promise<DeviceSession> {
-  if (holder.current?.platform === 'ios') {
-    if (!udid || holder.current.deviceId === udid) return holder.current;
-    await holder.current.close();
-    holder.current = null;
-  }
-  holder.current = await devices.launch({
-    platform: 'ios',
-    deviceId: udid,
-    lock: true,
-    boot: true,
-  });
-  return holder.current;
-}
-
 async function withDevice(
-  holder: SessionHolder,
+  registry: SessionRegistry,
   platform: 'ios' | 'android' | undefined,
   udid: string | undefined,
   // MCP tool handlers return heterogeneous content shapes (text/image).
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   fn: (s: DeviceSession) => Promise<any>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> {
   if (platform === 'android') {
     const s = await devices.launch({ platform: 'android', deviceId: udid });
@@ -67,12 +52,13 @@ async function withDevice(
       await s.close();
     }
   }
-  return fn(await ensureIos(holder, udid));
+  const session = await registry.ensureDevice(udid);
+  return registry.runExclusive(session.deviceId, fn);
 }
 
 export function registerDevicewrightTools(
   server: McpServer,
-  holder: SessionHolder
+  registry: SessionRegistry
 ): void {
   server.registerTool(
     'doctor',
@@ -87,10 +73,35 @@ export function registerDevicewrightTools(
   server.registerTool(
     'get_booted_sim_id',
     {
-      description: 'Get the ID of the currently booted iOS simulator',
+      description:
+        'Discovery-only: return the booted simulator UDID when exactly one is booted. Does not attach, lock, or mutate the session registry. If multiple are booted, use list_booted_sims and pass udid to other tools.',
       inputSchema: {},
     },
-    async () => jsonResult({ udid: (await ensureIos(holder)).deviceId })
+    async () => jsonResult({ udid: discoverBootedSimId() })
+  );
+
+  server.registerTool(
+    'list_booted_sims',
+    {
+      description:
+        'List booted iOS simulators and whether this MCP process currently holds a session (map membership, not liveness).',
+      inputSchema: {},
+    },
+    async () => jsonResult({ sims: registry.listBootedWithHeld() })
+  );
+
+  server.registerTool(
+    'close_device',
+    {
+      description:
+        'Close the MCP session for a UDID: drain in-flight work (default 30s) then unlock. Force-close returns DEVICE_CLOSE_FORCED if drain times out.',
+      inputSchema: {
+        udid: z.string(),
+        drain_ms: z.number().optional(),
+      },
+    },
+    async ({ udid, drain_ms }) =>
+      jsonResult(await registry.closeDevice(udid, drain_ms ?? 30_000))
   );
 
   server.registerTool(
@@ -102,11 +113,11 @@ export function registerDevicewrightTools(
     }
   );
 
-  registerUiTools(server, holder);
-  registerAppTools(server, holder);
+  registerUiTools(server, registry);
+  registerAppTools(server, registry);
 }
 
-function registerUiTools(server: McpServer, holder: SessionHolder): void {
+function registerUiTools(server: McpServer, registry: SessionRegistry): void {
   server.registerTool(
     'ui_describe_all',
     {
@@ -117,7 +128,7 @@ function registerUiTools(server: McpServer, holder: SessionHolder): void {
       },
     },
     async ({ udid, platform }) =>
-      withDevice(holder, platform, udid, async (s) =>
+      withDevice(registry, platform, udid, async (s) =>
         jsonResult(await s.accessibilityTree())
       )
   );
@@ -135,7 +146,7 @@ function registerUiTools(server: McpServer, holder: SessionHolder): void {
       },
     },
     async ({ x, y, duration, udid, platform }) =>
-      withDevice(holder, platform, udid, async (s) => {
+      withDevice(registry, platform, udid, async (s) => {
         await s.tap({ x, y, duration: optDuration(duration) });
         return textResult(`tapped (${x}, ${y})`);
       })
@@ -152,7 +163,7 @@ function registerUiTools(server: McpServer, holder: SessionHolder): void {
       },
     },
     async ({ text, udid, platform }) =>
-      withDevice(holder, platform, udid, async (s) => {
+      withDevice(registry, platform, udid, async (s) => {
         await s.type(text);
         return textResult('typed');
       })
@@ -174,7 +185,7 @@ function registerUiTools(server: McpServer, holder: SessionHolder): void {
       },
     },
     async (args) =>
-      withDevice(holder, args.platform, args.udid, async (s) => {
+      withDevice(registry, args.platform, args.udid, async (s) => {
         await s.swipe({
           xStart: args.x_start,
           yStart: args.y_start,
@@ -198,7 +209,9 @@ function registerUiTools(server: McpServer, holder: SessionHolder): void {
       },
     },
     async ({ x, y, udid }) =>
-      jsonResult(await (await ensureIos(holder, udid)).describePoint(x, y))
+      withDevice(registry, 'ios', udid, async (s) =>
+        jsonResult(await s.describePoint(x, y))
+      )
   );
 
   server.registerTool(
@@ -215,7 +228,7 @@ function registerUiTools(server: McpServer, holder: SessionHolder): void {
       },
     },
     async (args) =>
-      withDevice(holder, args.platform, args.udid, async (s) =>
+      withDevice(registry, args.platform, args.udid, async (s) =>
         jsonResult(
           await s.findElements({
             search: args.search,
@@ -237,7 +250,7 @@ function registerUiTools(server: McpServer, holder: SessionHolder): void {
       },
     },
     async ({ udid, platform }) =>
-      withDevice(holder, platform, udid, async (s) => {
+      withDevice(registry, platform, udid, async (s) => {
         const shot = await s.screenshot();
         const buf =
           typeof shot === 'string' ? fs.readFileSync(shot) : Buffer.from(shot);
@@ -265,7 +278,7 @@ function registerUiTools(server: McpServer, holder: SessionHolder): void {
       },
     },
     async ({ output_path, udid, type, platform }) =>
-      withDevice(holder, platform, udid, async (s) => {
+      withDevice(registry, platform, udid, async (s) => {
         const out = assertSafeOutputPath(output_path);
         const saved = await s.screenshot({ path: out, type });
         return textResult(`saved ${saved}`);
@@ -273,7 +286,7 @@ function registerUiTools(server: McpServer, holder: SessionHolder): void {
   );
 }
 
-function registerAppTools(server: McpServer, holder: SessionHolder): void {
+function registerAppTools(server: McpServer, registry: SessionRegistry): void {
   server.registerTool(
     'install_app',
     {
@@ -285,7 +298,7 @@ function registerAppTools(server: McpServer, holder: SessionHolder): void {
       },
     },
     async ({ app_path, udid, platform }) =>
-      withDevice(holder, platform, udid, async (s) => {
+      withDevice(registry, platform, udid, async (s) => {
         const app = assertSafePath(app_path, { mustExist: true });
         await s.install(app);
         return textResult(`installed ${app}`);
@@ -304,7 +317,7 @@ function registerAppTools(server: McpServer, holder: SessionHolder): void {
       },
     },
     async ({ bundle_id, udid, terminate_running, platform }) =>
-      withDevice(holder, platform, udid, async (s) => {
+      withDevice(registry, platform, udid, async (s) => {
         const id = assertSafeBundleId(bundle_id);
         await s.launchApp(id, { terminateRunning: terminate_running });
         return textResult(`launched ${id}`);

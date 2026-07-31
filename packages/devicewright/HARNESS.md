@@ -22,3 +22,9 @@ import {
 ```
 
 Do **not** delete XCUITest fixtures as part of Devicewright Phase 2.
+
+## Parallel MCP sessions
+
+Harness / scripts that also talk to a simulator **must not** `devices.launch({ lock: true })` on a UDID the devicewright MCP already holds — you will fight the same PID lock. Prefer `lock: false` for short script side-paths, or `close_device` in MCP first.
+
+MCP soft-omit (0/1/many booted) does **not** change shared `resolveSimulatorId` used by harness code.
