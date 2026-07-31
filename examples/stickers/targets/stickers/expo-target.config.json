@@ -10,8 +10,12 @@
         "name": "Fun Stickers",
         "assets": [
           "stickers/bip.png",
-          "stickers/happy.png",
-          "stickers/excited.png"
+          "stickers/wave.png",
+          "stickers/hug.png",
+          "stickers/peek.png",
+          "stickers/jump.png",
+          "stickers/sit.png",
+          "stickers/heart.png"
         ]
       }
     ]

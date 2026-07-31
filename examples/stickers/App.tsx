@@ -4,7 +4,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function App() {
   const [ready, setReady] = useState(false);
-  const [status, setStatus] = useState('Fun Stickers pack (3 assets)');
+  const [status, setStatus] = useState('Fun Stickers pack (7 assets)');
 
   useEffect(() => {
     setReady(true);
@@ -21,7 +21,9 @@ export default function App() {
       <TouchableOpacity
         testID="btn-seed-payload"
         style={styles.button}
-        onPress={() => setStatus('pack: Fun Stickers (bip, happy, excited)')}
+        onPress={() =>
+          setStatus('pack: Fun Stickers (bip, wave, hug, peek, jump, sit, heart)')
+        }
       >
         <Text style={styles.buttonText}>Show pack status</Text>
       </TouchableOpacity>
