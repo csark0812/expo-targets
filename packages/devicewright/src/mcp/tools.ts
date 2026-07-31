@@ -90,9 +90,30 @@ export function registerDevicewrightTools(
   registry: SessionRegistry,
 ): void {
   server.registerTool(
+    "ping",
+    {
+      description:
+        "Liveness check for the Devicewright MCP child (useful when dogfooding mcp-dev reload). Returns ok, server name/version, and ISO timestamp.",
+      inputSchema: {
+        note: z.string().optional(),
+      },
+    },
+    async ({ note }) =>
+      jsonResult({
+        ok: true,
+        server: "devicewright",
+        version: "0.0.1",
+        note: note ?? null,
+        at: new Date().toISOString(),
+        via: "devicewright",
+      }),
+  );
+
+  server.registerTool(
     "doctor",
     {
-      description: "Preflight: Xcode, simctl, idb, simulators, adb.",
+      description:
+        "Preflight host tools for device control: Xcode, simctl, idb, booted simulators, and optionally adb. Run this before UI automation if a session looks unhealthy.",
       inputSchema: { requireAndroid: z.boolean().optional() },
     },
     async ({ requireAndroid }) =>

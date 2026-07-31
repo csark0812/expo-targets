@@ -1,8 +1,49 @@
 {
   "mcpServers": {
     "devicewright": {
-      "command": "bun",
-      "args": ["run", "--cwd", "packages/devicewright", "mcp"],
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-dev",
+        "--watch",
+        "packages/devicewright/src/**/*.ts",
+        "--rebuild",
+        "bun run --filter @expo-targets/devicewright build",
+        "--cursor-config",
+        "/Users/YOU/.cursor/mcp.json",
+        "--",
+        "node",
+        "packages/devicewright/build/bin/mcp.js"
+      ],
+      "env": {
+        "DEVICEWRIGHT_IDB_PATH": "/path/to/idb",
+        "MCP_DEV_REFRESH": "0"
+      }
+    },
+    "devicewright-local-mcp-dev": {
+      "command": "node",
+      "args": [
+        "/ABS/PATH/packages/mcp-dev/build/bin/mcp-dev.js",
+        "--watch",
+        "packages/devicewright/src/**/*.ts",
+        "--rebuild",
+        "bun run --filter @expo-targets/devicewright build",
+        "--cwd",
+        "/ABS/PATH/expo-targets",
+        "--cursor-config",
+        "/Users/YOU/.cursor/mcp.json",
+        "--",
+        "node",
+        "/ABS/PATH/packages/devicewright/build/bin/mcp.js"
+      ],
+      "env": {
+        "DEVICEWRIGHT_IDB_PATH": "/path/to/idb",
+        "MCP_DEV_REFRESH": "0"
+      }
+    },
+    "devicewright-raw": {
+      "command": "node",
+      "args": ["packages/devicewright/build/bin/mcp.js"],
       "env": {
         "DEVICEWRIGHT_IDB_PATH": "/path/to/idb"
       }

@@ -70,19 +70,78 @@ await android.close();
 
 ## MCP
 
-Point Cursor at the workspace MCP (replaces `ios-simulator-mcp` after hardening). Prefer an **absolute** `bun` path if `spawn bun ENOENT`:
+Prefer **[mcp-dev](../mcp-dev)** as a Cursor wrapper so file changes rebuild/restart the MCP child while the parent stdio session stays up. Pass `--cursor-config` to your Cursor `mcp.json` path so successful reloads bump `MCP_DEV_REFRESH` and Cursor refetches the tool catalog (Cursor ignores MCP `tools/list_changed`).
+
+**Published (after `mcp-dev` is on npm):**
 
 ```json
 {
   "mcpServers": {
     "devicewright": {
-      "command": "/Users/YOU/.bun/bin/bun",
-      "args": ["run", "--filter", "@expo-targets/devicewright", "mcp"],
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-dev",
+        "--watch",
+        "packages/devicewright/src/**/*.ts",
+        "--rebuild",
+        "bun run --filter @expo-targets/devicewright build",
+        "--cursor-config",
+        "/Users/YOU/.cursor/mcp.json",
+        "--",
+        "node",
+        "packages/devicewright/build/bin/mcp.js"
+      ],
       "env": {
-        "DEVICEWRIGHT_IDB_PATH": "/path/to/idb"
+        "DEVICEWRIGHT_IDB_PATH": "/path/to/idb",
+        "MCP_DEV_REFRESH": "0"
       }
     }
   }
+}
+```
+
+**Pre-publish / monorepo (local bin):**
+
+```json
+{
+  "mcpServers": {
+    "devicewright": {
+      "command": "node",
+      "args": [
+        "/ABS/PATH/TO/expo-targets/packages/mcp-dev/build/bin/mcp-dev.js",
+        "--watch",
+        "packages/devicewright/src/**/*.ts",
+        "--rebuild",
+        "bun run --filter @expo-targets/devicewright build",
+        "--cwd",
+        "/ABS/PATH/TO/expo-targets",
+        "--cursor-config",
+        "/Users/YOU/.cursor/mcp.json",
+        "--",
+        "node",
+        "/ABS/PATH/TO/expo-targets/packages/devicewright/build/bin/mcp.js"
+      ],
+      "env": {
+        "DEVICEWRIGHT_IDB_PATH": "/path/to/idb",
+        "MCP_DEV_REFRESH": "0"
+      }
+    }
+  }
+}
+```
+
+Build once before first attach: `bun run --filter @expo-targets/devicewright build` and `bun run --filter mcp-dev build`. After changing mcp.json, reload the MCP server once (or let `--cursor-config` bump `MCP_DEV_REFRESH` on the next watch reload).
+
+`ping` is a liveness tool for verifying the child after an mcp-dev reload.
+
+**Rollback (raw child, no watch):**
+
+```json
+{
+  "command": "node",
+  "args": ["/ABS/PATH/TO/expo-targets/packages/devicewright/build/bin/mcp.js"],
+  "env": { "DEVICEWRIGHT_IDB_PATH": "/path/to/idb" }
 }
 ```
 
@@ -92,7 +151,7 @@ Point Cursor at the workspace MCP (replaces `ios-simulator-mcp` after hardening)
 
 **Soft-omit vs scripts:** MCP soft-omit is MCP-only. TS scripts / `runOnDevices` still use shared `resolveSimulatorId` (first-booted when omit). One lock plane: both use PID locks when `lock: true`.
 
-**Rollback:** restore `npx -y ios-simulator-mcp` (+ `IOS_SIMULATOR_MCP_IDB_PATH`).
+**Rollback to ios-simulator-mcp:** restore `npx -y ios-simulator-mcp` (+ `IOS_SIMULATOR_MCP_IDB_PATH`).
 
 Tool names stay compatible with `ios-simulator-mcp` (`ui_tap`, `ui_describe_all`, `screenshot`, …) plus `doctor`, `list_booted_sims`, `close_device`, `record_video`, `stop_recording`, `ui_view_recording`, and optional `platform: android`.
 
