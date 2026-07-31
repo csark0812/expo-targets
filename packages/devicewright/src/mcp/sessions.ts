@@ -3,16 +3,17 @@
  * Soft-omit lives here only (do not import from CLI / shared resolveSimulatorId).
  */
 
-import type { ChildProcess } from 'node:child_process';
+import type { ChildProcess } from "node:child_process";
 
-import { assertSafeDeviceId } from '../allowlist';
-import { devices } from '../devices';
-import { setIdbChildTracker } from '../ios/idb';
-import { listSimulators, type SimDevice } from '../ios/simctl';
-import type { DeviceSession } from '../session';
+import { assertSafeDeviceId } from "../allowlist";
+import { devices } from "../devices";
+import { setDeviceChildTracker } from "../ios/idb";
+import { listSimulators, type SimDevice } from "../ios/simctl";
+import { gcDevicewrightTemp } from "../media/gc";
+import type { DeviceSession } from "../session";
 
-export const DEVICE_CLOSE_FORCED = 'DEVICE_CLOSE_FORCED';
-export const DEVICE_SESSION_ABORTED = 'DEVICE_SESSION_ABORTED';
+export const DEVICE_CLOSE_FORCED = "DEVICE_CLOSE_FORCED";
+export const DEVICE_SESSION_ABORTED = "DEVICE_SESSION_ABORTED";
 
 export type CloseDeviceResult =
   | { ok: true; forced: false; udid: string }
@@ -33,7 +34,7 @@ export type BootedSimRow = {
 
 function abortedError(udid: string): Error {
   const err = new Error(
-    `${DEVICE_SESSION_ABORTED}: device session ${udid} was aborted (closing or force-closed)`
+    `${DEVICE_SESSION_ABORTED}: device session ${udid} was aborted (closing or force-closed)`,
   );
   err.name = DEVICE_SESSION_ABORTED;
   return err;
@@ -42,18 +43,18 @@ function abortedError(udid: string): Error {
 /** MCP-only soft-omit: 0 → error; 1 → that udid; many → error with list. */
 export function resolveMcpSimulatorIdFromBooted(
   deviceId: string | undefined,
-  booted: Array<{ udid: string; name: string }>
+  booted: Array<{ udid: string; name: string }>,
 ): string {
   if (deviceId) return assertSafeDeviceId(deviceId);
   if (booted.length === 0) {
     throw new Error(
-      'no booted simulator; boot one or pass udid. Use list_booted_sims.'
+      "no booted simulator; boot one or pass udid. Use list_booted_sims.",
     );
   }
   if (booted.length === 1) return booted[0]!.udid;
-  const list = booted.map((d) => `${d.name} (${d.udid})`).join(', ');
+  const list = booted.map((d) => `${d.name} (${d.udid})`).join(", ");
   throw new Error(
-    `multiple booted simulators; pass udid. Booted: ${list}. Use list_booted_sims.`
+    `multiple booted simulators; pass udid. Booted: ${list}. Use list_booted_sims.`,
   );
 }
 
@@ -68,7 +69,7 @@ export function discoverBootedSimId(): string {
 }
 
 export function listBootedSimulators(): SimDevice[] {
-  return listSimulators().filter((d) => d.state === 'Booted');
+  return listSimulators().filter((d) => d.state === "Booted");
 }
 
 export type SessionRegistryDeps = {
@@ -97,7 +98,7 @@ export class SessionRegistry {
   constructor(deps: SessionRegistryDeps = {}) {
     this.deps = deps;
     if (!deps.skipIdbTracker) {
-      setIdbChildTracker((udid, child) => this.trackChild(udid, child));
+      setDeviceChildTracker((udid, child) => this.trackChild(udid, child));
     }
   }
 
@@ -138,7 +139,7 @@ export class SessionRegistry {
         const session = this.deps.launchIos
           ? await this.deps.launchIos(id)
           : await devices.launch({
-              platform: 'ios',
+              platform: "ios",
               deviceId: id,
               lock: true,
               boot: true,
@@ -160,7 +161,7 @@ export class SessionRegistry {
    */
   async runExclusive<T>(
     deviceId: string,
-    fn: (session: DeviceSession) => Promise<T>
+    fn: (session: DeviceSession) => Promise<T>,
   ): Promise<T> {
     const id = assertSafeDeviceId(deviceId);
     if (this.closing.has(id)) {
@@ -175,7 +176,7 @@ export class SessionRegistry {
     const prev = this.queues.get(id) ?? Promise.resolve();
     this.queues.set(
       id,
-      prev.then(() => gate).catch(() => gate)
+      prev.then(() => gate).catch(() => gate),
     );
 
     await prev.catch(() => undefined);
@@ -219,7 +220,7 @@ export class SessionRegistry {
 
   async closeDevice(
     deviceId: string,
-    drainMs = 30_000
+    drainMs = 30_000,
   ): Promise<CloseDeviceResult> {
     const udid = assertSafeDeviceId(deviceId);
     this.closing.add(udid);
@@ -246,6 +247,7 @@ export class SessionRegistry {
     }
 
     this.closing.delete(udid);
+    gcDevicewrightTemp();
 
     if (forced) {
       return {
@@ -284,9 +286,10 @@ export class SessionRegistry {
         } catch {
           // ignore
         }
-      })
+      }),
     );
     this.closing.clear();
+    gcDevicewrightTemp();
   }
 
   private poisonExclusive(udid: string): void {
@@ -310,8 +313,8 @@ export class SessionRegistry {
     }
     set.add(child);
     const cleanup = () => set!.delete(child);
-    child.once('close', cleanup);
-    child.once('error', cleanup);
+    child.once("close", cleanup);
+    child.once("error", cleanup);
   }
 
   private killChildren(udid: string): void {
@@ -319,7 +322,7 @@ export class SessionRegistry {
     if (!set) return;
     for (const child of set) {
       try {
-        child.kill('SIGKILL');
+        child.kill("SIGKILL");
       } catch {
         // ignore
       }
@@ -358,20 +361,20 @@ export class SessionRegistry {
 
   private async waitIdleOrTimeout(
     udid: string,
-    drainMs: number
+    drainMs: number,
   ): Promise<boolean> {
     const winner = await Promise.race([
-      this.waitUntilIdle(udid).then(() => 'idle' as const),
-      new Promise<'timeout'>((resolve) => {
-        setTimeout(() => resolve('timeout'), drainMs);
+      this.waitUntilIdle(udid).then(() => "idle" as const),
+      new Promise<"timeout">((resolve) => {
+        setTimeout(() => resolve("timeout"), drainMs);
       }),
     ]);
-    return winner === 'timeout' && (this.busyCount.get(udid) ?? 0) > 0;
+    return winner === "timeout" && (this.busyCount.get(udid) ?? 0) > 0;
   }
 }
 
 export function createSessionRegistry(
-  deps: SessionRegistryDeps = {}
+  deps: SessionRegistryDeps = {},
 ): SessionRegistry {
   return new SessionRegistry(deps);
 }

@@ -21,22 +21,44 @@ bun run --filter @expo-targets/devicewright doctor
 ## TypeScript
 
 ```ts
-import { devices } from '@expo-targets/devicewright';
+import { devices } from "@expo-targets/devicewright";
 
-const device = await devices.launch({ platform: 'ios', device: 'iPhone 16' });
-await device.launchApp('com.apple.Preferences');
-await device.getByText('General').tap();
-await device.screenshot({ path: 'settings.png' });
+const device = await devices.launch({ platform: "ios", device: "iPhone 16" });
+await device.launchApp("com.apple.Preferences");
+await device.getByText("General").tap();
+await device.screenshot({ path: "settings.png" });
 await device.close();
 ```
+
+### Screen recording (iOS Simulator)
+
+```ts
+await device.startRecording({ path: "flow.mp4" }); // optional maxSeconds
+// …interact…
+const videoPath = await device.stopRecording();
+const viewed = await device.viewRecording({ fps: 10, maxFrames: 60 });
+// viewed.frames[].t — seconds from start; thinned=true when long clip
+// zoom a 200ms slice at ~100ms spacing:
+const push = await device.viewRecording({
+  startSeconds: 12.0,
+  endSeconds: 12.2,
+  fps: 10,
+  maxFrames: 60,
+});
+await device.close(); // prefer stop_recording before close_device
+```
+
+**ffmpeg:** optional soft dependency. `record_video` / `stop_recording` use simctl only. `ui_view_recording` needs `ffmpeg` + `ffprobe` on PATH (`brew install ffmpeg`). `doctor` **warns** if missing — it does not fail the preflight. Frame JPEGs are deleted after MCP returns images; `.mp4` files stay in `os.tmpdir()` as `devicewright-*` (24h GC on close) unless you pass `output_path` / `path`.
+
+MCP: `record_video` → interact → `stop_recording` → `ui_view_recording` (`fps`, `max_frames`, optional `start_seconds` / `end_seconds`). Prefer `stop_recording` before `close_device` (force-close may SIGKILL and truncate). Android recording deferred. Manual Simulator demos are video/frames only — no gesture log.
 
 Cross-OS happy path (same script shape):
 
 ```ts
-const android = await devices.launch({ platform: 'android' });
-await android.launchApp('com.android.settings');
-await android.getByText('Settings').tap(); // or assert visible
-await android.screenshot({ path: 'android-settings.png' });
+const android = await devices.launch({ platform: "android" });
+await android.launchApp("com.android.settings");
+await android.getByText("Settings").tap(); // or assert visible
+await android.screenshot({ path: "android-settings.png" });
 await android.close();
 ```
 
@@ -66,7 +88,7 @@ Point Cursor at the workspace MCP (replaces `ios-simulator-mcp` after hardening)
 
 **Rollback:** restore `npx -y ios-simulator-mcp` (+ `IOS_SIMULATOR_MCP_IDB_PATH`).
 
-Tool names stay compatible with `ios-simulator-mcp` (`ui_tap`, `ui_describe_all`, `screenshot`, …) plus `doctor`, `list_booted_sims`, `close_device`, and optional `platform: android`.
+Tool names stay compatible with `ios-simulator-mcp` (`ui_tap`, `ui_describe_all`, `screenshot`, …) plus `doctor`, `list_booted_sims`, `close_device`, `record_video`, `stop_recording`, `ui_view_recording`, and optional `platform: android`.
 
 Local multi-sim smoke (two booted sims, not CI):
 
@@ -82,7 +104,7 @@ bun packages/devicewright/src/examples/parallel-sessions-smoke.ts
 
 ## Host claims (week-7 bar)
 
-Must keep: Share, Messages, Photos, SpringBoard, Settings, Safari.  
+Must keep: Share, Messages, Photos, SpringBoard, Settings, Safari.
 Cut first if behind: Wallet → App Clip → widgets → Stickers; Android hello-path cut if red.
 
 ```bash

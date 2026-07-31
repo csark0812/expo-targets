@@ -1,4 +1,4 @@
-export * as android from './android';
+export * as android from "./android";
 export {
   applyCuts,
   type ClaimState,
@@ -7,14 +7,14 @@ export {
   type HostClaim,
   type HostId,
   mustKeepHosts,
-} from './claims';
-export { devices } from './devices';
-export { type DoctorReport, formatDoctor, runDoctor } from './doctor';
-export * as ios from './ios';
-export { simctl as iosSimctl } from './ios';
-export { Locator } from './locator';
-export { acquireDeviceLock, acquireSimLock, type LockHandle } from './lock';
-export { createDevicewrightMcpServer, startMcpStdio } from './mcp/server';
+} from "./claims";
+export { devices } from "./devices";
+export { type DoctorReport, formatDoctor, runDoctor } from "./doctor";
+export * as ios from "./ios";
+export { simctl as iosSimctl } from "./ios";
+export { Locator } from "./locator";
+export { acquireDeviceLock, acquireSimLock, type LockHandle } from "./lock";
+export { createDevicewrightMcpServer, startMcpStdio } from "./mcp/server";
 export {
   type CloudDeviceAdapter,
   getCloudAdapter,
@@ -25,18 +25,28 @@ export {
   physicalLaunchOptions,
   registerCloudAdapter,
   runOnDevices,
-} from './scale';
-export { DeviceSession } from './session';
+} from "./scale";
+export { DeviceSession } from "./session";
 export type {
   AccessibilityNode,
   DeviceDriver,
   DeviceKind,
   DoctorCheck,
+  ExtractedFrame,
   FindCriteria,
   LaunchOptions,
   Platform,
+  RecordingHandle,
+  RecordVideoOptions,
   ScreenshotOptions,
   SwipeOptions,
   TapOptions,
   TraceStep,
-} from './types';
+  ViewRecordingOptions,
+  ViewRecordingResult,
+} from "./types";
+export {
+  computeFrameTimestamps,
+  extractFrames,
+  gcDevicewrightTemp,
+} from "./media";

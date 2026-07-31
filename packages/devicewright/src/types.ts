@@ -1,6 +1,6 @@
-export type Platform = 'ios' | 'android';
+export type Platform = "ios" | "android";
 
-export type DeviceKind = 'simulator' | 'emulator' | 'physical' | 'cloud';
+export type DeviceKind = "simulator" | "emulator" | "physical" | "cloud";
 
 export type LaunchOptions = {
   platform: Platform;
@@ -21,7 +21,53 @@ export type LaunchOptions = {
 
 export type ScreenshotOptions = {
   path?: string;
-  type?: 'png' | 'jpeg';
+  type?: "png" | "jpeg";
+};
+
+export type RecordVideoOptions = {
+  path?: string;
+  codec?: "h264" | "hevc";
+  /** Optional auto-SIGINT; omit = unbounded. */
+  maxSeconds?: number;
+};
+
+export type ViewRecordingOptions = {
+  /** Default: last stopped recording on this session. */
+  path?: string;
+  /** Default 10. */
+  fps?: number;
+  /** Default 60. */
+  maxFrames?: number;
+  /** Inclusive window start (seconds from video start). Default 0. */
+  startSeconds?: number;
+  /** Exclusive-ish window end (seconds from video start). Default: full duration. */
+  endSeconds?: number;
+};
+
+export type RecordingHandle = {
+  path: string;
+  startedAt: number;
+};
+
+export type ExtractedFrame = {
+  path: string;
+  /** Seconds from video start. */
+  t: number;
+};
+
+export type ViewRecordingResult = {
+  path: string;
+  duration: number;
+  /** Resolved sample window (seconds from video start). */
+  startSeconds: number;
+  endSeconds: number;
+  frameCount: number;
+  fps: number;
+  maxFrames: number;
+  thinned: boolean;
+  frames: ExtractedFrame[];
+  /** Temp dir holding frame files — delete after MCP encode. */
+  outDir: string;
 };
 
 export type SwipeOptions = {
@@ -52,7 +98,7 @@ export type AccessibilityNode = {
 export type FindCriteria = {
   search: string[];
   type?: string;
-  matchMode?: 'substring' | 'exact';
+  matchMode?: "substring" | "exact";
   caseSensitive?: boolean;
 };
 
@@ -79,10 +125,12 @@ export interface DeviceDriver {
   install(appPath: string): Promise<void>;
   launchApp(
     bundleId: string,
-    options?: { terminateRunning?: boolean }
+    options?: { terminateRunning?: boolean },
   ): Promise<void>;
   terminateApp?(bundleId: string): Promise<void>;
   screenshot(options?: ScreenshotOptions): Promise<Buffer | string>;
+  startRecording(options?: RecordVideoOptions): Promise<RecordingHandle>;
+  stopRecording(): Promise<string>;
   accessibilityTree(): Promise<AccessibilityNode[]>;
   describePoint?(x: number, y: number): Promise<AccessibilityNode | null>;
   findElements(criteria: FindCriteria): Promise<AccessibilityNode[]>;
