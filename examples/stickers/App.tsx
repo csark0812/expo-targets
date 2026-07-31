@@ -21,7 +21,7 @@ export default function App() {
       <TouchableOpacity
         testID="btn-seed-payload"
         style={styles.button}
-        onPress={() => setStatus('pack: Fun Stickers (brutus, happy, excited)')}
+        onPress={() => setStatus('pack: Fun Stickers (bip, happy, excited)')}
       >
         <Text style={styles.buttonText}>Show pack status</Text>
       </TouchableOpacity>

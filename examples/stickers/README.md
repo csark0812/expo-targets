@@ -2,7 +2,7 @@
 
 Asset-only iMessage sticker pack (no `withTargetsMetro`). Host shows pack status for Maestro smoke.
 
-Pack grid size is **regular** (plugin default): provide sticker PNGs at **408×408 @3x**.
+Pack character: **Bip**. Grid size is **regular** (plugin default): provide sticker PNGs at **408×408 @3x**.
 
 ## OS path
 
