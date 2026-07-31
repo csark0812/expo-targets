@@ -1,0 +1,103 @@
+name: publish-mcp-dev
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to publish (e.g. 0.1.1). Leave empty to bump.
+        required: false
+      bump_type:
+        description: Bump type when version is empty
+        required: false
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          registry-url: https://registry.npmjs.org
+
+      - name: Install npm (OIDC provenance)
+        run: npm install -g npm@latest
+
+      - run: bun install --frozen-lockfile
+      - run: bun run --filter mcp-dev build
+      - run: bun test --cwd packages/mcp-dev src
+      - run: tsc -p packages/mcp-dev --noEmit
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version and tag
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            NEW_VERSION="${{ inputs.version }}"
+            npm version "$NEW_VERSION" --no-git-tag-version --allow-same-version --prefix packages/mcp-dev
+          else
+            npm version "${{ inputs.bump_type }}" --no-git-tag-version --prefix packages/mcp-dev
+            NEW_VERSION=$(node -p "require('./packages/mcp-dev/package.json').version")
+          fi
+
+          echo "NEW_VERSION=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+          git add packages/mcp-dev/package.json
+          if git diff --cached --quiet; then
+            echo "Version already at $NEW_VERSION; skipping release commit"
+          else
+            git commit -m "chore(mcp-dev): release v$NEW_VERSION [skip ci]"
+          fi
+
+          TAG="mcp-dev-v$NEW_VERSION"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists"
+          else
+            git tag "$TAG"
+          fi
+
+      - run: bun run --filter mcp-dev build
+
+      - name: Push release commit and tag
+        run: git push origin HEAD --follow-tags
+
+      - name: Publish mcp-dev
+        working-directory: packages/mcp-dev
+        run: npm publish --access public --provenance
+
+      - uses: softprops/action-gh-release@v3
+        with:
+          tag_name: mcp-dev-v${{ steps.version.outputs.NEW_VERSION }}
+          name: mcp-dev@${{ steps.version.outputs.NEW_VERSION }}
+          body: |
+            ## mcp-dev@${{ steps.version.outputs.NEW_VERSION }}
+
+            Published via workflow_dispatch.
+
+            ### npm
+            ```bash
+            npx -y mcp-dev@${{ steps.version.outputs.NEW_VERSION }} --help
+            ```
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
