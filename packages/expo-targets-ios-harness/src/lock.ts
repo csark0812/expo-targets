@@ -1,7 +1,7 @@
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
-import process from 'node:process';
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import process from "node:process";
 
 export type LockHandle = {
   udid: string;
@@ -10,7 +10,7 @@ export type LockHandle = {
 };
 
 function lockPathFor(udid: string): string {
-  const safe = udid.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const safe = udid.replace(/[^a-zA-Z0-9_-]/g, "_");
   return path.join(os.tmpdir(), `expo-targets-ios-harness-${safe}.lock`);
 }
 
@@ -28,7 +28,7 @@ function pidAlive(pid: number): boolean {
 
 function readLockPid(lockFile: string): number | null {
   try {
-    const raw = fs.readFileSync(lockFile, 'utf8').trim();
+    const raw = fs.readFileSync(lockFile, "utf8").trim();
     const pid = Number(raw);
     return Number.isFinite(pid) ? pid : null;
   } catch {
@@ -46,7 +46,7 @@ export function acquireSimLock(udid: string): LockHandle {
   if (existing !== null) {
     if (pidAlive(existing) && existing !== process.pid) {
       throw new Error(
-        `simulator ${udid} already locked by pid ${existing} (${lockFile})`
+        `simulator ${udid} already locked by pid ${existing} (${lockFile})`,
       );
     }
     try {
@@ -56,7 +56,7 @@ export function acquireSimLock(udid: string): LockHandle {
     }
   }
 
-  const fd = fs.openSync(lockFile, 'wx');
+  const fd = fs.openSync(lockFile, "wx");
   try {
     fs.writeFileSync(fd, `${process.pid}\n`);
   } finally {

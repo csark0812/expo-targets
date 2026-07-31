@@ -19,10 +19,10 @@ bun packages/expo-targets-ios-harness/src/cli.ts test examples/share examples/ac
 
 Env:
 
-| Var | Role |
-| --- | --- |
-| `UITEST_SIM_UDID` | Override pinned simulator (default is machine-local iPhone Air) |
-| `UITEST_*_OVERRIDE` | Override matrix env keys for attach/test |
+| Var                 | Role                                                            |
+| ------------------- | --------------------------------------------------------------- |
+| `UITEST_SIM_UDID`   | Override pinned simulator (default is machine-local iPhone Air) |
+| `UITEST_*_OVERRIDE` | Override matrix env keys for attach/test                        |
 
 ## Flow
 

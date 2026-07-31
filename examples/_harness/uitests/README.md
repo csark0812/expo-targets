@@ -12,9 +12,9 @@ See [`packages/expo-targets-ios-harness/README.md`](../../../packages/expo-targe
 
 ## Failure gates (unchanged)
 
-| Spike | Gate | On failure |
-| --- | --- | --- |
+| Spike                       | Gate                                                              | On failure                                                                |
+| --------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | **C1** XCUITest Share Sheet | Sheet interactable; extension complete → host `text-last-payload` | **Stop and re-grill.** No in-process-only / Maestro Share Sheet fallback. |
-| **C2** Maestro clip launch | `openLink` / simctl launches clip + host handoff | **Stop and re-grill.** |
+| **C2** Maestro clip launch  | `openLink` / simctl launches clip + host handoff                  | **Stop and re-grill.**                                                    |
 
 Clip Maestro flows remain under each example’s `.maestro/launch.yaml`.

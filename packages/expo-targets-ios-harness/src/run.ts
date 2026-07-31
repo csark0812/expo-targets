@@ -1,17 +1,17 @@
-import { spawnSync } from 'node:child_process';
-import fs from 'node:fs';
-import path from 'node:path';
-import process from 'node:process';
-import { attachExample } from './attach';
-import { UITEST_TARGET_NAME } from './constants';
-import { acquireSimLock } from './lock';
+import { spawnSync } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
+import process from "node:process";
+import { attachExample } from "./attach";
+import { UITEST_TARGET_NAME } from "./constants";
+import { acquireSimLock } from "./lock";
 import {
   type ExampleRel,
   type MatrixEntry,
   resolveMatrixEntries,
-} from './matrix';
-import { exampleIosDir, findXcworkspace, repoRoot } from './paths';
-import { assertSimulatorExists, bootSimulator, resolveSimUdid } from './sim';
+} from "./matrix";
+import { exampleIosDir, findXcworkspace, repoRoot } from "./paths";
+import { assertSimulatorExists, bootSimulator, resolveSimUdid } from "./sim";
 
 export type RunOptions = {
   exampleRels?: ExampleRel[];
@@ -41,23 +41,23 @@ function runXcodebuildTest(opts: {
   const iosDir = exampleIosDir(opts.entry.exampleRel);
   const workspace = findXcworkspace(iosDir);
   const args = [
-    'test',
-    '-workspace',
+    "test",
+    "-workspace",
     workspace,
-    '-scheme',
+    "-scheme",
     opts.entry.scheme,
-    '-configuration',
-    'Release',
-    '-destination',
+    "-configuration",
+    "Release",
+    "-destination",
     `platform=iOS Simulator,id=${opts.udid}`,
     `-only-testing:${UITEST_TARGET_NAME}`,
   ];
   fs.mkdirSync(path.dirname(opts.logPath), { recursive: true });
-  const out = fs.openSync(opts.logPath, 'w');
+  const out = fs.openSync(opts.logPath, "w");
   try {
-    const result = spawnSync('xcodebuild', args, {
+    const result = spawnSync("xcodebuild", args, {
       cwd: path.join(repoRoot(), opts.entry.exampleRel),
-      stdio: ['ignore', out, out],
+      stdio: ["ignore", out, out],
       env: {
         ...process.env,
         ...opts.entry.env,
@@ -74,10 +74,10 @@ function attachIfNeeded(entry: MatrixEntry, skipAttach?: boolean): void {
     return;
   }
   const attached = attachExample(entry);
-  const created = attached.uiTestCreated ? ' (created UITest target)' : '';
-  const testable = attached.testableAdded ? ' (added scheme testable)' : '';
+  const created = attached.uiTestCreated ? " (created UITest target)" : "";
+  const testable = attached.testableAdded ? " (added scheme testable)" : "";
   console.error(
-    `[ios-harness] attached ${attached.exampleRel}${created}${testable}`
+    `[ios-harness] attached ${attached.exampleRel}${created}${testable}`,
   );
 }
 
@@ -86,10 +86,10 @@ function testOne(opts: {
   udid: string;
   logDir: string;
 }): { ok: true } | { ok: false; logPath: string; exitCode: number } {
-  const slug = opts.entry.exampleRel.replace(/\//g, '-');
+  const slug = opts.entry.exampleRel.replace(/\//g, "-");
   const logPath = path.join(opts.logDir, `${slug}.xcodebuild.log`);
   console.error(
-    `[ios-harness] testing ${opts.entry.exampleRel} on ${opts.udid} (log: ${logPath})`
+    `[ios-harness] testing ${opts.entry.exampleRel} on ${opts.udid} (log: ${logPath})`,
   );
   const exitCode = runXcodebuildTest({
     entry: opts.entry,
@@ -98,7 +98,7 @@ function testOne(opts: {
   });
   if (exitCode !== 0) {
     console.error(
-      `[ios-harness] FAIL ${opts.entry.exampleRel} udid=${opts.udid} exit=${exitCode} log=${logPath}`
+      `[ios-harness] FAIL ${opts.entry.exampleRel} udid=${opts.udid} exit=${exitCode} log=${logPath}`,
     );
     return { ok: false, logPath, exitCode };
   }
@@ -114,7 +114,7 @@ export function runShareSheetMatrix(options: RunOptions = {}): RunResult {
   const entries = resolveMatrixEntries(options.exampleRels);
   const logDir =
     options.logDir ??
-    path.join(repoRoot(), '.ios-harness', `run-${Date.now()}`);
+    path.join(repoRoot(), ".ios-harness", `run-${Date.now()}`);
   fs.mkdirSync(logDir, { recursive: true });
 
   const lock = acquireSimLock(udid);

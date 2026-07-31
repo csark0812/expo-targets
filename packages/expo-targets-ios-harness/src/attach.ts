@@ -1,25 +1,25 @@
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from "node:fs";
+import path from "node:path";
 
 // @ts-expect-error - no types available for xcode package
-import xcode from 'xcode';
+import xcode from "xcode";
 
 import {
   SMOKE_FILE_NAME,
   UITEST_TARGET_NAME,
   type UitestEnvKey,
-} from './constants';
-import type { MatrixEntry } from './matrix';
-import { exampleIosDir, findXcodeproj, fixtureSmokePath } from './paths';
+} from "./constants";
+import type { MatrixEntry } from "./matrix";
+import { exampleIosDir, findXcodeproj, fixtureSmokePath } from "./paths";
 import {
   findHostApplication,
   hostBundleId,
   knownTargetNames,
   type PbxProject,
-} from './pbx';
-import { ensureSmokeSourceFile } from './pbxSources';
-import { ensureUiTestNativeTarget } from './pbxUiTest';
-import { findHostSchemePath, updateHostScheme } from './scheme';
+} from "./pbx";
+import { ensureSmokeSourceFile } from "./pbxSources";
+import { ensureUiTestNativeTarget } from "./pbxUiTest";
+import { findHostSchemePath, updateHostScheme } from "./scheme";
 
 export type AttachResult = {
   exampleRel: string;
@@ -41,7 +41,7 @@ function productReferenceName(project: PbxProject, targetUuid: string): string {
   const fileRefs = project.hash.project.objects.PBXFileReference ?? {};
   const ref = fileRefs[productRef];
   const name = String(ref?.path ?? ref?.name ?? `${UITEST_TARGET_NAME}.xctest`);
-  return name.replace(/^"/, '').replace(/"$/, '');
+  return name.replace(/^"/, "").replace(/"$/, "");
 }
 
 /**
@@ -51,7 +51,7 @@ export function attachExample(entry: MatrixEntry): AttachResult {
   const iosDir = exampleIosDir(entry.exampleRel);
   if (!fs.existsSync(iosDir)) {
     throw new Error(
-      `missing ${iosDir} — run: cd ${entry.exampleRel} && npx expo prebuild --platform ios`
+      `missing ${iosDir} — run: cd ${entry.exampleRel} && npx expo prebuild --platform ios`,
     );
   }
 
@@ -59,7 +59,7 @@ export function attachExample(entry: MatrixEntry): AttachResult {
   copyFixture(destDir);
 
   const xcodeprojPath = findXcodeproj(iosDir);
-  const pbxprojPath = path.join(xcodeprojPath, 'project.pbxproj');
+  const pbxprojPath = path.join(xcodeprojPath, "project.pbxproj");
   const project = xcode.project(pbxprojPath) as PbxProject;
   project.parseSync();
 

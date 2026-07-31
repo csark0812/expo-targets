@@ -1,4 +1,4 @@
-import { APPLICATION_PRODUCT_TYPE, UITEST_TARGET_NAME } from './constants';
+import { APPLICATION_PRODUCT_TYPE, UITEST_TARGET_NAME } from "./constants";
 
 export type PbxProject = {
   parseSync: () => void;
@@ -8,14 +8,14 @@ export type PbxProject = {
     name: string,
     type: string,
     subfolder?: string,
-    bundleId?: string
+    bundleId?: string,
   ) => { uuid: string; pbxNativeTarget: any };
   addTargetDependency: (target: string, deps: string[]) => unknown;
   addBuildPhase: (
     files: string[],
     type: string,
     comment: string,
-    target: string
+    target: string,
   ) => unknown;
   addSourceFile: (filePath: string, opt: any, group?: string) => unknown;
   removeSourceFile: (filePath: string, opt: any, group?: string) => unknown;
@@ -23,7 +23,7 @@ export type PbxProject = {
     files: string[],
     name: string,
     groupPath?: string,
-    sourceTree?: string
+    sourceTree?: string,
   ) => { uuid: string; pbxGroup: any };
   addToPbxGroup: (file: any, groupKey: string) => void;
   findPBXGroupKey: (criteria: {
@@ -36,7 +36,7 @@ export type PbxProject = {
     prop: string,
     value: string,
     build?: string,
-    targetName?: string
+    targetName?: string,
   ) => void;
   getFirstProject: () => { uuid: string; firstProject: any };
   pbxNativeTargetSection: () => Record<string, any>;
@@ -51,19 +51,19 @@ export type PbxProject = {
 };
 
 export function unquote(value: unknown): string {
-  const raw = String(value ?? '');
-  return raw.replace(/^"/, '').replace(/"$/, '');
+  const raw = String(value ?? "");
+  return raw.replace(/^"/, "").replace(/"$/, "");
 }
 
 function isCommentKey(key: string): boolean {
-  return key.endsWith('_comment');
+  return key.endsWith("_comment");
 }
 
 function bundleIdForTarget(project: PbxProject, target: any): string {
   const listUuid = target.buildConfigurationList;
   const list = project.pbxXCConfigurationList()[listUuid];
   if (!list?.buildConfigurations) {
-    return '';
+    return "";
   }
   const configs = project.pbxXCBuildConfigurationSection();
   for (const entry of list.buildConfigurations) {
@@ -73,11 +73,11 @@ function bundleIdForTarget(project: PbxProject, target: any): string {
       return id;
     }
   }
-  return '';
+  return "";
 }
 
 export function listNativeTargets(
-  project: PbxProject
+  project: PbxProject,
 ): Array<{ uuid: string; name: string; target: any }> {
   const section = project.pbxNativeTargetSection();
   const out: Array<{ uuid: string; name: string; target: any }> = [];
@@ -93,11 +93,11 @@ export function listNativeTargets(
 
 export function hostBundleId(
   project: PbxProject,
-  target: { target: any }
+  target: { target: any },
 ): string {
   return (
     bundleIdForTarget(project, target.target) ||
-    'com.expotargets.example.uitests'
+    "com.expotargets.example.uitests"
   );
 }
 
@@ -107,7 +107,7 @@ export function findHostApplication(project: PbxProject): {
   target: any;
 } {
   const apps = listNativeTargets(project).filter(
-    (t) => unquote(t.target.productType) === APPLICATION_PRODUCT_TYPE
+    (t) => unquote(t.target.productType) === APPLICATION_PRODUCT_TYPE,
   );
   const preferred = apps.find((t) => {
     const bundleId = bundleIdForTarget(project, t.target);
@@ -115,13 +115,13 @@ export function findHostApplication(project: PbxProject): {
   });
   const host = preferred ?? apps[0];
   if (!host) {
-    throw new Error('no application target');
+    throw new Error("no application target");
   }
   return host;
 }
 
 export function findUiTestTarget(
-  project: PbxProject
+  project: PbxProject,
 ): { uuid: string; name: string; target: any } | null {
   return (
     listNativeTargets(project).find((t) => t.name === UITEST_TARGET_NAME) ??
