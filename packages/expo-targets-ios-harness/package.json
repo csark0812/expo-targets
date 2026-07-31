@@ -10,7 +10,7 @@
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf build",
-    "test:unit": "bun test src/matrix.test.ts src/lock.test.ts",
+    "test:unit": "bun test src/matrix.test.ts src/lock.test.ts src/scheme.test.ts",
     "test:share-sheet": "bun src/cli.ts test:share-sheet",
     "attach": "bun src/cli.ts attach",
     "test": "bun src/cli.ts test"

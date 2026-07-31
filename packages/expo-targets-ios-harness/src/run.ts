@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { attachExample } from './attach';
-import { DEFAULT_SIM_UDID, UITEST_TARGET_NAME } from './constants';
+import { UITEST_TARGET_NAME } from './constants';
 import { acquireSimLock } from './lock';
 import {
   type ExampleRel,
@@ -11,6 +11,7 @@ import {
   resolveMatrixEntries,
 } from './matrix';
 import { exampleIosDir, findXcworkspace, repoRoot } from './paths';
+import { assertSimulatorExists, bootSimulator, resolveSimUdid } from './sim';
 
 export type RunOptions = {
   exampleRels?: ExampleRel[];
@@ -27,25 +28,9 @@ export type RunResult = {
 };
 
 function resolveUdid(explicit?: string): string {
-  const udid = explicit || process.env.UITEST_SIM_UDID || DEFAULT_SIM_UDID;
-  const list = spawnSync('xcrun', ['simctl', 'list', 'devices', 'available'], {
-    encoding: 'utf8',
-  });
-  if (list.status !== 0) {
-    throw new Error('failed to list simulators via xcrun simctl');
-  }
-  if (!list.stdout.includes(udid)) {
-    throw new Error(
-      `simulator UDID ${udid} not found. Set UITEST_SIM_UDID to a booted/available device.`
-    );
-  }
+  const udid = explicit || resolveSimUdid();
+  assertSimulatorExists(udid);
   return udid;
-}
-
-function ensureBooted(udid: string): void {
-  spawnSync('xcrun', ['simctl', 'bootstatus', udid, '-b'], {
-    stdio: 'inherit',
-  });
 }
 
 function runXcodebuildTest(opts: {
@@ -135,7 +120,7 @@ export function runShareSheetMatrix(options: RunOptions = {}): RunResult {
   const lock = acquireSimLock(udid);
   const completed: ExampleRel[] = [];
   try {
-    ensureBooted(udid);
+    bootSimulator(udid);
     for (const entry of entries) {
       attachIfNeeded(entry, options.skipAttach);
       const result = testOne({ entry, udid, logDir });
