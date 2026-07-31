@@ -2,11 +2,21 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+/**
+ * Honest pack catalog for Devicewright Stickers A.
+ * Must stay in sync with targets/stickers/expo-target.config.json stickerPacks.
+ * Asset-only MSSticker packs cannot write App Group on selection — host marker
+ * reflects installed pack assets, not Maestro in-memory seed theater.
+ */
+export const PACK_CATALOG_MARKER =
+  'pack: Fun Stickers (brutus, happy, excited)';
+
 export default function App() {
   const [ready, setReady] = useState(false);
-  const [status, setStatus] = useState('Fun Stickers pack (3 assets)');
+  const [status, setStatus] = useState(PACK_CATALOG_MARKER);
 
   useEffect(() => {
+    setStatus(PACK_CATALOG_MARKER);
     setReady(true);
   }, []);
 
@@ -16,14 +26,18 @@ export default function App() {
       <Text style={styles.title}>Stickers example</Text>
       <Text testID="status-target-ready">{ready ? 'ready' : 'loading'}</Text>
       <Text style={styles.note}>
-        Asset-only iMessage sticker pack — no React Native extension entry.
+        Asset-only iMessage sticker pack — host catalog mirrors installed assets
+        (selection cannot App-Group).
+      </Text>
+      <Text testID="status-pack-catalog" style={styles.payload}>
+        {PACK_CATALOG_MARKER}
       </Text>
       <TouchableOpacity
-        testID="btn-seed-payload"
+        testID="btn-show-pack-catalog"
         style={styles.button}
-        onPress={() => setStatus('pack: Fun Stickers (brutus, happy, excited)')}
+        onPress={() => setStatus(PACK_CATALOG_MARKER)}
       >
-        <Text style={styles.buttonText}>Show pack status</Text>
+        <Text style={styles.buttonText}>Show pack catalog</Text>
       </TouchableOpacity>
       <TouchableOpacity
         testID="btn-clear-payload"

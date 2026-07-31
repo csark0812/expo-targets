@@ -1,6 +1,12 @@
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  AppState,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { messagesTarget } from './targets/messages';
 
 export default function App() {
@@ -15,6 +21,10 @@ export default function App() {
 
   useEffect(() => {
     refresh();
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') refresh();
+    });
+    return () => sub.remove();
   }, [refresh]);
 
   return (
@@ -49,6 +59,13 @@ export default function App() {
         }}
       >
         <Text style={styles.buttonText}>Clear payload</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        testID="btn-refresh"
+        style={styles.button}
+        onPress={refresh}
+      >
+        <Text style={styles.buttonText}>Refresh</Text>
       </TouchableOpacity>
       <Text testID="text-last-payload" style={styles.payload}>
         {payload}
