@@ -59,6 +59,9 @@ coverage/
 .env
 .env.local
 
+# Ephemeral agent workspace (handoffs, etc.)
+_agent/
+
 # Devicewright suite run outputs
 examples/.devicewright/artifacts/
 
