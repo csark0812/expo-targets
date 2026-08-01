@@ -1,4 +1,3 @@
-import fs from 'node:fs';
 import path from 'node:path';
 import {
   type ConfigPlugin,
@@ -8,10 +7,17 @@ import {
 
 import type { ExtensionType } from '../../config';
 import type { Logger } from '../../logger';
-import { File, Podfile } from '../utils/index';
+import { applyPodfilePlan } from '../apply/podfile';
+import { readPodsRb } from '../observe/podsRb';
+import { planPodfile } from '../plan/podfile';
+import { File } from '../utils/index';
 
 const { getProjectName } = IOSConfig.XcodeUtils;
 
+/**
+ * Add a target block to the app's Podfile: read the Podfile, plan the target
+ * entry, apply it, write it back.
+ */
 export const withTargetPodfile: ConfigPlugin<{
   targetName: string;
   deploymentTarget: string;
@@ -20,246 +26,42 @@ export const withTargetPodfile: ConfigPlugin<{
   standalone?: boolean;
   targetDirectory?: string;
   logger: Logger;
-  // biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
-}> = (config, props) => {
-  return withDangerousMod(config, [
+}> = (config, props) =>
+  withDangerousMod(config, [
     'ios',
-    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
-    // biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
     async (config) => {
-      const podfilePath = path.join(
-        config.modRequest.platformProjectRoot,
-        'Podfile'
-      );
-      let podfile = File.readFileIfExists(podfilePath);
+      const { projectRoot, platformProjectRoot } = config.modRequest;
+      const podfilePath = path.join(platformProjectRoot, 'Podfile');
+      const podfile = File.readFileIfExists(podfilePath);
 
       if (!podfile) {
         throw new Error(`Podfile not found at ${podfilePath}`);
       }
 
-      // Remove existing target block if present (ensures correct placement on rebuild)
-      if (Podfile.hasTargetBlock(podfile, props.targetName)) {
-        props.logger.log(
-          `Removing existing '${props.targetName}' target to ensure correct placement`
-        );
-        podfile = Podfile.removeTargetBlock(podfile, props.targetName);
-      }
-
-      const projectRoot = config.modRequest.projectRoot;
-      const mainTargetName = getProjectName(projectRoot);
-
-      // Ensure main app has use_frameworks! for CocoaPods compatibility
-      // Both React Native and standalone extensions need main app to have matching setting
-      podfile = Podfile.ensureMainTargetUsesFrameworks(podfile, mainTargetName);
-
-      // Ensure Xcode 14+ resource bundle code signing fix is applied
-      // This must be done before any other post_install modifications
-      podfile = Podfile.ensureResourceBundleCodeSigning(podfile);
-
-      // For standalone targets, detect main app's use_frameworks! setting
-      // CocoaPods requires host app and extensions to have matching use_frameworks! settings
-      const mainUsesFrameworks = props.standalone
-        ? Podfile.mainTargetUsesFrameworks(podfile, mainTargetName)
-        : undefined;
-
-      // Read pods.rb from target's ios directory if it exists
-      // This allows custom CocoaPods configuration per target (e.g., Firebase, third-party SDKs)
-      // Compatible with @bacons/apple-targets pods.rb format
-      let podsRbContent: string | undefined;
-      if (props.targetDirectory) {
-        const podsRbPath = path.join(
+      const plan = planPodfile({
+        targetName: props.targetName,
+        deploymentTarget: props.deploymentTarget,
+        extensionType: props.extensionType,
+        standalone: Boolean(props.standalone),
+        excludedPackages: props.excludedPackages,
+        podsRbContent: readPodsRb({
           projectRoot,
-          props.targetDirectory,
-          'ios',
-          'pods.rb'
-        );
-        if (fs.existsSync(podsRbPath)) {
-          podsRbContent = fs.readFileSync(podsRbPath, 'utf-8');
-          props.logger.log(
-            `Found pods.rb for ${props.targetName}: ${podsRbPath}`
-          );
-        }
+          targetDirectory: props.targetDirectory,
+        }),
+      });
+
+      if (plan.podsRbContent) {
+        props.logger.log(`Found pods.rb for ${plan.targetName}`);
       }
 
-      // Generate appropriate target block based on type
-      // React Native targets are nested inside main target to inherit dependencies
-      const targetBlock = props.standalone
-        ? Podfile.generateStandaloneTargetBlock({
-            targetName: props.targetName,
-            deploymentTarget: props.deploymentTarget,
-            useFrameworks: mainUsesFrameworks,
-            podsRbContent,
-          })
-        : Podfile.generateReactNativeTargetBlock({
-            targetName: props.targetName,
-            deploymentTarget: props.deploymentTarget,
-            extensionType: props.extensionType,
-            podsRbContent,
-          });
-
-      props.logger.log(
-        `Updated Podfile for ${props.standalone ? 'standalone' : 'React Native'} target: ${props.targetName}`
+      File.writeFileSafe(
+        podfilePath,
+        applyPodfilePlan(podfile, plan, {
+          mainTargetName: getProjectName(projectRoot),
+          logger: props.logger,
+        })
       );
 
-      // Insert target block into Podfile
-      // Standalone: sibling to avoid Expo autolinking, RN: nested to inherit
-      podfile = Podfile.insertTargetBlock(
-        podfile,
-        targetBlock,
-        props.standalone,
-        props.logger
-      );
-
-      // For React Native targets, ensure framework search paths are configured
-      // inherit! :search_paths needs additional framework search paths for Swift imports
-      if (!props.standalone) {
-        // Find all React Native extension targets nested inside main target
-        // These targets use inherit! :search_paths to avoid inheriting incompatible pods like Expo
-        const reactNativeTargets: {
-          targetName: string;
-          deploymentTarget: string;
-        }[] = [];
-
-        // Find the main target block and extract nested targets from within it
-        const mainTargetStart = podfile.indexOf(
-          `target '${mainTargetName}' do`
-        );
-        if (mainTargetStart >= 0) {
-          // Find the closing 'end' of the main target (before post_install)
-          const postInstallStart = podfile.indexOf(
-            'post_install do',
-            mainTargetStart
-          );
-          const mainTargetBlock =
-            postInstallStart >= 0
-              ? podfile.substring(mainTargetStart, postInstallStart)
-              : podfile.substring(mainTargetStart);
-
-          // Match nested target blocks within main target that have inherit! :complete
-          // Look for lines that match: target 'Name' do ... inherit! :complete ... end
-          // We need to match complete target blocks, so we'll look for the pattern
-          // and verify it's a nested target (not the main target itself)
-          const lines = mainTargetBlock.split('\n');
-          let inNestedTarget = false;
-          let currentTargetName = '';
-          let currentTargetLines: string[] = [];
-          let nestedTargetDepth = 0;
-
-          for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
-
-            // Check if this line starts a nested target
-            const targetMatch = line.match(/^\s+target\s+'([^']+)'\s+do/);
-            if (targetMatch && targetMatch[1] !== mainTargetName) {
-              inNestedTarget = true;
-              currentTargetName = targetMatch[1];
-              currentTargetLines = [line];
-              nestedTargetDepth = 1;
-              continue;
-            }
-
-            // If we're in a nested target, collect lines until we find the closing 'end'
-            if (inNestedTarget) {
-              currentTargetLines.push(line);
-
-              // Count nested blocks (do/end pairs)
-              if (line.match(/\bdo\b/)) {
-                nestedTargetDepth++;
-              }
-              if (line.match(/\bend\b/)) {
-                nestedTargetDepth--;
-
-                // If depth is 0, we've closed the target block
-                if (nestedTargetDepth === 0) {
-                  const targetBlock = currentTargetLines.join('\n');
-
-                  // Check if this target has inherit! :search_paths (React Native extensions)
-                  if (targetBlock.includes('inherit! :search_paths')) {
-                    // Extract deployment target
-                    const platformMatch = targetBlock.match(
-                      /platform\s+:ios,\s+'([^']+)'/
-                    );
-                    const version = platformMatch
-                      ? platformMatch[1]
-                      : props.deploymentTarget;
-
-                    reactNativeTargets.push({
-                      targetName: currentTargetName,
-                      deploymentTarget: version,
-                    });
-                  }
-
-                  // Reset for next target
-                  inNestedTarget = false;
-                  currentTargetName = '';
-                  currentTargetLines = [];
-                }
-              }
-            }
-          }
-        }
-
-        if (reactNativeTargets.length > 0) {
-          // Inject framework search paths configuration into post_install hook
-          podfile = Podfile.ensureReactNativeExtensionFrameworkPaths(
-            podfile,
-            reactNativeTargets,
-            mainTargetName
-          );
-        }
-      }
-
-      // For standalone targets, inject deployment target fixes into post_install hook
-      // Must be done in Podfile because xcconfig files are generated by CocoaPods
-      if (props.standalone) {
-        const extensionTargets: {
-          targetName: string;
-          deploymentTarget: string;
-        }[] = [];
-        const targetPattern =
-          /target\s+'([^']+)'\s+do\s+platform\s+:ios,\s+'([^']+)'/g;
-        let match;
-
-        // Find all standalone extension targets in the Podfile (including the one we just inserted)
-        while ((match = targetPattern.exec(podfile)) !== null) {
-          const [, name, version] = match;
-          if (name !== mainTargetName) {
-            extensionTargets.push({
-              targetName: name,
-              deploymentTarget: version,
-            });
-          }
-        }
-
-        // Find the highest deployment target among all standalone extensions
-        if (extensionTargets.length > 0) {
-          const highestDeploymentTarget = extensionTargets.reduce(
-            (highest, ext) => {
-              const extVersion = Number.parseFloat(ext.deploymentTarget);
-              const highestVersion = Number.parseFloat(
-                highest.deploymentTarget
-              );
-              return extVersion > highestVersion ? ext : highest;
-            }
-          ).deploymentTarget;
-
-          // Update Podfile platform line to match the highest extension deployment target
-          // This ensures consistency and prevents linker errors
-          podfile = Podfile.updatePodfilePlatform(
-            podfile,
-            highestDeploymentTarget
-          );
-
-          // Inject into post_install hook to fix after react_native_post_install runs
-          podfile = Podfile.ensureExtensionDeploymentTargets(
-            podfile,
-            extensionTargets
-          );
-        }
-      }
-
-      File.writeFileSafe(podfilePath, podfile);
       return config;
     },
   ]);
-};

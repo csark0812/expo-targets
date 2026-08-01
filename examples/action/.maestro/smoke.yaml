@@ -1,0 +1,18 @@
+appId: com.expotargets.example.action
+name: action host smoke
+tags:
+  - smoke
+  - action
+---
+- launchApp:
+    clearState: true
+- assertVisible:
+    id: screen-root
+- assertVisible:
+    id: status-target-ready
+- tapOn:
+    id: btn-seed-payload
+- assertVisible:
+    id: text-last-payload
+- tapOn:
+    id: btn-clear-payload

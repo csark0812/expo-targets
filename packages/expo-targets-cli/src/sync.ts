@@ -1,9 +1,9 @@
-import fs from "node:fs";
-import path from "node:path";
-import process from "node:process";
-import { globSync } from "glob";
+import fs from 'node:fs';
+import path from 'node:path';
+import process from 'node:process';
+import { globSync } from 'glob';
 // @ts-expect-error - no types available for xcode package
-import xcode from "xcode";
+import xcode from 'xcode';
 
 /**
  * Sync CLI for bare React Native projects.
@@ -20,31 +20,31 @@ export interface SyncOptions {
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
 export async function syncTargets(options: SyncOptions = {}) {
   const projectRoot = process.cwd();
-  const iosPath = path.join(projectRoot, "ios");
+  const iosPath = path.join(projectRoot, 'ios');
 
   if (!fs.existsSync(iosPath)) {
     throw new Error(
-      "No ios/ directory found. This command is for bare React Native projects.\n" +
-        "For Expo managed projects, use: npx expo prebuild",
+      'No ios/ directory found. This command is for bare React Native projects.\n' +
+        'For Expo managed projects, use: npx expo prebuild'
     );
   }
 
   // Find Xcode project
   const xcodeProjects = fs
     .readdirSync(iosPath)
-    .filter((f) => f.endsWith(".xcodeproj"));
+    .filter((f) => f.endsWith('.xcodeproj'));
   if (xcodeProjects.length === 0) {
-    throw new Error("No Xcode project found in ios/. Cannot sync targets.");
+    throw new Error('No Xcode project found in ios/. Cannot sync targets.');
   }
   if (xcodeProjects.length > 1) {
     throw new Error(
-      `Multiple Xcode projects found in ios/: ${xcodeProjects.join(", ")}\n` +
-        "Please ensure only one .xcodeproj exists.",
+      `Multiple Xcode projects found in ios/: ${xcodeProjects.join(', ')}\n` +
+        'Please ensure only one .xcodeproj exists.'
     );
   }
 
-  const projectName = xcodeProjects[0].replace(".xcodeproj", "");
-  const pbxprojPath = path.join(iosPath, xcodeProjects[0], "project.pbxproj");
+  const projectName = xcodeProjects[0].replace('.xcodeproj', '');
+  const pbxprojPath = path.join(iosPath, xcodeProjects[0], 'project.pbxproj');
   if (options.verbose) {
   }
 
@@ -52,13 +52,13 @@ export async function syncTargets(options: SyncOptions = {}) {
   const mockConfig = createMockConfig(projectRoot, projectName, iosPath);
 
   // Discover targets
-  const targetsRoot = options.targetsRoot || "./targets";
+  const targetsRoot = options.targetsRoot || './targets';
   const targetConfigFiles = globSync(
     `${targetsRoot}/*/expo-target.config.@(js|ts|json)`,
     {
       cwd: projectRoot,
       absolute: true,
-    },
+    }
   );
 
   if (targetConfigFiles.length === 0) {
@@ -71,7 +71,7 @@ export async function syncTargets(options: SyncOptions = {}) {
   // Import withTargetsDir dynamically to avoid circular dependencies
   const {
     withTargetsDir,
-  } = require("expo-targets/plugin/build/withTargetsDir");
+  } = require('expo-targets/plugin/build/withTargetsDir');
 
   modifiedConfig = withTargetsDir(modifiedConfig, {
     targetsRoot,
@@ -103,7 +103,7 @@ export async function syncTargets(options: SyncOptions = {}) {
 function createMockConfig(
   projectRoot: string,
   projectName: string,
-  iosPath: string,
+  iosPath: string
 ): any {
   // Read app.json or package.json to get bundle ID and other config
   let bundleId = `com.example.${projectName.toLowerCase()}`;
@@ -113,10 +113,10 @@ function createMockConfig(
   };
 
   // Try to read app.json first
-  const appJsonPath = path.join(projectRoot, "app.json");
+  const appJsonPath = path.join(projectRoot, 'app.json');
   if (fs.existsSync(appJsonPath)) {
     try {
-      const appJson = JSON.parse(fs.readFileSync(appJsonPath, "utf-8"));
+      const appJson = JSON.parse(fs.readFileSync(appJsonPath, 'utf-8'));
       if (appJson.expo) {
         config = { ...appJson.expo, ...config };
         bundleId = appJson.expo.ios?.bundleIdentifier || bundleId;
@@ -125,17 +125,17 @@ function createMockConfig(
   }
 
   // Try to read Info.plist for bundle ID if not in app.json
-  const infoPlistPath = path.join(iosPath, projectName, "Info.plist");
+  const infoPlistPath = path.join(iosPath, projectName, 'Info.plist');
   if (!config.ios?.bundleIdentifier && fs.existsSync(infoPlistPath)) {
     try {
-      const plistContent = fs.readFileSync(infoPlistPath, "utf-8");
+      const plistContent = fs.readFileSync(infoPlistPath, 'utf-8');
       const bundleIdMatch = plistContent.match(
-        /<key>CFBundleIdentifier<\/key>\s*<string>([^<]+)<\/string>/,
+        /<key>CFBundleIdentifier<\/key>\s*<string>([^<]+)<\/string>/
       );
       if (bundleIdMatch?.[1]) {
         bundleId = bundleIdMatch[1].replace(
-          "$(PRODUCT_BUNDLE_IDENTIFIER)",
-          bundleId,
+          '$(PRODUCT_BUNDLE_IDENTIFIER)',
+          bundleId
         );
       }
     } catch {}
@@ -160,9 +160,9 @@ function createMockConfig(
 async function syncPodfile(
   iosPath: string,
   _config: any,
-  options: SyncOptions,
+  options: SyncOptions
 ) {
-  const podfilePath = path.join(iosPath, "Podfile");
+  const podfilePath = path.join(iosPath, 'Podfile');
 
   if (!fs.existsSync(podfilePath)) {
     return;

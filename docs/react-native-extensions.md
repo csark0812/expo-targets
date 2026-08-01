@@ -1,17 +1,60 @@
 # React Native in Extensions
 
+**Source of truth for** React Native extensions (runtime contract, Metro, type support).
+
+<!-- doc-meta: owner=eng | last-reviewed=2026-07-30 -->
+
 Build share extensions, action extensions, App Clips, and iMessage apps using React Native instead of native Swift/Kotlin.
+
+> **Status:** Backbone v1 covers the cross-type [runtime contract](#runtime-contract) and hardened `withTargetsMetro` packaging. Prefer these patterns; type-specific polish continues on top.
 
 ## Supported Types
 
-| Type       | React Native Support | Notes                    |
-| ---------- | -------------------- | ------------------------ |
-| `share`    | ✅ Full support      | Custom UI for sharing    |
-| `action`   | ✅ Full support      | Process content in place |
-| `clip`     | ✅ Full support      | Lightweight app preview  |
-| `messages` | ✅ Full support      | iMessage app with RN UI  |
-| `widget`   | ❌ SwiftUI only      | iOS uses WidgetKit       |
-| `stickers` | ❌ Native only       | Static image assets      |
+| Type       | React Native Support | Notes                                |
+| ---------- | -------------------- | ------------------------------------ |
+| `share`    | ✅ Full support      | Custom UI for sharing                |
+| `action`   | ✅ Full support      | Process content in place             |
+| `clip`     | ✅ Full support      | Lightweight app preview              |
+| `messages` | ✅ Full support      | iMessage app with RN UI              |
+| `widget`   | ❌ SwiftUI only      | Soft-deprecated; prefer expo-widgets |
+| `stickers` | ❌ Native only       | Static image assets                  |
+
+---
+
+## Runtime contract
+
+Stable across **share**, **action**, **clip**, and **messages** (messages adds APIs on top).
+
+### Bootstrap
+
+1. Declare `entry` in `expo-target.config` (path relative to project root).
+2. Wrap Metro with `withTargetsMetro` so the extension host can resolve that entry.
+3. Call `createTarget(name, Component)` in the entry file. The `name` must match config `name` exactly; this registers the component with `AppRegistry`.
+4. Rebuild native (`prebuild` / `sync`) so the extension target embeds expo-targets and loads the RN host.
+
+### Lifecycle (share / action / clip)
+
+| API                  | Role                                   |
+| -------------------- | -------------------------------------- |
+| `getSharedData()`    | Read content passed into the extension |
+| `openHostApp(path?)` | Open the containing app                |
+| `close()`            | Dismiss the extension UI               |
+
+These require the **ExpoTargetsExtension** native module inside the extension process. Calling them from the main app or without a native build throws an actionable error.
+
+### Failure modes
+
+| Symptom                               | Likely cause                                                                            |
+| ------------------------------------- | --------------------------------------------------------------------------------------- |
+| `Target "X" not found`                | Config `name` / `createTarget` mismatch, or targets not in `extra.targets` / Info.plist |
+| `App Group not configured`            | Missing `appGroup` on the target                                                        |
+| `requires an "entry" field`           | Passed a Component without `entry` in config                                            |
+| `ExpoTargetsExtension is unavailable` | Not running in the extension, or native module not linked — re-prebuild                 |
+| Metro cannot resolve entry            | Missing `withTargetsMetro`, or `entry` path wrong                                       |
+
+### Messages
+
+Same bootstrap + packaging. Additive APIs: `sendMessage`, `sendUpdate`, `requestPresentationStyle`, conversation helpers — see [API](./api.md).
 
 ---
 
@@ -46,11 +89,11 @@ Key fields:
 
 ```typescript
 // targets/share-ext/index.tsx
-import { createTarget } from 'expo-targets';
-import ShareExtension from './src/ShareExtension';
+import { createTarget } from "expo-targets";
+import ShareExtension from "./src/ShareExtension";
 
 // Pass the component as the second argument - handles registration automatically
-export const shareTarget = createTarget<'share'>('ShareExt', ShareExtension);
+export const shareTarget = createTarget<"share">("ShareExt", ShareExtension);
 ```
 
 The second parameter to `createTarget` automatically calls `AppRegistry.registerComponent()` for you. The name must match the `name` field in your config exactly.
@@ -110,8 +153,8 @@ const styles = StyleSheet.create({
 
 ```javascript
 // metro.config.js
-const { getDefaultConfig } = require('expo/metro-config');
-const { withTargetsMetro } = require('expo-targets/metro');
+const { getDefaultConfig } = require("expo/metro-config");
+const { withTargetsMetro } = require("expo-targets/metro");
 
 module.exports = withTargetsMetro(getDefaultConfig(__dirname));
 ```
@@ -119,8 +162,9 @@ module.exports = withTargetsMetro(getDefaultConfig(__dirname));
 The Metro wrapper:
 
 - Discovers targets with an `entry` field in their config
-- Creates separate bundles for each extension
-- Excludes packages listed in `excludedPackages`
+- Validates that each `entry` file exists (warns otherwise)
+- Maps Metro `bundleRoot` (entry path without extension) to the absolute entry file — this must match the native host `jsBundleURL(forBundleRoot:)`
+- Chains any existing `resolveRequest` so other Metro plugins keep working
 
 > **Note:** Pure Swift/SwiftUI extensions (like widgets) do NOT need Metro configuration.
 
@@ -170,7 +214,7 @@ import {
   close, // Close the extension
   openHostApp, // Open main app with deep link
   createTarget, // Access shared storage
-} from 'expo-targets';
+} from "expo-targets";
 ```
 
 ### getSharedData()
@@ -194,9 +238,9 @@ const data = getSharedData();
 Save data in the extension for your main app to read later:
 
 ```typescript
-import { createTarget, close } from 'expo-targets';
+import { createTarget, close } from "expo-targets";
 
-const shareTarget = createTarget('ShareExt');
+const shareTarget = createTarget("ShareExt");
 
 function handleSave() {
   const data = getSharedData();
@@ -216,11 +260,11 @@ Your main app can read this data:
 
 ```typescript
 // In your main app
-import { createTarget } from 'expo-targets';
+import { createTarget } from "expo-targets";
 
-const shareTarget = createTarget('ShareExt');
+const shareTarget = createTarget("ShareExt");
 const data = shareTarget.getData();
-console.log('Last shared:', data?.lastShared);
+console.log("Last shared:", data?.lastShared);
 ```
 
 ### Opening the Main App
@@ -228,11 +272,11 @@ console.log('Last shared:', data?.lastShared);
 Use `openHostApp()` to open your main app with a deep link:
 
 ```typescript
-import { openHostApp } from 'expo-targets';
+import { openHostApp } from "expo-targets";
 
 function handleOpenInApp() {
   // Opens: com.yourcompany.yourapp://shared/123
-  openHostApp('/shared/123');
+  openHostApp("/shared/123");
   // Extension closes automatically after opening host app
 }
 ```
@@ -243,12 +287,12 @@ In your main app, handle the deep link:
 
 ```typescript
 // App.tsx
-import { Linking } from 'react-native';
-import { useEffect } from 'react';
+import { Linking } from "react-native";
+import { useEffect } from "react";
 
 useEffect(() => {
   const handleUrl = ({ url }: { url: string }) => {
-    const path = url.split('://')[1]; // "shared/123"
+    const path = url.split("://")[1]; // "shared/123"
     // Navigate based on path
   };
 
@@ -256,7 +300,7 @@ useEffect(() => {
   Linking.getInitialURL().then((url) => url && handleUrl({ url }));
 
   // Handle warm start
-  const sub = Linking.addEventListener('url', handleUrl);
+  const sub = Linking.addEventListener("url", handleUrl);
   return () => sub.remove();
 }, []);
 ```
@@ -436,13 +480,13 @@ iMessage apps let users interact with your app directly in Messages.
 
 ```typescript
 // targets/my-messages/index.tsx
-import { createTarget } from 'expo-targets';
-import MessagesApp from './MessagesApp';
+import { createTarget } from "expo-targets";
+import MessagesApp from "./MessagesApp";
 
 // Pass component as second argument - name must match config exactly
-export const messagesTarget = createTarget<'messages'>(
-  'MyMessages',
-  MessagesApp
+export const messagesTarget = createTarget<"messages">(
+  "MyMessages",
+  MessagesApp,
 );
 ```
 
@@ -534,11 +578,12 @@ sub.remove(); // Cleanup
 
 See working examples in the repository:
 
-- **[extensions-showcase](../apps/extensions-showcase/)** — React Native share and action extensions
-- **[bare-rn-share](../apps/bare-rn-share/)** — Share extension in bare RN workflow
+- **[share](../examples/share/)** — React Native share extension
+- **[action](../examples/action/)** — React Native action extension
+- **[kitchen-sink](../examples/kitchen-sink/)** — Six primary types in one host
 
 ```bash
-cd apps/extensions-showcase
+cd examples/share
 npm install
 npx expo prebuild
 npx expo run:ios

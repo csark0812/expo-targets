@@ -6,14 +6,262 @@ import { withAndroidTarget } from './android/withAndroidTarget';
 import { withIOSTarget } from './ios/config-plugins/withIOSTarget';
 import { Logger } from './logger';
 
+interface EvaluatedTarget {
+  config: any;
+  targetPath: string;
+  targetDirName: string;
+}
+
+/**
+ * Evaluate every `expo-target.config.*` once, up front, so the validation pass
+ * and the processing pass agree on what they are looking at.
+ */
+function evaluateTargetConfigs(
+  targetConfigFiles: string[],
+  expoConfig: any
+): EvaluatedTarget[] {
+  return targetConfigFiles.map((targetPath) => {
+    let evaluatedConfig = require(targetPath);
+
+    // Handle ES module default export (export default config)
+    if (evaluatedConfig?.default) {
+      evaluatedConfig = evaluatedConfig.default;
+    }
+
+    // Handle function exports (like app.config.js)
+    if (typeof evaluatedConfig === 'function') {
+      evaluatedConfig = evaluatedConfig(expoConfig);
+    }
+
+    return {
+      config: evaluatedConfig,
+      targetPath,
+      targetDirName: path.basename(path.dirname(targetPath)),
+    };
+  });
+}
+
+/**
+ * `messages` and `stickers` both claim com.apple.message-payload-provider, and
+ * iOS allows exactly one such extension per app.
+ */
+function validateMessagePayloadProviders(targets: EvaluatedTarget[]): void {
+  const providers = targets
+    .filter(({ config }) => config.platforms?.includes('ios') && config.type)
+    .map(({ config, targetDirName }) => ({
+      type: config.type,
+      name: config.name || targetDirName,
+    }))
+    .filter((t) => t.type === 'messages' || t.type === 'stickers');
+
+  if (providers.length <= 1) {
+    return;
+  }
+
+  const typeNames = providers.map((t) => `${t.name} (${t.type})`).join(', ');
+  throw new Error(
+    'iOS limitation: Only one message payload provider extension is allowed per app. ' +
+      `Found multiple: ${typeNames}. ` +
+      `Both 'messages' and 'stickers' target types use the same extension point ` +
+      '(com.apple.message-payload-provider) and cannot coexist. ' +
+      'Choose either a messages app OR a stickers pack, but not both. ' +
+      'See https://developer.apple.com/documentation/messages for details.'
+  );
+}
+
+/**
+ * App Groups are inherited from the main app when a target does not name one.
+ */
+function resolveAppGroup(
+  evaluatedConfig: any,
+  expoConfig: any
+): string | undefined {
+  if (evaluatedConfig.appGroup) {
+    return evaluatedConfig.appGroup;
+  }
+
+  const mainAppGroups =
+    expoConfig.ios?.entitlements?.['com.apple.security.application-groups'];
+  return Array.isArray(mainAppGroups) && mainAppGroups.length > 0
+    ? mainAppGroups[0]
+    : undefined;
+}
+
+interface TargetContext {
+  target: EvaluatedTarget;
+  targetDirectory: string;
+  targetName: string;
+  appGroup?: string;
+  logger: Logger;
+}
+
+/**
+ * An `intent` target with `ios.intents.ui`, or a `wallet` target with
+ * `ios.wallet.ui`, implies a second companion UI target.
+ */
+const withCompanionUiTarget: ConfigPlugin<{
+  context: TargetContext;
+  companion: 'intent-ui' | 'wallet-ui';
+  runtimeConfigs: any[];
+}> = (config, { context, companion, runtimeConfigs }) => {
+  const { target, targetDirectory, targetName, appGroup, logger } = context;
+  const evaluatedConfig = target.config;
+  const parent =
+    companion === 'intent-ui'
+      ? evaluatedConfig.ios?.intents
+      : evaluatedConfig.ios?.wallet;
+
+  if (!parent?.ui) {
+    return config;
+  }
+
+  const uiConfig = typeof parent.ui === 'object' ? parent.ui : {};
+  const uiName = uiConfig.name || `${targetName}UI`;
+  const displayName = `${evaluatedConfig.displayName || targetName} UI`;
+
+  logger.log(
+    `Auto-generating ${companion === 'intent-ui' ? 'Intent' : 'Wallet'} UI target: ${uiName} (from ${targetName})`
+  );
+
+  const next = withIOSTarget(config, {
+    type: companion,
+    name: uiName,
+    displayName,
+    appGroup: evaluatedConfig.appGroup,
+    bundleIdentifier: uiConfig.bundleIdentifier,
+    directory: targetDirectory,
+    configPath: target.targetPath,
+    logger,
+    ...(companion === 'intent-ui'
+      ? {
+          intents: { intentsSupported: parent.intentsSupported || [] },
+          buildSubdirectory: uiName,
+        }
+      : {}),
+  });
+
+  // Store the companion config for runtime access
+  runtimeConfigs.push({
+    type: companion,
+    name: uiName,
+    displayName,
+    platforms: ['ios'],
+    appGroup,
+  });
+
+  return next;
+};
+
+const withTargetIos: ConfigPlugin<{
+  context: TargetContext;
+  runtimeConfigs: any[];
+}> = (config, { context, runtimeConfigs }) => {
+  const { target, targetDirectory, targetName, logger } = context;
+  const evaluatedConfig = target.config;
+
+  // Extract intents config from ios.intents for intent/intent-ui types
+  const intentsConfig =
+    evaluatedConfig.type === 'intent' && evaluatedConfig.ios?.intents
+      ? {
+          intentsSupported: evaluatedConfig.ios.intents.intentsSupported || [],
+          intentsRestrictedWhileLocked:
+            evaluatedConfig.ios.intents.intentsRestrictedWhileLocked,
+        }
+      : undefined;
+
+  let next = withIOSTarget(config, {
+    ...(evaluatedConfig.ios || {}),
+    type: evaluatedConfig.type,
+    name: targetName,
+    displayName: evaluatedConfig.displayName,
+    appGroup: evaluatedConfig.appGroup,
+    entry: evaluatedConfig.entry,
+    excludedPackages: evaluatedConfig.excludedPackages,
+    directory: targetDirectory,
+    configPath: target.targetPath,
+    intents: intentsConfig,
+    logger,
+  });
+
+  if (evaluatedConfig.type === 'intent') {
+    next = withCompanionUiTarget(next, {
+      context,
+      companion: 'intent-ui',
+      runtimeConfigs,
+    });
+  }
+
+  if (evaluatedConfig.type === 'wallet') {
+    next = withCompanionUiTarget(next, {
+      context,
+      companion: 'wallet-ui',
+      runtimeConfigs,
+    });
+  }
+
+  return next;
+};
+
+const withTarget: ConfigPlugin<{
+  target: EvaluatedTarget;
+  projectRoot: string;
+  runtimeConfigs: any[];
+  logger: Logger;
+}> = (config, { target, projectRoot, runtimeConfigs, logger }) => {
+  const { config: evaluatedConfig, targetPath, targetDirName } = target;
+
+  if (!evaluatedConfig.name) {
+    throw new Error(
+      `Target in ${targetDirName} must specify 'name' property in expo-target.config`
+    );
+  }
+
+  const targetName = evaluatedConfig.name;
+  logger.log(
+    `Processing ${targetDirName}: type=${evaluatedConfig.type}, name=${targetName}`
+  );
+
+  const supportsIos = evaluatedConfig.platforms.includes('ios');
+  const supportsAndroid = evaluatedConfig.platforms.includes('android');
+  logger.log(
+    `${targetDirName}: iOS=${supportsIos}, Android=${supportsAndroid}`
+  );
+
+  const targetDirectory = path.relative(projectRoot, path.dirname(targetPath));
+  const appGroup = resolveAppGroup(evaluatedConfig, config);
+  const context: TargetContext = {
+    target,
+    targetDirectory,
+    targetName,
+    appGroup,
+    logger,
+  };
+
+  let next = config;
+
+  if (supportsIos) {
+    next = withTargetIos(next, { context, runtimeConfigs });
+  }
+
+  if (supportsAndroid) {
+    next = withAndroidTarget(next, {
+      ...evaluatedConfig,
+      directory: targetDirectory,
+    });
+  }
+
+  // Store full config for runtime access (with resolved appGroup)
+  runtimeConfigs.push({ ...evaluatedConfig, appGroup });
+
+  return next;
+};
+
 export const withTargetsDir: ConfigPlugin<{
   targetsRoot?: string;
   debug?: boolean;
-  // biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
 }> = (config, options) => {
   const targetsRoot = options?.targetsRoot || './targets';
-  const debug = options?.debug ?? false;
-  const logger = new Logger(debug);
+  const logger = new Logger(options?.debug ?? false);
   const projectRoot = config._internal?.projectRoot;
 
   // Look for expo-target.config files (supports .js, .ts, or .json)
@@ -29,237 +277,27 @@ export const withTargetsDir: ConfigPlugin<{
     logger.logSparse(true, `Found ${targetConfigFiles.length} target(s)`);
   }
 
+  const targets = evaluateTargetConfigs(targetConfigFiles, config);
+  validateMessagePayloadProviders(targets);
+
   // Collect target configs for runtime access
-  const targetConfigs: any[] = [];
+  const runtimeConfigs: any[] = [];
+  let next = config;
 
-  // First pass: evaluate all configs and cache them
-  const evaluatedConfigs: {
-    config: any;
-    targetPath: string;
-    targetDirName: string;
-  }[] = [];
-
-  // biome-ignore lint/complexity/noForEach: pre-existing; prefer for-of tracked
-  targetConfigFiles.forEach((targetPath) => {
-    let evaluatedConfig = require(targetPath);
-
-    // Handle ES module default export (export default config)
-    if (evaluatedConfig?.default) {
-      evaluatedConfig = evaluatedConfig.default;
-    }
-
-    // Handle function exports (like app.config.js)
-    if (typeof evaluatedConfig === 'function') {
-      evaluatedConfig = evaluatedConfig(config);
-    }
-
-    const targetDirName = path.basename(path.dirname(targetPath));
-    evaluatedConfigs.push({
-      config: evaluatedConfig,
-      targetPath,
-      targetDirName,
+  for (const target of targets) {
+    next = withTarget(next, {
+      target,
+      projectRoot,
+      runtimeConfigs,
+      logger,
     });
-  });
-
-  // Validate iOS-specific limitations before processing
-  const iosTargetTypes: { type: string; name: string; directory: string }[] =
-    [];
-  // biome-ignore lint/complexity/noForEach: pre-existing; prefer for-of tracked
-  evaluatedConfigs.forEach(({ config: evaluatedConfig, targetDirName }) => {
-    const supportsIos = evaluatedConfig.platforms?.includes('ios');
-    if (supportsIos && evaluatedConfig.type) {
-      iosTargetTypes.push({
-        type: evaluatedConfig.type,
-        name: evaluatedConfig.name || targetDirName,
-        directory: targetDirName,
-      });
-    }
-  });
-
-  const messagePayloadProviderTypes = iosTargetTypes.filter(
-    (t) => t.type === 'messages' || t.type === 'stickers'
-  );
-
-  if (messagePayloadProviderTypes.length > 1) {
-    const typeNames = messagePayloadProviderTypes
-      .map((t) => `${t.name} (${t.type})`)
-      .join(', ');
-    throw new Error(
-      'iOS limitation: Only one message payload provider extension is allowed per app. ' +
-        `Found multiple: ${typeNames}. ` +
-        `Both 'messages' and 'stickers' target types use the same extension point ` +
-        '(com.apple.message-payload-provider) and cannot coexist. ' +
-        'Choose either a messages app OR a stickers pack, but not both. ' +
-        'See https://developer.apple.com/documentation/messages for details.'
-    );
   }
 
-  // Second pass: process targets using cached configs
-  // biome-ignore lint/complexity/noForEach: pre-existing; prefer for-of tracked
-  evaluatedConfigs.forEach(
-    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
-    // biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
-    ({ config: evaluatedConfig, targetPath, targetDirName }) => {
-      const targetDirectory = path.relative(
-        projectRoot,
-        path.dirname(targetPath)
-      );
-
-      // Validate name is specified
-      if (!evaluatedConfig.name) {
-        throw new Error(
-          `Target in ${targetDirName} must specify 'name' property in expo-target.config`
-        );
-      }
-
-      const targetName = evaluatedConfig.name;
-
-      logger.log(
-        `Processing ${targetDirName}: type=${evaluatedConfig.type}, name=${targetName}`
-      );
-
-      const supportsIos = evaluatedConfig.platforms.includes('ios');
-      const supportsAndroid = evaluatedConfig.platforms.includes('android');
-
-      logger.log(
-        `${targetDirName}: iOS=${supportsIos}, Android=${supportsAndroid}`
-      );
-
-      // Resolve appGroup (inherit from main app if not specified)
-      let appGroup = evaluatedConfig.appGroup;
-      if (!appGroup) {
-        const mainAppGroups =
-          config.ios?.entitlements?.['com.apple.security.application-groups'];
-        if (Array.isArray(mainAppGroups) && mainAppGroups.length > 0) {
-          appGroup = mainAppGroups[0];
-        }
-      }
-
-      if (supportsIos) {
-        // Extract intents config from ios.intents for intent/intent-ui types
-        const intentsConfig =
-          evaluatedConfig.type === 'intent' && evaluatedConfig.ios?.intents
-            ? {
-                intentsSupported:
-                  evaluatedConfig.ios.intents.intentsSupported || [],
-                intentsRestrictedWhileLocked:
-                  evaluatedConfig.ios.intents.intentsRestrictedWhileLocked,
-              }
-            : undefined;
-
-        config = withIOSTarget(config, {
-          ...(evaluatedConfig.ios || {}),
-          type: evaluatedConfig.type,
-          name: targetName,
-          displayName: evaluatedConfig.displayName,
-          appGroup: evaluatedConfig.appGroup,
-          entry: evaluatedConfig.entry,
-          excludedPackages: evaluatedConfig.excludedPackages,
-          directory: targetDirectory,
-          configPath: targetPath,
-          intents: intentsConfig,
-          logger,
-        });
-
-        // Auto-generate Intent UI target when intent type has ios.intents.ui enabled
-        if (
-          evaluatedConfig.type === 'intent' &&
-          evaluatedConfig.ios?.intents?.ui
-        ) {
-          const intentsConfig = evaluatedConfig.ios.intents;
-          const uiConfig =
-            typeof intentsConfig.ui === 'object' ? intentsConfig.ui : {};
-
-          const intentUiName = uiConfig.name || `${targetName}UI`;
-          const intentUiBundleId = uiConfig.bundleIdentifier;
-
-          logger.log(
-            `Auto-generating Intent UI target: ${intentUiName} (from ${targetName})`
-          );
-
-          config = withIOSTarget(config, {
-            type: 'intent-ui',
-            name: intentUiName,
-            displayName: `${evaluatedConfig.displayName || targetName} UI`,
-            appGroup: evaluatedConfig.appGroup,
-            bundleIdentifier: intentUiBundleId,
-            directory: targetDirectory,
-            configPath: targetPath,
-            intents: {
-              intentsSupported: intentsConfig.intentsSupported || [],
-            },
-            buildSubdirectory: intentUiName,
-            logger,
-          });
-
-          // Store Intent UI config for runtime access
-          targetConfigs.push({
-            type: 'intent-ui',
-            name: intentUiName,
-            displayName: `${evaluatedConfig.displayName || targetName} UI`,
-            platforms: ['ios'],
-            appGroup,
-          });
-        }
-
-        // Auto-generate Wallet UI target when wallet type has ios.wallet.ui enabled
-        if (
-          evaluatedConfig.type === 'wallet' &&
-          evaluatedConfig.ios?.wallet?.ui
-        ) {
-          const walletConfig = evaluatedConfig.ios.wallet;
-          const uiConfig =
-            typeof walletConfig.ui === 'object' ? walletConfig.ui : {};
-
-          const walletUiName = uiConfig.name || `${targetName}UI`;
-          const walletUiBundleId = uiConfig.bundleIdentifier;
-
-          logger.log(
-            `Auto-generating Wallet UI target: ${walletUiName} (from ${targetName})`
-          );
-
-          config = withIOSTarget(config, {
-            type: 'wallet-ui',
-            name: walletUiName,
-            displayName: `${evaluatedConfig.displayName || targetName} UI`,
-            appGroup: evaluatedConfig.appGroup,
-            bundleIdentifier: walletUiBundleId,
-            directory: targetDirectory,
-            configPath: targetPath,
-            logger,
-          });
-
-          // Store Wallet UI config for runtime access
-          targetConfigs.push({
-            type: 'wallet-ui',
-            name: walletUiName,
-            displayName: `${evaluatedConfig.displayName || targetName} UI`,
-            platforms: ['ios'],
-            appGroup,
-          });
-        }
-      }
-
-      if (supportsAndroid) {
-        config = withAndroidTarget(config, {
-          ...evaluatedConfig,
-          directory: targetDirectory,
-        });
-      }
-
-      // Store full config for runtime access (with resolved appGroup)
-      targetConfigs.push({
-        ...evaluatedConfig,
-        appGroup,
-      });
-    }
-  );
-
   // Inject target configs into expo config for runtime access
-  config.extra = {
-    ...config.extra,
-    targets: targetConfigs,
+  next.extra = {
+    ...next.extra,
+    targets: runtimeConfigs,
   };
 
-  return config;
+  return next;
 };

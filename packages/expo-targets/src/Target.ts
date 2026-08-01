@@ -1,4 +1,3 @@
-import process from 'node:process';
 import Constants from 'expo-constants';
 import { AppRegistry } from 'react-native';
 import type {
@@ -133,6 +132,20 @@ function isWebExtensionType(type: ExtensionType): boolean {
   return WEB_EXTENSION_TYPES.has(type);
 }
 
+const warnedWidgetTargets = new Set<string>();
+
+function warnIfWidgetDeprecated(type: ExtensionType, targetName: string) {
+  if (type !== 'widget' || warnedWidgetTargets.has(targetName)) {
+    return;
+  }
+  warnedWidgetTargets.add(targetName);
+  console.warn(
+    `[expo-targets] Target "${targetName}" uses type "widget", which is soft-deprecated. ` +
+      'For new React/iOS widgets and Live Activities, prefer expo-widgets (SDK 56+). ' +
+      'See https://docs.expo.dev/versions/latest/sdk/widgets/ and docs/widgets.md'
+  );
+}
+
 // Function overloads for better type inference
 export function createTarget<_T extends 'messages'>(
   targetName: string,
@@ -175,6 +188,8 @@ export function createTarget<_T extends ExtensionType = ExtensionType>(
       `Target "${targetName}" not found. Ensure it's defined in app.json under "extra.targets"`
     );
   }
+
+  warnIfWidgetDeprecated(config.type, targetName);
 
   // Safari extension with entry but running in native context (config lookup)
   // This shouldn't normally happen but handle gracefully
@@ -262,7 +277,15 @@ export function createTarget<_T extends ExtensionType = ExtensionType>(
   }
 
   // Register component with target injected as prop
-  if (componentFunc && 'entry' in config && config.entry) {
+  if (componentFunc) {
+    if (!('entry' in config && config.entry)) {
+      throw new Error(
+        `[expo-targets] createTarget("${targetName}", Component) requires an "entry" field in ` +
+          'expo-target.config pointing at the RN entry file (relative to project root). ' +
+          'See docs/react-native-extensions.md'
+      );
+    }
+
     const WrappedComponent = (props: any) => {
       const React = require('react');
       return React.createElement(componentFunc, { ...props, target });
@@ -270,7 +293,9 @@ export function createTarget<_T extends ExtensionType = ExtensionType>(
 
     let qualifiedComponent = WrappedComponent;
 
-    if (process.env.NODE_ENV !== 'production') {
+    // Avoid `node:process` so Metro/Release host bundles resolve in RN.
+    // biome-ignore lint/correctness/noProcessGlobal: RN host env; node:process breaks Metro
+    if (globalThis.process?.env?.NODE_ENV !== 'production') {
       try {
         const { withDevTools } = require('expo/src/launch/withDevTools');
         qualifiedComponent = withDevTools(WrappedComponent);

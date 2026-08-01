@@ -1,8 +1,15 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "outDir": "./build"
+    "outDir": "./build",
+    "lib": ["ES2020", "DOM"]
   },
   "include": ["src/**/*", "plugin/src/**/*", "metro/src/**/*"],
-  "exclude": ["node_modules", "build", "plugin/build", "metro/build"]
+  "exclude": [
+    "node_modules",
+    "build",
+    "plugin/build",
+    "metro/build",
+    "**/*.test.ts"
+  ]
 }

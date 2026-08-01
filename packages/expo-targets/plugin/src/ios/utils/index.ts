@@ -1,13 +1,16 @@
 /**
- * Centralized utilities for iOS plugin operations.
- * Re-exports all utility modules for convenient access.
+ * Shared iOS helpers that are not Plan/Apply-specific
+ * (paths, plist I/O, assets, Safari/RN Swift generators).
+ *
+ * PBX and Podfile apply logic lives under `../apply/{pbx,podfile}` — import
+ * those modules directly.
  */
 
+export * as Xcode from '../apply/pbx';
+export * as Podfile from '../apply/podfile';
 export * as Asset from './asset';
 export * as File from './file';
 export * as Paths from './paths';
 export * as Plist from './plist';
-export * as Podfile from './podfile';
 export * as ReactNativeSwift from './reactNativeSwift';
 export * as Safari from './safari';
-export * as Xcode from './xcode';

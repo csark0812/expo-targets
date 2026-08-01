@@ -4,11 +4,10 @@ private var clipInvocationURL: String?
 private var clipMetadata: [String: Any] = [:]
 
 private func loadClipContent() {
-    // App Clips typically receive data via URL and scene activation
-    // This is populated from scene delegate / app launch
-    if let userActivity = extensionContext?.intent as? NSUserActivity,
-       let url = userActivity.webpageURL {
-        clipInvocationURL = url.absoluteString
+    // App Clips receive invocation URLs via UIApplicationDelegate openURL /
+    // continue userActivity (see ReactNativeClipApp). Seed from launch if posted.
+    if let url = clipInvocationURL {
+        return
     }
 }
 
@@ -25,4 +24,3 @@ private func getClipDataProps() -> [String: Any] {
 
     return data
 }
-

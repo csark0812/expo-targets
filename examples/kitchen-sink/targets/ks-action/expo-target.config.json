@@ -1,0 +1,13 @@
+{
+  "type": "action",
+  "name": "KsAction",
+  "displayName": "KS Action",
+  "platforms": ["ios"],
+  "entry": "./targets/ks-action/index.tsx",
+  "appGroup": "group.com.expotargets.example.kitchensink",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.kitchensink.ks-action",
+    "displayName": "KS Action",
+    "activationRules": [{ "type": "image", "maxCount": 1 }]
+  }
+}

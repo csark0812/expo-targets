@@ -1,0 +1,19 @@
+appId: com.expotargets.example.native.share
+name: native share host smoke
+tags:
+  - smoke
+  - native
+  - share
+---
+- launchApp:
+    clearState: true
+- assertVisible:
+    id: screen-root
+- assertVisible:
+    id: status-target-ready
+- tapOn:
+    id: btn-seed-payload
+- assertVisible:
+    id: text-last-payload
+- tapOn:
+    id: btn-clear-payload

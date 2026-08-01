@@ -4,7 +4,16 @@ import process from 'node:process';
 import fs from 'fs-extra';
 import prompts from 'prompts';
 
+const WIDGET_HANDOFF = `
+For new React/iOS widgets and Live Activities, prefer official expo-widgets (Expo SDK 56+):
+https://docs.expo.dev/versions/latest/sdk/widgets/
+
+Native WidgetKit scaffolds from this CLI are soft-deprecated. Details:
+https://github.com/csark0812/expo-targets/blob/main/docs/widgets.md
+`.trim();
+
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
 async function main() {
   const response = await prompts([
     {
@@ -12,20 +21,30 @@ async function main() {
       name: 'type',
       message: 'What type of target?',
       choices: [
-        { title: 'Widget', value: 'widget' },
-        { title: 'App Clip', value: 'clip' },
-        { title: 'iMessage Stickers', value: 'imessage' },
-        { title: 'Messages App', value: 'messages' },
         { title: 'Share Extension', value: 'share' },
         { title: 'Action Extension', value: 'action' },
-        { title: 'Siri Intent', value: 'intent' },
+        { title: 'App Clip', value: 'clip' },
+        { title: 'Messages App', value: 'messages' },
+        { title: 'iMessage Stickers', value: 'imessage' },
         { title: 'Wallet Extension', value: 'wallet' },
+        { title: 'Siri Intent', value: 'intent' },
+        {
+          title: 'Widget (soft-deprecated — prefer expo-widgets for React/iOS)',
+          value: 'widget',
+        },
       ],
+    },
+    {
+      type: (_prev, values) => (values.type === 'widget' ? 'confirm' : null),
+      name: 'confirmNativeWidget',
+      message:
+        'Continue with a native WidgetKit scaffold? (React/iOS widgets → expo-widgets)',
+      initial: false,
     },
     {
       type: 'text',
       name: 'name',
-      message: 'Target name (e.g., my-widget):',
+      message: 'Target name (e.g., my-share):',
       validate: (value) =>
         value.length > 0 ? true : 'Target name is required',
     },
@@ -43,7 +62,7 @@ async function main() {
         ['share', 'action', 'clip'].includes(values.type) ? 'confirm' : null,
       name: 'useReactNative',
       message: 'Use React Native for UI?',
-      initial: false,
+      initial: true,
     },
     {
       type: (_prev, values) => (values.type === 'intent' ? 'confirm' : null),
@@ -55,6 +74,16 @@ async function main() {
 
   if (!(response.type && response.name)) {
     return;
+  }
+
+  if (response.type === 'widget') {
+    console.warn(`\n[expo-targets] ${WIDGET_HANDOFF}\n`);
+    if (response.confirmNativeWidget === false) {
+      console.log(
+        'Aborted. Install expo-widgets for React/iOS widgets, or re-run and confirm the native scaffold.'
+      );
+      return;
+    }
   }
 
   const targetDir = path.join(process.cwd(), 'targets', response.name);
@@ -94,12 +123,20 @@ async function main() {
     }
   }
 
-  // Generate index.ts with pre-configured target instance
-  const indexTs = `import { createTarget } from 'expo-targets';
+  // Host-app helper instance (skip when RN entry already exports createTarget)
+  if (!response.useReactNative) {
+    const indexTs = `import { createTarget } from 'expo-targets';
 
 export const ${pascalToCamel(pascalName)} = createTarget('${pascalName}');
 `;
-  fs.writeFileSync(path.join(targetDir, 'index.ts'), indexTs);
+    fs.writeFileSync(path.join(targetDir, 'index.ts'), indexTs);
+  }
+
+  if (response.type === 'widget') {
+    console.warn(
+      '[expo-targets] Deprecated: native widget targets are soft-deprecated. Prefer expo-widgets for React/iOS widgets. See docs/widgets.md'
+    );
+  }
 }
 
 // biome-ignore lint/complexity/useMaxParams: pre-existing complexity; tracked for refactor

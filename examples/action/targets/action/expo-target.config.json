@@ -1,0 +1,18 @@
+{
+  "type": "action",
+  "name": "Action",
+  "displayName": "Example Action",
+  "platforms": ["ios"],
+  "entry": "./targets/action/index.tsx",
+  "appGroup": "group.com.expotargets.example.action",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.action.action",
+    "displayName": "Example Action",
+    "activationRules": [
+      {
+        "type": "image",
+        "maxCount": 1
+      }
+    ]
+  }
+}

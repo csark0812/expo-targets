@@ -1,0 +1,8 @@
+appId: ${APP_ID}
+name: ios open security dialog stub
+---
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"

@@ -42,7 +42,9 @@
     "copy:templates": "mkdir -p plugin/build/ios/templates && cp plugin/src/ios/templates/*.swift plugin/build/ios/templates/",
     "clean": "rm -rf build plugin/build metro/build",
     "prepare": "bun run build",
-    "lint": "biome lint src"
+    "lint": "biome lint src",
+    "test": "bun test",
+    "test:unit": "bun test"
   },
   "dependencies": {
     "@babel/parser": "^7.25.0",
@@ -58,6 +60,7 @@
   },
   "devDependencies": {
     "@react-native-community/cli": "^16.0.0",
+    "@types/bun": "^1.2.21",
     "typescript": "~5.3.3"
   },
   "peerDependencies": {

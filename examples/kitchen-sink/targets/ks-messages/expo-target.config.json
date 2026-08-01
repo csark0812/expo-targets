@@ -1,0 +1,12 @@
+{
+  "type": "messages",
+  "name": "KsMessages",
+  "displayName": "KS Messages",
+  "platforms": ["ios"],
+  "entry": "./targets/ks-messages/index.tsx",
+  "appGroup": "group.com.expotargets.example.kitchensink",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.kitchensink.ks-messages",
+    "displayName": "KS Messages"
+  }
+}

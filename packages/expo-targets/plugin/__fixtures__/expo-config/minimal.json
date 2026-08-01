@@ -1,0 +1,8 @@
+{
+  "name": "TestApp",
+  "slug": "test-app",
+  "version": "1.0.0",
+  "ios": {
+    "bundleIdentifier": "com.example.app"
+  }
+}

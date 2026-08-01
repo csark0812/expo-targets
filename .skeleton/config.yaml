@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=node_modules/@csark0812/skeleton/schemas/config.schema.json
+
+scan:
+  include:
+    - "docs/**"
+    - "README.md"
+    - ".skeleton/registry.md"
+    - "AGENTS.md"
+  exclude:
+    - "refs/**"
+    - "examples/**"
+    - "packages/**/README.md"
+    - "packages/**/__fixtures__/**"
+    - "CHANGELOG.md"
+    - "**/node_modules/**"
+  banned: []
+  retiredSkills: []
+
+daysUntilStale: 180

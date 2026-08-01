@@ -1,0 +1,6 @@
+{
+  "type": "share",
+  "name": "ShareMinimal",
+  "displayName": "Share",
+  "entry": "./index.tsx"
+}

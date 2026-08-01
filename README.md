@@ -1,8 +1,14 @@
 # expo-targets
 
-Add **iOS widgets**, **App Clips**, **iMessage stickers**, **share extensions**, and **wallet extensions** to your Expo app — no native experience required.
+**Source of truth for** package overview.
 
-> **⚠️ Important:** Requires development builds (`npx expo run:ios`). Does not work with Expo Go.
+<!-- doc-meta: owner=eng | last-reviewed=2026-07-30 -->
+
+Add **share extensions**, **action extensions**, **App Clips**, **iMessage apps**, **stickers**, **wallet extensions**, and other Apple targets Expo does not ship — including React Native UIs where supported.
+
+> **Widgets:** For new React/iOS widgets and Live Activities, prefer official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) (SDK 56+). Native/Android widgets in this library are soft-deprecated / bridge-grade. See [Widgets handoff](./docs/widgets.md).
+
+> **Important:** Requires development builds (`npx expo run:ios`). Does not work with Expo Go.
 >
 > **Prerequisites:** macOS, Xcode 14+, Expo SDK 50+, iOS 14+. [Full requirements →](./docs/getting-started.md#prerequisites)
 
@@ -34,50 +40,50 @@ npm install expo-targets
 
 > **Why App Groups?** App Groups enable data sharing between your main app and extensions. The ID must start with `group.` — convention is `group.{your.bundle.identifier}`.
 
-### 3. Create a Widget
+### 3. Create a Share Extension (React Native)
 
 ```bash
 npx create-expo-target
-# Choose: Widget → my-widget → iOS
+# Choose: Share Extension → my-share → iOS → Yes (Use React Native)
 ```
 
 This creates:
 
 ```
-targets/my-widget/
-├── expo-target.config.json   # Widget configuration
-├── index.ts                  # Pre-configured target instance
-└── ios/
-    └── Widget.swift          # SwiftUI widget code
+targets/my-share/
+├── expo-target.config.json   # Extension configuration
+├── index.tsx                 # createTarget + RN entry
+└── ios/                      # Native host (generated at prebuild)
 ```
 
-### 4. Build & Run
+### 4. Configure Metro
+
+```js
+// metro.config.js
+const { getDefaultConfig } = require("expo/metro-config");
+const { withTargetsMetro } = require("expo-targets/metro");
+
+module.exports = withTargetsMetro(getDefaultConfig(__dirname));
+```
+
+See [React Native Extensions](./docs/react-native-extensions.md).
+
+### 5. Build & Run
 
 ```bash
 npx expo prebuild
 npx expo run:ios
 ```
 
-> **Building a Share/Action Extension with React Native?** You'll also need to configure Metro. See [React Native Extensions](./docs/react-native-extensions.md#4-configure-metro).
-
-### 5. Update from Your App
+### 6. Use the extension APIs
 
 ```typescript
-// Option A: Import the generated target instance
-import { myWidget } from './targets/my-widget';
+import { close, openHostApp, getSharedData } from "expo-targets";
 
-myWidget.setData({ message: 'Hello from React Native!' });
-myWidget.refresh();
-
-// Option B: Create your own instance
-import { createTarget } from 'expo-targets';
-
-const myWidget = createTarget('MyWidget'); // Must match config "name" field
-myWidget.setData({ message: 'Hello!' });
-myWidget.refresh();
+const data = getSharedData(); // Content shared into the extension
+openHostApp("/path"); // Open the host app
+close(); // Dismiss the extension
 ```
-
-🎉 **That's it!** Long-press your home screen, tap **+**, search for your app, and add the widget.
 
 ---
 
@@ -85,69 +91,77 @@ myWidget.refresh();
 
 | Type                   | iOS | Android | Description             |
 | ---------------------- | --- | ------- | ----------------------- |
-| `widget`               | ✅  | ✅      | Home screen widgets     |
-| `clip`                 | ✅  | —       | App Clips               |
-| `stickers`             | ✅  | —       | iMessage sticker packs  |
-| `messages`             | ✅  | —       | iMessage apps           |
-| `share`                | ✅  | 🔜      | Share extensions        |
-| `action`               | ✅  | 🔜      | Action extensions       |
-| `wallet`               | 📋  | —       | Wallet extensions       |
-| `safari`               | 📋  | —       | Safari web extensions   |
-| `notification-content` | 📋  | 🔜      | Rich notification UI    |
-| `notification-service` | 📋  | 🔜      | Notification processing |
-| `intent`               | 📋  | —       | Siri intents            |
-| `intent-ui`            | 📋  | —       | Siri intent UI          |
+| `share`                | ✅   | 🔜       | Share extensions        |
+| `action`               | ✅   | 🔜       | Action extensions       |
+| `clip`                 | ✅   | —       | App Clips               |
+| `stickers`             | ✅   | —       | iMessage sticker packs  |
+| `messages`             | ✅   | —       | iMessage apps           |
+| `wallet`               | ✅   | —       | Wallet extensions       |
+| `widget`               | ✅\* | ✅†      | Home screen widgets     |
+| `safari`               | 📋   | —       | Safari web extensions   |
+| `notification-content` | 📋   | 🔜       | Rich notification UI    |
+| `notification-service` | 📋   | 🔜       | Notification processing |
+| `intent`               | 📋   | —       | Siri intents            |
+| `intent-ui`            | 📋   | —       | Siri intent UI          |
 
 **Legend:** ✅ Production ready · 📋 Config-only\* · 🔜 Planned · — Not applicable
 
-> \*Config-only types generate the Xcode target structure but require you to write all Swift code yourself. See [Configuration → Extension Types](./docs/configuration.md#extension-types-reference).
+> \*Config-only types generate the Xcode target structure but require you to write all Swift code yourself. **No new config-only types** are being added. See [Deprecations](./docs/deprecations.md).
+>
+> \*`widget` (iOS): soft-deprecated — prefer [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) for React widgets. †Android widgets: bridge-grade. Details: [widgets.md](./docs/widgets.md).
 
 ---
 
 ## How It Works
 
-expo-targets uses **App Groups** to share data between your app and extensions:
+expo-targets uses **App Groups** to share data between your app and extensions, and (for RN extensions) a Metro + native host path to load your React tree inside the extension process.
 
 ```
 ┌─────────────────┐        ┌─────────────────┐
-│   Your App      │        │   Widget        │
+│   Your App      │        │   Extension     │
 │                 │        │                 │
-│  widget.set()   │───────▶│  UserDefaults   │
-│  widget.refresh()        │  reads data     │
+│  target.set()   │───────▶│  UserDefaults / │
+│  getSharedData  │◀───────│  RN host        │
 └─────────────────┘        └─────────────────┘
 ```
-
-Your JavaScript code writes to shared storage, and your Swift widget reads from it. Simple.
 
 ---
 
 ## Examples
 
-Clone the repo and explore working examples:
+Thin hosts live under [`examples/`](./examples/). Start with share once the suite lands:
 
 ```bash
 git clone https://github.com/csark0812/expo-targets.git
-cd expo-targets/apps/widgets-showcase
+cd expo-targets/examples/share
 npm install && npx expo run:ios
 ```
 
-| Example                                           | What it shows                          |
-| ------------------------------------------------- | -------------------------------------- |
-| [widgets-showcase](./apps/widgets-showcase)       | Basic to advanced widgets              |
-| [extensions-showcase](./apps/extensions-showcase) | React Native share/action extensions   |
-| [clips-and-stickers](./apps/clips-and-stickers)   | App Clips + iMessage stickers          |
-| [bare-rn-widgets](./apps/bare-rn-widgets)         | Adding widgets to existing RN projects |
+| Example                                   | What it shows                                                               |
+| ----------------------------------------- | --------------------------------------------------------------------------- |
+| [share](./examples/share)                 | React Native share extension                                                |
+| [action](./examples/action)               | React Native action extension                                               |
+| [clip](./examples/clip)                   | React Native App Clip                                                       |
+| [stickers](./examples/stickers)           | Asset-only sticker pack                                                     |
+| [widgets](./examples/widgets)             | iOS WidgetKit (soft-deprecated; prefer [`expo-widgets`](./docs/widgets.md)) |
+| [messages](./examples/messages)           | React Native messages extension                                             |
+| [kitchen-sink](./examples/kitchen-sink)   | Six primary types in one host                                               |
+| [native/share](./examples/native/share)   | Swift share + RN host                                                       |
+| [native/action](./examples/native/action) | Swift action + RN host                                                      |
+| [native/clip](./examples/native/clip)     | SwiftUI App Clip + RN host                                                  |
 
-See [apps/README.md](./apps/README.md) for the full list.
+See [examples/README.md](./examples/README.md) for Maestro vs manual coverage.
 
 ---
 
 ## Documentation
 
-- **[Getting Started](./docs/getting-started.md)** — Build your first widget in 5 minutes
-- **[Configuration](./docs/configuration.md)** — All config options explained
+- **[Getting Started](./docs/getting-started.md)** — Build a React Native share extension
+- **[React Native Extensions](./docs/react-native-extensions.md)** — RN runtime contract + Metro
+- **[Widgets handoff](./docs/widgets.md)** — `expo-widgets` vs this library
+- **[Configuration](./docs/configuration.md)** — All config options
 - **[API Reference](./docs/api.md)** — JavaScript/TypeScript API
-- **[React Native Extensions](./docs/react-native-extensions.md)** — Using RN in share/action extensions
+- **[Deprecations](./docs/deprecations.md)** — Soft-deprecate and freeze policy
 
 ---
 
@@ -155,72 +169,47 @@ See [apps/README.md](./apps/README.md) for the full list.
 
 ### Expo Managed (Recommended)
 
-Best for most projects. Expo manages your native `ios/` folder via prebuild:
-
 ```bash
 npx expo prebuild
 npx expo run:ios
 ```
 
-Use this if:
-
-- Starting a new project
-- Your `ios/` folder is generated (not in git)
-- You use `expo prebuild` regularly
-
 ### Bare React Native
 
-For existing projects with a custom `ios/` folder you maintain manually:
-
 ```bash
-npx expo-targets sync    # Add targets to existing ios/ folder
+npx expo-targets sync
 cd ios && pod install
 npx react-native run-ios
 ```
-
-Use this if:
-
-- You have an existing React Native project with native modifications
-- Your `ios/` folder is committed to git
-- You can't use `expo prebuild` (it would overwrite your changes)
 
 ---
 
 ## API at a Glance
 
 ```typescript
-import { createTarget, refreshAllTargets } from 'expo-targets';
+import { createTarget, close, openHostApp, getSharedData } from "expo-targets";
 
-// Create a target instance
-const widget = createTarget('MyWidget');
+// RN extension entry
+export const share = createTarget<"share">("MyShare", ShareExtension);
 
-// Storage
-widget.set('key', value); // Set a single value
-widget.get<T>('key'); // Get a value
-widget.setData({ key: value }); // Set multiple values
-widget.getData<T>(); // Get all data
-widget.clear(); // Clear all data
-
-// Lifecycle
-widget.refresh(); // Refresh this widget
-refreshAllTargets(); // Refresh all widgets
+const data = getSharedData();
+openHostApp("/inbox");
+close();
 ```
 
-For share/action extensions:
+Shared storage (widgets and other targets):
 
 ```typescript
-import { close, openHostApp, getSharedData } from 'expo-targets';
-
-const data = getSharedData(); // Get shared content
-openHostApp('/path'); // Open main app
-close(); // Close extension
+const target = createTarget("MyTarget");
+target.setData({ key: "value" });
+target.refresh();
 ```
 
 ---
 
 ## Contributing
 
-Contributions welcome! This project is actively maintained.
+Contributions welcome. See [AGENTS.md](./AGENTS.md) for agent/docs conventions.
 
 ## License
 
@@ -228,4 +217,6 @@ MIT
 
 ## Credits
 
-Inspired by [@bacons/apple-targets](https://github.com/EvanBacon/expo-apple-targets), [expo-widgets](https://github.com/bittingz/expo-widgets), and [expo-share-extension](https://github.com/MaxAst/expo-share-extension).
+Inspired by [@bacons/apple-targets](https://github.com/EvanBacon/expo-apple-targets) and [expo-share-extension](https://github.com/MaxAst/expo-share-extension).
+
+Widget-related prior art: official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) (preferred for React/iOS widgets today) and community [bittingz/expo-widgets](https://github.com/bittingz/expo-widgets) (historical inspiration only — not the Expo SDK package).

@@ -1,9 +1,0 @@
-{
-  "type": "notification-service",
-  "name": "DemoNotificationService",
-  "displayName": "Demo Notification Service",
-  "platforms": ["ios"],
-  "ios": {
-    "deploymentTarget": "15.1"
-  }
-}

@@ -1,0 +1,17 @@
+{
+  "type": "clip",
+  "name": "Clip",
+  "displayName": "Example Clip",
+  "platforms": ["ios"],
+  "entry": "./targets/clip/index.tsx",
+  "appGroup": "group.com.expotargets.example.clip",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.clip.clip",
+    "displayName": "Example Clip",
+    "entitlements": {
+      "com.apple.developer.associated-domains": [
+        "appclips:clip.example.expotargets.dev"
+      ]
+    }
+  }
+}

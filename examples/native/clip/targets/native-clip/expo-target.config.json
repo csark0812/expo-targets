@@ -1,0 +1,21 @@
+{
+  "type": "clip",
+  "name": "NativeClip",
+  "displayName": "Native Clip",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.example.native.clip",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.native.clip.clip",
+    "displayName": "Native Clip",
+    "colors": {
+      "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" },
+      "BackgroundColor": { "light": "#FFFFFF", "dark": "#000000" },
+      "PrimaryText": { "light": "#000000", "dark": "#FFFFFF" }
+    },
+    "entitlements": {
+      "com.apple.developer.associated-domains": [
+        "appclips:native-clip.example.expotargets.dev"
+      ]
+    }
+  }
+}

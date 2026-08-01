@@ -1,0 +1,12 @@
+{
+  "type": "messages",
+  "name": "Messages",
+  "displayName": "Example Messages",
+  "platforms": ["ios"],
+  "entry": "./targets/messages/index.tsx",
+  "appGroup": "group.com.expotargets.example.messages",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.messages.messages",
+    "displayName": "Example Messages"
+  }
+}

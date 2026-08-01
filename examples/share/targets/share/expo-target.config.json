@@ -1,0 +1,20 @@
+{
+  "type": "share",
+  "name": "Share",
+  "displayName": "Example Share",
+  "platforms": ["ios"],
+  "entry": "./targets/share/index.tsx",
+  "appGroup": "group.com.expotargets.example.share",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.share.share",
+    "displayName": "Example Share",
+    "activationRules": [
+      {
+        "type": "text"
+      },
+      {
+        "type": "url"
+      }
+    ]
+  }
+}

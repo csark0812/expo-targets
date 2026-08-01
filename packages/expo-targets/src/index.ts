@@ -14,6 +14,7 @@ export type { SharedData } from './modules/extension/index';
 export {
   close,
   Extension,
+  getExtensionNativeModule,
   getSharedData,
   openHostApp,
 } from './modules/extension/index';

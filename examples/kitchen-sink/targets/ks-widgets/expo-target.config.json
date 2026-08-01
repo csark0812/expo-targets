@@ -1,0 +1,16 @@
+{
+  "type": "widget",
+  "name": "KsWidget",
+  "displayName": "KS Widget",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.example.kitchensink",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.kitchensink.ks-widgets",
+    "displayName": "KS Widget",
+    "colors": {
+      "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" },
+      "BackgroundColor": { "light": "#F2F2F7", "dark": "#1C1C1E" },
+      "TextPrimary": { "light": "#000000", "dark": "#FFFFFF" }
+    }
+  }
+}
