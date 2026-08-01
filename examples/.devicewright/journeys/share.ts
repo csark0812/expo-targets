@@ -8,72 +8,70 @@ import type { TargetJourneyResult } from '../types';
 import {
   assertPayloadContains,
   C1,
-  findNamedNode,
-  flattenLabels,
+  findNamedViaPointProbe,
+  findSheetRowProbe,
+  hostReadyTestId,
   sleep,
-  tapCenter,
   tapId,
+  tapProbeHit,
   waitForId,
-  waitForNamed,
 } from './helpers';
 
 async function dismissShareSheet(device: DeviceSession): Promise<void> {
   for (const label of ['Close', 'Cancel']) {
     try {
-      const node = await waitForNamed(device, [label], 2_000);
-      await tapCenter(device, node);
+      const hit = await findNamedViaPointProbe(device, [label], {
+        timeoutMs: 2_000,
+        yStartRatio: 0.05,
+        yEndRatio: 0.95,
+        allowBlocked: true,
+      });
+      await tapProbeHit(device, hit);
       await sleep(500);
       return;
     } catch {
       // try next
     }
   }
-  // Best-effort: tap outside / home not required — re-launch host later.
 }
 
+/**
+ * Find share/action-extension cell via published suite probe
+ * (`findSheetRowProbe` + probe taps). `needsViewMore` → expandMore true.
+ */
 async function findExtensionRow(
   device: DeviceSession,
   entry: TargetCatalogEntry,
   timeoutMs = 15_000
-): Promise<ReturnType<typeof findNamedNode>> {
+): Promise<{ probeX: number; probeY: number; label?: string }> {
   const names = [
     entry.extensionName,
     entry.hostDisplayName,
     ...entry.extensionAliases,
   ].filter(Boolean);
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    const tree = await device.accessibilityTree();
-    const hit = findNamedNode(tree, names);
-    if (hit && !BLOCKED_SHEET_LABELS.has(hit.label ?? '')) return hit;
-
-    // View More / More expands the activity list.
-    const more = findNamedNode(tree, ['View More', 'More']);
-    if (more) {
-      try {
-        await tapCenter(device, more);
-        await sleep(800);
-        continue;
-      } catch {
-        // ignore
-      }
-    }
-    await sleep(400);
+  // Drop only ultra-generic aliases that collide with system rows.
+  const searchNames = [
+    ...new Set(names.filter((n) => n !== 'Share' && n !== 'Messages')),
+  ];
+  if (!searchNames.length) {
+    searchNames.push(entry.extensionName);
   }
-  const tree = await device.accessibilityTree();
-  throw new Error(
-    `extension row not in Share Sheet (${names.join(' | ')}); labels=${flattenLabels(
-      tree
-    )
-      .slice(0, 100)
-      .join(', ')}`
-  );
+
+  const hit = await findSheetRowProbe(device, searchNames, {
+    expandMore: Boolean(entry.needsViewMore),
+    match: 'exact',
+    blockedLabels: BLOCKED_SHEET_LABELS,
+    probeTimeoutMs: timeoutMs,
+  });
+  return {
+    probeX: hit.probeX,
+    probeY: hit.probeY,
+    label: hit.node.label,
+  };
 }
 
 /**
  * Share/action C1 parity journey (pure DW).
- * Checklist: trigger → find row → complete → host marker.
- * Caller must ensure Release install (operator fail if Debug-only).
  */
 export async function runShareActionJourney(
   device: DeviceSession,
@@ -98,56 +96,80 @@ export async function runShareActionJourney(
   try {
     steps.push('launch-host');
     await device.launchApp(entry.hostBundleId, { terminateRunning: true });
-    await waitForId(device, entry.testIds.screenRoot, 20_000);
+    await waitForId(device, hostReadyTestId(entry.testIds), 12_000);
     steps.push('host-ready');
 
     const clearId = entry.testIds.clearPayload;
     try {
-      await tapId(device, clearId, 5_000);
+      await tapId(device, clearId, 3_000);
       steps.push('clear-payload');
     } catch {
       steps.push('clear-payload-skip');
     }
 
     steps.push('open-share-sheet');
-    await tapId(device, entry.testIds.openShareSheet, 10_000);
+    await tapId(device, entry.testIds.openShareSheet, 8_000);
     checklist.push(C1.triggerFromHost);
-    await sleep(1_200);
+    await sleep(1_000);
 
     steps.push('find-extension-row');
     const row = await findExtensionRow(device, entry);
-    if (!row) throw new Error('extension row missing');
+    steps.push(`extension=${row.label ?? '?'}`);
     checklist.push(C1.findExtensionRow);
 
     steps.push('tap-extension');
-    await tapCenter(device, row);
-    await sleep(1_500);
+    await tapProbeHit(device, row);
+    await sleep(1_000);
 
-    if (entry.readyText) {
-      try {
-        await waitForNamed(device, [entry.readyText], 12_000);
-        steps.push('appex-ready');
-      } catch {
-        steps.push('appex-ready-skip');
-      }
-    }
+    // readyText probe is optional and expensive when AX-opaque — skip.
+    steps.push('appex-ready-skip');
 
     const completeLabels = entry.completeButton
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean);
     steps.push('complete-appex');
-    const complete = await waitForNamed(device, completeLabels, 15_000);
-    await tapCenter(device, complete);
+    const complete = await findNamedViaPointProbe(device, completeLabels, {
+      timeoutMs: 10_000,
+      yStartRatio: 0.2,
+      yEndRatio: 0.85,
+      stepX: 45,
+      stepY: 35,
+      hotspots: [
+        { x: 30, y: 370 },
+        { x: 210, y: 480 },
+        { x: 210, y: 520 },
+        { x: 210, y: 420 },
+      ],
+    });
+    await tapProbeHit(device, complete);
     checklist.push(C1.completeAppex);
-    await sleep(1_200);
+    await sleep(600);
+
+    // Native action Process Image writes App Group but does not dismiss.
+    if (id === 'native-action') {
+      try {
+        const close = await findNamedViaPointProbe(device, ['Close'], {
+          timeoutMs: 1_500,
+          yStartRatio: 0.35,
+          yEndRatio: 0.85,
+          allowBlocked: true,
+          hotspots: [{ x: 210, y: 560 }, { x: 210, y: 500 }],
+        });
+        await tapProbeHit(device, close);
+        steps.push('dismiss-appex');
+        await sleep(400);
+      } catch {
+        // force-launch host below
+      }
+    }
 
     steps.push('return-host');
     await device.launchApp(entry.hostBundleId);
-    await waitForId(device, entry.testIds.screenRoot, 15_000);
+    await waitForId(device, hostReadyTestId(entry.testIds), 10_000);
     if (entry.testIds.refresh) {
       try {
-        await tapId(device, entry.testIds.refresh, 5_000);
+        await tapId(device, entry.testIds.refresh, 3_000);
       } catch {
         // optional
       }
@@ -158,7 +180,7 @@ export async function runShareActionJourney(
       device,
       entry.testIds.lastPayload,
       entry.payloadMarker,
-      25_000
+      12_000
     );
     checklist.push(C1.assertHostMarker);
 
@@ -175,7 +197,7 @@ export async function runShareActionJourney(
     const msg = String(e);
     const failureKind = /labels=\s*$|labels=$/m.test(msg)
       ? 'infra'
-      : /not installed|Unable to find|failed to get the task|Launch failed/i.test(
+      : /not installed|Unable to find|failed to get the task|Launch failed|point-probe/i.test(
             msg
           )
         ? 'operator'

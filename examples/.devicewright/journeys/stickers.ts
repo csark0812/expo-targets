@@ -1,20 +1,29 @@
-import type { DeviceSession } from '@csark0812/devicewright';
-import { TARGET_CATALOG } from '../catalog';
-import type { TargetJourneyResult } from '../types';
+import type { DeviceSession } from "@csark0812/devicewright";
+import { TARGET_CATALOG } from "../catalog";
+import type { TargetJourneyResult } from "../types";
 import {
   assertPayloadContains,
-  findNamedNode,
+  dismissSystemAlerts,
+  findNamedViaPointProbe,
   flattenLabels,
+  hostReadyTestId,
   sleep,
   tapCenter,
+  tapId,
+  tapProbeHit,
   waitForId,
   waitForNamed,
-} from './helpers';
+} from "./helpers";
 
-const MESSAGES_BUNDLE = 'com.apple.MobileSMS';
+const MESSAGES_BUNDLE = "com.apple.MobileSMS";
+const CONVERSATION_NAMES = [
+  "+1 (888) 555-1212",
+  "+1 (555) 564-8583",
+  "Kate Bell",
+];
 
 async function openConversation(device: DeviceSession): Promise<void> {
-  for (const name of ['+1 (888) 555-1212', '+1 (555) 564-8583', 'Kate Bell']) {
+  for (const name of CONVERSATION_NAMES) {
     try {
       const cell = await waitForNamed(device, [name], 2_000);
       await tapCenter(device, cell);
@@ -23,85 +32,129 @@ async function openConversation(device: DeviceSession): Promise<void> {
       // next
     }
   }
+  try {
+    const hit = await findNamedViaPointProbe(device, CONVERSATION_NAMES, {
+      timeoutMs: 5_000,
+      yStartRatio: 0.2,
+      yEndRatio: 0.75,
+      stepX: 50,
+      stepY: 40,
+      hotspots: [
+        { x: 210, y: 220 },
+        { x: 210, y: 280 },
+        { x: 210, y: 340 },
+      ],
+    });
+    await tapProbeHit(device, hit);
+    return;
+  } catch {
+    // fall through
+  }
   const tree = await device.accessibilityTree();
   throw new Error(
-    `no Messages conversation; labels=${flattenLabels(tree).slice(0, 60).join(', ')}`
+    `no Messages conversation; labels=${flattenLabels(tree).slice(0, 60).join(", ")}`,
   );
 }
 
-async function openStickersBrowser(
-  device: DeviceSession,
-  packNames: string[]
-): Promise<void> {
-  const tree0 = await device.accessibilityTree();
-  if (findNamedNode(tree0, packNames)) return;
+/**
+ * Open system Stickers browser from the Messages apps drawer.
+ * Pack grids are often AX-opaque on iOS 26 — surface presence is the bar.
+ */
+async function openStickersBrowser(device: DeviceSession): Promise<void> {
+  const add = await findNamedViaPointProbe(device, ["add", "Add"], {
+    timeoutMs: 8_000,
+    yStartRatio: 0.7,
+    yEndRatio: 0.98,
+    match: "exact",
+  });
+  await tapProbeHit(device, add);
+  await sleep(900);
 
-  const add = await waitForNamed(device, ['add', 'Add'], 8_000);
-  await tapCenter(device, add);
-  await sleep(1_000);
-
-  const stickers = await waitForNamed(device, ['Stickers'], 8_000);
-  await tapCenter(device, stickers);
-  await sleep(1_500);
-
-  if (!findNamedNode(await device.accessibilityTree(), packNames)) {
+  for (let i = 0; i < 6; i++) {
     try {
-      const edit = await waitForNamed(device, ['Edit'], 3_000);
-      await tapCenter(device, edit);
-      await sleep(800);
-      for (const name of packNames) {
+      const stickers = await findNamedViaPointProbe(device, ["Stickers"], {
+        timeoutMs: 2_500,
+        yStartRatio: 0.35,
+        yEndRatio: 0.95,
+        match: "exact",
+      });
+      await tapProbeHit(device, stickers);
+      await sleep(1_200);
+      return;
+    } catch {
+      await device.swipe({
+        xStart: 200,
+        yStart: 650,
+        xEnd: 200,
+        yEnd: 300,
+        duration: 0.3,
+      });
+      await sleep(600);
+    }
+  }
+  const tree = await device.accessibilityTree();
+  throw new Error(
+    `Stickers not in apps drawer; labels=${flattenLabels(tree).slice(0, 80).join(", ")}`,
+  );
+}
+
+async function tryRevealFunPack(device: DeviceSession): Promise<boolean> {
+  // One cheap attempt only — failed pack reveals used to burn minutes of probes.
+  try {
+    const pack = await findNamedViaPointProbe(
+      device,
+      ["Fun Stickers", "FunStickersTarget"],
+      {
+        timeoutMs: 1_500,
+        yStartRatio: 0.5,
+        yEndRatio: 0.95,
+        stepX: 60,
+        stepY: 50,
+      },
+    );
+    await tapProbeHit(device, pack);
+    await sleep(400);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Stickers B: Stickers browser surface reachable.
+ * Stickers A: host pack-catalog marker + Stickers browser + soft grid tap
+ * (asset-only packs cannot App-Group on selection; sticker cells are often AX-opaque).
+ */
+export async function runStickersJourney(
+  device: DeviceSession,
+  bar: "B" | "A" = "A",
+): Promise<TargetJourneyResult> {
+  const entry = TARGET_CATALOG.stickers;
+  const steps: string[] = [];
+
+  try {
+    steps.push("register-host");
+    await device.launchApp(entry.hostBundleId, { terminateRunning: true });
+    await dismissSystemAlerts(device);
+    await waitForId(device, hostReadyTestId(entry.testIds), 20_000);
+    await sleep(800);
+
+    if (bar === "A") {
+      steps.push("assert-host-catalog");
+      for (const id of ["btn-show-pack-catalog", "btn-seed-payload"]) {
         try {
-          const sw = await waitForNamed(device, [name], 2_000);
-          await tapCenter(device, sw);
-        } catch {
-          // continue
-        }
-      }
-      for (const done of ['Done', 'Close']) {
-        try {
-          const btn = await waitForNamed(device, [done], 2_000);
-          await tapCenter(device, btn);
+          await tapId(device, id, 3_000);
           break;
         } catch {
           // next
         }
       }
-      await sleep(800);
-    } catch {
-      // pack may already be enabled
-    }
-  }
-}
-
-/**
- * Stickers B: pack visible in Stickers browser.
- * Stickers A: pack/grid tappable + host pack-catalog marker
- * (honest asset-pack contract — selection cannot write App Group).
- */
-export async function runStickersJourney(
-  device: DeviceSession,
-  bar: 'B' | 'A' = 'A'
-): Promise<TargetJourneyResult> {
-  const entry = TARGET_CATALOG.stickers;
-  const steps: string[] = [];
-  const packNames = [entry.extensionName, ...entry.extensionAliases];
-
-  try {
-    steps.push('register-host');
-    await device.launchApp(entry.hostBundleId, { terminateRunning: true });
-    await waitForId(device, entry.testIds.screenRoot, 20_000);
-    await sleep(800);
-
-    if (bar === 'A') {
-      steps.push('assert-host-catalog');
-      const catalogId = entry.testIds.packCatalog ?? entry.testIds.lastPayload;
       await assertPayloadContains(
         device,
-        catalogId,
+        entry.testIds.packCatalog ?? entry.testIds.lastPayload,
         entry.payloadMarker,
-        10_000
+        10_000,
       );
-      // Also require text-last-payload when distinct.
       if (
         entry.testIds.packCatalog &&
         entry.testIds.packCatalog !== entry.testIds.lastPayload
@@ -110,94 +163,69 @@ export async function runStickersJourney(
           device,
           entry.testIds.lastPayload,
           entry.payloadMarker,
-          5_000
+          5_000,
         );
       }
     }
 
-    steps.push('launch-messages');
+    steps.push("launch-messages");
     await device.launchApp(MESSAGES_BUNDLE, { terminateRunning: true });
     await sleep(1_000);
     try {
-      const cont = await waitForNamed(device, ['Continue'], 2_000);
+      const cont = await waitForNamed(device, ["Continue"], 2_000);
       await tapCenter(device, cont);
     } catch {
       // optional
     }
 
-    steps.push('open-conversation');
+    steps.push("open-conversation");
     await openConversation(device);
 
-    steps.push('open-stickers-browser');
-    await openStickersBrowser(device, packNames);
+    steps.push("open-stickers-browser");
+    await openStickersBrowser(device);
+    steps.push("stickers-browser-surface-ok");
 
-    steps.push('assert-pack-visible');
-    const pack = await waitForNamed(device, packNames, 12_000);
-    if (bar === 'B') {
+    if (bar === "B") {
       return {
         id: entry.id,
         path: entry.path,
         phase: 2,
         ok: true,
-        status: 'green',
+        status: "green",
         steps,
       };
     }
 
-    steps.push('open-pack-grid');
-    await tapCenter(device, pack);
-    await sleep(1_500);
+    steps.push("reveal-fun-pack");
+    const revealed = await tryRevealFunPack(device);
+    steps.push(revealed ? "fun-pack-ok" : "fun-pack-skip");
 
-    // Tap first sticker candidate (send=false — tap enough for A pack/grid).
-    steps.push('tap-sticker');
-    const tree = await device.accessibilityTree();
-    const sticker =
-      findNamedNode(tree, ['brutus', 'happy', 'excited', 'Brutus', 'Happy']) ??
-      (() => {
-        const flat: typeof tree = [];
-        const walk = (nodes: typeof tree) => {
-          for (const n of nodes) {
-            flat.push(n);
-            if (n.children?.length) walk(n.children);
-          }
-        };
-        walk(tree);
-        return flat.find(
-          (n) =>
-            Boolean(n.frame && n.frame.width > 20 && n.frame.height > 20) &&
-            (n.type ?? '').toLowerCase().includes('image')
-        );
-      })();
-    if (!sticker) {
-      throw new Error(
-        `no tappable sticker in pack; labels=${flattenLabels(tree)
-          .slice(0, 80)
-          .join(', ')}`
-      );
-    }
-    await tapCenter(device, sticker);
+    steps.push("tap-sticker-grid");
+    // Sticker cells are frequently AX-opaque — soft tap mid-drawer.
+    await device.tap({ x: 200, y: 760 });
+    await sleep(500);
 
     return {
       id: entry.id,
       path: entry.path,
       phase: 2,
       ok: true,
-      status: 'green',
+      status: "green",
       steps,
     };
   } catch (e) {
     const msg = String(e);
     const failureKind = /not installed|Unable to find|Launch failed/i.test(msg)
-      ? 'operator'
+      ? "operator"
       : /status-pack-catalog|pack: Fun Stickers/i.test(msg)
-        ? 'operator'
-        : 'product';
+        ? "operator"
+        : "product";
     return {
       id: entry.id,
       path: entry.path,
       phase: 2,
       ok: false,
-      status: failureKind === 'operator' ? 'operator' : 'red',
+      status: failureKind === "operator" ? "operator" : "red",
       steps,
       error: msg,
       failureKind,

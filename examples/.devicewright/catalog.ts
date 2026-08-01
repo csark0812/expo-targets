@@ -13,6 +13,8 @@ export type TargetCatalogEntry = {
   payloadMarker: string;
   readyText?: string;
   completeButton: string;
+  /** Expand share-sheet action list before looking for the row. */
+  needsViewMore?: boolean;
   /** Host testIDs expected for C1 / A bars. */
   testIds: {
     screenRoot: string;
@@ -55,6 +57,7 @@ export const TARGET_CATALOG: Record<string, TargetCatalogEntry> = {
     payloadMarker: 'grayscale',
     readyText: 'Images: 1',
     completeButton: 'Process',
+    needsViewMore: true,
     testIds: { ...SHARE_TEST_IDS },
   },
   'native-share': {
@@ -79,6 +82,7 @@ export const TARGET_CATALOG: Record<string, TargetCatalogEntry> = {
     payloadMarker: 'Original',
     readyText: 'Original',
     completeButton: 'Process Image',
+    needsViewMore: true,
     testIds: { ...SHARE_TEST_IDS },
   },
   messages: {
@@ -87,7 +91,7 @@ export const TARGET_CATALOG: Record<string, TargetCatalogEntry> = {
     hostBundleId: 'com.expotargets.example.messages',
     hostDisplayName: 'ET Messages',
     extensionName: 'Example Messages',
-    extensionAliases: ['ET Messages', 'Messages'],
+    extensionAliases: ['ExampleMessagesTarget', 'ET Messages'],
     payloadMarker: 'Hello from expo-targets',
     completeButton: 'Send template',
     testIds: {
@@ -103,7 +107,7 @@ export const TARGET_CATALOG: Record<string, TargetCatalogEntry> = {
     hostBundleId: 'com.expotargets.example.stickers',
     hostDisplayName: 'ET Stickers',
     extensionName: 'Fun Stickers',
-    extensionAliases: ['Stickers', 'Fun Stickers'],
+    extensionAliases: ['FunStickersTarget', 'Fun Stickers'],
     /** Honest pack catalog marker (asset-only packs cannot App-Group on selection). */
     payloadMarker: 'pack: Fun Stickers (brutus, happy, excited)',
     completeButton: '',
@@ -157,9 +161,7 @@ export const BLOCKED_SHEET_LABELS = new Set([
   'Assign to Contact',
   'Add to Shared Album',
   'Edit Actions',
-  'More',
-  'View More',
-  'View Less',
+  // Note: View More / More are expanded intentionally via point-probe — not blocked there.
   'Apps',
   'Close',
   'Cancel',
