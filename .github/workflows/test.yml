@@ -18,6 +18,8 @@ jobs:
           bun-version: latest
 
       - run: bun install --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
       - run: bunx biome ci . --error-on-warnings
       - run: bun run typecheck
       - run: bun run test:unit
@@ -33,6 +35,8 @@ jobs:
         with:
           bun-version: latest
       - run: bun install --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
       - run: bun run test:integration
 
   security:
@@ -43,6 +47,8 @@ jobs:
         with:
           bun-version: latest
       - run: bun install --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
       - name: Dependency audit
         run: bun audit
       - name: Gitleaks
