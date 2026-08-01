@@ -64,11 +64,16 @@ export async function findNamedViaPointProbe(
   });
 }
 
+/**
+ * Tap a point-probe hit at describePoint coords — never AXFrame center.
+ * On iOS 26 share sheets AXFrame is often shifted (Example Action frame
+ * overlaps Save to Files); clamping into the frame opens the wrong row.
+ */
 export async function tapProbeHit(
   device: DeviceSession,
-  hit: Pick<PointProbeHit, 'probeX' | 'probeY'>
+  hit: PointProbeHit | Pick<PointProbeHit, 'probeX' | 'probeY'>
 ): Promise<void> {
-  await tapProbeHitSuite(device, hit);
+  return tapProbeHitSuite(device, hit);
 }
 
 export async function waitForNamed(
@@ -124,7 +129,7 @@ export function hostReadyTestId(testIds: {
   );
 }
 
-/** Dismiss common iOS “Open in …?” sheets — short probe budget. */
+/** Dismiss common iOS “Open in …?” / permission alerts — short probe budget. */
 export async function dismissSystemAlerts(
   device: DeviceSession,
   timeoutMs = 1_500
@@ -139,7 +144,9 @@ export async function dismissSystemAlerts(
       stepY: 50,
       allowBlocked: true,
       match: 'exact',
+      // “Open in …?” Cancel sits left-of-center (~136,496 on Air).
       hotspots: [
+        { x: 136, y: 496 },
         { x: 80, y: 490 },
         { x: 120, y: 520 },
         { x: 210, y: 500 },

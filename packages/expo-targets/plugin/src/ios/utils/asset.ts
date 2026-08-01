@@ -19,16 +19,21 @@ interface ColorComponents {
 
 /**
  * Normalize a color string to RGBA components for iOS.
+ *
+ * `@react-native/normalize-colors` returns an unsigned 0xRRGGBBAA int.
+ * (Older docs said 0xAARRGGBB — that layout produced transparent TextPrimary /
+ * AccentColor and blank WidgetKit tiles on iOS 17+.)
  */
 export function normalizeColorToComponents(color: string): ColorComponents {
   const normalized = normalizeColor(color);
   if (normalized === null || normalized === undefined) {
     throw new Error(`Invalid color: ${color}`);
   }
-  const r = ((normalized >> 16) & 0xff) / 255;
-  const g = ((normalized >> 8) & 0xff) / 255;
-  const b = (normalized & 0xff) / 255;
-  const a = ((normalized >> 24) & 0xff) / 255;
+  const n = normalized >>> 0;
+  const r = ((n >>> 24) & 0xff) / 255;
+  const g = ((n >>> 16) & 0xff) / 255;
+  const b = ((n >>> 8) & 0xff) / 255;
+  const a = (n & 0xff) / 255;
   return {
     red: r.toFixed(3),
     green: g.toFixed(3),

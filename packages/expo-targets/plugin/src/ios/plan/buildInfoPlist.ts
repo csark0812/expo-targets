@@ -21,6 +21,8 @@ export interface TargetInfoPlistOptions {
   mainAppSchemes?: string[];
   targetsConfig?: any[];
   targetIcon?: string;
+  /** Human-facing extension name (spaces OK). Written into CFBundleDisplayName. */
+  displayName?: string;
   intentsConfig?: {
     intentsSupported?: string[];
     intentsRestrictedWhileLocked?: string[];
@@ -338,6 +340,11 @@ export function getTargetInfoPlistForType(
   }
 
   const basePlist = deepMerge(createBasePlist(), characteristics.basePlist);
+  // Literal displayName wins over $(PRODUCT_NAME). INFOPLIST_KEY_* does not
+  // override an existing Info.plist key, so write it here.
+  if (options.displayName?.trim()) {
+    basePlist.CFBundleDisplayName = options.displayName.trim();
+  }
   const context: PlistContext = { basePlist, characteristics, type, options };
 
   applyExtensionPointIdentifier(context);

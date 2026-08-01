@@ -77,6 +77,13 @@ describe('getTargetInfoPlistForType (characterization)', () => {
     );
   });
 
+  test('displayName becomes CFBundleDisplayName (not PRODUCT_NAME)', () => {
+    const parsed = plist.parse(
+      getTargetInfoPlistForType('stickers', { displayName: 'Fun Stickers' })
+    ) as { CFBundleDisplayName?: string };
+    expect(parsed.CFBundleDisplayName).toBe('Fun Stickers');
+  });
+
   test('share extension with React Native entry uses ReactNativeViewController', () => {
     const parsed = plist.parse(
       getTargetInfoPlistForType('share', { entry: './index.tsx' })

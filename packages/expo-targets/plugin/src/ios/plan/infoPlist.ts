@@ -56,6 +56,7 @@ function buildInfoPlistContents({
     mainAppSchemes: mainAppSchemes.length > 0 ? mainAppSchemes : undefined,
     targetsConfig,
     targetIcon: props.targetIcon,
+    displayName: props.displayName,
     intentsConfig: props.intents,
   });
 }

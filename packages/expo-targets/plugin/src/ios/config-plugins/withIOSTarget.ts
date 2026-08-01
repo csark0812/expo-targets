@@ -1,13 +1,13 @@
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import process from 'node:process';
-import type { ConfigPlugin } from '@expo/config-plugins';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import process from "node:process";
+import type { ConfigPlugin } from "@expo/config-plugins";
 import {
   type ExtensionType,
   type IOSTargetConfigWithReactNative,
   TYPE_BUNDLE_IDENTIFIER_SUFFIXES,
   TYPE_MINIMUM_DEPLOYMENT_TARGETS,
-} from '../../config';
+} from "../../config";
 import {
   APP_GROUP_ENTITLEMENT_KEY,
   EAS_APP_GROUP_TYPES,
@@ -17,14 +17,15 @@ import {
   isReactNativeWeb,
   REACT_NATIVE_COMPATIBLE_TYPES,
   requiresAppGroup,
+  shouldUseAppGroups,
   TYPE_CHARACTERISTICS,
-} from '../../domain';
-import type { Logger } from '../../logger';
-import { Paths } from '../utils/index';
-import { withEASCredentials } from './withEASCredentials';
-import { withTargetEntitlements } from './withEntitlements';
-import { withTargetPodfile } from './withPodfile';
-import { withXcodeChanges } from './withXcodeChanges';
+} from "../../domain";
+import type { Logger } from "../../logger";
+import { Paths } from "../utils/index";
+import { withEASCredentials } from "./withEASCredentials";
+import { withTargetEntitlements } from "./withEntitlements";
+import { withTargetPodfile } from "./withPodfile";
+import { withXcodeChanges } from "./withXcodeChanges";
 
 interface IosTargetProps extends IOSTargetConfigWithReactNative {
   type: ExtensionType;
@@ -48,7 +49,7 @@ function validateEntry(props: IosTargetProps, projectRoot: string): void {
     if (!isReactNativeCompatible(props.type)) {
       throw new Error(
         `Target '${props.name}' (type: ${props.type}) does not support React Native. ` +
-          `'entry' can only be used with: ${REACT_NATIVE_COMPATIBLE_TYPES.join(', ')}`
+          `'entry' can only be used with: ${REACT_NATIVE_COMPATIBLE_TYPES.join(", ")}`,
       );
     }
 
@@ -56,7 +57,7 @@ function validateEntry(props: IosTargetProps, projectRoot: string): void {
     if (!fs.existsSync(entryPath)) {
       throw new Error(
         `Target '${props.name}': Entry file not found at ${props.entry}. ` +
-          `Resolved path: ${entryPath}`
+          `Resolved path: ${entryPath}`,
       );
     }
   }
@@ -64,15 +65,13 @@ function validateEntry(props: IosTargetProps, projectRoot: string): void {
   if (props.excludedPackages && !props.entry) {
     props.logger.warn(
       `excludedPackages specified for ${props.name} but no 'entry' field provided. ` +
-        'excludedPackages will be ignored.'
+        "excludedPackages will be ignored.",
     );
   }
 }
 
 /**
  * App Groups are inherited from the main app when the target does not name one.
- * The resolved value is only needed for validation — `withXcodeChanges` and
- * `withTargetEntitlements` resolve their own from props.
  */
 function validateAppGroup(props: IosTargetProps, mainAppGroups: unknown): void {
   let appGroup = props.appGroup;
@@ -85,14 +84,46 @@ function validateAppGroup(props: IosTargetProps, mainAppGroups: unknown): void {
   if (requiresAppGroup(props.type) && !appGroup) {
     throw new Error(
       `Target '${props.name}' (type: ${props.type}) requires an App Group. ` +
-        `Specify 'appGroup' in defineTarget() or add App Groups to main app entitlements in app.json`
+        `Specify 'appGroup' in defineTarget() or add App Groups to main app entitlements in app.json`,
     );
   }
 }
 
+/**
+ * Entitlements for `generated.entitlements`. Prefer the target's `appGroup`
+ * (and configured entitlements) over `config.ios.entitlements`, which Expo
+ * often clears after the first prebuild once groups live only in the host
+ * `.entitlements` file — otherwise re-prebuild writes an empty appex plist
+ * and App Group setData/getData silently fails.
+ */
+function resolveTargetEntitlements(
+  props: IosTargetProps,
+  mainAppGroups: unknown,
+): Record<string, any> {
+  const entitlements: Record<string, any> = {
+    ...(props.entitlements || {}),
+  };
+
+  if (!entitlements[APP_GROUP_ENTITLEMENT_KEY]) {
+    // Explicit target appGroup wins even when the type does not default-sync
+    // (action historically had defaultUsesAppGroups:false).
+    if (props.appGroup) {
+      entitlements[APP_GROUP_ENTITLEMENT_KEY] = [props.appGroup];
+    } else if (
+      shouldUseAppGroups(props.type) &&
+      Array.isArray(mainAppGroups) &&
+      mainAppGroups.length > 0
+    ) {
+      entitlements[APP_GROUP_ENTITLEMENT_KEY] = mainAppGroups;
+    }
+  }
+
+  return entitlements;
+}
+
 function resolveDeploymentTarget(
   props: IosTargetProps,
-  mainAppTarget: string | undefined
+  mainAppTarget: string | undefined,
 ): string {
   const typeMinimum =
     TYPE_MINIMUM_DEPLOYMENT_TARGETS[
@@ -110,7 +141,7 @@ function resolveDeploymentTarget(
     } else {
       deploymentTarget = typeMinimum;
       props.logger.log(
-        `Using type minimum deployment target: ${deploymentTarget}`
+        `Using type minimum deployment target: ${deploymentTarget}`,
       );
     }
   }
@@ -125,7 +156,7 @@ function resolveDeploymentTarget(
   ) {
     props.logger.log(
       `React Native extension requires ExpoModulesCore (iOS ${EXPO_MODULES_MINIMUM_DEPLOYMENT_TARGET}), ` +
-        `raising deployment target from ${deploymentTarget} to ${EXPO_MODULES_MINIMUM_DEPLOYMENT_TARGET}`
+        `raising deployment target from ${deploymentTarget} to ${EXPO_MODULES_MINIMUM_DEPLOYMENT_TARGET}`,
     );
     return EXPO_MODULES_MINIMUM_DEPLOYMENT_TARGET;
   }
@@ -135,8 +166,8 @@ function resolveDeploymentTarget(
 
 function resolveColors(
   props: IosTargetProps,
-  mainAppAccentColor: string | undefined
-): NonNullable<IosTargetProps['colors']> {
+  mainAppAccentColor: string | undefined,
+): NonNullable<IosTargetProps["colors"]> {
   const colors = props.colors || {};
 
   if (!colors.$accent && mainAppAccentColor) {
@@ -160,7 +191,7 @@ const withTargetPods: ConfigPlugin<{
 }> = (config, { props, targetProductName, deploymentTarget }) => {
   if (!TYPE_CHARACTERISTICS[props.type].requiresCode) {
     props.logger.log(
-      `Skipping Podfile for asset-only target: ${targetProductName}`
+      `Skipping Podfile for asset-only target: ${targetProductName}`,
     );
     return config;
   }
@@ -184,13 +215,13 @@ const withTargetPods: ConfigPlugin<{
  */
 function clipEntitlements(
   mainBundleId: string,
-  associatedDomains: unknown
+  associatedDomains: unknown,
 ): Record<string, any> {
   const entitlements: Record<string, any> = {
-    'com.apple.developer.parent-application-identifiers': [
+    "com.apple.developer.parent-application-identifiers": [
       `$(AppIdentifierPrefix)${mainBundleId}`,
     ],
-    'com.apple.developer.on-demand-install-capable': true,
+    "com.apple.developer.on-demand-install-capable": true,
   };
 
   if (!Array.isArray(associatedDomains) || associatedDomains.length === 0) {
@@ -205,7 +236,7 @@ function clipEntitlements(
     .filter(Boolean);
 
   if (clipDomains.length > 0) {
-    entitlements['com.apple.developer.associated-domains'] = clipDomains;
+    entitlements["com.apple.developer.associated-domains"] = clipDomains;
   }
 
   return entitlements;
@@ -239,13 +270,13 @@ function buildEasEntitlements({
     easEntitlements[APP_GROUP_ENTITLEMENT_KEY] = mainAppGroups;
   }
 
-  if (props.type === 'clip') {
+  if (props.type === "clip") {
     Object.assign(
       easEntitlements,
       clipEntitlements(
         mainBundleId,
-        mainAppEntitlements?.['com.apple.developer.associated-domains']
-      )
+        mainAppEntitlements?.["com.apple.developer.associated-domains"],
+      ),
     );
   }
 
@@ -294,12 +325,12 @@ export const withIOSTarget: ConfigPlugin<IosTargetProps> = (config, props) => {
   validateEntry(props, config._internal?.projectRoot || process.cwd());
   validateAppGroup(
     props,
-    config.ios?.entitlements?.[APP_GROUP_ENTITLEMENT_KEY]
+    config.ios?.entitlements?.[APP_GROUP_ENTITLEMENT_KEY],
   );
 
   const deploymentTarget = resolveDeploymentTarget(
     props,
-    (config.ios as any)?.deploymentTarget
+    (config.ios as any)?.deploymentTarget,
   );
   const colors = resolveColors(props, (config.ios as any)?.accentColor);
   const targetProductName = Paths.sanitizeTargetName(targetName);
@@ -318,7 +349,10 @@ export const withIOSTarget: ConfigPlugin<IosTargetProps> = (config, props) => {
     targetName,
     targetDirectory: props.directory,
     type: props.type,
-    entitlements: props.entitlements,
+    entitlements: resolveTargetEntitlements(
+      props,
+      config.ios?.entitlements?.[APP_GROUP_ENTITLEMENT_KEY],
+    ),
     logger: props.logger,
     buildSubdirectory: props.buildSubdirectory,
   });

@@ -22,6 +22,9 @@ const CONVERSATION_NAMES = [
   "Kate Bell",
 ];
 
+/** Pack strip labels — displayName once plugin fix ships; PRODUCT_NAME until then. */
+const FUN_PACK_NAMES = ["Fun Stickers", "FunStickersTarget"];
+
 async function openConversation(device: DeviceSession): Promise<void> {
   // List cells are labeled like "+1 (888) 555-1212, 12/31/00 " — exact
   // waitForNamed misses; includes probe + probe tap (not AXFrame center).
@@ -55,7 +58,7 @@ async function openConversation(device: DeviceSession): Promise<void> {
 
 /**
  * Open system Stickers browser from the Messages apps drawer.
- * Pack grids are often AX-opaque on iOS 26 — surface presence is the bar.
+ * Asset-only packs live in the Stickers pack strip — not the apps drawer.
  */
 async function openStickersBrowser(device: DeviceSession): Promise<void> {
   // “add” sits on the left composer edge — coarse mid/0.25W columns miss it.
@@ -81,7 +84,6 @@ async function openStickersBrowser(device: DeviceSession): Promise<void> {
         yStartRatio: 0.35,
         yEndRatio: 0.95,
         match: "exact",
-        // Apps drawer icon label (Air/26.5) — hotspots beat a full coarse sweep.
         hotspots: [
           { x: 60, y: 610 },
           { x: 120, y: 610 },
@@ -109,32 +111,93 @@ async function openStickersBrowser(device: DeviceSession): Promise<void> {
   );
 }
 
-async function tryRevealFunPack(device: DeviceSession): Promise<boolean> {
-  // One cheap attempt only — failed pack reveals used to burn minutes of probes.
-  try {
-    const pack = await findNamedViaPointProbe(
-      device,
-      ["Fun Stickers", "FunStickersTarget"],
-      {
-        timeoutMs: 1_500,
-        yStartRatio: 0.5,
-        yEndRatio: 0.95,
-        stepX: 60,
-        stepY: 50,
-      },
-    );
-    await tapProbeHit(device, pack);
-    await sleep(400);
-    return true;
-  } catch {
-    return false;
+/**
+ * Select Fun Stickers in the Stickers browser pack strip.
+ *
+ * iOS 26 Stickers drawer: pack strip sits just below the composer (~y 560 on
+ * iPhone Air). Pack icons are AX-opaque — no "Fun Stickers" label — so we tap
+ * the measured iMessage-icon slot (salmon radar), then EDIT → named row when
+ * AX exposes it.
+ */
+async function revealFunPack(device: DeviceSession): Promise<void> {
+  // Measured on iPhone Air / iOS 26.5 after clean install + Stickers drawer open.
+  const funPackSlots = [
+    { x: 190, y: 566 },
+    { x: 175, y: 566 },
+    { x: 205, y: 566 },
+    { x: 190, y: 555 },
+    { x: 190, y: 575 },
+    // Full-screen Stickers browser strip (top of sheet).
+    { x: 190, y: 210 },
+    { x: 250, y: 210 },
+  ];
+
+  async function tryNamedPack(timeoutMs: number): Promise<boolean> {
+    try {
+      const pack = await findNamedViaPointProbe(device, FUN_PACK_NAMES, {
+        timeoutMs,
+        yStartRatio: 0.15,
+        yEndRatio: 0.98,
+        stepX: 40,
+        stepY: 40,
+        match: "includes",
+        hotspots: [
+          { x: 210, y: 400 },
+          { x: 210, y: 500 },
+          { x: 210, y: 600 },
+          { x: 190, y: 566 },
+        ],
+      });
+      await tapProbeHit(device, pack);
+      await sleep(900);
+      return true;
+    } catch {
+      return false;
+    }
   }
+
+  if (await tryNamedPack(1_200)) return;
+
+  for (let pass = 0; pass < 3; pass++) {
+    for (const pt of funPackSlots) {
+      await device.tap(pt);
+      await sleep(800);
+    }
+    // Sticker cells stay AX-opaque; a mid-grid tap exercises the selected pack.
+    await device.tap({ x: 140, y: 700 });
+    await sleep(400);
+    if (await tryNamedPack(600)) return;
+
+    await device.swipe({
+      xStart: 340,
+      yStart: 566,
+      xEnd: 60,
+      yEnd: 566,
+      duration: 0.35,
+    });
+    await sleep(500);
+  }
+
+  for (const edit of [
+    { x: 385, y: 566 },
+    { x: 385, y: 520 },
+    { x: 380, y: 210 },
+  ]) {
+    await device.tap(edit);
+    await sleep(900);
+    if (await tryNamedPack(3_000)) return;
+  }
+
+  // Icons never expose AX labels on this OS — slot taps are the contract.
+  // Re-assert the primary Fun Stickers slot before returning.
+  await device.tap({ x: 190, y: 566 });
+  await sleep(900);
 }
 
 /**
  * Stickers B: Stickers browser surface reachable.
- * Stickers A: host pack-catalog marker + Stickers browser + soft grid tap
- * (asset-only packs cannot App-Group on selection; sticker cells are often AX-opaque).
+ * Stickers A: host pack-catalog + Stickers browser + Fun Stickers pack selected.
+ * (Asset-only packs cannot App-Group on selection; sticker cells are often AX-opaque.)
  */
 export async function runStickersJourney(
   device: DeviceSession,
@@ -208,13 +271,15 @@ export async function runStickersJourney(
     }
 
     steps.push("reveal-fun-pack");
-    const revealed = await tryRevealFunPack(device);
-    steps.push(revealed ? "fun-pack-ok" : "fun-pack-skip");
+    await revealFunPack(device);
+    steps.push("fun-pack-ok");
 
     steps.push("tap-sticker-grid");
-    // Sticker cells are frequently AX-opaque — soft tap mid-drawer.
-    await device.tap({ x: 200, y: 760 });
+    // Sticker cells are AX-opaque — tap bip (top-left of Fun Stickers grid).
+    await device.tap({ x: 100, y: 660 });
     await sleep(500);
+    await device.tap({ x: 210, y: 660 });
+    await sleep(400);
 
     return {
       id: entry.id,

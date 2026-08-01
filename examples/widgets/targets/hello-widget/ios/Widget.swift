@@ -45,21 +45,43 @@ struct HelloWidget: Widget {
 struct HelloWidgetView: View {
     var entry: Provider.Entry
 
+    private var background: Color {
+        Color("BackgroundColor", bundle: .main)
+    }
+
+    private var accent: Color {
+        Color("AccentColor", bundle: .main)
+    }
+
+    private var textPrimary: Color {
+        Color("TextPrimary", bundle: .main)
+    }
+
+    @ViewBuilder
     var body: some View {
-        ZStack {
-            Color("BackgroundColor")
-            VStack(spacing: 12) {
-                Image(systemName: "star.fill")
-                    .font(.system(size: 32))
-                    .foregroundColor(Color("AccentColor"))
-                Text(entry.message)
-                    .font(.body)
-                    .fontWeight(.semibold)
-                    .foregroundColor(Color("TextPrimary"))
-                    .multilineTextAlignment(.center)
-                    .lineLimit(3)
+        // iOS 17+: without containerBackground, WidgetKit often paints a blank white tile.
+        if #available(iOS 17.0, *) {
+            content.containerBackground(for: .widget) {
+                background
             }
-            .padding()
+        } else {
+            content.background(background)
         }
+    }
+
+    private var content: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "star.fill")
+                .font(.system(size: 32))
+                .foregroundColor(accent)
+            Text(entry.message)
+                .font(.body)
+                .fontWeight(.semibold)
+                .foregroundColor(textPrimary)
+                .multilineTextAlignment(.center)
+                .lineLimit(3)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

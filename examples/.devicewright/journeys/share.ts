@@ -1,13 +1,14 @@
-import type { DeviceSession } from '@csark0812/devicewright';
+import type { DeviceSession } from "@csark0812/devicewright";
 import {
   BLOCKED_SHEET_LABELS,
   TARGET_CATALOG,
   type TargetCatalogEntry,
-} from '../catalog';
-import type { TargetJourneyResult } from '../types';
+} from "../catalog";
+import type { TargetJourneyResult } from "../types";
 import {
   assertPayloadContains,
   C1,
+  dismissSystemAlerts,
   findNamedViaPointProbe,
   findSheetRowProbe,
   hostReadyTestId,
@@ -15,10 +16,10 @@ import {
   tapId,
   tapProbeHit,
   waitForId,
-} from './helpers';
+} from "./helpers";
 
 async function dismissShareSheet(device: DeviceSession): Promise<void> {
-  for (const label of ['Close', 'Cancel']) {
+  for (const label of ["Close", "Cancel"]) {
     try {
       const hit = await findNamedViaPointProbe(device, [label], {
         timeoutMs: 2_000,
@@ -42,8 +43,8 @@ async function dismissShareSheet(device: DeviceSession): Promise<void> {
 async function findExtensionRow(
   device: DeviceSession,
   entry: TargetCatalogEntry,
-  timeoutMs = 15_000
-): Promise<{ probeX: number; probeY: number; label?: string }> {
+  timeoutMs = 15_000,
+) {
   const names = [
     entry.extensionName,
     entry.hostDisplayName,
@@ -51,23 +52,36 @@ async function findExtensionRow(
   ].filter(Boolean);
   // Drop only ultra-generic aliases that collide with system rows.
   const searchNames = [
-    ...new Set(names.filter((n) => n !== 'Share' && n !== 'Messages')),
+    ...new Set(names.filter((n) => n !== "Share" && n !== "Messages")),
   ];
   if (!searchNames.length) {
     searchNames.push(entry.extensionName);
   }
 
+  // Prefer expanded action-list Y before apps-row hotspots — idb describePoint
+  // at ~636 can ghost-match Example Action while the real row is ~539.
+  const listFirstHotspots = entry.needsViewMore
+    ? [
+        { x: 200, y: 560 },
+        { x: 200, y: 590 },
+        { x: 200, y: 620 },
+        { x: 200, y: 650 },
+        { x: 200, y: 700 },
+        { x: 200, y: 730 },
+        { x: 200, y: 760 },
+        { x: 100, y: 560 },
+        { x: 100, y: 730 },
+      ]
+    : undefined;
+
   const hit = await findSheetRowProbe(device, searchNames, {
     expandMore: Boolean(entry.needsViewMore),
-    match: 'exact',
+    match: "exact",
     blockedLabels: BLOCKED_SHEET_LABELS,
     probeTimeoutMs: timeoutMs,
+    ...(listFirstHotspots ? { hotspots: listFirstHotspots } : {}),
   });
-  return {
-    probeX: hit.probeX,
-    probeY: hit.probeY,
-    label: hit.node.label,
-  };
+  return hit;
 }
 
 /**
@@ -75,7 +89,7 @@ async function findExtensionRow(
  */
 export async function runShareActionJourney(
   device: DeviceSession,
-  id: keyof typeof TARGET_CATALOG
+  id: keyof typeof TARGET_CATALOG,
 ): Promise<TargetJourneyResult> {
   const entry = TARGET_CATALOG[id];
   if (!entry?.testIds.openShareSheet) {
@@ -84,64 +98,68 @@ export async function runShareActionJourney(
       path: entry?.path ?? id,
       phase: 1,
       ok: false,
-      status: 'red',
+      status: "red",
       steps: [],
       error: `no share/action catalog for ${id}`,
-      failureKind: 'product',
+      failureKind: "product",
     };
   }
 
   const steps: string[] = [];
   const checklist: string[] = [];
   try {
-    steps.push('launch-host');
+    steps.push("launch-host");
     await device.launchApp(entry.hostBundleId, { terminateRunning: true });
+    // Expo run:ios / prior deep-links leave “Open in ET Share?” over the host.
+    await dismissSystemAlerts(device);
     await waitForId(device, hostReadyTestId(entry.testIds), 12_000);
-    steps.push('host-ready');
+    steps.push("host-ready");
 
     const clearId = entry.testIds.clearPayload;
     try {
       await tapId(device, clearId, 3_000);
-      steps.push('clear-payload');
+      steps.push("clear-payload");
     } catch {
-      steps.push('clear-payload-skip');
+      steps.push("clear-payload-skip");
     }
 
-    steps.push('open-share-sheet');
+    steps.push("open-share-sheet");
     await tapId(device, entry.testIds.openShareSheet, 8_000);
     checklist.push(C1.triggerFromHost);
     await sleep(1_000);
 
-    steps.push('find-extension-row');
+    steps.push("find-extension-row");
     const row = await findExtensionRow(device, entry);
-    steps.push(`extension=${row.label ?? '?'}`);
+    steps.push(`extension=${row.node.label ?? "?"}`);
     checklist.push(C1.findExtensionRow);
 
-    steps.push('tap-extension');
+    steps.push("tap-extension");
     await tapProbeHit(device, row);
-    await sleep(1_000);
+    await sleep(1_200);
 
     // readyText probe is optional and expensive when AX-opaque — skip.
-    steps.push('appex-ready-skip');
+    steps.push("appex-ready-skip");
 
     const completeLabels = entry.completeButton
-      .split(',')
+      .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
-    steps.push('complete-appex');
+    steps.push("complete-appex");
     const complete = await findNamedViaPointProbe(device, completeLabels, {
       timeoutMs: 10_000,
       yStartRatio: 0.15,
       yEndRatio: 0.85,
       stepX: 45,
       stepY: 35,
-      match: 'exact',
+      match: "exact",
       hotspots: [
         // Native share Save (Air/26.5) sits high-left; share Save ~mid.
         { x: 40, y: 220 },
         { x: 30, y: 370 },
+        // Action Process: tap-space ~y500 (AXFrame ~411 is shifted).
+        { x: 210, y: 500 },
+        { x: 210, y: 490 },
         { x: 210, y: 480 },
-        { x: 210, y: 520 },
         { x: 210, y: 420 },
       ],
     });
@@ -150,24 +168,27 @@ export async function runShareActionJourney(
     await sleep(600);
 
     // Native action Process Image writes App Group but does not dismiss.
-    if (id === 'native-action') {
+    if (id === "native-action") {
       try {
-        const close = await findNamedViaPointProbe(device, ['Close'], {
+        const close = await findNamedViaPointProbe(device, ["Close"], {
           timeoutMs: 1_500,
           yStartRatio: 0.35,
           yEndRatio: 0.85,
           allowBlocked: true,
-          hotspots: [{ x: 210, y: 560 }, { x: 210, y: 500 }],
+          hotspots: [
+            { x: 210, y: 560 },
+            { x: 210, y: 500 },
+          ],
         });
         await tapProbeHit(device, close);
-        steps.push('dismiss-appex');
+        steps.push("dismiss-appex");
         await sleep(400);
       } catch {
         // force-launch host below
       }
     }
 
-    steps.push('return-host');
+    steps.push("return-host");
     await device.launchApp(entry.hostBundleId);
     await waitForId(device, hostReadyTestId(entry.testIds), 10_000);
     if (entry.testIds.refresh) {
@@ -178,12 +199,12 @@ export async function runShareActionJourney(
       }
     }
 
-    steps.push('assert-payload');
+    steps.push("assert-payload");
     await assertPayloadContains(
       device,
       entry.testIds.lastPayload,
       entry.payloadMarker,
-      12_000
+      12_000,
     );
     checklist.push(C1.assertHostMarker);
 
@@ -192,21 +213,21 @@ export async function runShareActionJourney(
       path: entry.path,
       phase: 1,
       ok: true,
-      status: 'green',
+      status: "green",
       steps,
       checklist,
     };
   } catch (e) {
     const msg = String(e);
     const failureKind = /labels=\s*$|labels=$/m.test(msg)
-      ? 'infra'
+      ? "infra"
       : /not installed|Unable to find|failed to get the task|Launch failed|point-probe/i.test(
-            msg
+            msg,
           )
-        ? 'operator'
+        ? "operator"
         : /btn-open-share-sheet|screen-root/i.test(msg)
-          ? 'operator'
-          : 'product';
+          ? "operator"
+          : "product";
     try {
       await dismissShareSheet(device);
     } catch {
@@ -218,11 +239,11 @@ export async function runShareActionJourney(
       phase: 1,
       ok: false,
       status:
-        failureKind === 'operator'
-          ? 'operator'
-          : failureKind === 'infra'
-            ? 'infra'
-            : 'red',
+        failureKind === "operator"
+          ? "operator"
+          : failureKind === "infra"
+            ? "infra"
+            : "red",
       steps,
       checklist,
       error: msg,

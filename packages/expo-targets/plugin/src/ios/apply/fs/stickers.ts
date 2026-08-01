@@ -6,6 +6,12 @@ import type { StickerPackPlan, StickersPlan } from '../../plan/types';
 import * as Asset from '../../utils/asset';
 
 function applyStickerPack(pack: StickerPackPlan, logger: Logger): void {
+  // Replace the pack directory so renamed/removed stickers (e.g. brutus → bip)
+  // do not linger in Stickers.xcassets / the installed appex.
+  if (fs.existsSync(pack.stickerPackPath)) {
+    fs.rmSync(pack.stickerPackPath, { recursive: true, force: true });
+  }
+
   Asset.createStickerPack({
     stickerPackPath: pack.stickerPackPath,
     name: pack.name,

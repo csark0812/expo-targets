@@ -10,6 +10,7 @@ import type {
   ProjectPaths,
   StickerPackPlan,
   StickersPlan,
+  TargetIdentity,
 } from './types';
 
 const IMESSAGE_APP_ICON = 'iMessage App Icon.stickersiconset';

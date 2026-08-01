@@ -175,8 +175,9 @@ export function planBuildSettings({
     IPHONEOS_DEPLOYMENT_TARGET: identity.deploymentTarget,
   };
 
-  // Allows user-friendly names with spaces; overrides the Info.plist
-  // CFBundleDisplayName, which resolves to $(PRODUCT_NAME).
+  // Keep INFOPLIST_KEY as a belt-and-suspenders signal for Xcode UI; the
+  // generated Info.plist already sets CFBundleDisplayName when displayName is set
+  // (INFOPLIST_KEY alone does not override an existing Info.plist key).
   if (props.displayName) {
     settings.INFOPLIST_KEY_CFBundleDisplayName = `"${props.displayName}"`;
   }
