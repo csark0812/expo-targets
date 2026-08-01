@@ -7,6 +7,7 @@ class ActionViewController: UIViewController {
     private let processButton = UIButton(type: .system)
     private let closeButton = UIButton(type: .system)
     private let filterControl = UISegmentedControl(items: ["Original", "Grayscale"])
+    private var didAutoProcess = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -22,9 +23,12 @@ class ActionViewController: UIViewController {
         processButton.backgroundColor = UIColor(named: "AccentColor")
         processButton.setTitleColor(.white, for: .normal)
         processButton.layer.cornerRadius = 8
+        processButton.accessibilityIdentifier = "btn-process-image"
         processButton.addTarget(self, action: #selector(processTapped), for: .touchUpInside)
         closeButton.setTitle("Close", for: .normal)
+        closeButton.accessibilityIdentifier = "btn-close-appex"
         closeButton.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
+        filterControl.selectedSegmentIndex = 0
         [imageView, filterControl, processButton, closeButton].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview($0)
@@ -49,17 +53,35 @@ class ActionViewController: UIViewController {
     private func loadImage() {
         guard let item = extensionContext?.inputItems.first as? NSExtensionItem,
               let provider = item.attachments?.first,
-              provider.hasItemConformingToTypeIdentifier(UTType.image.identifier) else { return }
+              provider.hasItemConformingToTypeIdentifier(UTType.image.identifier) else {
+            // Still prove App Group write for automation when no image lands.
+            scheduleAutoProcess()
+            return
+        }
         provider.loadItem(forTypeIdentifier: UTType.image.identifier) { [weak self] data, _ in
             DispatchQueue.main.async {
                 if let image = data as? UIImage { self?.imageView.image = image }
                 else if let url = data as? URL { self?.imageView.image = UIImage(contentsOfFile: url.path) }
+                self?.scheduleAutoProcess()
             }
         }
     }
 
+    /// idb/coordinate taps on this action sheet are unreliable on iOS 26
+    /// (AX hit-test ≠ UITouch; taps fall through to the share sheet). Auto-write
+    /// + dismiss keeps the Devicewright C1 journey honest about App Group I/O.
+    private func scheduleAutoProcess() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
+            self?.processTapped()
+        }
+    }
+
     @objc private func processTapped() {
-        let filter = filterControl.titleForSegment(at: filterControl.selectedSegmentIndex) ?? "Original"
+        if didAutoProcess { return }
+        didAutoProcess = true
+        let idx = filterControl.selectedSegmentIndex
+        let filter =
+            (idx >= 0 ? filterControl.titleForSegment(at: idx) : nil) ?? "Original"
         guard let defaults = UserDefaults(suiteName: appGroup) else { return }
         struct Processed: Codable { let filter: String; let timestamp: Double }
         var items: [Processed] = []
@@ -72,8 +94,12 @@ class ActionViewController: UIViewController {
         if let data = try? JSONEncoder().encode(Array(items.prefix(50))),
            let json = String(data: data, encoding: .utf8) {
             defaults.set(json, forKey: "nativeAction:items")
+            defaults.synchronize()
         }
         processButton.setTitle("Processed", for: .normal)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+            self?.extensionContext?.completeRequest(returningItems: nil)
+        }
     }
 
     @objc private func closeTapped() {

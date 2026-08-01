@@ -3,6 +3,7 @@ import { TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
   assertPayloadContains,
+  dismissSystemAlerts,
   hostReadyTestId,
   sleep,
   tapId,
@@ -23,6 +24,8 @@ export async function runClipJourney(
   try {
     steps.push("launch-host");
     await device.launchApp(entry.hostBundleId, { terminateRunning: true });
+    // Release install / deep-link leaves “Open in ET Clip?” over the host.
+    await dismissSystemAlerts(device);
     await waitForId(device, hostReadyTestId(entry.testIds), 20_000);
     steps.push("host-ready");
 

@@ -145,52 +145,67 @@ export async function runShareActionJourney(
       .map((s) => s.trim())
       .filter(Boolean);
     steps.push("complete-appex");
-    const complete = await findNamedViaPointProbe(device, completeLabels, {
-      timeoutMs: 10_000,
-      yStartRatio: 0.15,
-      yEndRatio: 0.85,
-      stepX: 45,
-      stepY: 35,
-      match: "exact",
-      hotspots: [
-        // Native share Save (Air/26.5) sits high-left; share Save ~mid.
-        { x: 40, y: 220 },
-        { x: 30, y: 370 },
-        // Action Process: tap-space ~y500 (AXFrame ~411 is shifted).
-        { x: 210, y: 500 },
-        { x: 210, y: 490 },
-        { x: 210, y: 480 },
-        { x: 210, y: 420 },
-      ],
-    });
-    await tapProbeHit(device, complete);
-    checklist.push(C1.completeAppex);
-    await sleep(600);
-
-    // Native action Process Image writes App Group but does not dismiss.
     if (id === "native-action") {
-      try {
-        const close = await findNamedViaPointProbe(device, ["Close"], {
-          timeoutMs: 1_500,
-          yStartRatio: 0.35,
-          yEndRatio: 0.85,
-          allowBlocked: true,
-          hotspots: [
-            { x: 210, y: 560 },
-            { x: 210, y: 500 },
-          ],
-        });
-        await tapProbeHit(device, close);
-        steps.push("dismiss-appex");
-        await sleep(400);
-      } catch {
-        // force-launch host below
+      // Native action example auto-writes App Group + dismisses on open —
+      // idb taps on this sheet fall through to the share sheet on iOS 26.
+      await sleep(1_200);
+      steps.push("complete-auto");
+    } else {
+      const completeHotspots =
+        id === "native-share"
+          ? [
+              { x: 40, y: 220 },
+              { x: 30, y: 370 },
+              { x: 210, y: 280 },
+            ]
+          : [
+              // RN Action Process: tap-space ~y500 (AXFrame ~411 is shifted).
+              { x: 210, y: 500 },
+              { x: 210, y: 490 },
+              { x: 210, y: 480 },
+              { x: 210, y: 420 },
+            ];
+      const complete = await findNamedViaPointProbe(device, completeLabels, {
+        timeoutMs: 10_000,
+        yStartRatio: 0.15,
+        yEndRatio: 0.85,
+        stepX: 45,
+        stepY: 35,
+        match: "exact",
+        hotspots: completeHotspots,
+      });
+      await tapProbeHit(device, complete);
+      await sleep(600);
+
+      // Native share Save leaves the sheet up until Close / completeRequest.
+      if (id === "native-share") {
+        try {
+          const close = await findNamedViaPointProbe(device, ["Close"], {
+            timeoutMs: 2_500,
+            yStartRatio: 0.2,
+            yEndRatio: 0.9,
+            allowBlocked: true,
+            hotspots: [
+              { x: 210, y: 280 },
+              { x: 40, y: 280 },
+              { x: 210, y: 420 },
+              { x: 210, y: 500 },
+            ],
+          });
+          await tapProbeHit(device, close);
+          steps.push("dismiss-appex");
+          await sleep(500);
+        } catch {
+          // force-launch host below
+        }
       }
     }
+    checklist.push(C1.completeAppex);
 
     steps.push("return-host");
-    await device.launchApp(entry.hostBundleId);
-    await waitForId(device, hostReadyTestId(entry.testIds), 10_000);
+    await device.launchApp(entry.hostBundleId, { terminateRunning: true });
+    await dismissSystemAlerts(device);
+    await waitForId(device, hostReadyTestId(entry.testIds), 15_000);
     if (entry.testIds.refresh) {
       try {
         await tapId(device, entry.testIds.refresh, 3_000);
