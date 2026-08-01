@@ -278,7 +278,7 @@ export function createTarget<_T extends ExtensionType = ExtensionType>(
 
   // Register component with target injected as prop
   if (componentFunc) {
-    if (!(('entry' in config) && config.entry)) {
+    if (!('entry' in config && config.entry)) {
       throw new Error(
         `[expo-targets] createTarget("${targetName}", Component) requires an "entry" field in ` +
           'expo-target.config pointing at the RN entry file (relative to project root). ' +
