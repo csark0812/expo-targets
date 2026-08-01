@@ -8,11 +8,9 @@ import type { TargetJourneyResult } from '../types';
 import {
   assertPayloadContains,
   C1,
-  expandShareSheet,
-  findNamedNode,
   findNamedViaPointProbe,
+  findSheetRowProbe,
   hostReadyTestId,
-  isSheetChromeNode,
   sleep,
   tapId,
   tapProbeHit,
@@ -38,10 +36,8 @@ async function dismissShareSheet(device: DeviceSession): Promise<void> {
 }
 
 /**
- * Find share/action-extension cell. describe-all on iOS 26 often only exposes
- * Application + dismiss chrome — never match those. Prefer tree hits that
- * aren't chrome; fall back to describePoint grid. Expand View More if needed.
- * Always tap using probe coordinates (AXFrame ≠ tap space on the sheet).
+ * Find share/action-extension cell via published suite probe
+ * (`findSheetRowProbe` + probe taps). `needsViewMore` → expandMore true.
  */
 async function findExtensionRow(
   device: DeviceSession,
@@ -61,86 +57,17 @@ async function findExtensionRow(
     searchNames.push(entry.extensionName);
   }
 
-  const start = Date.now();
-  let expandRetries = 0;
-
-  const tryTree = async (): Promise<
-    { probeX: number; probeY: number; label?: string } | undefined
-  > => {
-    const tree = await device.accessibilityTree();
-    const hit = findNamedNode(tree, searchNames);
-    if (
-      hit &&
-      !BLOCKED_SHEET_LABELS.has(hit.label ?? '') &&
-      !isSheetChromeNode(hit) &&
-      hit.frame
-    ) {
-      return {
-        probeX: Math.round(hit.frame.x + hit.frame.width / 2),
-        probeY: Math.round(hit.frame.y + hit.frame.height / 2),
-        label: hit.label,
-      };
-    }
-    return undefined;
+  const hit = await findSheetRowProbe(device, searchNames, {
+    expandMore: Boolean(entry.needsViewMore),
+    match: 'exact',
+    blockedLabels: BLOCKED_SHEET_LABELS,
+    probeTimeoutMs: timeoutMs,
+  });
+  return {
+    probeX: hit.probeX,
+    probeY: hit.probeY,
+    label: hit.node.label,
   };
-
-  const tryProbe = async (
-    budgetMs: number
-  ): Promise<{ probeX: number; probeY: number; label?: string } | undefined> => {
-    if (budgetMs < 600) return undefined;
-    try {
-      const hit = await findNamedViaPointProbe(device, searchNames, {
-        timeoutMs: budgetMs,
-        yStartRatio: 0.5,
-        yEndRatio: 0.98,
-        stepX: 45,
-        stepY: 35,
-        match: 'includes',
-        // Apps row (~636) + expanded action list (~730) on iPhone Air / iOS 26.
-        hotspots: [
-          { x: 330, y: 636 },
-          { x: 250, y: 636 },
-          { x: 210, y: 636 },
-          { x: 200, y: 730 },
-          { x: 200, y: 760 },
-          { x: 100, y: 730 },
-        ],
-      });
-      return {
-        probeX: hit.probeX,
-        probeY: hit.probeY,
-        label: hit.node.label,
-      };
-    } catch {
-      return undefined;
-    }
-  };
-
-  // Action extensions live under View More — expand before the first probe.
-  if (entry.needsViewMore) {
-    await expandShareSheet(device);
-  }
-
-  while (Date.now() - start < timeoutMs) {
-    const fromTree = await tryTree();
-    if (fromTree) return fromTree;
-
-    const remaining = timeoutMs - (Date.now() - start);
-    const fromProbe = await tryProbe(Math.min(6_000, remaining));
-    if (fromProbe) return fromProbe;
-
-    // Only retry View More for action sheets — never expand on share rows.
-    if (entry.needsViewMore && expandRetries < 1) {
-      await expandShareSheet(device);
-      expandRetries += 1;
-      continue;
-    }
-    break;
-  }
-
-  throw new Error(
-    `point-probe timeout for [${searchNames.join(' | ')}] after sheet expand`
-  );
 }
 
 /**
