@@ -1,13 +1,14 @@
-import path from 'node:path';
-import { runMatrix, type SuiteMatrixRow } from '@csark0812/devicewright/suite';
-import { journeyFor, stubResult } from './journeys';
+import path from "node:path";
+import { runMatrix, type SuiteMatrixRow } from "@csark0812/devicewright/suite";
+import { ensureHostReleaseInstall } from "./ensure-install";
+import { journeyFor, stubResult } from "./journeys";
 import {
   REQUIRED_V1,
   type RequiredTargetRow,
   type TargetPhase,
-} from './required';
-import { exampleExists, repoRoot } from './root';
-import type { TargetJourneyResult } from './types';
+} from "./required";
+import { exampleExists, repoRoot } from "./root";
+import type { TargetJourneyResult } from "./types";
 
 export type RunTargetMatrixOptions = {
   ids?: string[];
@@ -17,6 +18,8 @@ export type RunTargetMatrixOptions = {
   artifactDir?: string;
   failFast?: boolean;
   idbPath?: string;
+  /** When true, Release-build + install missing hosts before each live journey. */
+  ensureInstall?: boolean;
 };
 
 function resolveRows(ids?: string[]): RequiredTargetRow[] {
@@ -25,13 +28,14 @@ function resolveRows(ids?: string[]): RequiredTargetRow[] {
   const rows = REQUIRED_V1.filter((r) => wanted.has(r.id));
   const missing = ids.filter((id) => !rows.some((r) => r.id === id));
   if (missing.length) {
-    throw new Error(`unknown REQUIRED_V1 id(s): ${missing.join(', ')}`);
+    throw new Error(`unknown REQUIRED_V1 id(s): ${missing.join(", ")}`);
   }
   return rows;
 }
 
 /**
  * REQUIRED_V1 matrix — consumer-owned; uses DW generic runMatrix.
+ * iOS 26.5 AX unlock lives in @csark0812/devicewright (devices.launch / doctor).
  */
 export async function runTargetMatrix(options: RunTargetMatrixOptions = {}) {
   const rows = resolveRows(options.ids);
@@ -41,8 +45,8 @@ export async function runTargetMatrix(options: RunTargetMatrixOptions = {}) {
     options.artifactDir ??
     path.join(
       repoRoot(),
-      'examples/.devicewright/artifacts',
-      `targets-${Date.now()}`
+      "examples/.devicewright/artifacts",
+      `targets-${Date.now()}`,
     );
 
   const suiteRows: SuiteMatrixRow[] = rows.map((row) => {
@@ -56,10 +60,10 @@ export async function runTargetMatrix(options: RunTargetMatrixOptions = {}) {
             path: row.path,
             phase: row.phase,
             ok: false,
-            status: 'red' as const,
+            status: "red" as const,
             steps: [],
             error: `missing required path ${row.path}`,
-            failureKind: 'product',
+            failureKind: "product",
           };
         },
       };
@@ -68,9 +72,31 @@ export async function runTargetMatrix(options: RunTargetMatrixOptions = {}) {
       return { id: row.id, stub: true };
     }
     const runner = journeyFor(row.id)!;
+    const ensureInstall = options.ensureInstall === true;
     return {
       id: row.id,
-      run: async (device) => runner(device),
+      run: async (device) => {
+        if (ensureInstall) {
+          try {
+            await ensureHostReleaseInstall({
+              id: row.id,
+              deviceId: device.deviceId,
+            });
+          } catch (e) {
+            return {
+              id: row.id,
+              path: row.path,
+              phase: row.phase,
+              ok: false,
+              status: "operator" as const,
+              steps: ["ensure-install"],
+              error: String(e),
+              failureKind: "operator" as const,
+            };
+          }
+        }
+        return runner(device);
+      },
     };
   });
 
@@ -86,7 +112,7 @@ export async function runTargetMatrix(options: RunTargetMatrixOptions = {}) {
   const byId = new Map(rows.map((r) => [r.id, r]));
   const results: TargetJourneyResult[] = result.results.map((r) => {
     const meta = byId.get(r.id);
-    if (r.status === 'stub' && meta) {
+    if (r.status === "stub" && meta) {
       return { ...stubResult(meta), error: r.error ?? stubResult(meta).error };
     }
     return {
@@ -94,10 +120,10 @@ export async function runTargetMatrix(options: RunTargetMatrixOptions = {}) {
       path: meta?.path ?? r.id,
       phase: meta?.phase ?? 1,
       ok: r.ok,
-      status: r.status as TargetJourneyResult['status'],
+      status: r.status as TargetJourneyResult["status"],
       steps: (r.steps as string[]) ?? [],
       error: r.error,
-      failureKind: r.failureKind as TargetJourneyResult['failureKind'],
+      failureKind: r.failureKind as TargetJourneyResult["failureKind"],
       checklist: (r as { checklist?: string[] }).checklist,
     };
   });

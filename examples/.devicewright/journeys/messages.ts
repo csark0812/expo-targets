@@ -1,68 +1,127 @@
-import type { DeviceSession } from '@csark0812/devicewright';
-import { TARGET_CATALOG } from '../catalog';
-import type { TargetJourneyResult } from '../types';
+import type { DeviceSession } from "@csark0812/devicewright";
+import { TARGET_CATALOG } from "../catalog";
+import type { TargetJourneyResult } from "../types";
 import {
   assertPayloadContains,
-  findNamedNode,
+  dismissSystemAlerts,
+  findNamedViaPointProbe,
   flattenLabels,
+  hostReadyTestId,
   sleep,
   tapCenter,
   tapId,
+  tapProbeHit,
   waitForId,
   waitForNamed,
-} from './helpers';
+} from "./helpers";
 
-const MESSAGES_BUNDLE = 'com.apple.MobileSMS';
+const MESSAGES_BUNDLE = "com.apple.MobileSMS";
+const CONVERSATION_NAMES = [
+  "+1 (888) 555-1212",
+  "Kate Bell",
+  "+1 (555) 564-8583",
+];
 
 async function openConversation(device: DeviceSession): Promise<void> {
-  const candidates = ['+1 (888) 555-1212', 'Kate Bell', '+1 (555) 564-8583'];
-  for (const name of candidates) {
+  for (const name of CONVERSATION_NAMES) {
     try {
       const cell = await waitForNamed(device, [name], 2_000);
       await tapCenter(device, cell);
       return;
     } catch {
-      // try next
+      // try next / point-probe
     }
   }
-  // Fall back: first cell-like label in tree is too brittle — require a conversation.
+  // iOS 26: ConversationList often empty in describe-all — probe rows.
+  try {
+    const hit = await findNamedViaPointProbe(device, CONVERSATION_NAMES, {
+      timeoutMs: 5_000,
+      yStartRatio: 0.2,
+      yEndRatio: 0.75,
+      stepX: 50,
+      stepY: 40,
+      hotspots: [
+        { x: 210, y: 220 },
+        { x: 210, y: 280 },
+        { x: 210, y: 340 },
+      ],
+    });
+    await tapProbeHit(device, hit);
+    return;
+  } catch {
+    // fall through
+  }
   const tree = await device.accessibilityTree();
   throw new Error(
-    `no Messages conversation; labels=${flattenLabels(tree).slice(0, 60).join(', ')}`
+    `no Messages conversation; labels=${flattenLabels(tree).slice(0, 60).join(", ")}`,
   );
 }
 
 async function openAppDrawer(
   device: DeviceSession,
-  names: string[]
+  names: string[],
 ): Promise<void> {
-  const tree0 = await device.accessibilityTree();
-  if (findNamedNode(tree0, names)) return;
+  try {
+    await findNamedViaPointProbe(device, names, {
+      timeoutMs: 2_000,
+      yStartRatio: 0.55,
+      yEndRatio: 0.95,
+    });
+    return;
+  } catch {
+    // need to open apps drawer
+  }
 
-  const add = await waitForNamed(device, ['add', 'Add'], 8_000);
-  await tapCenter(device, add);
+  let addHit: { probeX: number; probeY: number } | undefined;
+  try {
+    const add = await waitForNamed(device, ["add", "Add"], 4_000);
+    if (add.frame) {
+      addHit = {
+        probeX: Math.round(add.frame.x + add.frame.width / 2),
+        probeY: Math.round(add.frame.y + add.frame.height / 2),
+      };
+    }
+  } catch {
+    // point-probe Add
+  }
+  if (!addHit) {
+    const hit = await findNamedViaPointProbe(device, ["add", "Add"], {
+      timeoutMs: 8_000,
+      yStartRatio: 0.7,
+      yEndRatio: 0.98,
+      match: "exact",
+    });
+    addHit = { probeX: hit.probeX, probeY: hit.probeY };
+  }
+  await tapProbeHit(device, addHit);
   await sleep(800);
 
   for (let i = 0; i < 5; i++) {
-    const tree = await device.accessibilityTree();
-    if (findNamedNode(tree, names)) return;
-    // Swipe attachment sheet up (normalized mid → upper).
-    await device.swipe({
-      xStart: 200,
-      yStart: 600,
-      xEnd: 200,
-      yEnd: 280,
-      duration: 0.3,
-    });
-    await sleep(700);
+    try {
+      await findNamedViaPointProbe(device, names, {
+        timeoutMs: 2_500,
+        yStartRatio: 0.4,
+        yEndRatio: 0.95,
+      });
+      return;
+    } catch {
+      await device.swipe({
+        xStart: 200,
+        yStart: 600,
+        xEnd: 200,
+        yEnd: 280,
+        duration: 0.3,
+      });
+      await sleep(700);
+    }
   }
   const tree = await device.accessibilityTree();
   throw new Error(
-    `messages extension not in apps drawer (${names.join(' | ')}); labels=${flattenLabels(
-      tree
+    `messages extension not in apps drawer (${names.join(" | ")}); labels=${flattenLabels(
+      tree,
     )
       .slice(0, 80)
-      .join(', ')}`
+      .join(", ")}`,
   );
 }
 
@@ -72,7 +131,7 @@ async function openAppDrawer(
  */
 export async function runMessagesJourney(
   device: DeviceSession,
-  bar: 'B' | 'A' = 'A'
+  bar: "B" | "A" = "A",
 ): Promise<TargetJourneyResult> {
   const entry = TARGET_CATALOG.messages;
   const steps: string[] = [];
@@ -83,10 +142,11 @@ export async function runMessagesJourney(
   ];
 
   try {
-    if (bar === 'A') {
-      steps.push('clear-host');
+    if (bar === "A") {
+      steps.push("clear-host");
       await device.launchApp(entry.hostBundleId, { terminateRunning: true });
-      await waitForId(device, entry.testIds.screenRoot, 20_000);
+      await dismissSystemAlerts(device);
+      await waitForId(device, hostReadyTestId(entry.testIds), 20_000);
       try {
         await tapId(device, entry.testIds.clearPayload, 5_000);
       } catch {
@@ -94,69 +154,63 @@ export async function runMessagesJourney(
       }
     }
 
-    steps.push('launch-messages');
+    steps.push("launch-messages");
     await device.launchApp(MESSAGES_BUNDLE, { terminateRunning: true });
     await sleep(1_000);
     try {
-      const cont = await waitForNamed(device, ['Continue'], 2_000);
+      const cont = await waitForNamed(device, ["Continue"], 2_000);
       await tapCenter(device, cont);
     } catch {
       // dismiss optional
     }
 
-    steps.push('open-conversation');
+    steps.push("open-conversation");
     await openConversation(device);
 
-    steps.push('open-app-drawer');
+    steps.push("open-app-drawer");
     await openAppDrawer(device, names);
 
-    steps.push('assert-extension-visible');
-    const row = await waitForNamed(device, names, 8_000);
-    if (bar === 'B') {
+    steps.push("assert-extension-visible");
+    const row = await findNamedViaPointProbe(device, names, {
+      timeoutMs: 8_000,
+      yStartRatio: 0.35,
+      yEndRatio: 0.95,
+    });
+    if (bar === "B") {
       return {
         id: entry.id,
         path: entry.path,
         phase: 2,
         ok: true,
-        status: 'green',
+        status: "green",
         steps,
       };
     }
 
-    steps.push('open-extension');
-    await tapCenter(device, row);
+    steps.push("open-extension");
+    await tapProbeHit(device, row);
     await sleep(2_000);
 
-    // Expand sheet grabber if present.
-    try {
-      const grabber = await waitForNamed(device, ['Sheet Grabber'], 2_000);
-      const f = grabber.frame;
-      if (f) {
-        await device.swipe({
-          xStart: Math.round(f.x + f.width / 2),
-          yStart: Math.round(f.y + f.height / 2),
-          xEnd: Math.round(f.x + f.width / 2),
-          yEnd: 120,
-          duration: 0.25,
-        });
-        await sleep(800);
-      }
-    } catch {
-      // optional
-    }
+    // Grabber expand is optional and slow when missing — skip.
 
-    steps.push('send-template');
-    const send = await waitForNamed(
+    steps.push("send-template");
+    const send = await findNamedViaPointProbe(
       device,
-      [entry.completeButton, 'btn-send-template', 'Send template'],
-      25_000
+      [entry.completeButton, "btn-send-template", "Send template"],
+      {
+        timeoutMs: 10_000,
+        yStartRatio: 0.25,
+        yEndRatio: 0.9,
+        stepX: 50,
+        stepY: 40,
+      },
     );
-    await tapCenter(device, send);
-    await sleep(1_500);
+    await tapProbeHit(device, send);
+    await sleep(800);
 
-    steps.push('assert-host-payload');
+    steps.push("assert-host-payload");
     await device.launchApp(entry.hostBundleId);
-    await waitForId(device, entry.testIds.screenRoot, 15_000);
+    await waitForId(device, hostReadyTestId(entry.testIds), 15_000);
     if (entry.testIds.refresh) {
       try {
         await tapId(device, entry.testIds.refresh, 5_000);
@@ -168,7 +222,7 @@ export async function runMessagesJourney(
       device,
       entry.testIds.lastPayload,
       entry.payloadMarker,
-      25_000
+      25_000,
     );
 
     return {
@@ -176,20 +230,20 @@ export async function runMessagesJourney(
       path: entry.path,
       phase: 2,
       ok: true,
-      status: 'green',
+      status: "green",
       steps,
     };
   } catch (e) {
     const msg = String(e);
     const failureKind = /not installed|Unable to find|Launch failed/i.test(msg)
-      ? 'operator'
-      : 'product';
+      ? "operator"
+      : "product";
     return {
       id: entry.id,
       path: entry.path,
       phase: 2,
       ok: false,
-      status: failureKind === 'operator' ? 'operator' : 'red',
+      status: failureKind === "operator" ? "operator" : "red",
       steps,
       error: msg,
       failureKind,

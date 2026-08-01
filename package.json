@@ -39,6 +39,7 @@
     "examples:devicewright:dry-preflight": "bun examples/.devicewright/cli.ts dry-preflight",
     "examples:devicewright:matrix": "bun examples/.devicewright/cli.ts matrix --stubs-only",
     "examples:devicewright:matrix:live": "bun examples/.devicewright/cli.ts matrix --live-through=1",
+    "examples:devicewright:matrix:ensure": "bun examples/.devicewright/cli.ts matrix --live-through=3 --no-fail-fast --ensure-install",
     "examples:devicewright:share": "bun examples/.devicewright/cli.ts matrix --ids=share",
     "examples:devicewright:action": "bun examples/.devicewright/cli.ts matrix --ids=action",
     "examples:devicewright:messages": "bun examples/.devicewright/cli.ts matrix --ids=messages",
@@ -48,7 +49,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.6",
-    "@csark0812/devicewright": "^0.1.2",
+    "@csark0812/devicewright": "^0.1.3",
     "@csark0812/skeleton": "^1.5.5",
     "typescript": "~5.3.3"
   },

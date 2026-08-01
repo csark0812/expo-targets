@@ -1,13 +1,13 @@
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from "node:fs";
+import path from "node:path";
 import {
   type DoctorReport,
   formatDoctor,
   runDoctor,
-} from '@csark0812/devicewright';
-import { simctl } from '@csark0812/devicewright/ios';
-import { REQUIRED_V1 } from './required';
-import { exampleExists, repoRoot } from './root';
+} from "@csark0812/devicewright";
+import { simctl } from "@csark0812/devicewright/ios";
+import { REQUIRED_V1 } from "./required";
+import { exampleExists, repoRoot } from "./root";
 
 export type DoctorCheck = { name: string; ok: boolean; detail: string };
 
@@ -24,58 +24,58 @@ function checkRequiredPaths(): DoctorCheck {
     if (!exampleExists(row.path)) missing.push(row.path);
   }
   return {
-    name: 'REQUIRED_V1_paths',
+    name: "REQUIRED_V1_paths",
     ok: missing.length === 0,
     detail:
       missing.length === 0
         ? `${REQUIRED_V1.length} paths present`
-        : `missing: ${missing.join(', ')}`,
+        : `missing: ${missing.join(", ")}`,
   };
 }
 
 function checkBootedSim(): DoctorCheck {
   try {
     const sims = simctl.listSimulators();
-    const booted = sims.filter((s) => s.state === 'Booted');
+    const booted = sims.filter((s) => s.state === "Booted");
     return {
-      name: 'booted_sim',
+      name: "booted_sim",
       ok: booted.length > 0,
       detail:
         booted.length > 0
-          ? `${booted.length} booted (${booted.map((s) => s.name).join(', ')})`
-          : 'no Booted simulator — boot one before matrix',
+          ? `${booted.length} booted (${booted.map((s) => s.name).join(", ")})`
+          : "no Booted simulator — boot one before matrix",
     };
   } catch (e) {
-    return { name: 'booted_sim', ok: false, detail: String(e) };
+    return { name: "booted_sim", ok: false, detail: String(e) };
   }
 }
 
 function checkReadmeReleaseRecipes(): DoctorCheck {
-  const readmePath = path.join(__dirname, 'README.md');
-  let text = '';
+  const readmePath = path.join(__dirname, "README.md");
+  let text = "";
   try {
-    text = fs.readFileSync(readmePath, 'utf8');
+    text = fs.readFileSync(readmePath, "utf8");
   } catch (e) {
     return {
-      name: 'readme_release_recipes',
+      name: "readme_release_recipes",
       ok: false,
       detail: `cannot read ${readmePath}: ${e}`,
     };
   }
   const needles = [
-    'Release',
-    'dry-preflight',
-    'examples:devicewright',
-    'matrix',
+    "Release",
+    "dry-preflight",
+    "examples:devicewright",
+    "matrix",
   ];
   const missing = needles.filter((n) => !text.includes(n));
   return {
-    name: 'readme_release_recipes',
+    name: "readme_release_recipes",
     ok: missing.length === 0,
     detail:
       missing.length === 0
-        ? 'suite README documents Release / dry-preflight / examples:devicewright / matrix'
-        : `README missing: ${missing.join(', ')}`,
+        ? "suite README documents Release / dry-preflight / examples:devicewright / matrix"
+        : `README missing: ${missing.join(", ")}`,
   };
 }
 
@@ -84,11 +84,12 @@ export function runDryPreflight(
     allowNoSim?: boolean;
     requireAndroid?: boolean;
     idbPath?: string;
-  } = {}
+  } = {},
 ): DryPreflightReport {
   const root = repoRoot();
   const pathCheck = checkRequiredPaths();
   const readmeCheck = checkReadmeReleaseRecipes();
+  // @csark0812/devicewright@0.1.3+ doctor includes iOS 26.5 AX entitlement ensure.
   const doctor = runDoctor({
     idbPath: options.idbPath,
     requireAndroid: options.requireAndroid === true,
@@ -101,7 +102,7 @@ export function runDryPreflight(
 
   const checks: DoctorCheck[] = [
     {
-      name: 'repo_root',
+      name: "repo_root",
       ok: fs.existsSync(root),
       detail: root,
     },
@@ -121,10 +122,10 @@ export function runDryPreflight(
 
 export function formatDryPreflight(report: DryPreflightReport): string {
   const lines = report.checks.map(
-    (c) => `${c.ok ? 'PASS' : 'FAIL'}  ${c.name}: ${c.detail}`
+    (c) => `${c.ok ? "PASS" : "FAIL"}  ${c.name}: ${c.detail}`,
   );
-  lines.push(report.ok ? '\nDry-preflight OK' : '\nDry-preflight FAILED');
-  return lines.join('\n');
+  lines.push(report.ok ? "\nDry-preflight OK" : "\nDry-preflight FAILED");
+  return lines.join("\n");
 }
 
 export { formatDoctor };
