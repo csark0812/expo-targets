@@ -42,7 +42,10 @@ jobs:
   security:
     runs-on: ubuntu-latest
     steps:
+      # Full history so gitleaks can resolve the PR base..head commit range.
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
