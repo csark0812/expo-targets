@@ -131,11 +131,14 @@ export async function runShareActionJourney(
     steps.push('complete-appex');
     const complete = await findNamedViaPointProbe(device, completeLabels, {
       timeoutMs: 10_000,
-      yStartRatio: 0.2,
+      yStartRatio: 0.15,
       yEndRatio: 0.85,
       stepX: 45,
       stepY: 35,
+      match: 'exact',
       hotspots: [
+        // Native share Save (Air/26.5) sits high-left; share Save ~mid.
+        { x: 40, y: 220 },
         { x: 30, y: 370 },
         { x: 210, y: 480 },
         { x: 210, y: 520 },

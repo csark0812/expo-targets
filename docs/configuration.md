@@ -2,7 +2,7 @@
 
 **Source of truth for** `expo-target.config` options and extension types.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-07-30 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-07-31 -->
 
 > **Config-only freeze:** do not add new config-only extension types. See [deprecations.md](./deprecations.md). For widgets policy see [widgets.md](./widgets.md).
 
@@ -669,18 +669,7 @@ Access via `getSharedData().preprocessedData` in your extension.
   "platforms": ["ios"],
   "ios": {
     "deploymentTarget": "10.0",
-    "targetIcon": "./assets/imessage-icon.png"
-  }
-}
-```
-
-Place sticker images (PNG) directly in the target's `ios/` folder. They're auto-discovered.
-
-For organized sticker packs:
-
-```json
-{
-  "ios": {
+    "targetIcon": "./assets/imessage-icon.png",
     "stickerPacks": [
       {
         "name": "Animals",
@@ -694,6 +683,18 @@ For organized sticker packs:
   }
 }
 ```
+
+Declare packs with `ios.stickerPacks`. Asset paths and `targetIcon` are relative to the **target directory** (where `expo-target.config.json` lives), not the app root.
+
+The plugin currently hardcodes sticker pack **grid size to `regular`**. Provide @3x PNGs sized for that grid (Apple’s Messages sticker sizes):
+
+| Grid (Messages) | Points | Pixels (@3x) |
+| --------------- | ------ | ------------ |
+| Small           | 100×100 | **300×300** |
+| Regular (default in this plugin) | 136×136 | **408×408** |
+| Large           | 206×206 | **618×618** |
+
+Until `grid-size` is configurable, use **408×408** source stickers. Keep each sticker file under 500 KB.
 
 **⚠️ iOS Limitation:** You cannot have both a `stickers` target and a `messages` target in the same app. iOS only allows one message payload provider extension per app. Both types use the same extension point identifier (`com.apple.message-payload-provider`). Choose either stickers OR a messages app, but not both.
 

@@ -2,12 +2,7 @@
 
 Asset-only iMessage sticker pack (no `withTargetsMetro`). Host shows pack status for Maestro smoke.
 
-## Devicewright host contract
-
-`status-pack-catalog` / `text-last-payload` show the installed pack catalog
-(`pack: Fun Stickers (brutus, happy, excited)`), kept in sync with
-`targets/stickers/expo-target.config.json`. Asset-only packs cannot write App
-Group on sticker selection — this is the honest host marker for suite bar A.
+Pack character: **Bip** (sage body, cream vest, minimal **dot-eye** face — locked in `stickers/bip.png`). Pack is cute **poses** regen’d from that base: bip, wave, hug, peek, jump, sit, heart. Grid size is **regular** (plugin default): provide sticker PNGs at **408×408 @3x**.
 
 ## OS path
 

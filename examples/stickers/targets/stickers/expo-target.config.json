@@ -9,9 +9,13 @@
       {
         "name": "Fun Stickers",
         "assets": [
-          "stickers/brutus.png",
-          "stickers/happy.png",
-          "stickers/excited.png"
+          "stickers/bip.png",
+          "stickers/wave.png",
+          "stickers/hug.png",
+          "stickers/peek.png",
+          "stickers/jump.png",
+          "stickers/sit.png",
+          "stickers/heart.png"
         ]
       }
     ]

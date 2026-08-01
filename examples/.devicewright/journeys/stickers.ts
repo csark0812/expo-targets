@@ -23,29 +23,26 @@ const CONVERSATION_NAMES = [
 ];
 
 async function openConversation(device: DeviceSession): Promise<void> {
-  for (const name of CONVERSATION_NAMES) {
-    try {
-      const cell = await waitForNamed(device, [name], 2_000);
-      await tapCenter(device, cell);
-      return;
-    } catch {
-      // next
-    }
-  }
+  // List cells are labeled like "+1 (888) 555-1212, 12/31/00 " — exact
+  // waitForNamed misses; includes probe + probe tap (not AXFrame center).
   try {
     const hit = await findNamedViaPointProbe(device, CONVERSATION_NAMES, {
-      timeoutMs: 5_000,
-      yStartRatio: 0.2,
-      yEndRatio: 0.75,
+      timeoutMs: 8_000,
+      yStartRatio: 0.15,
+      yEndRatio: 0.65,
       stepX: 50,
       stepY: 40,
+      match: "includes",
       hotspots: [
+        { x: 210, y: 200 },
         { x: 210, y: 220 },
+        { x: 210, y: 250 },
         { x: 210, y: 280 },
         { x: 210, y: 340 },
       ],
     });
     await tapProbeHit(device, hit);
+    await sleep(800);
     return;
   } catch {
     // fall through
@@ -61,11 +58,18 @@ async function openConversation(device: DeviceSession): Promise<void> {
  * Pack grids are often AX-opaque on iOS 26 — surface presence is the bar.
  */
 async function openStickersBrowser(device: DeviceSession): Promise<void> {
+  // “add” sits on the left composer edge — coarse mid/0.25W columns miss it.
   const add = await findNamedViaPointProbe(device, ["add", "Add"], {
     timeoutMs: 8_000,
     yStartRatio: 0.7,
-    yEndRatio: 0.98,
+    yEndRatio: 0.99,
     match: "exact",
+    hotspots: [
+      { x: 40, y: 860 },
+      { x: 48, y: 864 },
+      { x: 55, y: 880 },
+      { x: 28, y: 864 },
+    ],
   });
   await tapProbeHit(device, add);
   await sleep(900);
@@ -73,10 +77,17 @@ async function openStickersBrowser(device: DeviceSession): Promise<void> {
   for (let i = 0; i < 6; i++) {
     try {
       const stickers = await findNamedViaPointProbe(device, ["Stickers"], {
-        timeoutMs: 2_500,
+        timeoutMs: 4_000,
         yStartRatio: 0.35,
         yEndRatio: 0.95,
         match: "exact",
+        // Apps drawer icon label (Air/26.5) — hotspots beat a full coarse sweep.
+        hotspots: [
+          { x: 60, y: 610 },
+          { x: 120, y: 610 },
+          { x: 180, y: 570 },
+          { x: 240, y: 570 },
+        ],
       });
       await tapProbeHit(device, stickers);
       await sleep(1_200);
@@ -170,7 +181,7 @@ export async function runStickersJourney(
 
     steps.push("launch-messages");
     await device.launchApp(MESSAGES_BUNDLE, { terminateRunning: true });
-    await sleep(1_000);
+    await sleep(2_000);
     try {
       const cont = await waitForNamed(device, ["Continue"], 2_000);
       await tapCenter(device, cont);
