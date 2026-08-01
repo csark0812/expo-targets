@@ -1,6 +1,6 @@
-import { StatusBar } from "expo-status-bar";
-import { AppGroupStorage } from "expo-targets";
-import { useCallback, useEffect, useState } from "react";
+import { StatusBar } from 'expo-status-bar';
+import { AppGroupStorage } from 'expo-targets';
+import { useCallback, useEffect, useState } from 'react';
 import {
   AppState,
   Share,
@@ -8,38 +8,39 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from "react-native";
+} from 'react-native';
 
 const storage = new AppGroupStorage(
-  "group.com.expotargets.example.native.share",
+  'group.com.expotargets.example.native.share'
 );
-const STORAGE_KEY = "nativeShare:items";
+const STORAGE_KEY = 'nativeShare:items';
 
 /** Marker string asserted by ShareSheetSmoke after Save to App. */
-export const UITEST_NATIVE_SHARE_MARKER = "expo-targets uitest share payload";
+export const UITEST_NATIVE_SHARE_MARKER = 'expo-targets uitest share payload';
 
 type SharedItem = { type: string; content: string; timestamp: number };
 
 function formatStoredList(
-  raw: SharedItem[] | string | null | undefined,
+  raw: SharedItem[] | string | null | undefined
 ): string {
-  if (!raw) return "none";
+  if (!raw) return 'none';
   const items =
-    typeof raw === "string" ? (JSON.parse(raw) as SharedItem[]) : raw;
-  return items.length ? JSON.stringify(items) : "none";
+    typeof raw === 'string' ? (JSON.parse(raw) as SharedItem[]) : raw;
+  return items.length ? JSON.stringify(items) : 'none';
 }
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: host contract demo screen
 export default function App() {
-  const [payload, setPayload] = useState("none");
+  const [payload, setPayload] = useState('none');
   const [ready, setReady] = useState(false);
 
   const refresh = useCallback(() => {
     try {
       setPayload(
-        formatStoredList(storage.get<SharedItem[] | string>(STORAGE_KEY)),
+        formatStoredList(storage.get<SharedItem[] | string>(STORAGE_KEY))
       );
     } catch {
-      setPayload("none");
+      setPayload('none');
     }
     setReady(true);
   }, []);
@@ -47,8 +48,8 @@ export default function App() {
   useEffect(() => {
     refresh();
     const interval = setInterval(refresh, 2000);
-    const sub = AppState.addEventListener("change", (state) => {
-      if (state === "active") refresh();
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') refresh();
     });
     return () => {
       clearInterval(interval);
@@ -60,7 +61,7 @@ export default function App() {
     <View style={styles.container} testID="screen-root">
       <StatusBar style="auto" />
       <Text style={styles.title}>Native Share example</Text>
-      <Text testID="status-target-ready">{ready ? "ready" : "loading"}</Text>
+      <Text testID="status-target-ready">{ready ? 'ready' : 'loading'}</Text>
       <TouchableOpacity
         testID="btn-seed-payload"
         style={styles.button}
@@ -69,11 +70,11 @@ export default function App() {
             STORAGE_KEY,
             JSON.stringify([
               {
-                type: "text",
-                content: "seeded from host",
+                type: 'text',
+                content: 'seeded from host',
                 timestamp: Date.now() / 1000,
               },
-            ]),
+            ])
           );
           refresh();
         }}
@@ -96,7 +97,7 @@ export default function App() {
         onPress={() => {
           void Share.share({
             message: UITEST_NATIVE_SHARE_MARKER,
-            url: "https://example.com/expo-targets-share",
+            url: 'https://example.com/expo-targets-share',
           });
         }}
       >
@@ -117,14 +118,14 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, gap: 12, justifyContent: "center" },
-  title: { fontSize: 22, fontWeight: "700" },
+  container: { flex: 1, padding: 24, gap: 12, justifyContent: 'center' },
+  title: { fontSize: 22, fontWeight: '700' },
   button: {
-    backgroundColor: "#007AFF",
+    backgroundColor: '#007AFF',
     padding: 12,
     borderRadius: 8,
-    alignItems: "center",
+    alignItems: 'center',
   },
-  buttonText: { color: "#fff", fontWeight: "600" },
-  payload: { fontFamily: "Courier", fontSize: 12 },
+  buttonText: { color: '#fff', fontWeight: '600' },
+  payload: { fontFamily: 'Courier', fontSize: 12 },
 });

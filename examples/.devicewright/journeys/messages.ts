@@ -15,11 +15,7 @@ import {
 const MESSAGES_BUNDLE = 'com.apple.MobileSMS';
 
 async function openConversation(device: DeviceSession): Promise<void> {
-  const candidates = [
-    '+1 (888) 555-1212',
-    'Kate Bell',
-    '+1 (555) 564-8583',
-  ];
+  const candidates = ['+1 (888) 555-1212', 'Kate Bell', '+1 (555) 564-8583'];
   for (const name of candidates) {
     try {
       const cell = await waitForNamed(device, [name], 2_000);
@@ -36,7 +32,10 @@ async function openConversation(device: DeviceSession): Promise<void> {
   );
 }
 
-async function openAppDrawer(device: DeviceSession, names: string[]): Promise<void> {
+async function openAppDrawer(
+  device: DeviceSession,
+  names: string[]
+): Promise<void> {
   const tree0 = await device.accessibilityTree();
   if (findNamedNode(tree0, names)) return;
 

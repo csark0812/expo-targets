@@ -1,12 +1,7 @@
 import type { DeviceSession } from '@csark0812/devicewright';
 import { TARGET_CATALOG } from '../catalog';
 import type { TargetJourneyResult } from '../types';
-import {
-  assertPayloadContains,
-  sleep,
-  tapId,
-  waitForId,
-} from './helpers';
+import { assertPayloadContains, sleep, tapId, waitForId } from './helpers';
 
 const SPRINGBOARD = 'com.apple.springboard';
 

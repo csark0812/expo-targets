@@ -1,7 +1,7 @@
-import * as fs from "node:fs";
-import * as path from "node:path";
-import process from "node:process";
-import type { MetroConfig } from "metro-config";
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import process from 'node:process';
+import type { MetroConfig } from 'metro-config';
 
 export interface TargetConfig {
   name: string;
@@ -16,14 +16,14 @@ export interface ScanResult {
 function loadTargetConfig(
   configPath: string,
   dirName: string,
-  warnings: string[],
+  warnings: string[]
 ): TargetConfig | undefined {
   try {
-    return JSON.parse(fs.readFileSync(configPath, "utf-8")) as TargetConfig;
+    return JSON.parse(fs.readFileSync(configPath, 'utf-8')) as TargetConfig;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     warnings.push(
-      `[expo-targets/metro] targets/${dirName}: invalid expo-target.config.json (${message})`,
+      `[expo-targets/metro] targets/${dirName}: invalid expo-target.config.json (${message})`
     );
   }
 }
@@ -42,21 +42,21 @@ function registerTargetEntry(opts: {
 
   if (!config.name) {
     warnings.push(
-      `[expo-targets/metro] targets/${dirName}: config has "entry" but missing "name"`,
+      `[expo-targets/metro] targets/${dirName}: config has "entry" but missing "name"`
     );
   }
 
   const entryPath = path.resolve(projectRoot, config.entry);
   if (!fs.existsSync(entryPath)) {
     warnings.push(
-      `[expo-targets/metro] targets/${dirName}: entry "${config.entry}" does not exist (resolved: ${entryPath})`,
+      `[expo-targets/metro] targets/${dirName}: entry "${config.entry}" does not exist (resolved: ${entryPath})`
     );
     return;
   }
 
   const bundleRoot = config.entry
-    .replace(/^\.\//, "")
-    .replace(/\.(tsx?|jsx?)$/, "");
+    .replace(/^\.\//, '')
+    .replace(/\.(tsx?|jsx?)$/, '');
   entryMap.set(bundleRoot, entryPath);
 }
 
@@ -65,7 +65,7 @@ function registerTargetEntry(opts: {
  * Exported for tests and tooling.
  */
 export function scanTargetsDirectory(projectRoot: string): ScanResult {
-  const targetsDir = path.join(projectRoot, "targets");
+  const targetsDir = path.join(projectRoot, 'targets');
   const entryMap = new Map<string, string>();
   const warnings: string[] = [];
 
@@ -81,7 +81,7 @@ export function scanTargetsDirectory(projectRoot: string): ScanResult {
     const configPath = path.join(
       targetsDir,
       dir.name,
-      "expo-target.config.json",
+      'expo-target.config.json'
     );
     if (!fs.existsSync(configPath)) {
       continue;
@@ -104,7 +104,7 @@ export function scanTargetsDirectory(projectRoot: string): ScanResult {
 
 function logScanSummary(
   entryMap: Map<string, string>,
-  warnings: string[],
+  warnings: string[]
 ): void {
   for (const warning of warnings) {
     console.warn(warning);
@@ -113,15 +113,15 @@ function logScanSummary(
     return;
   }
   const roots = [...new Set(entryMap.values())];
-  const noun = roots.length === 1 ? "y" : "ies";
+  const noun = roots.length === 1 ? 'y' : 'ies';
   console.log(
-    `[expo-targets/metro] Resolved ${roots.length} RN extension entr${noun}`,
+    `[expo-targets/metro] Resolved ${roots.length} RN extension entr${noun}`
   );
 }
 
 export function withTargetsMetro(
   metroConfig: MetroConfig,
-  options?: { projectRoot?: string; silent?: boolean },
+  options?: { projectRoot?: string; silent?: boolean }
 ): MetroConfig {
   const projectRoot = options?.projectRoot || process.cwd();
   const { entryMap, warnings } = scanTargetsDirectory(projectRoot);
@@ -137,11 +137,11 @@ export function withTargetsMetro(
     resolver: {
       ...metroConfig.resolver,
       resolveRequest: (context, moduleName, platform) => {
-        const normalized = moduleName.replace(/^\.\//, "");
+        const normalized = moduleName.replace(/^\.\//, '');
         const entryPath = entryMap.get(normalized);
 
         if (entryPath) {
-          return { type: "sourceFile", filePath: entryPath };
+          return { type: 'sourceFile', filePath: entryPath };
         }
 
         if (previousResolveRequest) {

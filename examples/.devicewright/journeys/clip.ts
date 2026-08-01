@@ -25,7 +25,7 @@ export async function runClipJourney(
     await sleep(400);
     const payload = await waitForId(device, entry.testIds.lastPayload, 8_000);
     const label = payload.label ?? '';
-    if (!label.includes('seeded') && !label.includes('itemName')) {
+    if (!(label.includes('seeded') || label.includes('itemName'))) {
       // Accept any non-none after seed.
       if (label === 'none' || label === '') {
         throw new Error(`clip host payload still empty after seed: ${label}`);

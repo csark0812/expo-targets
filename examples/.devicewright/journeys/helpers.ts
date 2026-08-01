@@ -2,8 +2,7 @@
  * Consumer journey helpers — DW suite a11y + C1 ids.
  * Compat: waitForNamed(device, names, timeoutMs) still works.
  */
-import type { DeviceSession } from '@csark0812/devicewright';
-import type { AccessibilityNode } from '@csark0812/devicewright';
+import type { AccessibilityNode, DeviceSession } from '@csark0812/devicewright';
 import {
   assertPayloadContains as assertPayloadContainsSuite,
   findNamedNode as findNamedNodeSuite,
@@ -17,12 +16,7 @@ import {
 } from '@csark0812/devicewright/suite';
 import { BLOCKED_SHEET_LABELS } from '../catalog';
 
-export {
-  flattenLabels,
-  sleep,
-  tapCenter,
-  findSheetRow,
-};
+export { findSheetRow, flattenLabels, sleep, tapCenter };
 
 export function findNamedNode(
   nodes: AccessibilityNode[],
@@ -39,7 +33,7 @@ export async function waitForNamed(
   const timeoutMs =
     typeof timeoutMsOrOpts === 'number'
       ? timeoutMsOrOpts
-      : timeoutMsOrOpts.timeoutMs ?? 15_000;
+      : (timeoutMsOrOpts.timeoutMs ?? 15_000);
   return waitForNamedSuite(device, names, {
     timeoutMs,
     blockedLabels: BLOCKED_SHEET_LABELS,

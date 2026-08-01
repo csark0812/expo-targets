@@ -62,7 +62,12 @@ function checkReadmeReleaseRecipes(): DoctorCheck {
       detail: `cannot read ${readmePath}: ${e}`,
     };
   }
-  const needles = ['Release', 'dry-preflight', 'examples:devicewright', 'matrix'];
+  const needles = [
+    'Release',
+    'dry-preflight',
+    'examples:devicewright',
+    'matrix',
+  ];
   const missing = needles.filter((n) => !text.includes(n));
   return {
     name: 'readme_release_recipes',
@@ -75,7 +80,11 @@ function checkReadmeReleaseRecipes(): DoctorCheck {
 }
 
 export function runDryPreflight(
-  options: { allowNoSim?: boolean; requireAndroid?: boolean; idbPath?: string } = {}
+  options: {
+    allowNoSim?: boolean;
+    requireAndroid?: boolean;
+    idbPath?: string;
+  } = {}
 ): DryPreflightReport {
   const root = repoRoot();
   const pathCheck = checkRequiredPaths();

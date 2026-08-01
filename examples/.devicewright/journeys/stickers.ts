@@ -94,8 +94,7 @@ export async function runStickersJourney(
 
     if (bar === 'A') {
       steps.push('assert-host-catalog');
-      const catalogId =
-        entry.testIds.packCatalog ?? entry.testIds.lastPayload;
+      const catalogId = entry.testIds.packCatalog ?? entry.testIds.lastPayload;
       await assertPayloadContains(
         device,
         catalogId,

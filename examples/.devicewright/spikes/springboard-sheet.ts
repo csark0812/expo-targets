@@ -15,7 +15,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { devices } from '../../devices';
-import { flattenLabels, sleep, tapCenter, waitForNamed } from '../journeys/helpers';
+import {
+  flattenLabels,
+  sleep,
+  tapCenter,
+  waitForNamed,
+} from '../journeys/helpers';
 
 const ARTIFACT_DIR = path.join(
   process.cwd(),

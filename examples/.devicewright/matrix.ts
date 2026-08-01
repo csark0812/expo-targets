@@ -46,8 +46,7 @@ export async function runTargetMatrix(options: RunTargetMatrixOptions = {}) {
     );
 
   const suiteRows: SuiteMatrixRow[] = rows.map((row) => {
-    const useStub =
-      stubsOnly || row.phase > liveThrough || !journeyFor(row.id);
+    const useStub = stubsOnly || row.phase > liveThrough || !journeyFor(row.id);
     if (!exampleExists(row.path)) {
       return {
         id: row.id,

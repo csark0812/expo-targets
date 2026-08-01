@@ -11,7 +11,9 @@
       "!**/build",
       "!**/dist",
       "!**/*.d.ts",
-      "!!**/node_modules"
+      "!!**/node_modules",
+      "!**/examples/.devicewright",
+      "!**/packages/mcp-dev"
     ]
   },
   "formatter": {
@@ -87,6 +89,7 @@
       },
       "complexity": {
         "preset": "all",
+        "noVoid": "off",
         "noExcessiveCognitiveComplexity": {
           "level": "error",
           "options": { "maxAllowedComplexity": 10 }

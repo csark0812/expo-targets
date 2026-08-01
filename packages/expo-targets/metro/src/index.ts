@@ -3,4 +3,4 @@ export {
   scanTargetsDirectory,
   type TargetConfig,
   withTargetsMetro,
-} from "./withTargetsMetro";
+} from './withTargetsMetro';

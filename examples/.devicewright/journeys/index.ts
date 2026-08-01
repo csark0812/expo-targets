@@ -7,14 +7,14 @@ import { runShareActionJourney } from './share';
 import { runStickersJourney } from './stickers';
 import { runWidgetsJourney } from './widgets';
 
+export { runClipJourney } from './clip';
 export {
-  C1,
   assertPayloadContains,
+  C1,
   tapId,
   waitForId,
   waitForNamed,
 } from './helpers';
-export { runClipJourney } from './clip';
 export { runMessagesJourney } from './messages';
 export { runShareActionJourney } from './share';
 export { runStickersJourney } from './stickers';
