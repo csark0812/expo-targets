@@ -34,11 +34,21 @@
     "examples:maestro:kitchen-sink": "maestro test examples/kitchen-sink/.maestro/smoke-share.yaml examples/kitchen-sink/.maestro/smoke-action.yaml examples/kitchen-sink/.maestro/smoke-clip.yaml examples/kitchen-sink/.maestro/smoke-stickers.yaml examples/kitchen-sink/.maestro/smoke-widgets.yaml examples/kitchen-sink/.maestro/smoke-messages.yaml",
     "examples:maestro:native-share": "maestro test examples/native/share/.maestro/smoke.yaml",
     "examples:maestro:native-action": "maestro test examples/native/action/.maestro/smoke.yaml",
-    "examples:maestro:native-clip": "maestro test examples/native/clip/.maestro/smoke.yaml"
+    "examples:maestro:native-clip": "maestro test examples/native/clip/.maestro/smoke.yaml",
+    "examples:devicewright:dry-preflight": "bun examples/.devicewright/cli.ts dry-preflight",
+    "examples:devicewright:matrix": "bun examples/.devicewright/cli.ts matrix --stubs-only",
+    "examples:devicewright:matrix:live": "bun examples/.devicewright/cli.ts matrix --live-through=1",
+    "examples:devicewright:share": "bun examples/.devicewright/cli.ts matrix --ids=share",
+    "examples:devicewright:action": "bun examples/.devicewright/cli.ts matrix --ids=action",
+    "examples:devicewright:messages": "bun examples/.devicewright/cli.ts matrix --ids=messages",
+    "examples:devicewright:stickers": "bun examples/.devicewright/cli.ts matrix --ids=stickers",
+    "examples:devicewright:clip": "bun examples/.devicewright/cli.ts matrix --ids=clip",
+    "examples:devicewright:widgets": "bun examples/.devicewright/cli.ts matrix --ids=widgets"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.6",
     "@csark0812/skeleton": "^1.5.5",
+    "@csark0812/devicewright": "^0.1.1",
     "typescript": "~5.3.3"
   },
   "version": "0.2.7",

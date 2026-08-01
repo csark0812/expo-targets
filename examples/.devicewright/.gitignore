@@ -1,0 +1,4 @@
+devicewright-artifacts/
+artifacts/
+!artifacts/spikes/
+!artifacts/spikes/**
