@@ -368,7 +368,7 @@ describe('planAssets for sticker targets', () => {
       'iMessage App Icon.stickersiconset'
     );
     expect(plan.stickers?.sourceIconPath).toBe(
-      path.join(PROJECT_ROOT, 'assets/icon.png')
+      path.join(PROJECT_ROOT, 'targets/my-share', 'assets/icon.png')
     );
   });
 

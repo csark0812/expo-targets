@@ -9,7 +9,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
  * reflects installed pack assets, not Maestro in-memory seed theater.
  */
 export const PACK_CATALOG_MARKER =
-  'pack: Fun Stickers (brutus, happy, excited)';
+  'pack: Fun Stickers (bip, wave, hug, peek, jump, sit, heart)';
 
 export default function App() {
   const [ready, setReady] = useState(false);

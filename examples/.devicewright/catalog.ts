@@ -109,7 +109,7 @@ export const TARGET_CATALOG: Record<string, TargetCatalogEntry> = {
     extensionName: 'Fun Stickers',
     extensionAliases: ['FunStickersTarget', 'Fun Stickers'],
     /** Honest pack catalog marker (asset-only packs cannot App-Group on selection). */
-    payloadMarker: 'pack: Fun Stickers (brutus, happy, excited)',
+    payloadMarker: 'pack: Fun Stickers (bip, wave, hug, peek, jump, sit, heart)',
     completeButton: '',
     testIds: {
       screenRoot: 'screen-root',
