@@ -23,8 +23,9 @@
     "audit:self": "skeleton audit self",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "test": "bun test packages/expo-targets",
+    "test": "bun test packages/expo-targets && bun test ./examples/.devicewright/required.test.ts",
     "test:unit": "bun test packages/expo-targets",
+    "test:devicewright": "bun test ./examples/.devicewright/required.test.ts",
     "test:integration": "bun test packages/expo-targets/plugin/src/ios/config-plugins/withXcodeChanges.integration.test.ts",
     "examples:maestro:share": "maestro test examples/share/.maestro/smoke.yaml",
     "examples:maestro:action": "maestro test examples/action/.maestro/smoke.yaml",
@@ -45,7 +46,9 @@
     "examples:devicewright:messages": "bun examples/.devicewright/cli.ts matrix --ids=messages",
     "examples:devicewright:stickers": "bun examples/.devicewright/cli.ts matrix --ids=stickers",
     "examples:devicewright:clip": "bun examples/.devicewright/cli.ts matrix --ids=clip",
-    "examples:devicewright:widgets": "bun examples/.devicewright/cli.ts matrix --ids=widgets"
+    "examples:devicewright:widgets": "bun examples/.devicewright/cli.ts matrix --ids=widgets",
+    "compare:bacon-registry": "bun scripts/compare-bacon-registry.ts",
+    "compare:bacon-registry:harden": "bun scripts/compare-bacon-registry.ts --harden"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.6",

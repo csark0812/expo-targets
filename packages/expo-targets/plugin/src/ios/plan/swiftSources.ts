@@ -41,6 +41,7 @@ function isTestFile(file: string): boolean {
  * never the React Native view controller. Native React Native extensions get
  * generated view controllers when the user provided no Swift of their own.
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: type dispatch table for Swift file resolution
 function resolveSwiftFileNames(
   workspace: TargetWorkspace,
   props: IOSTargetProps
@@ -65,6 +66,13 @@ function resolveSwiftFileNames(
       return [REACT_NATIVE_CLIP_APP, REACT_NATIVE_VIEW_CONTROLLER];
     }
     return [REACT_NATIVE_VIEW_CONTROLLER];
+  }
+
+  // Notification content: user principal hosts RN child when entry is set.
+  if (props.entry && props.type === 'notification-content') {
+    if (!files.some((file) => isNamed(file, REACT_NATIVE_VIEW_CONTROLLER))) {
+      files.push(REACT_NATIVE_VIEW_CONTROLLER);
+    }
   }
 
   return files;

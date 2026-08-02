@@ -14,6 +14,11 @@ const FILE_TYPES_BY_EXTENSION: Record<string, string> = {
   '.swift': 'sourcecode.swift',
   '.h': 'sourcecode.c.h',
   '.m': 'sourcecode.c.objc',
+  '.js': 'sourcecode.javascript',
+  '.json': 'text.json',
+  '.html': 'text.html',
+  '.css': 'text.css',
+  '.png': 'image.png',
 };
 
 function fileTypeFor(fileName: string, fallback?: string): string {

@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "ET Trick",
+    "slug": "example-trick",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "scheme": "expotargets-trick",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0B1220"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.expotargets.example.trick",
+      "deploymentTarget": "15.1",
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.expotargets.example.trick"
+        ]
+      },
+      "infoPlist": {
+        "CFBundleDisplayName": "ET Trick",
+        "NSPhotoLibraryUsageDescription": "ET Trick uses Photos to demonstrate the photo-editing extension.",
+        "NSPhotoLibraryAddUsageDescription": "ET Trick may save edited photos."
+      }
+    },
+    "plugins": [
+      "expo-notifications",
+      [
+        "expo-targets",
+        {
+          "debug": true
+        }
+      ]
+    ],
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0B1220"
+      },
+      "package": "com.expotargets.example.trick"
+    }
+  }
+}

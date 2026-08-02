@@ -23,6 +23,7 @@ jobs:
       - run: bunx biome ci . --error-on-warnings
       - run: bun run typecheck
       - run: bun run test:unit
+      - run: bun run compare:bacon-registry
       - run: bun run build
 
   # L3: drives the real iOS pipeline against a stripped pbxproj fixture.

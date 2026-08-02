@@ -5,6 +5,7 @@
  */
 import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { TARGET_CATALOG } from "./catalog";
@@ -59,6 +60,41 @@ async function runStreaming(
 }
 
 /**
+ * Pre-approve a URL scheme so `simctl openurl` skips “Open in …?”.
+ * Mirrors Expo CLI’s `updateSimulatorLinkingPermissionsAsync` (often races).
+ */
+function approveSimulatorDeepLink(
+  udid: string,
+  scheme: string,
+  appId: string,
+): void {
+  const plistPath = path.join(
+    os.homedir(),
+    "Library/Developer/CoreSimulator/Devices",
+    udid,
+    "data/Library/Preferences/com.apple.launchservices.schemeapproval.plist",
+  );
+  const key = `com.apple.CoreSimulator.CoreSimulatorBridge-->${scheme}`;
+  const py = `
+import plistlib, pathlib, sys
+p = pathlib.Path(sys.argv[1])
+data = plistlib.loads(p.read_bytes()) if p.exists() else {}
+data[sys.argv[2]] = sys.argv[3]
+p.parent.mkdir(parents=True, exist_ok=True)
+p.write_bytes(plistlib.dumps(data, fmt=plistlib.FMT_BINARY))
+`;
+  const r = spawnSync("python3", ["-c", py, plistPath, key, appId], {
+    encoding: "utf8",
+    env: process.env,
+  });
+  if (r.status !== 0) {
+    console.error(
+      `[ensure-install] scheme-approval failed for ${scheme}: ${r.stderr || r.stdout}`,
+    );
+  }
+}
+
+/**
  * If the catalog host is not on `deviceId`, Release-build + install it.
  * No-op when already installed (or already ensured this process).
  */
@@ -102,25 +138,47 @@ export async function ensureHostReleaseInstall(
     );
   }
 
-  await runStreaming(
-    "npx",
-    [
-      "expo",
-      "run:ios",
-      "--configuration",
-      "Release",
-      "--device",
-      udid,
-      "--no-bundler",
-    ],
-    cwd,
-  );
+  // expo run:ios opens `{bundleId}://expo-development-client/...` via openurl.
+  approveSimulatorDeepLink(udid, entry.hostBundleId, entry.hostBundleId);
+
+  try {
+    await runStreaming(
+      "npx",
+      [
+        "expo",
+        "run:ios",
+        "--configuration",
+        "Release",
+        "--device",
+        udid,
+        "--no-bundler",
+      ],
+      cwd,
+    );
+  } catch (e) {
+    // Build+install often succeeds; simctl openurl then fails (115) when the
+    // Simulator is busy or rejects the metro deep link. Continue if installed.
+    if (!isHostInstalledOnSim(udid, entry.hostBundleId)) {
+      throw e;
+    }
+    console.error(
+      `[ensure-install] ${entry.id}: run:ios exited but ${entry.hostBundleId} is installed — continuing`,
+    );
+  }
 
   if (!isHostInstalledOnSim(udid, entry.hostBundleId)) {
     throw new Error(
       `ensure-install: ${entry.hostBundleId} still missing after Release run:ios (${entry.path})`,
     );
   }
+
+  // expo run:ios launches via openCustomRuntimeAsync → simctl openurl (exp+/scheme).
+  // That surfaces Simulator “Open in …?”; terminate so journeys can launch by bundle id.
+  spawnSync("xcrun", ["simctl", "terminate", udid, entry.hostBundleId], {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+    env: process.env,
+  });
 
   ensuredThisRun.add(key);
   console.error(

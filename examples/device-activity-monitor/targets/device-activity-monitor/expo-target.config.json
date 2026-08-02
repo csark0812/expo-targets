@@ -1,0 +1,16 @@
+{
+  "type": "device-activity-monitor",
+  "name": "DeviceActivityMonitor",
+  "displayName": "ET DevAct Target",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.example.device-activity-monitor",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.device-activity-monitor.device-activity-monitor",
+    "displayName": "ET DevAct Target",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "DeviceActivityMonitorExtension"
+      }
+    }
+  }
+}

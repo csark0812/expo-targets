@@ -1,0 +1,16 @@
+{
+  "type": "spotlight-delegate",
+  "name": "SpotlightDelegate",
+  "displayName": "ET SpotDel Target",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.example.spotlight-delegate",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.spotlight-delegate.spotlight-delegate",
+    "displayName": "ET SpotDel Target",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "SpotlightDelegate"
+      }
+    }
+  }
+}

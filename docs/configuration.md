@@ -688,11 +688,11 @@ Declare packs with `ios.stickerPacks`. Asset paths and `targetIcon` are relative
 
 The plugin currently hardcodes sticker pack **grid size to `regular`**. Provide @3x PNGs sized for that grid (Apple’s Messages sticker sizes):
 
-| Grid (Messages) | Points | Pixels (@3x) |
-| --------------- | ------ | ------------ |
-| Small           | 100×100 | **300×300** |
-| Regular (default in this plugin) | 136×136 | **408×408** |
-| Large           | 206×206 | **618×618** |
+| Grid (Messages)                  | Points  | Pixels (@3x) |
+| -------------------------------- | ------- | ------------ |
+| Small                            | 100×100 | **300×300**  |
+| Regular (default in this plugin) | 136×136 | **408×408**  |
+| Large                            | 206×206 | **618×618**  |
 
 Until `grid-size` is configurable, use **408×408** source stickers. Keep each sticker file under 500 KB.
 
@@ -893,33 +893,54 @@ export default function (config: ExpoConfig) {
 
 ## Extension Types Reference
 
-| Type                      | iOS           | Android    | Description               |
-| ------------------------- | ------------- | ---------- | ------------------------- |
-| `widget`                  | ✅ iOS 14+    | ✅ API 26+ | Home screen widgets       |
-| `clip`                    | ✅ iOS 14+    | —          | App Clips                 |
-| `stickers`                | ✅ iOS 10+    | —          | iMessage sticker packs    |
-| `messages`                | ✅ iOS 10+    | —          | iMessage apps             |
-| `share`                   | ✅ iOS 8+     | 🔜         | Share extensions          |
-| `action`                  | ✅ iOS 8+     | 🔜         | Action extensions         |
-| `wallet`                  | ✅ iOS 14+    | —          | Wallet pass provisioning  |
-| `safari`                  | 📋 iOS 15+    | —          | Safari web extensions     |
-| `notification-content`    | 📋 iOS 10+    | 🔜         | Rich notification UI      |
-| `notification-service`    | 📋 iOS 10+    | 🔜         | Notification processing   |
-| `intent`                  | 📋 iOS 12+    | —          | Siri intents (legacy)     |
-| `app-intent`              | 📋 iOS 16+    | —          | App Intents (modern Siri) |
-| `spotlight`               | 📋 iOS 9+     | —          | Spotlight index           |
-| `bg-download`             | 📋 iOS 7+     | —          | Background downloads      |
-| `quicklook-thumbnail`     | 📋 iOS 11+    | —          | QuickLook thumbnails      |
-| `location-push`           | 📋 iOS 15+    | —          | Location push service     |
-| `credentials-provider`    | 📋 iOS 12+    | —          | Credential provider       |
-| `account-auth`            | 📋 iOS 12.2+  | —          | Account authentication    |
-| `device-activity-monitor` | 📋 iOS 15+    | —          | Device activity monitor   |
-| `matter`                  | 📋 iOS 16.1+  | —          | Matter extensions         |
-| `watch`                   | 📋 watchOS 2+ | —          | Watch app                 |
+Types with a production example + Devicewright row are marked ✅. Entitlement-gated flows may still claim `os-limit` after the live-touchpoint floor — see `examples/.devicewright/claims.ts`.
 
-**Legend:** ✅ Production ready · 📋 Config-only (bring your own Swift/Kotlin) · 🔜 Planned · — Not applicable
+| Type                                                                                        | iOS                                     | Android    | Description                 |
+| ------------------------------------------------------------------------------------------- | --------------------------------------- | ---------- | --------------------------- |
+| `widget`                                                                                    | ✅ iOS 14+ (spine; prefer expo-widgets) | ✅ API 26+ | Home screen widgets         |
+| `clip`                                                                                      | ✅ iOS 14+                              | —          | App Clips                   |
+| `stickers`                                                                                  | ✅ iOS 10+                              | —          | iMessage sticker packs      |
+| `messages`                                                                                  | ✅ iOS 10+                              | —          | iMessage apps               |
+| `share`                                                                                     | ✅ iOS 8+                               | 🔜         | Share extensions            |
+| `action`                                                                                    | ✅ iOS 8+                               | 🔜         | Action extensions           |
+| `wallet` / `wallet-ui`                                                                      | ✅ iOS 14+ (issuer may os-limit)        | —          | Wallet pass provisioning    |
+| `safari`                                                                                    | ✅ iOS 15+                              | —          | Safari web extensions       |
+| `content-blocker`                                                                           | ✅ iOS 11+                              | —          | Safari content blocker      |
+| `notification-content`                                                                      | ✅ iOS 10+                              | 🔜         | Rich notification UI        |
+| `notification-service`                                                                      | ✅ iOS 10+                              | 🔜         | Notification processing     |
+| `intent` / `intent-ui`                                                                      | ✅ iOS 12+                              | —          | Siri intents (legacy)       |
+| `app-intent`                                                                                | ✅ iOS 16+                              | —          | App Intents (modern Siri)   |
+| `spotlight`                                                                                 | ✅ iOS 9+                               | —          | Spotlight index             |
+| `spotlight-delegate`                                                                        | ✅ iOS 13+                              | —          | CoreSpotlight delegate      |
+| `bg-download`                                                                               | ✅ iOS 7+                               | —          | Background downloads        |
+| `quicklook-thumbnail`                                                                       | ✅ iOS 11+                              | —          | QuickLook thumbnails        |
+| `quicklook-preview`                                                                         | ✅ iOS 8+                               | —          | QuickLook preview           |
+| `location-push`                                                                             | ✅ iOS 15+ (entitlement os-limit)       | —          | Location push service       |
+| `credentials-provider`                                                                      | ✅ iOS 12+ (Settings os-limit)          | —          | Credential provider         |
+| `account-auth`                                                                              | ✅ iOS 12.2+                            | —          | Account authentication      |
+| `authentication-services`                                                                   | ✅ iOS 13+ (SSO os-limit)               | —          | AppSSO identity provider    |
+| `device-activity-monitor`                                                                   | ✅ iOS 15+ (Family Controls os-limit)   | —          | Device activity monitor     |
+| `shield-action` / `shield-config`                                                           | ✅ iOS 15+ (Family Controls os-limit)   | —          | Screen Time shields         |
+| `matter`                                                                                    | ✅ iOS 16.1+                            | —          | Matter extensions           |
+| `watch` / `watch-widget`                                                                    | ✅ watchOS (paired sim DoD)             | —          | Watch app / complication    |
+| `keyboard`                                                                                  | ✅ iOS 8+                               | —          | Custom keyboard             |
+| `photo-editing`                                                                             | ✅ iOS 8+                               | —          | Photo Editing extension     |
+| `file-provider` / `file-provider-ui`                                                        | ✅ iOS 11+                              | —          | File Provider               |
+| `broadcast-upload` / `broadcast-setup-ui`                                                   | ✅ iOS 10+                              | —          | ReplayKit broadcast         |
+| `call-directory`                                                                            | ✅ iOS 10+                              | —          | Call Directory              |
+| `message-filter`                                                                            | ✅ iOS 11+                              | —          | SMS/MMS filter              |
+| `unwanted-communication`                                                                    | ✅ iOS 12+                              | —          | Unwanted communication UI   |
+| `network-packet-tunnel` / `network-app-proxy` / `network-dns-proxy` / `network-filter-data` | ✅ (NE entitlement os-limit)            | —          | Network Extensions          |
+| `classkit-context`                                                                          | ✅ iOS 11.4+                            | —          | ClassKit context provider   |
+| `print-service`                                                                             | ✅ iOS 14+                              | —          | Print discovery             |
+| `smart-card`                                                                                | ✅ iOS 10+                              | —          | CryptoTokenKit              |
+| `virtual-conference`                                                                        | ✅ iOS 15+                              | —          | Calendar virtual conference |
+
+**Legend:** ✅ Production with example + Devicewright · 🔜 Android planned · — Not applicable
 
 > **Combined targets:** For `wallet` and `intent` types, you can use the `ios.wallet.ui` or `ios.intents.ui` config options to generate both the main extension and its UI companion from a single config file. The CLI generates combined wallet extensions by default. See [Wallet Extension](#wallet-extension) and [Intent UI Extension](#intent-ui-extension) sections for details.
+
+> **New types:** A type joins `ExtensionType` only with registry + scaffold + example + Devicewright in the same PR. See [deprecations.md](./deprecations.md) and [migrate-from-bacons-apple-targets.md](./migrate-from-bacons-apple-targets.md).
 
 ### iOS Limitations
 
@@ -945,9 +966,9 @@ You cannot use both in the same app. If you need both features, consider:
 
 **Reference:** [Apple's Messages Framework Documentation](https://developer.apple.com/documentation/messages)
 
-### Config-Only Types
+### Config-only leftover
 
-Config-only types (`📋`) generate the Xcode target structure and Info.plist configuration, but **you must write all Swift/Kotlin code yourself**. These are for advanced use cases where you need full control over the implementation.
+Older docs used a 📋 “config-only” maturity label. New types must ship with an example + Devicewright journey (see [deprecations.md](./deprecations.md)). Existing Swift stubs in examples are starting points — replace with full Apple API conformance as needed for production apps.
 
 **What expo-targets provides:**
 

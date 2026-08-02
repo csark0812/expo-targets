@@ -1,0 +1,11 @@
+{
+  "type": "app-intent",
+  "name": "AppIntent",
+  "displayName": "ET AppIntent Target",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.example.app-intent",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.app-intent.app-intent",
+    "displayName": "ET AppIntent Target"
+  }
+}

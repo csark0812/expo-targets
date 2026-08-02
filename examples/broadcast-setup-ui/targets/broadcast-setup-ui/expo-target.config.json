@@ -1,0 +1,16 @@
+{
+  "type": "broadcast-setup-ui",
+  "name": "BroadcastSetupUi",
+  "displayName": "ET BroadcastUI Target",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.example.broadcast-setup-ui",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.broadcast-setup-ui.broadcast-setup-ui",
+    "displayName": "ET BroadcastUI Target",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "BroadcastSetupViewController"
+      }
+    }
+  }
+}

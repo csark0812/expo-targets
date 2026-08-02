@@ -14,9 +14,11 @@
 
 iOS widget investment: **shared spine only**. Android widgets: **bridge-grade** until the Expo exit ramp above.
 
-## Config-only types freeze
+## New extension types (no orphan stubs)
 
-Do **not** add new config-only extension types (stubs that only generate Xcode targets). Polish production-ready types instead: share, action, clip, messages, stickers, wallet, and the existing config-only set.
+New `ExtensionType` values are allowed **only** when the same PR ships **registry + scaffold template + production example + Devicewright REQUIRED row** (full per-type DoD). Do **not** add config-only stubs that only generate Xcode targets.
+
+See the Bacon compatibility epic / [migrate-from-bacons-apple-targets.md](./migrate-from-bacons-apple-targets.md).
 
 ## Dual widget engines
 

@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "ET NCE N",
+    "slug": "example-notification-content",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.expotargets.example.native.notification-content",
+      "deploymentTarget": "15.1",
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.expotargets.example.native.notification-content"
+        ]
+      },
+      "infoPlist": {
+        "CFBundleDisplayName": "ET NCE N"
+      }
+    },
+    "plugins": [
+      "expo-notifications",
+      [
+        "expo-targets",
+        {
+          "debug": true
+        }
+      ]
+    ],
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.expotargets.example.native.notification-content"
+    }
+  }
+}

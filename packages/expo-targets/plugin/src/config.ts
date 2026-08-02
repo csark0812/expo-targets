@@ -23,7 +23,31 @@ export type ExtensionType =
   | 'app-intent'
   | 'device-activity-monitor'
   | 'matter'
-  | 'watch';
+  | 'watch'
+  | 'content-blocker'
+  | 'keyboard'
+  | 'photo-editing'
+  | 'file-provider'
+  | 'file-provider-ui'
+  | 'broadcast-upload'
+  | 'broadcast-setup-ui'
+  | 'call-directory'
+  | 'message-filter'
+  | 'unwanted-communication'
+  | 'network-packet-tunnel'
+  | 'network-app-proxy'
+  | 'network-dns-proxy'
+  | 'network-filter-data'
+  | 'shield-action'
+  | 'shield-config'
+  | 'classkit-context'
+  | 'authentication-services'
+  | 'spotlight-delegate'
+  | 'quicklook-preview'
+  | 'print-service'
+  | 'smart-card'
+  | 'virtual-conference'
+  | 'watch-widget';
 
 export interface Color {
   light?: string;
@@ -114,6 +138,30 @@ export const TYPE_MINIMUM_DEPLOYMENT_TARGETS: Record<ExtensionType, string> = {
   'device-activity-monitor': '15.0',
   matter: '16.1',
   watch: '2.0',
+  'content-blocker': '11.0',
+  keyboard: '8.0',
+  'photo-editing': '8.0',
+  'file-provider': '11.0',
+  'file-provider-ui': '11.0',
+  'broadcast-upload': '10.0',
+  'broadcast-setup-ui': '10.0',
+  'call-directory': '10.0',
+  'message-filter': '11.0',
+  'unwanted-communication': '12.0',
+  'network-packet-tunnel': '9.0',
+  'network-app-proxy': '9.0',
+  'network-dns-proxy': '11.0',
+  'network-filter-data': '9.0',
+  'shield-action': '15.0',
+  'shield-config': '15.0',
+  'classkit-context': '11.4',
+  'authentication-services': '13.0',
+  'spotlight-delegate': '13.0',
+  'quicklook-preview': '8.0',
+  'print-service': '14.0',
+  'smart-card': '10.0',
+  'virtual-conference': '15.0',
+  'watch-widget': '9.0',
 };
 
 export const TYPE_BUNDLE_IDENTIFIER_SUFFIXES: Record<ExtensionType, string> = {
@@ -140,6 +188,30 @@ export const TYPE_BUNDLE_IDENTIFIER_SUFFIXES: Record<ExtensionType, string> = {
   'device-activity-monitor': 'device-activity-monitor',
   matter: 'matter',
   watch: 'watch',
+  'content-blocker': 'content-blocker',
+  keyboard: 'keyboard',
+  'photo-editing': 'photo-editing',
+  'file-provider': 'file-provider',
+  'file-provider-ui': 'file-provider-ui',
+  'broadcast-upload': 'broadcast-upload',
+  'broadcast-setup-ui': 'broadcast-setup-ui',
+  'call-directory': 'call-directory',
+  'message-filter': 'message-filter',
+  'unwanted-communication': 'unwanted-communication',
+  'network-packet-tunnel': 'network-packet-tunnel',
+  'network-app-proxy': 'network-app-proxy',
+  'network-dns-proxy': 'network-dns-proxy',
+  'network-filter-data': 'network-filter-data',
+  'shield-action': 'shield-action',
+  'shield-config': 'shield-config',
+  'classkit-context': 'classkit-context',
+  'authentication-services': 'authentication-services',
+  'spotlight-delegate': 'spotlight-delegate',
+  'quicklook-preview': 'quicklook-preview',
+  'print-service': 'print-service',
+  'smart-card': 'smart-card',
+  'virtual-conference': 'virtual-conference',
+  'watch-widget': 'watch-widget',
 };
 
 // Base configuration shared by all iOS targets

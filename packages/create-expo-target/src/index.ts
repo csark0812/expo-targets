@@ -25,13 +25,27 @@ async function main() {
         { title: 'Action Extension', value: 'action' },
         { title: 'App Clip', value: 'clip' },
         { title: 'Messages App', value: 'messages' },
-        { title: 'iMessage Stickers', value: 'imessage' },
+        {
+          title: 'iMessage Stickers (writes type: stickers)',
+          value: 'imessage',
+        },
         { title: 'Wallet Extension', value: 'wallet' },
         { title: 'Siri Intent', value: 'intent' },
         {
           title: 'Widget (soft-deprecated — prefer expo-widgets for React/iOS)',
           value: 'widget',
         },
+        { title: 'Notification Service', value: 'notification-service' },
+        { title: 'Notification Content', value: 'notification-content' },
+        { title: 'Safari Web Extension', value: 'safari' },
+        { title: 'Content Blocker', value: 'content-blocker' },
+        { title: 'App Intent', value: 'app-intent' },
+        { title: 'Keyboard', value: 'keyboard' },
+        { title: 'Photo Editing', value: 'photo-editing' },
+        { title: 'File Provider', value: 'file-provider' },
+        { title: 'Broadcast Upload', value: 'broadcast-upload' },
+        { title: 'Call Directory', value: 'call-directory' },
+        { title: 'Credentials Provider', value: 'credentials-provider' },
       ],
     },
     {
@@ -148,8 +162,9 @@ function generateConfig(
   useReactNative?: boolean,
   includeIntentUi?: boolean
 ): string {
+  const configType = type === 'imessage' ? 'stickers' : type;
   const config: any = {
-    type,
+    type: configType,
     name: pascalName,
     displayName: kebabName
       .split('-')
@@ -185,6 +200,7 @@ function generateConfig(
 
 // biome-ignore lint/complexity/useMaxParams: pre-existing complexity; tracked for refactor
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
 function copyTemplate(
   type: string,
   platform: string,
@@ -584,9 +600,20 @@ class IntentViewController: UIViewController, INUIHostedViewControlling {
 }`,
   };
 
-  const templateFn = templates[type] || templates.widget;
+  const genericStub = `import Foundation
+
+@objc(${pascalName}Handler)
+class ${pascalName}Handler: NSObject {
+  // Minimal stub — replace with the Apple extension principal for type "${type}".
+}
+`;
+
+  const templateFn =
+    templates[type] || (type === 'imessage' ? templates.imessage : null);
   const template =
-    typeof templateFn === 'function' ? templateFn(pascalName) : templateFn;
+    typeof templateFn === 'function'
+      ? templateFn(pascalName)
+      : templateFn || genericStub;
   let filename = 'Main.swift';
   if (type === 'widget') {
     filename = 'Widget.swift';

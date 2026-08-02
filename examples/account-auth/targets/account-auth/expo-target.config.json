@@ -1,0 +1,16 @@
+{
+  "type": "account-auth",
+  "name": "AccountAuth",
+  "displayName": "ET AcctAuth Target",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.example.account-auth",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.account-auth.account-auth",
+    "displayName": "ET AcctAuth Target",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "AccountAuthViewController"
+      }
+    }
+  }
+}

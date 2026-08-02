@@ -2,8 +2,10 @@ import path from "node:path";
 import { runMatrix, type SuiteMatrixRow } from "@csark0812/devicewright/suite";
 import { ensureHostReleaseInstall } from "./ensure-install";
 import { journeyFor, stubResult } from "./journeys";
+import { dismissSystemAlerts } from "./journeys/helpers";
+import { assertOsLimitAllowed, claimForId } from "./claims";
 import {
-  REQUIRED_V1,
+  REQUIRED_V2,
   type RequiredTargetRow,
   type TargetPhase,
 } from "./required";
@@ -23,19 +25,19 @@ export type RunTargetMatrixOptions = {
 };
 
 function resolveRows(ids?: string[]): RequiredTargetRow[] {
-  if (!ids?.length) return [...REQUIRED_V1];
+  if (!ids?.length) return [...REQUIRED_V2];
   const wanted = new Set(ids);
-  const rows = REQUIRED_V1.filter((r) => wanted.has(r.id));
+  const rows = REQUIRED_V2.filter((r) => wanted.has(r.id));
   const missing = ids.filter((id) => !rows.some((r) => r.id === id));
   if (missing.length) {
-    throw new Error(`unknown REQUIRED_V1 id(s): ${missing.join(", ")}`);
+    throw new Error(`unknown REQUIRED_V2 id(s): ${missing.join(", ")}`);
   }
   return rows;
 }
 
 /**
- * REQUIRED_V1 matrix — consumer-owned; uses DW generic runMatrix.
- * iOS 26.5 AX unlock lives in @csark0812/devicewright (devices.launch / doctor).
+ * REQUIRED_V2 matrix — consumer-owned; uses DW generic runMatrix.
+ * Unknown os-limit (not in claims.ts) fails hard.
  */
 export async function runTargetMatrix(options: RunTargetMatrixOptions = {}) {
   const rows = resolveRows(options.ids);
@@ -82,7 +84,22 @@ export async function runTargetMatrix(options: RunTargetMatrixOptions = {}) {
               id: row.id,
               deviceId: device.deviceId,
             });
+            // expo run:ios opens via simctl openurl → “Open in …?”; clear before journey.
+            await dismissSystemAlerts(device);
           } catch (e) {
+            const claim = claimForId(row.id);
+            if (claim) {
+              return {
+                id: row.id,
+                path: row.path,
+                phase: row.phase,
+                ok: true,
+                status: "os-limit" as const,
+                steps: ["ensure-install"],
+                error: `${claim.reason} (ensure-install: ${String(e)})`,
+                failureKind: "os-limit" as const,
+              };
+            }
             return {
               id: row.id,
               path: row.path,
@@ -115,15 +132,29 @@ export async function runTargetMatrix(options: RunTargetMatrixOptions = {}) {
     if (r.status === "stub" && meta) {
       return { ...stubResult(meta), error: r.error ?? stubResult(meta).error };
     }
+    let status = r.status as TargetJourneyResult["status"];
+    let error = r.error;
+    let failureKind = r.failureKind as TargetJourneyResult["failureKind"];
+    let ok = r.ok;
+    if (status === "os-limit") {
+      try {
+        assertOsLimitAllowed(r.id);
+      } catch (e) {
+        status = "red";
+        ok = false;
+        failureKind = "product";
+        error = String(e);
+      }
+    }
     return {
       id: r.id,
       path: meta?.path ?? r.id,
       phase: meta?.phase ?? 1,
-      ok: r.ok,
-      status: r.status as TargetJourneyResult["status"],
+      ok,
+      status,
       steps: (r.steps as string[]) ?? [],
-      error: r.error,
-      failureKind: r.failureKind as TargetJourneyResult["failureKind"],
+      error,
+      failureKind,
       checklist: (r as { checklist?: string[] }).checklist,
     };
   });

@@ -1,0 +1,19 @@
+{
+  "type": "photo-editing",
+  "name": "PhotoEditing",
+  "displayName": "ET PhotoEdit Target",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.example.photo-editing",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.photo-editing.photo-editing",
+    "displayName": "ET PhotoEdit Target",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "PhotoEditingViewController",
+        "NSExtensionAttributes": {
+          "PHSupportedMediaTypes": ["Image"]
+        }
+      }
+    }
+  }
+}

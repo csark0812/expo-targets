@@ -1,6 +1,8 @@
 # Devicewright example suite (consumer)
 
-Owns REQUIRED_V1 journeys for public `examples/*`. Devicewright (`@csark0812/devicewright`) is the private npm library that runs them.
+Owns REQUIRED_V2 journeys for public `examples/*`. Devicewright (`@csark0812/devicewright`) is the private npm library that runs them.
+
+See [PR_PROOF.md](./PR_PROOF.md) for operator pre-merge checklist, [claims.ts](./claims.ts) for approved `os-limit` rows, and [touchpoints.ts](./touchpoints.ts) for live-touchpoint definitions.
 
 ## Layout (Maestro parallel)
 
@@ -21,7 +23,7 @@ See [AUTH.md](./AUTH.md).
 
 ## Release install (required for share/action/messages bars)
 
-Debug binaries are an **operator** fail. For each REQUIRED_V1 example:
+Debug binaries are an **operator** fail. For each REQUIRED_V2 example:
 
 ```bash
 cd examples/share   # or action|messages|…

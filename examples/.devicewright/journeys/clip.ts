@@ -15,11 +15,16 @@ const SAFARI_BUNDLE = "com.apple.mobilesafari";
 /**
  * Clip host + invocation as far as idb allows.
  * Host contract: screen-root + seed/clear/payload. Invocation via Safari soft probe.
+ *
+ * `id` selects the catalog entry — "clip" (default) or "native-clip" (same
+ * App-Clip-shaped host contract, distinct bundle id / example path).
  */
 export async function runClipJourney(
   device: DeviceSession,
+  id: "clip" | "native-clip" = "clip",
 ): Promise<TargetJourneyResult> {
-  const entry = TARGET_CATALOG.clip;
+  const entry = TARGET_CATALOG[id];
+  const phase = id === "native-clip" ? 4 : 3;
   const steps: string[] = [];
   try {
     steps.push("launch-host");
@@ -53,7 +58,7 @@ export async function runClipJourney(
     return {
       id: entry.id,
       path: entry.path,
-      phase: 3,
+      phase,
       ok: true,
       status: "green",
       steps,
@@ -66,7 +71,7 @@ export async function runClipJourney(
     return {
       id: entry.id,
       path: entry.path,
-      phase: 3,
+      phase,
       ok: false,
       status: failureKind === "operator" ? "operator" : "red",
       steps,

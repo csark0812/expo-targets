@@ -108,7 +108,7 @@ function planStickers({
 export function planAssets({
   workspace,
   props,
-  identity,
+  identity: _identity,
   paths,
 }: {
   workspace: TargetWorkspace;

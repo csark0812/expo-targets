@@ -1,0 +1,16 @@
+{
+  "type": "shield-config",
+  "name": "ShieldConfig",
+  "displayName": "ET ShieldCfg Target",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.example.shield-config",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.shield-config.shield-config",
+    "displayName": "ET ShieldCfg Target",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "ShieldConfigurationExtension"
+      }
+    }
+  }
+}

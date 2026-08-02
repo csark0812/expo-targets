@@ -1,0 +1,16 @@
+{
+  "type": "shield-action",
+  "name": "ShieldAction",
+  "displayName": "ET ShieldAct Target",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.example.shield-action",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.shield-action.shield-action",
+    "displayName": "ET ShieldAct Target",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "ShieldActionExtension"
+      }
+    }
+  }
+}

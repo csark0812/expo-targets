@@ -1,0 +1,16 @@
+{
+  "type": "quicklook-preview",
+  "name": "QuicklookPreview",
+  "displayName": "ET QLPreview Target",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.example.quicklook-preview",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.quicklook-preview.quicklook-preview",
+    "displayName": "ET QLPreview Target",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "PreviewViewController"
+      }
+    }
+  }
+}

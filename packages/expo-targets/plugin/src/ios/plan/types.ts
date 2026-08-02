@@ -121,6 +121,8 @@ export interface AssetPlan {
 
 export interface SafariResourcesPlan {
   resourcesPath: string;
+  /** Path stored in the PBX file reference, relative to `ios/`. */
+  referencePath: string;
   useCustomResources: boolean;
   userResourcesPath: string;
   name: string;

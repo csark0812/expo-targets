@@ -1,0 +1,16 @@
+{
+  "type": "authentication-services",
+  "name": "AuthenticationServices",
+  "displayName": "ET AuthSvc Target",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.example.authentication-services",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.authentication-services.authentication-services",
+    "displayName": "ET AuthSvc Target",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "AuthenticationServicesHandler"
+      }
+    }
+  }
+}

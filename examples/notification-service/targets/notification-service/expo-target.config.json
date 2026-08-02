@@ -1,0 +1,11 @@
+{
+  "type": "notification-service",
+  "name": "NotificationService",
+  "displayName": "ET NSE Target",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.example.notification-service",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.notification-service.notification-service",
+    "displayName": "ET NSE Target"
+  }
+}
