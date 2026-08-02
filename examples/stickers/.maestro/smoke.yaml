@@ -11,7 +11,7 @@ tags:
 - assertVisible:
     id: status-target-ready
 - tapOn:
-    id: btn-seed-payload
+    id: btn-show-pack-catalog
 - assertVisible:
     id: text-last-payload
 - tapOn:

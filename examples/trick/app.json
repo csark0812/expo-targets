@@ -6,17 +6,11 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "scheme": "expotargets-trick",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0B1220"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.expotargets.example.trick",
-      "deploymentTarget": "15.1",
+      "deploymentTarget": "16.4",
       "entitlements": {
         "com.apple.security.application-groups": [
           "group.com.expotargets.example.trick"
@@ -31,6 +25,14 @@
       }
     },
     "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "backgroundColor": "#0B1220",
+          "resizeMode": "contain"
+        }
+      ],
       "expo-notifications",
       [
         "expo-targets",

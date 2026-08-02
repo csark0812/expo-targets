@@ -1,10 +1,12 @@
 import UIKit
+internal import Expo
 import React
-import React_RCTAppDelegate
 import ReactAppDependencyProvider
 
-// Extension-compatible delegate using standard RCT pattern
-private class ExtensionReactDelegate: RCTDefaultReactNativeFactoryDelegate {
+// Extension-compatible delegate. SDK 55+ prebuilt React no longer exposes a
+// standalone Swift module `React_RCTAppDelegate`; Expo's umbrella re-exports
+// those types (same pattern as the host AppDelegate).
+private class ExtensionReactDelegate: ExpoReactNativeFactoryDelegate {
     var bundleRoot: String
 
     init(bundleRoot: String) {
@@ -44,8 +46,8 @@ private class ExtensionReactDelegate: RCTDefaultReactNativeFactoryDelegate {
 }
 
 class ReactNativeViewController: UIViewController {
-    private var reactNativeFactory: RCTReactNativeFactory?
-    private var reactNativeFactoryDelegate: RCTReactNativeFactoryDelegate?
+    private var reactNativeFactory: ExpoReactNativeFactory?
+    private var reactNativeFactoryDelegate: ExpoReactNativeFactoryDelegate?
     private var rootView: UIView?
     private var isCleanedUp = false
     private var initialExtensionData: [String: Any]?
@@ -107,8 +109,8 @@ class ReactNativeViewController: UIViewController {
         reactNativeFactoryDelegate = ExtensionReactDelegate(bundleRoot: "{{BUNDLE_ROOT}}")
         reactNativeFactoryDelegate!.dependencyProvider = RCTAppDependencyProvider()
 
-        // Create factory using standard RCT pattern
-        reactNativeFactory = RCTReactNativeFactory(delegate: reactNativeFactoryDelegate!)
+        // Create factory via Expo (pulls RCTAppDelegate APIs through Expo.h)
+        reactNativeFactory = ExpoReactNativeFactory(delegate: reactNativeFactoryDelegate!)
 
         // Capture current view properties
         let currentBounds = self.view.bounds

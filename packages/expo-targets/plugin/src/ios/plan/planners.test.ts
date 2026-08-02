@@ -546,6 +546,7 @@ describe('composeXcodeTargetPlan', () => {
     expect(plan.buildSettings.MARKETING_VERSION).toBe('1.2.3');
     expect(plan.infoPlist.contents).toContain('ReactNativeViewController');
     expect(plan.safari).toBeUndefined();
+    expect(plan.bundleReactNative).toEqual({ entryFile: 'index.tsx' });
   });
 
   test('plans Safari resources for safari targets with an entry', () => {
@@ -564,6 +565,7 @@ describe('composeXcodeTargetPlan', () => {
     expect(plan.safari?.useCustomResources).toBe(false);
     expect(plan.safari?.resourcesPath).toContain('build/Resources');
     expect(plan.safari?.referencePath).toContain('Resources');
+    expect(plan.bundleReactNative).toBeUndefined();
   });
 
   test('plans Safari resources for native safari without entry', () => {

@@ -1,6 +1,6 @@
 # Examples
 
-Thin Expo SDK 54 hosts for exercising expo-targets. Each package is Maestro-ready with host-contract `testID`s.
+Thin Expo SDK 57 hosts for exercising expo-targets. Each package is Maestro-ready with host-contract `testID`s.
 
 > **Agent constraint:** Humans boot the iOS Simulator and run `expo run:ios` (or Maestro) locally. Do not treat Maestro YAML as CI-proven without a built `.app` on a simulator.
 

@@ -12,6 +12,7 @@ export {
   getTargetInfoPlistForType,
 } from './buildInfoPlist';
 export { planBuildSettings } from './buildSettings';
+export { planBundleReactNative } from './bundleReactNative';
 export { composeXcodeTargetPlan } from './compose';
 export { planEmbed } from './embed';
 export { planEntitlements } from './entitlements';
@@ -22,6 +23,7 @@ export { planSafariResources } from './safari';
 export { planSwiftSources } from './swiftSources';
 export type {
   AssetPlan,
+  BundleReactNativePlan,
   ColorsetPlan,
   EmbedPlan,
   EntitlementsPlan,
