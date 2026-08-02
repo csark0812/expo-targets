@@ -11,7 +11,7 @@ This is a **field-map migration**, not a silent plugin swap. There is no Bacon `
 1. Replace the config plugin `@bacons/apple-targets` with `expo-targets` in `app.json` / `app.config`.
 2. Keep `/targets/<name>/expo-target.config.*` — rename fields per the table below (`exportJs` → `entry` + Metro).
 3. Swap storage: Bacon `ExtensionStorage` → `createTarget` / App Group helpers from `expo-targets`.
-4. Widgets / Live Activities: prefer [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/); expo-targets keeps a soft-deprecated WidgetKit spine only.
+4. Widgets / Live Activities: native WidgetKit + ActivityKit in expo-targets ([widgets.md](./widgets.md)); do not dual-generate with `expo-widgets`.
 5. Alias: Bacon `imessage` → expo-targets `stickers` (asset pack) or `messages` (Messages app). Payload-provider stickers are not a full Messages extension.
 
 ## Plugin / package rename
@@ -25,13 +25,13 @@ This is a **field-map migration**, not a silent plugin swap. There is no Bacon `
 
 ## Type alias table
 
-| Bacon `type`                    | expo-targets `type`                           | Notes                                       |
-| ------------------------------- | --------------------------------------------- | ------------------------------------------- |
-| `widget`                        | `widget`                                      | Soft-deprecated → expo-widgets for new work |
-| `watch-widget`                  | `watch-widget`                                | Paired watch DoD                            |
-| `imessage`                      | `stickers` or `messages`                      | No `imessage` in ExtensionType              |
-| `share` / `action` / `clip` / … | same string when listed in ExtensionType      | See [configuration.md](./configuration.md)  |
-| Types only in Bacon             | Landed incrementally with scaffold+example+DW | Compare: `bun run compare:bacon-registry`   |
+| Bacon `type`                    | expo-targets `type`                           | Notes                                          |
+| ------------------------------- | --------------------------------------------- | ---------------------------------------------- |
+| `widget`                        | `widget`                                      | First-class native WidgetKit + Live Activities |
+| `watch-widget`                  | `watch-widget`                                | Paired watch DoD                               |
+| `imessage`                      | `stickers` or `messages`                      | No `imessage` in ExtensionType                 |
+| `share` / `action` / `clip` / … | same string when listed in ExtensionType      | See [configuration.md](./configuration.md)     |
+| Types only in Bacon             | Landed incrementally with scaffold+example+DW | Compare: `bun run compare:bacon-registry`      |
 
 ## Config field map
 

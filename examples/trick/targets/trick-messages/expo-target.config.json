@@ -1,0 +1,12 @@
+{
+  "type": "messages",
+  "name": "TrickMessages",
+  "displayName": "ET Trick Messages",
+  "platforms": ["ios"],
+  "entry": "./targets/trick-messages/index.tsx",
+  "appGroup": "group.com.expotargets.example.trick",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.trick.messages",
+    "displayName": "ET Trick Messages"
+  }
+}

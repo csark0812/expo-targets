@@ -1,38 +1,34 @@
-# Widgets and expo-widgets
+# Widgets and Live Activities
 
-**Source of truth for** widgets handoff and coexistence with official Expo widgets.
+**Source of truth for** WidgetKit / ActivityKit ownership in expo-targets.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-07-30 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-02 -->
 
-## Strong handoff (React / iOS)
+## Ownership
 
-For **new iOS home-screen widgets** and **Live Activities** built in React / Expo UI, use official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) (Expo SDK 56+).
+expo-targets owns **native WidgetKit home-screen widgets** and **ActivityKit Live Activities** as first-class Apple targets (negative-space / shared spine with other extensions).
 
-Live Activities are **out of scope** for expo-targets — use `expo-widgets`.
+Official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) remains a valid choice for React/Expo-UI-first widgets on SDK 56+, but it is **not** a soft-deprecate handoff for this library. Prefer this package when you already use expo-targets for share/clip/messages/etc. and want one config-plugin spine.
 
-## Native iOS widgets in this library
+## Dual engines
 
-Native SwiftUI / WidgetKit widgets via `type: "widget"` still work and remain in the API, but are **soft-deprecated** as the lead product story:
-
-- Prefer `expo-widgets` for React-first iOS widgets.
-- Investment here is **shared-spine only** (App Groups, config plugin, storage) — not a competing React-widget DX.
-- Deprecation warnings appear in minors when scaffolding or constructing widget targets; removal is reserved for a future major (or when Expo covers Android widgets). See [deprecations.md](./deprecations.md).
+Do **not** configure both `expo-widgets` and expo-targets to generate WidgetKit widget targets in the same app. Pick one generator per app.
 
 ## Android widgets
 
-Android home-screen widgets (Glance / RemoteViews) are **bridge-grade**: supported and intentional while Expo’s widgets stack is iOS-only. When Expo ships Android widgets, this surface may be dropped.
-
-## Coexistence with `expo-widgets`
-
-**Split ownership (supported):** use `expo-widgets` for iOS widgets / Live Activities, and expo-targets for share, action, clip, messages, stickers, wallet, and other non-widget targets in the same app.
-
-**Dual widget engines (unsupported for now):** do not configure both packages to generate WidgetKit widget targets in one app. Revisit only if real projects are blocked on split ownership (demand bar).
+Android home-screen widgets (Glance / RemoteViews) stay **bridge-grade** and intentional while Expo’s official widgets stack is iOS-led. Other Apple extension types have no Android equivalent — see [limits.md](./limits.md).
 
 ## Scaffolding
 
 ```bash
 npx create-expo-target
-# Widget is demoted in the menu; confirm after the expo-widgets handoff prompt
+# choose Widget — native WidgetKit scaffold
 ```
 
-For React Native extensions (the recommended lead path), see [getting-started.md](./getting-started.md) and [react-native-extensions.md](./react-native-extensions.md).
+Live Activities: ship an ActivityKit configuration in the widget extension and start/end from the host (see [`examples/trick`](../examples/trick)).
+
+## Related
+
+- [limits.md](./limits.md) — lib floor vs Apple gates
+- [deprecations.md](./deprecations.md) — roadmap policy
+- [getting-started.md](./getting-started.md)

@@ -1,0 +1,16 @@
+{
+  "type": "content-blocker",
+  "name": "TrickBlocker",
+  "displayName": "ET Trick Blocker",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.example.trick",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.trick.blocker",
+    "displayName": "ET Trick Blocker",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "ContentBlockerRequestHandler"
+      }
+    }
+  }
+}

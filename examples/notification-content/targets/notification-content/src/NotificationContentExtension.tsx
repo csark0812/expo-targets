@@ -19,8 +19,12 @@ export default function NotificationContentExtension({
       <Text style={styles.body} testID="nce-rn-body">
         {body ?? ''}
       </Text>
-      <Text style={styles.marker} testID="nce-rn-marker">
-        ET NCE RN
+      <Text
+        style={styles.marker}
+        testID="nce-rn-marker"
+        accessibilityLabel="ET NCE Content"
+      >
+        ET NCE Content
       </Text>
       {category ? (
         <Text style={styles.meta} testID="nce-rn-category">

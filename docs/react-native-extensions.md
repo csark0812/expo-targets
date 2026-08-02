@@ -10,14 +10,14 @@ Build share extensions, action extensions, App Clips, and iMessage apps using Re
 
 ## Supported Types
 
-| Type       | React Native Support | Notes                                |
-| ---------- | -------------------- | ------------------------------------ |
-| `share`    | ✅ Full support      | Custom UI for sharing                |
-| `action`   | ✅ Full support      | Process content in place             |
-| `clip`     | ✅ Full support      | Lightweight app preview              |
-| `messages` | ✅ Full support      | iMessage app with RN UI              |
-| `widget`   | ❌ SwiftUI only      | Soft-deprecated; prefer expo-widgets |
-| `stickers` | ❌ Native only       | Static image assets                  |
+| Type       | React Native Support | Notes                                          |
+| ---------- | -------------------- | ---------------------------------------------- |
+| `share`    | ✅ Full support      | Custom UI for sharing                          |
+| `action`   | ✅ Full support      | Process content in place                       |
+| `clip`     | ✅ Full support      | Lightweight app preview                        |
+| `messages` | ✅ Full support      | iMessage app with RN UI                        |
+| `widget`   | ❌ SwiftUI only      | First-class native WidgetKit + Live Activities |
+| `stickers` | ❌ Native only       | Static image assets                            |
 
 ---
 

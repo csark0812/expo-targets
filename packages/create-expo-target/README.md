@@ -23,7 +23,7 @@ Interactive CLI that creates:
 
 - Share / Action / App Clip / Messages
 - iMessage Stickers (writes `type: "stickers"`, not `imessage`)
-- Wallet / Siri Intent / Widget (soft-deprecated → expo-widgets)
+- Wallet / Siri Intent / Widget (native WidgetKit + Live Activities)
 - Notification Service / Content, Safari, Content Blocker, App Intent
 - Keyboard, Photo Editing, File Provider, Broadcast Upload, Call Directory, Credentials Provider
 

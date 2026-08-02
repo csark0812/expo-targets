@@ -6,7 +6,7 @@
 
 Add **share extensions**, **action extensions**, **App Clips**, **iMessage apps**, **stickers**, **wallet extensions**, and other Apple targets Expo does not ship — including React Native UIs where supported.
 
-> **Widgets:** For new React/iOS widgets and Live Activities, prefer official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) (SDK 56+). Native/Android widgets in this library are soft-deprecated / bridge-grade. See [Widgets handoff](./docs/widgets.md).
+> **Widgets:** Native WidgetKit + Live Activities are first-class in this library. Official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) is an alternative React/Expo-UI path — do not dual-generate WidgetKit in one app. Android widgets remain bridge-grade. See [widgets.md](./docs/widgets.md) and [limits.md](./docs/limits.md).
 
 > **Important:** Requires development builds (`npx expo run:ios`). Does not work with Expo Go.
 >
@@ -89,18 +89,18 @@ close(); // Dismiss the extension
 
 ## Supported Extensions
 
-| Type                   | iOS | Android | Description             |
-| ---------------------- | --- | ------- | ----------------------- |
-| `share`                | ✅   | 🔜       | Share extensions        |
-| `action`               | ✅   | 🔜       | Action extensions       |
+| Type                   | iOS  | Android | Description             |
+| ---------------------- | ---- | ------- | ----------------------- |
+| `share`                | ✅   | 🔜      | Share extensions        |
+| `action`               | ✅   | 🔜      | Action extensions       |
 | `clip`                 | ✅   | —       | App Clips               |
 | `stickers`             | ✅   | —       | iMessage sticker packs  |
 | `messages`             | ✅   | —       | iMessage apps           |
 | `wallet`               | ✅   | —       | Wallet extensions       |
-| `widget`               | ✅\* | ✅†      | Home screen widgets     |
+| `widget`               | ✅\* | ✅†     | Home screen widgets     |
 | `safari`               | 📋   | —       | Safari web extensions   |
-| `notification-content` | 📋   | 🔜       | Rich notification UI    |
-| `notification-service` | 📋   | 🔜       | Notification processing |
+| `notification-content` | 📋   | 🔜      | Rich notification UI    |
+| `notification-service` | 📋   | 🔜      | Notification processing |
 | `intent`               | 📋   | —       | Siri intents            |
 | `intent-ui`            | 📋   | —       | Siri intent UI          |
 
@@ -108,7 +108,7 @@ close(); // Dismiss the extension
 
 > \*Config-only types generate the Xcode target structure but require you to write all Swift code yourself. **No new config-only types** are being added. See [Deprecations](./docs/deprecations.md).
 >
-> \*`widget` (iOS): soft-deprecated — prefer [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) for React widgets. †Android widgets: bridge-grade. Details: [widgets.md](./docs/widgets.md).
+> \*`widget` (iOS): first-class native WidgetKit + Live Activities. †Android widgets: bridge-grade. Details: [widgets.md](./docs/widgets.md).
 
 ---
 
@@ -137,18 +137,18 @@ cd expo-targets/examples/share
 npm install && npx expo run:ios
 ```
 
-| Example                                   | What it shows                                                               |
-| ----------------------------------------- | --------------------------------------------------------------------------- |
-| [share](./examples/share)                 | React Native share extension                                                |
-| [action](./examples/action)               | React Native action extension                                               |
-| [clip](./examples/clip)                   | React Native App Clip                                                       |
-| [stickers](./examples/stickers)           | Asset-only sticker pack                                                     |
-| [widgets](./examples/widgets)             | iOS WidgetKit (soft-deprecated; prefer [`expo-widgets`](./docs/widgets.md)) |
-| [messages](./examples/messages)           | React Native messages extension                                             |
-| [kitchen-sink](./examples/kitchen-sink)   | Six primary types in one host                                               |
-| [native/share](./examples/native/share)   | Swift share + RN host                                                       |
-| [native/action](./examples/native/action) | Swift action + RN host                                                      |
-| [native/clip](./examples/native/clip)     | SwiftUI App Clip + RN host                                                  |
+| Example                                   | What it shows                                                     |
+| ----------------------------------------- | ----------------------------------------------------------------- |
+| [share](./examples/share)                 | React Native share extension                                      |
+| [action](./examples/action)               | React Native action extension                                     |
+| [clip](./examples/clip)                   | React Native App Clip                                             |
+| [stickers](./examples/stickers)           | Asset-only sticker pack                                           |
+| [widgets](./examples/widgets)             | iOS WidgetKit + Live Activities ([widgets.md](./docs/widgets.md)) |
+| [messages](./examples/messages)           | React Native messages extension                                   |
+| [kitchen-sink](./examples/kitchen-sink)   | Six primary types in one host                                     |
+| [native/share](./examples/native/share)   | Swift share + RN host                                             |
+| [native/action](./examples/native/action) | Swift action + RN host                                            |
+| [native/clip](./examples/native/clip)     | SwiftUI App Clip + RN host                                        |
 
 See [examples/README.md](./examples/README.md) for Maestro vs manual coverage.
 
@@ -219,4 +219,4 @@ MIT
 
 Inspired by [@bacons/apple-targets](https://github.com/EvanBacon/expo-apple-targets) and [expo-share-extension](https://github.com/MaxAst/expo-share-extension).
 
-Widget-related prior art: official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) (preferred for React/iOS widgets today) and community [bittingz/expo-widgets](https://github.com/bittingz/expo-widgets) (historical inspiration only — not the Expo SDK package).
+Widget-related prior art: official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) (React/Expo-UI alternative) and community [bittingz/expo-widgets](https://github.com/bittingz/expo-widgets) (historical inspiration only).

@@ -1,0 +1,13 @@
+{
+  "type": "share",
+  "name": "TrickShare",
+  "displayName": "ET Trick Share",
+  "platforms": ["ios"],
+  "entry": "./targets/trick-share/index.tsx",
+  "appGroup": "group.com.expotargets.example.trick",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.trick.share",
+    "displayName": "ET Trick Share",
+    "activationRules": [{ "type": "text" }, { "type": "url" }]
+  }
+}

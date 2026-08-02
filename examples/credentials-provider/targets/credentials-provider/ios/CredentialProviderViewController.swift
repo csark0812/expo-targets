@@ -1,8 +1,6 @@
-import Foundation
+import AuthenticationServices
 import UIKit
 
-/// Minimal credentials-provider stub for expo-targets example (CredentialsProvider).
+/// Credentials provider extension — ASCredentialProviderViewController principal.
 @objc(CredentialProviderViewController)
-class CredentialProviderViewController: NSObject {
-  // Extension principal — replace with full Apple API conformance as needed.
-}
+class CredentialProviderViewController: ASCredentialProviderViewController {}

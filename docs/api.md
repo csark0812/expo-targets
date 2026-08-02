@@ -4,7 +4,7 @@
 
 <!-- doc-meta: owner=eng | last-reviewed=2026-07-30 -->
 
-> Widget targets: soft-deprecated — see [widgets.md](./widgets.md). Prefer this API for share/action/clip/messages and shared storage.
+> Widget targets: first-class native WidgetKit + Live Activities — see [widgets.md](./widgets.md).
 
 ## createTarget
 
@@ -639,7 +639,7 @@ interface NonExtensionTarget extends BaseTarget {
 
 **Legend:** ✅ Production ready · 📋 Config-only · 🔜 Planned · — Not applicable
 
-> **Note:** Config-only types (`wallet`, `wallet-ui`, `intent`, `intent-ui`, `app-intent`, etc.) generate the Xcode target structure, but you must provide Swift implementation. See [Configuration Reference](./configuration.md#config-only-types) for details.
+> **Note:** Only **stickers** is asset-only (`requiresCode: false`). Other types (`wallet`, NE family, etc.) are scaffold + real principals — see [limits.md](./limits.md). Do not add orphan ExtensionTypes without example + Devicewright row ([deprecations.md](./deprecations.md)).
 
 ### Android Notes
 

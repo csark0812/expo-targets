@@ -6,7 +6,7 @@
 
 Build a React Native **share extension** with expo-targets.
 
-> **Looking for widgets?** Prefer official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) for React/iOS widgets. Native widgets in this library are soft-deprecated — see [widgets.md](./widgets.md).
+> **Looking for widgets?** Native WidgetKit + Live Activities are first-class here — see [widgets.md](./widgets.md). Official `expo-widgets` is an alternative React/Expo-UI path (do not dual-generate).
 
 ## Prerequisites
 

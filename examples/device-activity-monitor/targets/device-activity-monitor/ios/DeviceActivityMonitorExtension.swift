@@ -1,8 +1,6 @@
+import DeviceActivity
 import Foundation
-import UIKit
 
-/// Minimal device-activity-monitor stub for expo-targets example (DeviceActivityMonitor).
+/// DeviceActivity monitor extension principal.
 @objc(DeviceActivityMonitorExtension)
-class DeviceActivityMonitorExtension: NSObject {
-  // Extension principal — replace with full Apple API conformance as needed.
-}
+class DeviceActivityMonitorExtension: DeviceActivityMonitor {}

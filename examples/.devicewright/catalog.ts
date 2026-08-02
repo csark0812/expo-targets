@@ -149,6 +149,21 @@ export const TARGET_CATALOG: Record<string, TargetCatalogEntry> = {
       lastPayload: "text-last-payload",
     },
   },
+  "live-activity": {
+    id: "live-activity",
+    path: "examples/trick",
+    hostBundleId: "com.expotargets.example.trick",
+    hostDisplayName: "ET Trick",
+    extensionName: "ET Trick Widget",
+    extensionAliases: ["ET Trick Widget", "TrickWidget"],
+    payloadMarker: "ready",
+    completeButton: "",
+    testIds: {
+      screenRoot: "screen-root",
+      clearPayload: "btn-end-live",
+      lastPayload: "text-live-id",
+    },
+  },
 
   "notification-service": {
     id: "notification-service",

@@ -6,18 +6,18 @@ Thin Expo SDK 54 hosts for exercising expo-targets. Each package is Maestro-read
 
 ## Packages
 
-| Package                            | NPM name                              | Target story                                                                       | Maestro                                           |
-| ---------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------- |
-| [`share`](./share)                 | `@expo-targets/example-share`         | React Native share extension                                                       | `smoke.yaml` (automated host)                     |
-| [`action`](./action)               | `@expo-targets/example-action`        | React Native action extension                                                      | `smoke.yaml` (automated host)                     |
-| [`messages`](./messages)           | `@expo-targets/example-messages`      | React Native messages extension                                                    | `smoke.yaml` (automated host)                     |
-| [`clip`](./clip)                   | `@expo-targets/example-clip`          | React Native App Clip + `expotargets-clip` scheme                                  | `smoke.yaml` (host + `openLink`)                  |
-| [`stickers`](./stickers)           | `@expo-targets/example-stickers`      | Asset-only sticker pack (no `withTargetsMetro`)                                    | `smoke.yaml` (automated host)                     |
-| [`widgets`](./widgets)             | `@expo-targets/example-widgets`       | iOS WidgetKit only — **soft-deprecated** → [`docs/widgets.md`](../docs/widgets.md) | `smoke.yaml` (automated host)                     |
-| [`kitchen-sink`](./kitchen-sink)   | `@expo-targets/example-kitchen-sink`  | Five targets, one App Group (messages, not stickers — iOS payload-provider limit)  | `smoke-{share,action,clip,widgets,messages}.yaml` |
-| [`native/share`](./native/share)   | `@expo-targets/example-native-share`  | Swift share + RN host (`AppGroupStorage`)                                          | `smoke.yaml` (automated host)                     |
-| [`native/action`](./native/action) | `@expo-targets/example-native-action` | Swift action + RN host                                                             | `smoke.yaml` (automated host)                     |
-| [`native/clip`](./native/clip)     | `@expo-targets/example-native-clip`   | SwiftUI App Clip + RN host (`expotargets-native-clip`)                             | `smoke.yaml` (host + `openLink`)                  |
+| Package                            | NPM name                              | Target story                                                                      | Maestro                                           |
+| ---------------------------------- | ------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------- |
+| [`share`](./share)                 | `@expo-targets/example-share`         | React Native share extension                                                      | `smoke.yaml` (automated host)                     |
+| [`action`](./action)               | `@expo-targets/example-action`        | React Native action extension                                                     | `smoke.yaml` (automated host)                     |
+| [`messages`](./messages)           | `@expo-targets/example-messages`      | React Native messages extension                                                   | `smoke.yaml` (automated host)                     |
+| [`clip`](./clip)                   | `@expo-targets/example-clip`          | React Native App Clip + `expotargets-clip` scheme                                 | `smoke.yaml` (host + `openLink`)                  |
+| [`stickers`](./stickers)           | `@expo-targets/example-stickers`      | Asset-only sticker pack (no `withTargetsMetro`)                                   | `smoke.yaml` (automated host)                     |
+| [`widgets`](./widgets)             | `@expo-targets/example-widgets`       | iOS WidgetKit + ActivityKit spine — [`docs/widgets.md`](../docs/widgets.md)       | `smoke.yaml` (automated host)                     |
+| [`kitchen-sink`](./kitchen-sink)   | `@expo-targets/example-kitchen-sink`  | Five targets, one App Group (messages, not stickers — iOS payload-provider limit) | `smoke-{share,action,clip,widgets,messages}.yaml` |
+| [`native/share`](./native/share)   | `@expo-targets/example-native-share`  | Swift share + RN host (`AppGroupStorage`)                                         | `smoke.yaml` (automated host)                     |
+| [`native/action`](./native/action) | `@expo-targets/example-native-action` | Swift action + RN host                                                            | `smoke.yaml` (automated host)                     |
+| [`native/clip`](./native/clip)     | `@expo-targets/example-native-clip`   | SwiftUI App Clip + RN host (`expotargets-native-clip`)                            | `smoke.yaml` (host + `openLink`)                  |
 
 ## App icons
 
@@ -44,9 +44,9 @@ Shared subflow: [`examples/.maestro/subflows/ios-open-security-dialog.yaml`](./.
 | Widget on Home Screen    | —                              | Add widget, verify message  |
 | Native Swift extensions  | —                              | Share/action/clip native UI |
 
-## Widgets soft-deprecation
+## Widgets + Live Activities
 
-New React/iOS widgets and Live Activities should use official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/). The [`widgets`](./widgets) and kitchen-sink `ks-widgets` examples remain for WidgetKit spine testing only. See [`docs/widgets.md`](../docs/widgets.md) and [`docs/deprecations.md`](../docs/deprecations.md).
+Native WidgetKit and ActivityKit are first-class in expo-targets. See [`widgets`](./widgets), [`trick`](./trick) (Live Activity showcase), [`docs/widgets.md`](../docs/widgets.md), and [`docs/limits.md`](../docs/limits.md). Android widgets stay bridge-grade (Glance/RemoteViews) until Expo covers them.
 
 ## Quick start
 

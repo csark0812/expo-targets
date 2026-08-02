@@ -127,25 +127,54 @@ export function hostReadyTestId(testIds: {
 
 /**
  * Dismiss common iOS “Open in …?” / permission alerts.
- * Prefer Cancel: expo run:ios opens via URL scheme (simctl openurl), which
- * leaves this sheet; journeys then launch by bundle id, so Cancel is correct.
+ * Prefer Cancel via accessibility-tree frames (resolution-independent); fall back
+ * to point-probe hotspots when AX omits the button frame.
  */
 export async function dismissSystemAlerts(
   device: DeviceSession,
   timeoutMs = 2_000,
-  attempts = 2,
+  attempts = 4,
 ): Promise<void> {
-  const labels = [
+  const dismissLabels = [
     "Cancel",
     "Close",
     "Not Now",
-    "Don’t Allow",
     "Don't Allow",
-    "Open",
+    "Don't Allow",
   ];
   for (let i = 0; i < attempts; i++) {
+    const tree = await device.accessibilityTree();
+    const flat = flattenLabels(tree);
+    const hasSheet = flat.some(
+      (l) =>
+        /open in .+\?/i.test(l) ||
+        dismissLabels.some((d) => l.toLowerCase() === d.toLowerCase()),
+    );
+    if (!hasSheet) {
+      return;
+    }
+
+    let tapped = false;
+    for (const name of dismissLabels) {
+      for (const node of tree) {
+        const label = (node.label ?? "").trim();
+        if (label.toLowerCase() !== name.toLowerCase()) continue;
+        const f = node.frame;
+        if (!f || f.width < 8 || f.height < 8) continue;
+        await device.tap({
+          x: Math.round(f.x + f.width / 2),
+          y: Math.round(f.y + f.height / 2),
+        });
+        await sleep(400);
+        tapped = true;
+        break;
+      }
+      if (tapped) break;
+    }
+    if (tapped) continue;
+
     try {
-      const hit = await findNamedViaPointProbe(device, labels, {
+      const hit = await findNamedViaPointProbe(device, dismissLabels, {
         timeoutMs,
         yStartRatio: 0.35,
         yEndRatio: 0.75,
@@ -153,7 +182,6 @@ export async function dismissSystemAlerts(
         stepY: 50,
         allowBlocked: true,
         match: "exact",
-        // “Open in …?” Cancel left-of-center; Open ~right (~260,496 on Air).
         hotspots: [
           { x: 136, y: 496 },
           { x: 80, y: 490 },

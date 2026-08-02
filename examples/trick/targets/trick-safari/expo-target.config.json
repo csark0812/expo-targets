@@ -1,0 +1,17 @@
+{
+  "type": "safari",
+  "name": "TrickSafari",
+  "displayName": "ET Trick Safari",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.example.trick",
+  "entry": "./targets/trick-safari/index.tsx",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.trick.safari",
+    "displayName": "ET Trick Safari",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "SafariWebExtensionHandler"
+      }
+    }
+  }
+}

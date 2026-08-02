@@ -64,6 +64,13 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     touchpoint: "WidgetKit spine host + widget tile present",
     status: "concrete",
   },
+  {
+    id: "live-activity",
+    tranche: "V1/T13",
+    touchpoint:
+      "Trick host starts ActivityKit Live Activity; Lock Screen / DI when Sim allows, else WidgetKit family pluginkit",
+    status: "concrete",
+  },
 
   // T1 Notifications
   {
@@ -79,7 +86,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     type: "notification-content",
     tranche: "T1",
     touchpoint:
-      "category push delivered + content-extension appex in pluginkit (rich UI expand best-effort on Simulator)",
+      "category push + expanded RN content UI marker (ET NCE Content); native keeps pluginkit fallback",
     status: "concrete",
   },
   {
@@ -168,20 +175,22 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
   {
     id: "credentials-provider",
     tranche: "T5",
-    touchpoint: "AutoFill / Settings provider listed; deeper flow os-limit",
-    status: "stub",
+    touchpoint:
+      "pluginkit lists credential-provider appex; AutoFill UI os-limit",
+    status: "concrete",
   },
   {
     id: "account-auth",
     tranche: "T5",
-    touchpoint: "Account auth modification UI extension load",
-    status: "stub",
+    touchpoint:
+      "pluginkit lists account-auth modification appex; Settings os-limit",
+    status: "concrete",
   },
   {
     id: "authentication-services",
     tranche: "T5",
-    touchpoint: "SSO extension install + host contract",
-    status: "stub",
+    touchpoint: "pluginkit lists AppSSO idp appex; SSO flow os-limit",
+    status: "concrete",
   },
   {
     id: "photo-editing",
@@ -256,44 +265,45 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
   {
     id: "device-activity-monitor",
     tranche: "T9",
-    touchpoint: "DeviceActivity monitor install + plist; flow os-limit",
-    status: "stub",
+    touchpoint:
+      "pluginkit lists DeviceActivity monitor appex; Family Controls os-limit",
+    status: "concrete",
   },
   {
     id: "shield-action",
     tranche: "T9",
-    touchpoint: "Shield action extension install; Family Controls os-limit",
-    status: "stub",
+    touchpoint: "pluginkit lists shield-action appex; Family Controls os-limit",
+    status: "concrete",
   },
   {
     id: "shield-config",
     tranche: "T9",
-    touchpoint: "Shield config extension install; Family Controls os-limit",
-    status: "stub",
+    touchpoint: "pluginkit lists shield-config appex; Family Controls os-limit",
+    status: "concrete",
   },
   {
     id: "network-packet-tunnel",
     tranche: "T10",
-    touchpoint: "NE packet tunnel appex present; tunnel os-limit",
-    status: "stub",
+    touchpoint: "pluginkit lists NE packet-tunnel appex; tunnel os-limit",
+    status: "concrete",
   },
   {
     id: "network-app-proxy",
     tranche: "T10",
-    touchpoint: "NE app proxy appex present; tunnel os-limit",
-    status: "stub",
+    touchpoint: "pluginkit lists NE app-proxy appex; tunnel os-limit",
+    status: "concrete",
   },
   {
     id: "network-dns-proxy",
     tranche: "T10",
-    touchpoint: "NE DNS proxy appex present; tunnel os-limit",
-    status: "stub",
+    touchpoint: "pluginkit lists NE dns-proxy appex; tunnel os-limit",
+    status: "concrete",
   },
   {
     id: "network-filter-data",
     tranche: "T10",
-    touchpoint: "NE filter-data appex present; tunnel os-limit",
-    status: "stub",
+    touchpoint: "pluginkit lists NE filter-data appex; tunnel os-limit",
+    status: "concrete",
   },
   {
     id: "spotlight",
@@ -353,14 +363,14 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
   {
     id: "watch",
     tranche: "T12",
-    touchpoint: "Paired watchOS sim/device host+watch install",
-    status: "stub",
+    touchpoint: "Host install + paired watchOS sim/device os-limit",
+    status: "concrete",
   },
   {
     id: "watch-widget",
     tranche: "T12",
-    touchpoint: "Paired watchOS simulator / device",
-    status: "stub",
+    touchpoint: "pluginkit lists watch widget appex; paired watch os-limit",
+    status: "concrete",
   },
 ] as const;
 

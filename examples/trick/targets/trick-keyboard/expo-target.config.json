@@ -1,0 +1,16 @@
+{
+  "type": "keyboard",
+  "name": "TrickKeyboard",
+  "displayName": "ET Trick Keyboard",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.example.trick",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.trick.keyboard",
+    "displayName": "ET Trick Keyboard",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "KeyboardViewController"
+      }
+    }
+  }
+}

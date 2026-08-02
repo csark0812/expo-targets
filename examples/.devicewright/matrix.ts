@@ -85,7 +85,7 @@ export async function runTargetMatrix(options: RunTargetMatrixOptions = {}) {
               deviceId: device.deviceId,
             });
             // expo run:ios opens via simctl openurl → “Open in …?”; clear before journey.
-            await dismissSystemAlerts(device);
+            await dismissSystemAlerts(device, 3_000, 4);
           } catch (e) {
             const claim = claimForId(row.id);
             if (claim) {

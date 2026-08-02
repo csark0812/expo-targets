@@ -4,16 +4,7 @@ import process from 'node:process';
 import fs from 'fs-extra';
 import prompts from 'prompts';
 
-const WIDGET_HANDOFF = `
-For new React/iOS widgets and Live Activities, prefer official expo-widgets (Expo SDK 56+):
-https://docs.expo.dev/versions/latest/sdk/widgets/
-
-Native WidgetKit scaffolds from this CLI are soft-deprecated. Details:
-https://github.com/csark0812/expo-targets/blob/main/docs/widgets.md
-`.trim();
-
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
 async function main() {
   const response = await prompts([
     {
@@ -32,7 +23,7 @@ async function main() {
         { title: 'Wallet Extension', value: 'wallet' },
         { title: 'Siri Intent', value: 'intent' },
         {
-          title: 'Widget (soft-deprecated — prefer expo-widgets for React/iOS)',
+          title: 'Widget / Live Activity (native WidgetKit)',
           value: 'widget',
         },
         { title: 'Notification Service', value: 'notification-service' },
@@ -49,13 +40,6 @@ async function main() {
       ],
     },
     {
-      type: (_prev, values) => (values.type === 'widget' ? 'confirm' : null),
-      name: 'confirmNativeWidget',
-      message:
-        'Continue with a native WidgetKit scaffold? (React/iOS widgets → expo-widgets)',
-      initial: false,
-    },
-    {
       type: 'text',
       name: 'name',
       message: 'Target name (e.g., my-share):',
@@ -68,7 +52,7 @@ async function main() {
       message: 'Select platforms:',
       choices: [
         { title: 'iOS', value: 'ios', selected: true },
-        { title: 'Android (coming soon)', value: 'android', disabled: true },
+        { title: 'Android (widgets bridge-grade)', value: 'android' },
       ],
     },
     {
@@ -88,16 +72,6 @@ async function main() {
 
   if (!(response.type && response.name)) {
     return;
-  }
-
-  if (response.type === 'widget') {
-    console.warn(`\n[expo-targets] ${WIDGET_HANDOFF}\n`);
-    if (response.confirmNativeWidget === false) {
-      console.log(
-        'Aborted. Install expo-widgets for React/iOS widgets, or re-run and confirm the native scaffold.'
-      );
-      return;
-    }
   }
 
   const targetDir = path.join(process.cwd(), 'targets', response.name);
@@ -144,12 +118,6 @@ async function main() {
 export const ${pascalToCamel(pascalName)} = createTarget('${pascalName}');
 `;
     fs.writeFileSync(path.join(targetDir, 'index.ts'), indexTs);
-  }
-
-  if (response.type === 'widget') {
-    console.warn(
-      '[expo-targets] Deprecated: native widget targets are soft-deprecated. Prefer expo-widgets for React/iOS widgets. See docs/widgets.md'
-    );
   }
 }
 

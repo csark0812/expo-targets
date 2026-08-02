@@ -1,8 +1,6 @@
-import Foundation
+import AuthenticationServices
 import UIKit
 
-/// Minimal account-auth stub for expo-targets example (AccountAuth).
+/// Account authentication modification UI extension principal.
 @objc(AccountAuthViewController)
-class AccountAuthViewController: NSObject {
-  // Extension principal — replace with full Apple API conformance as needed.
-}
+class AccountAuthViewController: ASAccountAuthenticationModificationViewController {}

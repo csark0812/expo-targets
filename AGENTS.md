@@ -2,15 +2,14 @@
 
 **Source of truth for** agent cold-start in this repo.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-07-30 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-02 -->
 
 ## Product posture
 
-expo-targets owns **Expo’s negative space**: React Native share/action/clip/messages extensions, App Clips, stickers, wallet, and other Apple targets Expo does not ship. Android widgets are **bridge-grade** until Expo covers Android.
+expo-targets owns **Expo’s negative space**: React Native share/action/clip/messages extensions, App Clips, stickers, wallet, native WidgetKit + Live Activities, and other Apple targets. Android widgets are **bridge-grade**.
 
-- **New React/iOS widgets and Live Activities** → official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) (SDK 56+). See [docs/widgets.md](docs/widgets.md).
-- **Native iOS widgets** via this lib are soft-deprecated (shared-spine investment only).
-- **Do not add** orphan config-only extension types — a type joins the union only with scaffold + example + Devicewright in the same PR. See [docs/deprecations.md](docs/deprecations.md).
+- **Native iOS widgets + Live Activities** → this library ([docs/widgets.md](docs/widgets.md)). Official `expo-widgets` is an alternative React/Expo-UI path — do not dual-generate WidgetKit in one app.
+- **Do not add** orphan config-only extension types. See [docs/deprecations.md](docs/deprecations.md) and [docs/limits.md](docs/limits.md).
 
 ## Docs SSOT
 

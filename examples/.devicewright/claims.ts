@@ -15,7 +15,21 @@ export type ClaimsEntry = {
 
 export const OS_LIMIT_CLAIMS: readonly ClaimsEntry[] = [
   {
+    id: "notification-content",
+    reason:
+      "Simulator NCE RN rich UI expand — pluginkit + category delivered; marker required for green",
+  },
+  {
+    id: "live-activity",
+    reason:
+      "Lock Screen / Dynamic Island Live Activity chrome varies by Simulator model; host ActivityKit start + WidgetKit family is the floor",
+  },
+  {
     id: "wallet",
+    reason: "PassKit issuer provisioning requires Apple entitlement allow-list",
+  },
+  {
+    id: "wallet-ui",
     reason: "PassKit issuer provisioning requires Apple entitlement allow-list",
   },
   {

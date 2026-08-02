@@ -1,8 +1,24 @@
-import Foundation
+import FileProviderUI
 import UIKit
 
-/// Minimal file-provider-ui stub for expo-targets example (FileProviderUi).
+/// Minimal File Provider UI action extension — real FPUIActionExtensionViewController.
 @objc(DocumentActionViewController)
-class DocumentActionViewController: NSObject {
-  // Extension principal — replace with full Apple API conformance as needed.
+class DocumentActionViewController: FPUIActionExtensionViewController {
+  override func prepare(forAction actionIdentifier: String, itemIdentifiers: [NSFileProviderItemIdentifier]) {
+    let label = UILabel()
+    label.text = "ET FileProvUI"
+    label.textAlignment = .center
+    label.translatesAutoresizingMaskIntoConstraints = false
+    label.accessibilityIdentifier = "file-provider-ui-marker"
+    view.backgroundColor = .systemBackground
+    view.addSubview(label)
+    NSLayoutConstraint.activate([
+      label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+      label.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+    ])
+  }
+
+  override func prepare(forError error: Error) {
+    prepare(forAction: "error", itemIdentifiers: [])
+  }
 }

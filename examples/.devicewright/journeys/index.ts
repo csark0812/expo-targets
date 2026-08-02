@@ -14,6 +14,7 @@ import { runHostContractJourney } from "./host-contract";
 import { runIntentJourney } from "./intent";
 import { runIntentUiJourney } from "./intent-ui";
 import { runKeyboardJourney } from "./keyboard";
+import { runLiveActivityJourney } from "./live-activity";
 import { runLocationPushJourney } from "./location-push";
 import { runMessagesJourney } from "./messages";
 import { runNotificationContentJourney } from "./notification-content";
@@ -22,6 +23,7 @@ import { runPhotoEditingJourney } from "./photo-editing";
 import { runSafariJourney } from "./safari";
 import { runShareActionJourney } from "./share";
 import { runStickersJourney } from "./stickers";
+import { stubClusterJourneyFor } from "./stub-cluster";
 import { runWalletUiJourney } from "./wallet-ui";
 import { runWidgetsJourney } from "./widgets";
 
@@ -45,6 +47,7 @@ export { runHostContractJourney } from "./host-contract";
 export { runIntentJourney } from "./intent";
 export { runIntentUiJourney } from "./intent-ui";
 export { runKeyboardJourney } from "./keyboard";
+export { runLiveActivityJourney } from "./live-activity";
 export { runLocationPushJourney } from "./location-push";
 export { runMessagesJourney } from "./messages";
 export { runNotificationContentJourney } from "./notification-content";
@@ -97,6 +100,7 @@ const LIVE: Record<string, JourneyRunner> = {
   clip: (d) => runClipJourney(d, "clip"),
   "native-clip": (d) => runClipJourney(d, "native-clip"),
   widgets: (d) => runWidgetsJourney(d),
+  "live-activity": (d) => runLiveActivityJourney(d),
   safari: (d) => runSafariJourney(d, "safari"),
   "native-safari": (d) => runSafariJourney(d, "native-safari"),
   "content-blocker": (d) => runContentBlockerJourney(d),
@@ -118,6 +122,26 @@ const LIVE: Record<string, JourneyRunner> = {
   "call-directory": (d) => runCallDirectoryJourney(d),
   "location-push": (d) => runLocationPushJourney(d),
 };
+
+const STUB_CLUSTER_IDS = [
+  "credentials-provider",
+  "account-auth",
+  "authentication-services",
+  "device-activity-monitor",
+  "shield-action",
+  "shield-config",
+  "network-packet-tunnel",
+  "network-app-proxy",
+  "network-dns-proxy",
+  "network-filter-data",
+  "watch",
+  "watch-widget",
+] as const;
+
+for (const id of STUB_CLUSTER_IDS) {
+  const runner = stubClusterJourneyFor(id);
+  if (runner) LIVE[id] = runner;
+}
 
 for (const id of APPS_SETTINGS_IDS) {
   LIVE[id] = (d) => runAppsSettingsJourney(d, id);

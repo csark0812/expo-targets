@@ -1,8 +1,14 @@
+import AuthenticationServices
 import Foundation
-import UIKit
 
-/// Minimal authentication-services stub for expo-targets example (AuthenticationServices).
+/// App SSO identity-provider extension — authorization request handler principal.
 @objc(AuthenticationServicesHandler)
-class AuthenticationServicesHandler: NSObject {
-  // Extension principal — replace with full Apple API conformance as needed.
+class AuthenticationServicesHandler: NSObject,
+  ASAuthorizationProviderExtensionAuthorizationRequestHandler
+{
+  func prepareInterface(
+    for authorizationRequest: ASAuthorizationProviderExtensionAuthorizationRequest
+  ) {
+    authorizationRequest.completeRequest()
+  }
 }

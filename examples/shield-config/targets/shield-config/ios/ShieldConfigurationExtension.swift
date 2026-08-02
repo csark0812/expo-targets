@@ -1,8 +1,11 @@
-import Foundation
+import ManagedSettings
+import ManagedSettingsUI
 import UIKit
 
-/// Minimal shield-config stub for expo-targets example (ShieldConfig).
+/// Shield configuration extension — supplies shield UI metadata.
 @objc(ShieldConfigurationExtension)
-class ShieldConfigurationExtension: NSObject {
-  // Extension principal — replace with full Apple API conformance as needed.
+class ShieldConfigurationExtension: ShieldConfigurationDataSource {
+  override func configuration(shielding application: Application) -> ShieldConfiguration {
+    ShieldConfiguration()
+  }
 }

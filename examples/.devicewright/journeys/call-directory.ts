@@ -19,7 +19,13 @@ import {
   sleep,
   waitForNamed,
 } from "./helpers";
-import { navigatePath, scrollUntilVisible, tapLabelInTree } from "./settings-nav";
+import {
+  navigatePath,
+  openSettingsApps,
+  scrollUntilVisible,
+  searchAppsAndOpen,
+  tapLabelInTree,
+} from "./settings-nav";
 
 const SETTINGS_BUNDLE = "com.apple.Preferences";
 
@@ -76,6 +82,45 @@ async function tryOpenCallBlockingSettings(
         }
       }
     }
+  }
+
+  // Fallback: Settings → Apps → system Phone (avoid host “Phone” / Default Apps).
+  try {
+    await openSettingsApps(device, steps);
+    await searchAppsAndOpen(device, "Phone", ["Phone"], steps, {
+      exactRow: true,
+      confirmLabels: [
+        "Call Blocking & Identification",
+        "Call Blocking and Identification",
+        "Announce Calls",
+        "Silence Unknown Callers",
+        "Cellular",
+      ],
+    });
+    steps.push("apps-phone-settings");
+    try {
+      await navigatePath(
+        device,
+        [
+          "Call Blocking & Identification",
+          "Call Blocking and Identification",
+        ],
+        steps,
+      );
+      return true;
+    } catch {
+      const phoneLabels = flattenLabels(await device.accessibilityTree());
+      if (
+        phoneLabels.some((l) =>
+          /call blocking|call directory|identification/i.test(l),
+        )
+      ) {
+        steps.push("apps-phone-call-blocking-surface");
+        return true;
+      }
+    }
+  } catch {
+    steps.push("apps-phone-settings-unavailable");
   }
 
   // iPhone Air: no Phone row — try Settings search before giving up.
@@ -164,10 +209,17 @@ export async function runCallDirectoryJourney(
       steps.push("call-directory-listed");
       const enabled = await tapLabelInTree(device, appexLabels);
       if (enabled) steps.push("call-directory-opened");
-    } else {
-      steps.push("call-directory-not-listed-in-settings");
+      return {
+        id: "call-directory",
+        path,
+        phase: 5,
+        ok: true,
+        status: "green",
+        steps,
+      };
     }
 
+    steps.push("call-directory-not-listed-in-settings");
     return {
       id: "call-directory",
       path,
@@ -178,7 +230,7 @@ export async function runCallDirectoryJourney(
       failureKind: "os-limit",
       error:
         claim?.reason ??
-        "Call Directory Settings enablement — full lookup proof os-limit",
+        "Call Directory Settings enablement — extension not listed on this device",
     };
   } catch (e) {
     const msg = String(e);

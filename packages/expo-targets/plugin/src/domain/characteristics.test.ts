@@ -60,6 +60,9 @@ describe('TYPE_CHARACTERISTICS coverage', () => {
       expect(typeof characteristics.isReactNativeNative).toBe('boolean');
       expect(typeof characteristics.isReactNativeWeb).toBe('boolean');
       expect(typeof characteristics.needsIsolatedSearchPaths).toBe('boolean');
+      expect(['dual', 'native-only', 'rn-only']).toContain(
+        characteristics.rnExample
+      );
     }
   });
 
@@ -75,12 +78,31 @@ describe('TYPE_CHARACTERISTICS coverage', () => {
   });
 });
 
+describe('rnExample', () => {
+  test('dual covers UI extension points', () => {
+    const dual = EXTENSION_TYPES.filter(
+      (t) => TYPE_CHARACTERISTICS[t].rnExample === 'dual'
+    );
+    expect(sorted(dual)).toEqual(
+      sorted([
+        'action',
+        'clip',
+        'messages',
+        'notification-content',
+        'safari',
+        'share',
+      ])
+    );
+  });
+});
+
 describe('flag matrix', () => {
-  test('isReactNativeNative covers share, action, clip, messages only', () => {
+  test('isReactNativeNative covers share, action, clip, messages, notification-content', () => {
     expect(sorted(typesWithFlag('isReactNativeNative'))).toEqual([
       'action',
       'clip',
       'messages',
+      'notification-content',
       'share',
     ]);
   });
