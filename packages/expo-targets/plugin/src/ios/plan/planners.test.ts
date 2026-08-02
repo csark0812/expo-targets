@@ -548,7 +548,9 @@ describe('composeXcodeTargetPlan', () => {
     expect(plan.safari).toBeUndefined();
     expect(plan.bundleReactNative).toEqual({ entryFile: 'index.tsx' });
   });
+});
 
+describe('composeXcodeTargetPlan safari', () => {
   test('plans Safari resources for safari targets with an entry', () => {
     const plan = composeXcodeTargetPlan({
       props: makeProps({

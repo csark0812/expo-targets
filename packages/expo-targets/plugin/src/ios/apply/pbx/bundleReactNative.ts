@@ -75,7 +75,7 @@ function findShellScriptPhase({
   const target = xcodeProject.hash.project.objects.PBXNativeTarget[targetUuid];
   const section = xcodeProject.hash.project.objects.PBXShellScriptBuildPhase;
   if (!(target?.buildPhases && section)) {
-    return undefined;
+    return;
   }
 
   const quoted = `"${phaseName}"`;
@@ -86,7 +86,6 @@ function findShellScriptPhase({
       return { uuid: ref.value, phase };
     }
   }
-  return undefined;
 }
 
 function applyPhaseFields(phase: any, shellScript: string): void {

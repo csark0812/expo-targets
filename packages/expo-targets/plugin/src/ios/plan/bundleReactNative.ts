@@ -9,10 +9,10 @@ export function planBundleReactNative(
   props: IOSTargetProps
 ): BundleReactNativePlan | undefined {
   if (!props.entry) {
-    return undefined;
+    return;
   }
   if (!isReactNativeNative(props.type)) {
-    return undefined;
+    return;
   }
 
   return {
