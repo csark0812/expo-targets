@@ -2,9 +2,7 @@
   "type": "virtual-conference",
   "name": "VirtualConference",
   "displayName": "ET VirtConf Target",
-  "platforms": [
-    "ios"
-  ],
+  "platforms": ["ios"],
   "appGroup": "group.com.expotargets.example.virtual-conference",
   "ios": {
     "bundleIdentifier": "com.expotargets.example.virtual-conference.virtual-conference",

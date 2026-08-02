@@ -2,9 +2,7 @@
   "type": "call-directory",
   "name": "CallDirectory",
   "displayName": "ET CallDir Target",
-  "platforms": [
-    "ios"
-  ],
+  "platforms": ["ios"],
   "appGroup": "group.com.expotargets.example.call-directory",
   "ios": {
     "bundleIdentifier": "com.expotargets.example.call-directory.call-directory",

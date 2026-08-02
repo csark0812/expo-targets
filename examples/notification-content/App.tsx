@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import * as Notifications from "expo-notifications";
+import * as Notifications from 'expo-notifications';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -13,20 +13,21 @@ Notifications.setNotificationHandler({
   }),
 });
 
-const NCE_CATEGORY = "myNotificationCategory";
+const NCE_CATEGORY = 'myNotificationCategory';
 
 export default function App() {
   const [ready, setReady] = useState(false);
-  const [perm, setPerm] = useState("pending");
+  const [perm, setPerm] = useState('pending');
 
   useEffect(() => {
     let cancelled = false;
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: host bootstrap IIFE
     (async () => {
       try {
         await Notifications.setNotificationCategoryAsync(NCE_CATEGORY, []);
         const current = await Notifications.getPermissionsAsync();
         let status = current.status;
-        if (status !== "granted") {
+        if (status !== 'granted') {
           const asked = await Notifications.requestPermissionsAsync();
           status = asked.status;
         }
@@ -50,7 +51,7 @@ export default function App() {
     <View style={styles.container} testID="screen-root">
       <StatusBar style="auto" />
       <Text style={styles.title}>ET NCE</Text>
-      <Text testID="status-target-ready">{ready ? "ready" : "booting"}</Text>
+      <Text testID="status-target-ready">{ready ? 'ready' : 'booting'}</Text>
       <Text testID="text-extension-type">notification-content</Text>
       <Text testID="text-bundle-suffix">
         com.expotargets.example.notification-content
@@ -65,9 +66,9 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     padding: 24,
   },
-  title: { fontSize: 20, fontWeight: "600", marginBottom: 12 },
+  title: { fontSize: 20, fontWeight: '600', marginBottom: 12 },
 });

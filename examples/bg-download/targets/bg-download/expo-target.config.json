@@ -2,9 +2,7 @@
   "type": "bg-download",
   "name": "BgDownload",
   "displayName": "ET BgDL Target",
-  "platforms": [
-    "ios"
-  ],
+  "platforms": ["ios"],
   "appGroup": "group.com.expotargets.example.bg-download",
   "ios": {
     "bundleIdentifier": "com.expotargets.example.bg-download.bg-download",

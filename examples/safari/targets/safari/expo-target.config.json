@@ -2,9 +2,7 @@
   "type": "safari",
   "name": "Safari",
   "displayName": "ET Safari Target",
-  "platforms": [
-    "ios"
-  ],
+  "platforms": ["ios"],
   "appGroup": "group.com.expotargets.example.safari",
   "ios": {
     "bundleIdentifier": "com.expotargets.example.safari.safari",

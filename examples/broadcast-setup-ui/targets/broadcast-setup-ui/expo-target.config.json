@@ -2,9 +2,7 @@
   "type": "broadcast-setup-ui",
   "name": "BroadcastSetupUi",
   "displayName": "ET BroadcastUI Target",
-  "platforms": [
-    "ios"
-  ],
+  "platforms": ["ios"],
   "appGroup": "group.com.expotargets.example.broadcast-setup-ui",
   "ios": {
     "bundleIdentifier": "com.expotargets.example.broadcast-setup-ui.broadcast-setup-ui",

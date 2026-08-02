@@ -2,9 +2,7 @@
   "type": "spotlight",
   "name": "Spotlight",
   "displayName": "ET Spotlight Target",
-  "platforms": [
-    "ios"
-  ],
+  "platforms": ["ios"],
   "appGroup": "group.com.expotargets.example.spotlight",
   "ios": {
     "bundleIdentifier": "com.expotargets.example.spotlight.spotlight",

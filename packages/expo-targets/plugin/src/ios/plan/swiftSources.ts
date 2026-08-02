@@ -41,6 +41,7 @@ function isTestFile(file: string): boolean {
  * never the React Native view controller. Native React Native extensions get
  * generated view controllers when the user provided no Swift of their own.
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: type dispatch table for Swift file resolution
 function resolveSwiftFileNames(
   workspace: TargetWorkspace,
   props: IOSTargetProps

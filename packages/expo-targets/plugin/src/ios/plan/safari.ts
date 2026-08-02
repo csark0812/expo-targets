@@ -1,7 +1,11 @@
 import path from 'node:path';
 
 import type { TargetWorkspace } from '../observe/workspace';
-import type { IOSTargetProps, ProjectPaths, SafariResourcesPlan } from './types';
+import type {
+  IOSTargetProps,
+  ProjectPaths,
+  SafariResourcesPlan,
+} from './types';
 
 /**
  * Safari web extensions ship a `Resources` folder (popup, manifest, background

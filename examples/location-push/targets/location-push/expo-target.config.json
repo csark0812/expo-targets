@@ -2,9 +2,7 @@
   "type": "location-push",
   "name": "LocationPush",
   "displayName": "ET LocPush Target",
-  "platforms": [
-    "ios"
-  ],
+  "platforms": ["ios"],
   "appGroup": "group.com.expotargets.example.location-push",
   "ios": {
     "bundleIdentifier": "com.expotargets.example.location-push.location-push",

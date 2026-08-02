@@ -2,9 +2,7 @@
   "type": "unwanted-communication",
   "name": "UnwantedCommunication",
   "displayName": "ET Unwanted Target",
-  "platforms": [
-    "ios"
-  ],
+  "platforms": ["ios"],
   "appGroup": "group.com.expotargets.example.unwanted-communication",
   "ios": {
     "bundleIdentifier": "com.expotargets.example.unwanted-communication.unwanted-communication",

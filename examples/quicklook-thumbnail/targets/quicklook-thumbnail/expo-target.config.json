@@ -2,9 +2,7 @@
   "type": "quicklook-thumbnail",
   "name": "QuicklookThumbnail",
   "displayName": "ET QLThumb Target",
-  "platforms": [
-    "ios"
-  ],
+  "platforms": ["ios"],
   "appGroup": "group.com.expotargets.example.quicklook-thumbnail",
   "ios": {
     "bundleIdentifier": "com.expotargets.example.quicklook-thumbnail.quicklook-thumbnail",

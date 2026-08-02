@@ -2,9 +2,7 @@
   "type": "spotlight-delegate",
   "name": "SpotlightDelegate",
   "displayName": "ET SpotDel Target",
-  "platforms": [
-    "ios"
-  ],
+  "platforms": ["ios"],
   "appGroup": "group.com.expotargets.example.spotlight-delegate",
   "ios": {
     "bundleIdentifier": "com.expotargets.example.spotlight-delegate.spotlight-delegate",

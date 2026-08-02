@@ -2,9 +2,7 @@
   "type": "smart-card",
   "name": "SmartCard",
   "displayName": "ET SmartCard Target",
-  "platforms": [
-    "ios"
-  ],
+  "platforms": ["ios"],
   "appGroup": "group.com.expotargets.example.smart-card",
   "ios": {
     "bundleIdentifier": "com.expotargets.example.smart-card.smart-card",

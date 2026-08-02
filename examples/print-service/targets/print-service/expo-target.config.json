@@ -2,9 +2,7 @@
   "type": "print-service",
   "name": "PrintService",
   "displayName": "ET Print Target",
-  "platforms": [
-    "ios"
-  ],
+  "platforms": ["ios"],
   "appGroup": "group.com.expotargets.example.print-service",
   "ios": {
     "bundleIdentifier": "com.expotargets.example.print-service.print-service",

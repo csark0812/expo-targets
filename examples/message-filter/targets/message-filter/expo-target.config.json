@@ -2,9 +2,7 @@
   "type": "message-filter",
   "name": "MessageFilter",
   "displayName": "ET MsgFilter Target",
-  "platforms": [
-    "ios"
-  ],
+  "platforms": ["ios"],
   "appGroup": "group.com.expotargets.example.message-filter",
   "ios": {
     "bundleIdentifier": "com.expotargets.example.message-filter.message-filter",

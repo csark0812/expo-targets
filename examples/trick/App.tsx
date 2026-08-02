@@ -2,10 +2,11 @@
  * ET Trick — showcase host for the deepened Apple extension targets:
  * notification-service, notification-content, photo-editing, file-provider.
  */
-import { StatusBar } from "expo-status-bar";
-import * as Notifications from "expo-notifications";
-import { useCallback, useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+
+import * as Notifications from 'expo-notifications';
+import { StatusBar } from 'expo-status-bar';
+import { useCallback, useEffect, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -17,7 +18,7 @@ Notifications.setNotificationHandler({
   }),
 });
 
-const NCE_CATEGORY = "myNotificationCategory";
+const NCE_CATEGORY = 'myNotificationCategory';
 
 type Cap = {
   id: string;
@@ -29,46 +30,46 @@ type Cap = {
 
 const CAPS: Cap[] = [
   {
-    id: "nse",
-    title: "Notification Service",
-    appex: "ET Trick NSE",
-    how: "Remote / simctl push with mutable-content:1. NSE appends [expo-targets] to the title.",
-    surface: "Lock Screen / NC · pluginkit usernotifications.service",
+    id: 'nse',
+    title: 'Notification Service',
+    appex: 'ET Trick NSE',
+    how: 'Remote / simctl push with mutable-content:1. NSE appends [expo-targets] to the title.',
+    surface: 'Lock Screen / NC · pluginkit usernotifications.service',
   },
   {
-    id: "nce",
-    title: "Notification Content",
-    appex: "ET Trick NCE",
-    how: "Push (or schedule) with category myNotificationCategory, then expand the notification.",
-    surface: "Expanded notification · ET Trick NCE marker",
+    id: 'nce',
+    title: 'Notification Content',
+    appex: 'ET Trick NCE',
+    how: 'Push (or schedule) with category myNotificationCategory, then expand the notification.',
+    surface: 'Expanded notification · ET Trick NCE marker',
   },
   {
-    id: "photo",
-    title: "Photo Editing",
-    appex: "ET Trick Photo",
-    how: "Open Photos → pick an image → Edit. Extension applies grayscale via PHContentEditingController.",
-    surface: "Photos Edit · pluginkit com.apple.photo-editing",
+    id: 'photo',
+    title: 'Photo Editing',
+    appex: 'ET Trick Photo',
+    how: 'Open Photos → pick an image → Edit. Extension applies grayscale via PHContentEditingController.',
+    surface: 'Photos Edit · pluginkit com.apple.photo-editing',
   },
   {
-    id: "files",
-    title: "File Provider",
-    appex: "ET Trick Files",
-    how: "Non-UI File Provider appex registered with the OS (domain UI needs host NSFileProviderManager.add).",
-    surface: "pluginkit fileprovider-nonui · Files Browse best-effort",
+    id: 'files',
+    title: 'File Provider',
+    appex: 'ET Trick Files',
+    how: 'Non-UI File Provider appex registered with the OS (domain UI needs host NSFileProviderManager.add).',
+    surface: 'pluginkit fileprovider-nonui · Files Browse best-effort',
   },
 ];
 
 export default function App() {
   const [ready, setReady] = useState(false);
-  const [perm, setPerm] = useState("pending");
-  const [lastLocal, setLastLocal] = useState("none");
+  const [perm, setPerm] = useState('pending');
+  const [lastLocal, setLastLocal] = useState('none');
 
   const boot = useCallback(async () => {
     try {
       await Notifications.setNotificationCategoryAsync(NCE_CATEGORY, []);
       const current = await Notifications.getPermissionsAsync();
       let status = current.status;
-      if (status !== "granted") {
+      if (status !== 'granted') {
         const asked = await Notifications.requestPermissionsAsync();
         status = asked.status;
       }
@@ -87,8 +88,8 @@ export default function App() {
   const scheduleNce = async () => {
     const id = await Notifications.scheduleNotificationAsync({
       content: {
-        title: "ET Trick",
-        body: "Expand me for rich NCE content",
+        title: 'ET Trick',
+        body: 'Expand me for rich NCE content',
         categoryIdentifier: NCE_CATEGORY,
       },
       trigger: null,
@@ -106,7 +107,7 @@ export default function App() {
           Files.
         </Text>
         <Text testID="status-target-ready" style={styles.ready}>
-          {ready ? "ready" : "booting"}
+          {ready ? 'ready' : 'booting'}
         </Text>
         <Text testID="text-notif-perm" style={styles.meta}>
           notifications: {perm}
@@ -145,38 +146,38 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#0B1220" },
+  root: { flex: 1, backgroundColor: '#0B1220' },
   scroll: { padding: 24, paddingTop: 64, paddingBottom: 48, gap: 14 },
   brand: {
     fontSize: 36,
-    fontWeight: "800",
-    color: "#F4F7FB",
+    fontWeight: '800',
+    color: '#F4F7FB',
     letterSpacing: -0.5,
   },
-  tagline: { fontSize: 15, lineHeight: 22, color: "#9AA8BC" },
-  ready: { color: "#5CFFB0", fontWeight: "700", marginTop: 4 },
-  meta: { color: "#6B7C93", fontSize: 12, fontFamily: "Courier" },
+  tagline: { fontSize: 15, lineHeight: 22, color: '#9AA8BC' },
+  ready: { color: '#5CFFB0', fontWeight: '700', marginTop: 4 },
+  meta: { color: '#6B7C93', fontSize: 12, fontFamily: 'Courier' },
   cta: {
     marginTop: 8,
-    backgroundColor: "#2F6BFF",
+    backgroundColor: '#2F6BFF',
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 12,
-    alignItems: "center",
+    alignItems: 'center',
   },
-  ctaText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  ctaText: { color: '#fff', fontWeight: '700', fontSize: 15 },
   card: {
     marginTop: 4,
     padding: 16,
     borderRadius: 14,
-    backgroundColor: "#141E2E",
+    backgroundColor: '#141E2E',
     borderWidth: 1,
-    borderColor: "#243247",
+    borderColor: '#243247',
     gap: 6,
   },
-  cardTitle: { color: "#F4F7FB", fontSize: 17, fontWeight: "700" },
-  appex: { color: "#7EB6FF", fontSize: 13, fontWeight: "600" },
-  body: { color: "#C5D0DF", fontSize: 13, lineHeight: 19 },
-  surface: { color: "#6B7C93", fontSize: 11, marginTop: 4 },
-  footer: { color: "#5A6A80", fontSize: 12, lineHeight: 18, marginTop: 8 },
+  cardTitle: { color: '#F4F7FB', fontSize: 17, fontWeight: '700' },
+  appex: { color: '#7EB6FF', fontSize: 13, fontWeight: '600' },
+  body: { color: '#C5D0DF', fontSize: 13, lineHeight: 19 },
+  surface: { color: '#6B7C93', fontSize: 11, marginTop: 4 },
+  footer: { color: '#5A6A80', fontSize: 12, lineHeight: 18, marginTop: 8 },
 });

@@ -2,9 +2,7 @@
   "type": "shield-action",
   "name": "ShieldAction",
   "displayName": "ET ShieldAct Target",
-  "platforms": [
-    "ios"
-  ],
+  "platforms": ["ios"],
   "appGroup": "group.com.expotargets.example.shield-action",
   "ios": {
     "bundleIdentifier": "com.expotargets.example.shield-action.shield-action",

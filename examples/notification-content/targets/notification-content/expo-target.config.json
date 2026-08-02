@@ -2,9 +2,7 @@
   "type": "notification-content",
   "name": "NotificationContent",
   "displayName": "ET NCE Target",
-  "platforms": [
-    "ios"
-  ],
+  "platforms": ["ios"],
   "appGroup": "group.com.expotargets.example.notification-content",
   "entry": "./targets/notification-content/index.tsx",
   "ios": {
