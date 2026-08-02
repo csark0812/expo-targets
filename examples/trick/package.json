@@ -10,11 +10,14 @@
   },
   "dependencies": {
     "expo": "~54.0.18",
+    "expo-modules-core": "~3.0.26",
     "expo-notifications": "~0.32.13",
     "expo-status-bar": "~3.0.8",
     "expo-targets": "workspace:*",
     "react": "19.1.0",
-    "react-native": "0.81.5"
+    "react-native": "0.81.5",
+    "trick-file-domain": "file:./modules/trick-file-domain",
+    "trick-live-activity": "file:./modules/trick-live-activity"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

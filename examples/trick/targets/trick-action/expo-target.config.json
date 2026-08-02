@@ -1,0 +1,13 @@
+{
+  "type": "action",
+  "name": "TrickAction",
+  "displayName": "ET Trick Action",
+  "platforms": ["ios"],
+  "entry": "./targets/trick-action/index.tsx",
+  "appGroup": "group.com.expotargets.example.trick",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.trick.action",
+    "displayName": "ET Trick Action",
+    "activationRules": [{ "type": "image", "maxCount": 1 }]
+  }
+}

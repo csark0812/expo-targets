@@ -19,7 +19,7 @@ function pluginkitHasWalletUi(udid: string, appexId: string): boolean {
   const out = `${r.stdout ?? ""}\n${r.stderr ?? ""}`;
   return (
     out.toLowerCase().includes(appexId.toLowerCase()) &&
-    /issuer-provisioning\.authorization/i.test(out)
+    /issuer-provisioning/i.test(out)
   );
 }
 

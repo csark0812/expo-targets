@@ -38,6 +38,7 @@ const REACT_NATIVE_NATIVE = new Set<ExtensionType>([
   'action',
   'clip',
   'messages',
+  'notification-content',
 ]);
 
 const REACT_NATIVE_WEB = new Set<ExtensionType>(['safari']);
@@ -51,6 +52,7 @@ const RN_EXAMPLE_DUAL = new Set<ExtensionType>([
   'clip',
   'messages',
   'safari',
+  'notification-content',
 ]);
 
 const RN_EXAMPLE_RN_ONLY = new Set<ExtensionType>(['stickers', 'widget']);
@@ -373,7 +375,7 @@ const BASE_TYPE_CHARACTERISTICS: Record<
     requiresCode: true,
     targetType: 'app_extension',
     embedType: 'foundation-extension',
-    frameworks: [],
+    frameworks: ['AuthenticationServices'],
     productType: 'com.apple.product-type.app-extension',
     extensionPointIdentifier:
       'com.apple.authentication-services-credential-provider-ui',
@@ -387,7 +389,7 @@ const BASE_TYPE_CHARACTERISTICS: Record<
     requiresCode: true,
     targetType: 'app_extension',
     embedType: 'foundation-extension',
-    frameworks: [],
+    frameworks: ['AuthenticationServices'],
     productType: 'com.apple.product-type.app-extension',
     extensionPointIdentifier:
       'com.apple.authentication-services-account-authentication-modification-ui',
@@ -414,7 +416,7 @@ const BASE_TYPE_CHARACTERISTICS: Record<
     requiresCode: true,
     targetType: 'app_extension',
     embedType: 'foundation-extension',
-    frameworks: [],
+    frameworks: ['DeviceActivity'],
     productType: 'com.apple.product-type.app-extension',
     extensionPointIdentifier: 'com.apple.deviceactivity.monitor-extension',
     defaultUsesAppGroups: false,
@@ -659,7 +661,7 @@ const BASE_TYPE_CHARACTERISTICS: Record<
     requiresCode: true,
     targetType: 'app_extension',
     embedType: 'foundation-extension',
-    frameworks: ['ManagedSettings'],
+    frameworks: ['ManagedSettings', 'ManagedSettingsUI'],
     productType: 'com.apple.product-type.app-extension',
     extensionPointIdentifier: 'com.apple.ManagedSettings.shield-action-service',
     defaultUsesAppGroups: false,

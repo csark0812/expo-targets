@@ -8,7 +8,7 @@ Expo config plugin and runtime for Apple app extensions Expo does not ship — s
 
 > **Part of the expo-targets monorepo**. Full docs: [root README](../../README.md).
 >
-> **Widgets:** Prefer official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) for React/iOS widgets and Live Activities. See [widgets handoff](../../docs/widgets.md).
+> **Widgets:** Native WidgetKit + Live Activities are first-class. See [widgets](../../docs/widgets.md). Android widgets are bridge-grade.
 
 ## Quick Start
 
@@ -90,4 +90,4 @@ MIT
 
 ## Credits
 
-Inspired by [@bacons/apple-targets](https://github.com/EvanBacon/expo-apple-targets) and [expo-share-extension](https://github.com/MaxAst/expo-share-extension). Official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) is the recommended path for React/iOS widgets; community [bittingz/expo-widgets](https://github.com/bittingz/expo-widgets) was historical inspiration only.
+Inspired by [@bacons/apple-targets](https://github.com/EvanBacon/expo-apple-targets) and [expo-share-extension](https://github.com/MaxAst/expo-share-extension). Native WidgetKit + Live Activities are first-class here ([docs/widgets.md](../../docs/widgets.md)); official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) is an alternate React/Expo-UI path — do not dual-generate.

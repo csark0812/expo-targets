@@ -320,7 +320,8 @@ export type ReactNativeCompatibleType =
   | 'share'
   | 'action'
   | 'clip'
-  | 'messages';
+  | 'messages'
+  | 'notification-content';
 
 // Types that do NOT support React Native (use native rendering)
 export type NativeOnlyType = Exclude<ExtensionType, ReactNativeCompatibleType>;

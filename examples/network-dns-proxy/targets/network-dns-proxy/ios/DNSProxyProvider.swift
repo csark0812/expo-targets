@@ -1,8 +1,32 @@
-import Foundation
-import UIKit
+import NetworkExtension
 
-/// Minimal network-dns-proxy stub for expo-targets example (NetworkDnsProxy).
+/// Minimal DNS proxy — real NEDNSProxyProvider subclass.
 @objc(DNSProxyProvider)
-class DNSProxyProvider: NSObject {
-  // Extension principal — replace with full Apple API conformance as needed.
+class DNSProxyProvider: NEDNSProxyProvider {
+  override func startProxy(
+    options: [String: Any]?,
+    completionHandler: @escaping (Error?) -> Void
+  ) {
+    completionHandler(
+      NSError(
+        domain: "ETNEDNS",
+        code: 1,
+        userInfo: [
+          NSLocalizedDescriptionKey:
+            "expo-targets example: Network Extension entitlement required",
+        ]
+      )
+    )
+  }
+
+  override func stopProxy(
+    with reason: NEProviderStopReason,
+    completionHandler: @escaping () -> Void
+  ) {
+    completionHandler()
+  }
+
+  override func handleNewFlow(_ flow: NEAppProxyFlow) -> Bool {
+    false
+  }
 }

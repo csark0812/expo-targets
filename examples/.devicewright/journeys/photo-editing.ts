@@ -134,8 +134,23 @@ export async function runPhotoEditingJourney(
     steps.push("tap-edit");
     await sleep(1_200);
 
-    await tapLabelInTree(device, ["Extensions", "More", "…", "...", "Markup"]);
-    await sleep(800);
+    // Extensions chrome: overflow / More / … often hides third-party editors.
+    for (const name of [
+      "Extensions",
+      "More",
+      "…",
+      "...",
+      "Markup",
+      "Filters",
+    ]) {
+      if (await tapLabelInTree(device, [name], { exactOnly: true })) {
+        steps.push(`edit-chrome:${name}`);
+        await sleep(700);
+      }
+    }
+    // Bottom-trailing overflow hotspot on iPhone Air edit chrome.
+    await device.tap({ x: 380, y: 820 });
+    await sleep(600);
 
     const tree = await device.accessibilityTree();
     const labels = flattenLabels(tree);

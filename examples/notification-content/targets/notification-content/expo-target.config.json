@@ -12,7 +12,7 @@
       "NSExtension": {
         "NSExtensionPrincipalClass": "NotificationViewController",
         "NSExtensionAttributes": {
-          "UNNotificationExtensionCategory": "etNceCategory",
+          "UNNotificationExtensionCategory": "myNotificationCategory",
           "UNNotificationExtensionInitialContentSizeRatio": 0.5,
           "UNNotificationExtensionDefaultContentHidden": true
         }

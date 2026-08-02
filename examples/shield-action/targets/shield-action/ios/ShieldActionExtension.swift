@@ -1,8 +1,14 @@
-import Foundation
+import ManagedSettingsUI
 import UIKit
 
-/// Minimal shield-action stub for expo-targets example (ShieldAction).
+/// Shield action extension — responds to shield button taps.
 @objc(ShieldActionExtension)
-class ShieldActionExtension: NSObject {
-  // Extension principal — replace with full Apple API conformance as needed.
+class ShieldActionExtension: ShieldActionDelegate {
+  func handle(
+    action: ShieldAction,
+    for application: ApplicationToken,
+    completionHandler: @escaping (ShieldActionResponse) -> Void
+  ) {
+    completionHandler(.close)
+  }
 }

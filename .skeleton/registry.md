@@ -1,6 +1,6 @@
 # Registry
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-07-30 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-02 -->
 
 **Source of truth for** topic routing in this repo. Edit rows here; edit content in canonical files only.
 
@@ -16,5 +16,6 @@
 | Configuration                    | [configuration.md](../docs/configuration.md)                                         |
 | API                              | [api.md](../docs/api.md)                                                             |
 | Roadmap / deprecation policy     | [deprecations.md](../docs/deprecations.md)                                           |
+| Capability limits                | [limits.md](../docs/limits.md)                                                       |
 | Migrate from Bacon apple-targets | [migrate-from-bacons-apple-targets.md](../docs/migrate-from-bacons-apple-targets.md) |
 | Config plugin architecture       | [plugin/README.md](../packages/expo-targets/plugin/README.md)                        |

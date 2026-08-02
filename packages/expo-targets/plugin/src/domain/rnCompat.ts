@@ -13,6 +13,7 @@ export const REACT_NATIVE_NATIVE_TYPES: ExtensionType[] = [
   'action',
   'clip',
   'messages',
+  'notification-content',
 ];
 
 /** Types that render React Native Web inside a web view. */

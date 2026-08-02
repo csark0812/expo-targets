@@ -24,6 +24,8 @@
       },
       "infoPlist": {
         "CFBundleDisplayName": "ET Trick",
+        "NSSupportsLiveActivities": true,
+        "NSSupportsLiveActivitiesFrequentUpdates": true,
         "NSPhotoLibraryUsageDescription": "ET Trick uses Photos to demonstrate the photo-editing extension.",
         "NSPhotoLibraryAddUsageDescription": "ET Trick may save edited photos."
       }

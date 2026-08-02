@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ET Safari Target</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body, #root {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #fff;
+    }
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: #1c1c1e;
+        color: #fff;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="popup.js"></script>
+</body>
+</html>

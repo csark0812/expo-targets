@@ -9,7 +9,12 @@
     "displayName": "ET NCE Target",
     "infoPlist": {
       "NSExtension": {
-        "NSExtensionPrincipalClass": "NotificationViewController"
+        "NSExtensionPrincipalClass": "NotificationViewController",
+        "NSExtensionAttributes": {
+          "UNNotificationExtensionCategory": "myNotificationCategory",
+          "UNNotificationExtensionInitialContentSizeRatio": 0.5,
+          "UNNotificationExtensionDefaultContentHidden": true
+        }
       }
     }
   }

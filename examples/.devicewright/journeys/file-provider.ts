@@ -98,11 +98,25 @@ export async function runFileProviderJourney(
       if (
         labels.some(
           (l) =>
-            /ET FileProv|FileProv/i.test(l) ||
+            /ET FileProv|FileProv|ET Trick Files/i.test(l) ||
             needles.some((n) => l.toLowerCase().includes(n.toLowerCase())),
         )
       ) {
         steps.push("files-domain-listed");
+      } else {
+        // Scroll Browse locations once more.
+        await device.swipe({
+          xStart: 210,
+          yStart: 700,
+          xEnd: 210,
+          yEnd: 250,
+          duration: 0.35,
+        });
+        await sleep(500);
+        const again = flattenLabels(await device.accessibilityTree());
+        if (/ET FileProv|ET Trick Files/i.test(again.join("|"))) {
+          steps.push("files-domain-listed");
+        }
       }
     } catch {
       /* optional */

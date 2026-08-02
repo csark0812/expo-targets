@@ -146,7 +146,13 @@ export async function searchAppsAndOpen(
   steps.push("host-settings-open");
 
   const confirm = opts.confirmLabels ?? labels;
-  await waitForNamed(device, confirm, 8_000);
+  try {
+    await waitForNamed(device, confirm, 8_000);
+  } catch {
+    // Settings search can land on the row without pushing detail — retry tap.
+    await tapLabelInTree(device, labels, { exactOnly: opts.exactRow === true });
+    await waitForNamed(device, confirm, 8_000);
+  }
   steps.push("host-settings-ok");
 }
 
@@ -159,8 +165,6 @@ export async function openSystemSafariSettings(
   steps: string[],
 ): Promise<void> {
   await openSettingsApps(device, steps);
-  // Exact “Safari” only — do not match “ET Safari” / “ET Safari N”.
-  // Confirm via Safari-settings-only chrome (not the search results row).
   await searchAppsAndOpen(device, "Safari", ["Safari"], steps, {
     exactRow: true,
     confirmLabels: [

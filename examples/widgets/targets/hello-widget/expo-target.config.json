@@ -2,7 +2,7 @@
   "type": "widget",
   "name": "HelloWidget",
   "displayName": "Hello Widget",
-  "platforms": ["ios"],
+  "platforms": ["ios", "android"],
   "appGroup": "group.com.expotargets.example.widgets",
   "ios": {
     "bundleIdentifier": "com.expotargets.example.widgets.hello",
@@ -12,5 +12,9 @@
       "BackgroundColor": { "light": "#F2F2F7", "dark": "#1C1C1E" },
       "TextPrimary": { "light": "#000000", "dark": "#FFFFFF" }
     }
+  },
+  "android": {
+    "widgetType": "glance",
+    "description": "ET Widgets Hello (bridge-grade Glance)"
   }
 }

@@ -1,8 +1,6 @@
 import Foundation
 import UIKit
 
-/// Minimal watch stub for expo-targets example (Watch).
+/// watchOS companion target stub — full proof requires paired watch sim/device.
 @objc(WatchApp)
-class WatchApp: NSObject {
-  // Extension principal — replace with full Apple API conformance as needed.
-}
+class WatchApp: NSObject {}

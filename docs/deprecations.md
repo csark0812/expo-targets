@@ -2,17 +2,17 @@
 
 **Source of truth for** deprecation policy and negative-space roadmap constraints.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-07-30 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-02 -->
 
-## Widget soft-deprecate
+## Widgets / Live Activities
 
-| Stage                    | Behavior                                                                                                                                                              |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Minors (now)**         | Docs handoff to [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/); CLI + `createTarget` warn when `type === 'widget'`; native widgets keep working |
-| **Future major**         | Widget API / scaffolding may be removed                                                                                                                               |
-| **Expo Android widgets** | When Expo covers Android widgets, this library may drop the widget surface entirely                                                                                   |
+Native WidgetKit + ActivityKit are **first-class** in expo-targets (not soft-deprecated). See [widgets.md](./widgets.md).
 
-iOS widget investment: **shared spine only**. Android widgets: **bridge-grade** until the Expo exit ramp above.
+| Stage               | Behavior                                                                                    |
+| ------------------- | ------------------------------------------------------------------------------------------- |
+| **Now**             | Widget + Live Activity scaffolds and examples are supported                                 |
+| **Dual engines**    | Still unsupported: do not run expo-widgets and expo-targets WidgetKit generators in one app |
+| **Android widgets** | Bridge-grade until/unless Expo’s official Android widgets exit ramp applies                 |
 
 ## New extension types (no orphan stubs)
 
@@ -20,15 +20,8 @@ New `ExtensionType` values are allowed **only** when the same PR ships **registr
 
 See the Bacon compatibility epic / [migrate-from-bacons-apple-targets.md](./migrate-from-bacons-apple-targets.md).
 
-## Dual widget engines
-
-Building coexistence where **both** `expo-widgets` and expo-targets generate WidgetKit widgets in one app is **parked**. Reopen only after a **demand bar**: multiple real projects blocked on split ownership. Default: do not schedule.
-
-## Live Activities
-
-Out of scope. Use `expo-widgets`.
-
 ## Related
 
-- [widgets.md](./widgets.md) — handoff and coexistence
+- [widgets.md](./widgets.md) — WidgetKit / Live Activities ownership
+- [limits.md](./limits.md) — lib floor vs Apple gates
 - [AGENTS.md](../AGENTS.md) — agent posture summary

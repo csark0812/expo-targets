@@ -1,13 +1,25 @@
 # Widgets example
 
-> **Soft-deprecated:** For new React/iOS widgets and Live Activities, use official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/). See [`docs/widgets.md`](../../docs/widgets.md).
+Native WidgetKit Hello widget with `createTarget` host, Devicewright spine journey, and Maestro smoke.
 
-iOS WidgetKit-only Hello widget with `createTarget` host, Devicewright spine journey, and Maestro smoke.
+For Live Activities + multi-target showcase, see [`examples/trick`](../trick). Ownership policy: [`docs/widgets.md`](../../docs/widgets.md).
 
-This example is the **shared WidgetKit spine** for Bacon type-string coverage — not a Live Activities / Control Widgets engine.
-
-## OS path
+## OS path (iOS)
 
 1. Host → Seed payload
 2. Home Screen → add Hello Widget
 3. Widget shows the seeded message
+
+## Android (bridge-grade)
+
+`platforms: ["ios", "android"]` + Glance Kotlin under
+`targets/hello-widget/android/.../HelloWidget.kt`.
+
+```bash
+npx expo prebuild --platform android
+npx expo run:android
+```
+
+Prebuild wires Glance deps, `HelloWidgetWidgetReceiver` /
+`HelloWidgetUpdateReceiver`, and `widgetprovider_hellowidget` XML.
+Other Apple extension types have no Android equivalent — see [`docs/limits.md`](../../docs/limits.md).
