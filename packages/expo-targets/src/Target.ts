@@ -118,6 +118,7 @@ const EXTENSION_TYPES: Set<ReactNativeCompatibleType> = new Set([
   'action',
   'clip',
   'messages',
+  'notification-content',
 ]);
 
 const WEB_EXTENSION_TYPES: Set<ExtensionType> = new Set(['safari']);
