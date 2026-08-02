@@ -607,16 +607,17 @@ function scaffoldHost(
           android: "expo run:android",
         },
         dependencies: {
-          expo: "~54.0.18",
-          "expo-status-bar": "~3.0.8",
+          expo: "~57.0.9",
+          "expo-status-bar": "~57.0.1",
+          "expo-splash-screen": "~57.0.5",
           "expo-targets": "workspace:*",
-          react: "19.1.0",
-          "react-native": "0.81.5",
+          react: "19.2.3",
+          "react-native": "0.86.2",
         },
         devDependencies: {
-          "@babel/core": "^7.25.2",
-          "@types/react": "~19.1.0",
-          typescript: "~5.9.2",
+          "@babel/core": "^7.29.0",
+          "@types/react": "~19.2.0",
+          typescript: "~6.0.3",
         },
       },
       null,
@@ -632,16 +633,10 @@ function scaffoldHost(
       orientation: "portrait",
       icon: "./assets/icon.png",
       userInterfaceStyle: "light",
-      newArchEnabled: true,
-      splash: {
-        image: "./assets/splash-icon.png",
-        resizeMode: "contain",
-        backgroundColor: "#ffffff",
-      },
       ios: {
         supportsTablet: true,
         bundleIdentifier: bundleId,
-        deploymentTarget: "15.1",
+        deploymentTarget: "16.4",
         entitlements: {
           "com.apple.security.application-groups": [group],
         },
@@ -651,7 +646,17 @@ function scaffoldHost(
             : spec.displayName,
         },
       },
-      plugins: [["expo-targets", { debug: true }]],
+      plugins: [
+        [
+          "expo-splash-screen",
+          {
+            image: "./assets/splash-icon.png",
+            resizeMode: "contain",
+            backgroundColor: "#ffffff",
+          },
+        ],
+        ["expo-targets", { debug: true }],
+      ],
       android: {
         adaptiveIcon: {
           foregroundImage: "./assets/adaptive-icon.png",

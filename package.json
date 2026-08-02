@@ -58,8 +58,9 @@
   },
   "version": "0.2.7",
   "dependencies": {
-    "expo": "~54.0.25",
-    "react": "19.1.0",
-    "react-native": "0.81.5"
+    "@expo/config-plugins": "^57.0.6",
+    "expo": "~57.0.9",
+    "react": "19.2.3",
+    "react-native": "0.86.2"
   }
 }
