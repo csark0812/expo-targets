@@ -38,6 +38,7 @@ const REACT_NATIVE_NATIVE = new Set<ExtensionType>([
   'action',
   'clip',
   'messages',
+  'notification-content',
 ]);
 
 const REACT_NATIVE_WEB = new Set<ExtensionType>(['safari']);
@@ -51,6 +52,7 @@ const RN_EXAMPLE_DUAL = new Set<ExtensionType>([
   'clip',
   'messages',
   'safari',
+  'notification-content',
 ]);
 
 const RN_EXAMPLE_RN_ONLY = new Set<ExtensionType>(['stickers', 'widget']);
