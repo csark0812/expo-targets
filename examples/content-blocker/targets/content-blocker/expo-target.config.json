@@ -1,0 +1,16 @@
+{
+  "type": "content-blocker",
+  "name": "ContentBlocker",
+  "displayName": "ET Blocker Target",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.example.content-blocker",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.content-blocker.content-blocker",
+    "displayName": "ET Blocker Target",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "ContentBlockerRequestHandler"
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "type": "network-packet-tunnel",
+  "name": "NetworkPacketTunnel",
+  "displayName": "ET NETunnel Target",
+  "platforms": [
+    "ios"
+  ],
+  "appGroup": "group.com.expotargets.example.network-packet-tunnel",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.network-packet-tunnel.network-packet-tunnel",
+    "displayName": "ET NETunnel Target",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "PacketTunnelProvider"
+      }
+    }
+  }
+}

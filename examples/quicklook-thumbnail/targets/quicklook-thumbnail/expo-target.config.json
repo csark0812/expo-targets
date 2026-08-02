@@ -1,0 +1,18 @@
+{
+  "type": "quicklook-thumbnail",
+  "name": "QuicklookThumbnail",
+  "displayName": "ET QLThumb Target",
+  "platforms": [
+    "ios"
+  ],
+  "appGroup": "group.com.expotargets.example.quicklook-thumbnail",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.quicklook-thumbnail.quicklook-thumbnail",
+    "displayName": "ET QLThumb Target",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "ThumbnailProvider"
+      }
+    }
+  }
+}

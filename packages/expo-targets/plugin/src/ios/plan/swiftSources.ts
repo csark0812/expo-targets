@@ -67,6 +67,13 @@ function resolveSwiftFileNames(
     return [REACT_NATIVE_VIEW_CONTROLLER];
   }
 
+  // Notification content: user principal hosts RN child when entry is set.
+  if (props.entry && props.type === 'notification-content') {
+    if (!files.some((file) => isNamed(file, REACT_NATIVE_VIEW_CONTROLLER))) {
+      files.push(REACT_NATIVE_VIEW_CONTROLLER);
+    }
+  }
+
   return files;
 }
 

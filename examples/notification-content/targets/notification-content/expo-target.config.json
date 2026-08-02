@@ -1,0 +1,24 @@
+{
+  "type": "notification-content",
+  "name": "NotificationContent",
+  "displayName": "ET NCE Target",
+  "platforms": [
+    "ios"
+  ],
+  "appGroup": "group.com.expotargets.example.notification-content",
+  "entry": "./targets/notification-content/index.tsx",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.notification-content.notification-content",
+    "displayName": "ET NCE Target",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "NotificationViewController",
+        "NSExtensionAttributes": {
+          "UNNotificationExtensionCategory": "etNceCategory",
+          "UNNotificationExtensionInitialContentSizeRatio": 0.5,
+          "UNNotificationExtensionDefaultContentHidden": true
+        }
+      }
+    }
+  }
+}

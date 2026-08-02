@@ -1,0 +1,18 @@
+{
+  "type": "file-provider",
+  "name": "TrickFiles",
+  "displayName": "ET Trick Files",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.example.trick",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.trick.files",
+    "displayName": "ET Trick Files",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "FileProviderExtension",
+        "NSExtensionFileProviderSupportsEnumeration": true,
+        "NSExtensionFileProviderDocumentGroup": "group.com.expotargets.example.trick"
+      }
+    }
+  }
+}

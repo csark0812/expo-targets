@@ -125,43 +125,48 @@ export function hostReadyTestId(testIds: {
   return testIds.openShareSheet ?? testIds.clearPayload ?? testIds.screenRoot;
 }
 
-/** Dismiss common iOS “Open in …?” / permission alerts — short probe budget. */
+/**
+ * Dismiss common iOS “Open in …?” / permission alerts.
+ * Prefer Cancel: expo run:ios opens via URL scheme (simctl openurl), which
+ * leaves this sheet; journeys then launch by bundle id, so Cancel is correct.
+ */
 export async function dismissSystemAlerts(
   device: DeviceSession,
-  timeoutMs = 1_500,
+  timeoutMs = 2_000,
+  attempts = 2,
 ): Promise<void> {
-  // Prefer Open on install deep-link alerts so the host stays foregrounded;
-  // Cancel/Close clear permission sheets.
   const labels = [
-    "Open",
     "Cancel",
     "Close",
     "Not Now",
     "Don’t Allow",
     "Don't Allow",
+    "Open",
   ];
-  try {
-    const hit = await findNamedViaPointProbe(device, labels, {
-      timeoutMs,
-      yStartRatio: 0.35,
-      yEndRatio: 0.75,
-      stepX: 60,
-      stepY: 50,
-      allowBlocked: true,
-      match: "exact",
-      // “Open in …?” Open ~right; Cancel left-of-center (~136,496 on Air).
-      hotspots: [
-        { x: 260, y: 496 },
-        { x: 136, y: 496 },
-        { x: 80, y: 490 },
-        { x: 120, y: 520 },
-        { x: 210, y: 500 },
-      ],
-    });
-    await tapProbeHit(device, hit);
-    await sleep(300);
-  } catch {
-    // no alert
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const hit = await findNamedViaPointProbe(device, labels, {
+        timeoutMs,
+        yStartRatio: 0.35,
+        yEndRatio: 0.75,
+        stepX: 60,
+        stepY: 50,
+        allowBlocked: true,
+        match: "exact",
+        // “Open in …?” Cancel left-of-center; Open ~right (~260,496 on Air).
+        hotspots: [
+          { x: 136, y: 496 },
+          { x: 80, y: 490 },
+          { x: 120, y: 520 },
+          { x: 260, y: 496 },
+          { x: 210, y: 500 },
+        ],
+      });
+      await tapProbeHit(device, hit);
+      await sleep(350);
+    } catch {
+      return;
+    }
   }
 }
 

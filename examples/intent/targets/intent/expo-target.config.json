@@ -1,0 +1,24 @@
+{
+  "type": "intent",
+  "name": "Intent",
+  "displayName": "ET Intent Target",
+  "platforms": [
+    "ios"
+  ],
+  "appGroup": "group.com.expotargets.example.intent",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.intent.intent",
+    "displayName": "ET Intent Target",
+    "intents": {
+      "intentsSupported": [
+        "INSendMessageIntent"
+      ],
+      "ui": true
+    },
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "IntentHandler"
+      }
+    }
+  }
+}

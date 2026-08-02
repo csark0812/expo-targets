@@ -1,0 +1,11 @@
+{
+  "type": "watch",
+  "name": "Watch",
+  "displayName": "ET Watch Target",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.example.watch",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.watch.watch",
+    "displayName": "ET Watch Target"
+  }
+}

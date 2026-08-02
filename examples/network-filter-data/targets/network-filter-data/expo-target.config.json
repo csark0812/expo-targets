@@ -1,0 +1,18 @@
+{
+  "type": "network-filter-data",
+  "name": "NetworkFilterData",
+  "displayName": "ET NEFilter Target",
+  "platforms": [
+    "ios"
+  ],
+  "appGroup": "group.com.expotargets.example.network-filter-data",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.network-filter-data.network-filter-data",
+    "displayName": "ET NEFilter Target",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "FilterDataProvider"
+      }
+    }
+  }
+}

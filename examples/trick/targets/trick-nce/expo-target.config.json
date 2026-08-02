@@ -1,0 +1,21 @@
+{
+  "type": "notification-content",
+  "name": "TrickNCE",
+  "displayName": "ET Trick NCE",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.example.trick",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.trick.nce",
+    "displayName": "ET Trick NCE",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "NotificationViewController",
+        "NSExtensionAttributes": {
+          "UNNotificationExtensionCategory": "myNotificationCategory",
+          "UNNotificationExtensionInitialContentSizeRatio": 0.5,
+          "UNNotificationExtensionDefaultContentHidden": true
+        }
+      }
+    }
+  }
+}

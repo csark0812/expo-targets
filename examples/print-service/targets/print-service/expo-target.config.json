@@ -1,0 +1,18 @@
+{
+  "type": "print-service",
+  "name": "PrintService",
+  "displayName": "ET Print Target",
+  "platforms": [
+    "ios"
+  ],
+  "appGroup": "group.com.expotargets.example.print-service",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.print-service.print-service",
+    "displayName": "ET Print Target",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "PrinterExtension"
+      }
+    }
+  }
+}

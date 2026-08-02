@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "ET NEFilter",
+    "slug": "example-network-filter-data",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.expotargets.example.network-filter-data",
+      "deploymentTarget": "15.1",
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.expotargets.example.network-filter-data"
+        ]
+      },
+      "infoPlist": {
+        "CFBundleDisplayName": "ET NEFilter"
+      }
+    },
+    "plugins": [
+      [
+        "expo-targets",
+        {
+          "debug": true
+        }
+      ]
+    ],
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.expotargets.example.network-filter-data"
+    }
+  }
+}

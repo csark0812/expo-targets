@@ -2,14 +2,14 @@
 import process from "node:process";
 import { formatDryPreflight, runDryPreflight } from "./dry-preflight";
 import { runTargetMatrix } from "./matrix";
-import { REQUIRED_V1, type TargetPhase } from "./required";
+import { REQUIRED_V2, type TargetPhase } from "./required";
 
 function usage(): never {
   console.error(`examples/.devicewright/cli.ts <command>
 
 Commands:
   dry-preflight [--no-sim] [--android]
-  matrix [--ids=a,b] [--stubs-only] [--live-through=1|2|3] [--no-fail-fast] [--ensure-install]
+  matrix [--ids=a,b] [--stubs-only] [--live-through=1|2|3|4|5] [--no-fail-fast] [--ensure-install]
   list
 
   --ensure-install  Release-build + install missing hosts before live journeys
@@ -40,12 +40,18 @@ async function cmdMatrix(rest: string[]): Promise<void> {
   const liveThroughPhase = liveArg
     ? (Number(liveArg.slice("--live-through=".length)) as TargetPhase)
     : undefined;
+  const deviceArg = rest.find((a) => a.startsWith("--device="));
+  const iosDevice =
+    deviceArg?.slice("--device=".length) ||
+    process.env.DEVICEWRIGHT_SIM_UDID ||
+    undefined;
   const result = await runTargetMatrix({
     ids,
     stubsOnly: rest.includes("--stubs-only"),
     liveThroughPhase,
     failFast: !rest.includes("--no-fail-fast"),
     ensureInstall: rest.includes("--ensure-install"),
+    iosDevice,
   });
   console.log(
     JSON.stringify(
@@ -71,7 +77,7 @@ async function main(): Promise<void> {
   if (cmd === "dry-preflight") return cmdDry(rest);
   if (cmd === "matrix") return cmdMatrix(rest);
   if (cmd === "list") {
-    console.log(JSON.stringify(REQUIRED_V1, null, 2));
+    console.log(JSON.stringify(REQUIRED_V2, null, 2));
     return;
   }
   usage();

@@ -10,7 +10,7 @@ expo-targets owns **Expo’s negative space**: React Native share/action/clip/me
 
 - **New React/iOS widgets and Live Activities** → official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) (SDK 56+). See [docs/widgets.md](docs/widgets.md).
 - **Native iOS widgets** via this lib are soft-deprecated (shared-spine investment only).
-- **Do not add** new config-only extension types. See [docs/deprecations.md](docs/deprecations.md).
+- **Do not add** orphan config-only extension types — a type joins the union only with scaffold + example + Devicewright in the same PR. See [docs/deprecations.md](docs/deprecations.md).
 
 ## Docs SSOT
 

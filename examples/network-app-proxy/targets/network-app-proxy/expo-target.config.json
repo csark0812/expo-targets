@@ -1,0 +1,18 @@
+{
+  "type": "network-app-proxy",
+  "name": "NetworkAppProxy",
+  "displayName": "ET NEProxy Target",
+  "platforms": [
+    "ios"
+  ],
+  "appGroup": "group.com.expotargets.example.network-app-proxy",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.network-app-proxy.network-app-proxy",
+    "displayName": "ET NEProxy Target",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "AppProxyProvider"
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "type": "spotlight",
+  "name": "Spotlight",
+  "displayName": "ET Spotlight Target",
+  "platforms": [
+    "ios"
+  ],
+  "appGroup": "group.com.expotargets.example.spotlight",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.spotlight.spotlight",
+    "displayName": "ET Spotlight Target",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "IndexRequestHandler"
+      }
+    }
+  }
+}

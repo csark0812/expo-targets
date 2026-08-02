@@ -1,8 +1,8 @@
-import path from 'node:path';
+import path from "node:path";
 
-import type { Color } from '../../config';
-import type { TargetWorkspace } from '../observe/workspace';
-import * as Paths from '../utils/paths';
+import type { Color } from "../../config";
+import type { TargetWorkspace } from "../observe/workspace";
+import * as Paths from "../utils/paths";
 import type {
   AssetPlan,
   ColorsetPlan,
@@ -11,9 +11,9 @@ import type {
   StickerPackPlan,
   StickersPlan,
   TargetIdentity,
-} from './types';
+} from "./types";
 
-const IMESSAGE_APP_ICON = 'iMessage App Icon.stickersiconset';
+const IMESSAGE_APP_ICON = "iMessage App Icon.stickersiconset";
 
 function planColorsets({
   props,
@@ -30,7 +30,7 @@ function planColorsets({
       buildSubdirectory: props.buildSubdirectory,
     });
 
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       return { name, colorsetPath, color: value };
     }
 
@@ -58,7 +58,7 @@ function planStickerPacks({
     // (targets/.../ios/build/), not the legacy ios/<Target>/ catalog.
     const stickerPackPath = path.join(
       buildAssetsPath,
-      `${pack.name}.stickerpack`
+      `${pack.name}.stickerpack`,
     );
     const assets = pack.assets.map((assetPath) => {
       const sourcePath = path.isAbsolute(assetPath)
@@ -108,7 +108,7 @@ function planStickers({
 export function planAssets({
   workspace,
   props,
-  identity,
+  identity: _identity,
   paths,
 }: {
   workspace: TargetWorkspace;
@@ -116,7 +116,7 @@ export function planAssets({
   identity: TargetIdentity;
   paths: ProjectPaths;
 }): AssetPlan {
-  const isStickers = props.type === 'stickers';
+  const isStickers = props.type === "stickers";
   const buildAssetsPath = Paths.getTargetAssetsPath({
     projectRoot: paths.projectRoot,
     targetDirectory: props.directory,

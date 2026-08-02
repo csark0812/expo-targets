@@ -1,0 +1,16 @@
+{
+  "type": "broadcast-upload",
+  "name": "BroadcastUpload",
+  "displayName": "ET Broadcast Target",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.example.broadcast-upload",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.broadcast-upload.broadcast-upload",
+    "displayName": "ET Broadcast Target",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "SampleHandler"
+      }
+    }
+  }
+}

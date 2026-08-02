@@ -1,0 +1,19 @@
+{
+  "type": "photo-editing",
+  "name": "TrickPhoto",
+  "displayName": "ET Trick Photo",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.example.trick",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.trick.photo",
+    "displayName": "ET Trick Photo",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "PhotoEditingViewController",
+        "NSExtensionAttributes": {
+          "PHSupportedMediaTypes": ["Image"]
+        }
+      }
+    }
+  }
+}

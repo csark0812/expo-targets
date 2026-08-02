@@ -1,0 +1,18 @@
+{
+  "type": "network-dns-proxy",
+  "name": "NetworkDnsProxy",
+  "displayName": "ET NEDNS Target",
+  "platforms": [
+    "ios"
+  ],
+  "appGroup": "group.com.expotargets.example.network-dns-proxy",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.network-dns-proxy.network-dns-proxy",
+    "displayName": "ET NEDNS Target",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "DNSProxyProvider"
+      }
+    }
+  }
+}

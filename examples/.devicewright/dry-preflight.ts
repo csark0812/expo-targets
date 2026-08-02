@@ -6,7 +6,7 @@ import {
   runDoctor,
 } from "@csark0812/devicewright";
 import { simctl } from "@csark0812/devicewright/ios";
-import { REQUIRED_V1 } from "./required";
+import { REQUIRED_V2 } from "./required";
 import { exampleExists, repoRoot } from "./root";
 
 export type DoctorCheck = { name: string; ok: boolean; detail: string };
@@ -20,15 +20,15 @@ export type DryPreflightReport = {
 
 function checkRequiredPaths(): DoctorCheck {
   const missing: string[] = [];
-  for (const row of REQUIRED_V1) {
+  for (const row of REQUIRED_V2) {
     if (!exampleExists(row.path)) missing.push(row.path);
   }
   return {
-    name: "REQUIRED_V1_paths",
+    name: "REQUIRED_V2_paths",
     ok: missing.length === 0,
     detail:
       missing.length === 0
-        ? `${REQUIRED_V1.length} paths present`
+        ? `${REQUIRED_V2.length} paths present`
         : `missing: ${missing.join(", ")}`,
   };
 }

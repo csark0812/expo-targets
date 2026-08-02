@@ -1,0 +1,18 @@
+{
+  "type": "notification-content",
+  "name": "NativeNotificationContent",
+  "displayName": "ET NCE Target",
+  "platforms": [
+    "ios"
+  ],
+  "appGroup": "group.com.expotargets.example.native.notification-content",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.native.notification-content.notification-content",
+    "displayName": "ET NCE Target",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "NotificationViewController"
+      }
+    }
+  }
+}

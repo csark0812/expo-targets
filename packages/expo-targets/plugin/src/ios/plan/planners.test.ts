@@ -221,6 +221,7 @@ describe("planBuildSettings per type", () => {
   });
 });
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: existing planner suite
 describe("planSwiftSources", () => {
   test("generates a ReactNativeViewController when the user has no Swift", () => {
     const plans = swiftSourcesFor({ entry: "./index.tsx" });
@@ -564,6 +565,22 @@ describe("composeXcodeTargetPlan", () => {
     });
 
     expect(plan.safari?.useCustomResources).toBe(false);
+    expect(plan.safari?.resourcesPath).toContain("build/Resources");
+    expect(plan.safari?.referencePath).toContain("Resources");
+  });
+
+  test("plans Safari resources for native safari without entry", () => {
+    const plan = composeXcodeTargetPlan({
+      props: makeProps({
+        type: "safari",
+        name: "NativeSafari",
+      }),
+      expoConfig: { ios: { bundleIdentifier: MAIN_BUNDLE_ID } },
+      workspace: makeWorkspace({ type: "safari" }),
+      paths,
+      mainBuildSettings: {},
+    });
+
     expect(plan.safari?.resourcesPath).toContain("build/Resources");
   });
 });

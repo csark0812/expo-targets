@@ -1,0 +1,18 @@
+{
+  "type": "matter",
+  "name": "Matter",
+  "displayName": "ET Matter Target",
+  "platforms": [
+    "ios"
+  ],
+  "appGroup": "group.com.expotargets.example.matter",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.matter.matter",
+    "displayName": "ET Matter Target",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "MatterSupportExtension"
+      }
+    }
+  }
+}

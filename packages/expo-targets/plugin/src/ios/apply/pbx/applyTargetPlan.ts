@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
 import type { XcodeProject } from '@expo/config-plugins';
 
 import type { Logger } from '../../../logger';
@@ -140,6 +143,42 @@ function referenceAssets(
   });
 }
 
+/**
+ * Safari web-extension files (manifest.json, popup, background, images) must
+ * be in Copy Bundle Resources. Prefer flat file refs into the appex root —
+ * a folder reference named "Resources" can break appex Info.plist loading
+ * during embed on recent Xcode / iOS Simulator SDKs.
+ */
+function referenceSafariResources(
+  project: XcodeProject,
+  plan: XcodeTargetPlan,
+  { target, groupUuid }: { target: XcodeTarget; groupUuid: string }
+): void {
+  if (!plan.safari) return;
+
+  const root = plan.safari.resourcesPath;
+  if (!fs.existsSync(root)) return;
+
+  for (const name of fs.readdirSync(root)) {
+    if (name.startsWith('.')) continue;
+    const abs = path.join(root, name);
+    const isDir = fs.statSync(abs).isDirectory();
+    const fileRefUuid = addExternalFileReference({
+      project,
+      groupUuid,
+      filePath: path.join(plan.safari.referencePath, name),
+      fileName: name,
+      fileType: isDir ? 'folder' : undefined,
+    });
+    addFileToBuildPhase({
+      project,
+      targetUuid: target.uuid,
+      fileRefUuid,
+      phaseType: 'PBXResourcesBuildPhase',
+    });
+  }
+}
+
 function linkFrameworks(
   project: XcodeProject,
   plan: XcodeTargetPlan,
@@ -222,6 +261,9 @@ export function applyXcodeTargetPlan(
 
   referenceSwiftFiles(project, plan, { target, groupUuid });
   referenceAssets(project, plan, { target, groupUuid });
+  if (plan.safari) {
+    referenceSafariResources(project, plan, { target, groupUuid });
+  }
   linkFrameworks(project, plan, target);
 
   addTargetDependency({

@@ -1,0 +1,18 @@
+{
+  "type": "classkit-context",
+  "name": "ClasskitContext",
+  "displayName": "ET ClassKit Target",
+  "platforms": [
+    "ios"
+  ],
+  "appGroup": "group.com.expotargets.example.classkit-context",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.classkit-context.classkit-context",
+    "displayName": "ET ClassKit Target",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "ClassKitContextProvider"
+      }
+    }
+  }
+}

@@ -1,0 +1,212 @@
+[
+  {
+    "id": "notification-service",
+    "path": "examples/notification-service",
+    "phase": 4
+  },
+  {
+    "id": "notification-content",
+    "path": "examples/notification-content",
+    "phase": 4
+  },
+  {
+    "id": "native-notification-content",
+    "path": "examples/native/notification-content",
+    "phase": 4
+  },
+  {
+    "id": "wallet",
+    "path": "examples/wallet",
+    "phase": 4
+  },
+  {
+    "id": "native-clip",
+    "path": "examples/native/clip",
+    "phase": 4
+  },
+  {
+    "id": "safari",
+    "path": "examples/safari",
+    "phase": 4
+  },
+  {
+    "id": "native-safari",
+    "path": "examples/native/safari",
+    "phase": 4
+  },
+  {
+    "id": "content-blocker",
+    "path": "examples/content-blocker",
+    "phase": 4
+  },
+  {
+    "id": "app-intent",
+    "path": "examples/app-intent",
+    "phase": 5
+  },
+  {
+    "id": "intent",
+    "path": "examples/intent",
+    "phase": 5
+  },
+  {
+    "id": "credentials-provider",
+    "path": "examples/credentials-provider",
+    "phase": 5
+  },
+  {
+    "id": "account-auth",
+    "path": "examples/account-auth",
+    "phase": 5
+  },
+  {
+    "id": "authentication-services",
+    "path": "examples/authentication-services",
+    "phase": 5
+  },
+  {
+    "id": "photo-editing",
+    "path": "examples/photo-editing",
+    "phase": 5
+  },
+  {
+    "id": "file-provider",
+    "path": "examples/file-provider",
+    "phase": 5
+  },
+  {
+    "id": "file-provider-ui",
+    "path": "examples/file-provider-ui",
+    "phase": 5
+  },
+  {
+    "id": "quicklook-thumbnail",
+    "path": "examples/quicklook-thumbnail",
+    "phase": 5
+  },
+  {
+    "id": "quicklook-preview",
+    "path": "examples/quicklook-preview",
+    "phase": 5
+  },
+  {
+    "id": "call-directory",
+    "path": "examples/call-directory",
+    "phase": 5
+  },
+  {
+    "id": "message-filter",
+    "path": "examples/message-filter",
+    "phase": 5
+  },
+  {
+    "id": "unwanted-communication",
+    "path": "examples/unwanted-communication",
+    "phase": 5
+  },
+  {
+    "id": "keyboard",
+    "path": "examples/keyboard",
+    "phase": 5
+  },
+  {
+    "id": "broadcast-upload",
+    "path": "examples/broadcast-upload",
+    "phase": 5
+  },
+  {
+    "id": "broadcast-setup-ui",
+    "path": "examples/broadcast-setup-ui",
+    "phase": 5
+  },
+  {
+    "id": "device-activity-monitor",
+    "path": "examples/device-activity-monitor",
+    "phase": 5
+  },
+  {
+    "id": "shield-action",
+    "path": "examples/shield-action",
+    "phase": 5
+  },
+  {
+    "id": "shield-config",
+    "path": "examples/shield-config",
+    "phase": 5
+  },
+  {
+    "id": "network-packet-tunnel",
+    "path": "examples/network-packet-tunnel",
+    "phase": 5
+  },
+  {
+    "id": "network-app-proxy",
+    "path": "examples/network-app-proxy",
+    "phase": 5
+  },
+  {
+    "id": "network-dns-proxy",
+    "path": "examples/network-dns-proxy",
+    "phase": 5
+  },
+  {
+    "id": "network-filter-data",
+    "path": "examples/network-filter-data",
+    "phase": 5
+  },
+  {
+    "id": "spotlight",
+    "path": "examples/spotlight",
+    "phase": 5
+  },
+  {
+    "id": "spotlight-delegate",
+    "path": "examples/spotlight-delegate",
+    "phase": 5
+  },
+  {
+    "id": "bg-download",
+    "path": "examples/bg-download",
+    "phase": 5
+  },
+  {
+    "id": "location-push",
+    "path": "examples/location-push",
+    "phase": 5
+  },
+  {
+    "id": "matter",
+    "path": "examples/matter",
+    "phase": 5
+  },
+  {
+    "id": "classkit-context",
+    "path": "examples/classkit-context",
+    "phase": 5
+  },
+  {
+    "id": "print-service",
+    "path": "examples/print-service",
+    "phase": 5
+  },
+  {
+    "id": "smart-card",
+    "path": "examples/smart-card",
+    "phase": 5
+  },
+  {
+    "id": "virtual-conference",
+    "path": "examples/virtual-conference",
+    "phase": 5
+  },
+  {
+    "id": "watch",
+    "path": "examples/watch",
+    "phase": 5
+  },
+  {
+    "id": "watch-widget",
+    "path": "examples/watch-widget",
+    "phase": 5
+  }
+]

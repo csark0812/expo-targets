@@ -1,20 +1,20 @@
-import type { TargetPhase } from './required';
+import type { TargetPhase } from "./required";
 
-/** claim-state status for a REQUIRED_V1 row. */
+/** claim-state status for a REQUIRED_V2 row. */
 export type TargetClaimStatus =
-  | 'green'
-  | 'red'
-  | 'stub'
-  | 'os-limit'
-  | 'operator'
-  | 'infra';
+  | "green"
+  | "red"
+  | "stub"
+  | "os-limit"
+  | "operator"
+  | "infra";
 
 export type TargetFailureKind =
-  | 'infra'
-  | 'operator'
-  | 'product'
-  | 'os-limit'
-  | 'stub';
+  | "infra"
+  | "operator"
+  | "product"
+  | "os-limit"
+  | "stub";
 
 export type TargetJourneyResult = {
   id: string;

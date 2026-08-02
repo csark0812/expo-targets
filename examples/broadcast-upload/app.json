@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "ET Broadcast",
+    "slug": "example-broadcast-upload",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.expotargets.example.broadcast-upload",
+      "deploymentTarget": "15.1",
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.expotargets.example.broadcast-upload"
+        ]
+      },
+      "infoPlist": {
+        "CFBundleDisplayName": "ET Broadcast"
+      }
+    },
+    "plugins": [
+      [
+        "expo-targets",
+        {
+          "debug": true
+        }
+      ]
+    ],
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.expotargets.example.broadcast-upload"
+    }
+  }
+}

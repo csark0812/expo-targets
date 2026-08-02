@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "ET WatchW",
+    "slug": "example-watch-widget",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.expotargets.example.watch-widget",
+      "deploymentTarget": "15.1",
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.expotargets.example.watch-widget"
+        ]
+      },
+      "infoPlist": {
+        "CFBundleDisplayName": "ET WatchW"
+      }
+    },
+    "plugins": [
+      [
+        "expo-targets",
+        {
+          "debug": true
+        }
+      ]
+    ],
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.expotargets.example.watch-widget"
+    }
+  }
+}

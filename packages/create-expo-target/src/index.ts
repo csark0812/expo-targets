@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-import path from 'node:path';
-import process from 'node:process';
-import fs from 'fs-extra';
-import prompts from 'prompts';
+import path from "node:path";
+import process from "node:process";
+import fs from "fs-extra";
+import prompts from "prompts";
 
 const WIDGET_HANDOFF = `
 For new React/iOS widgets and Live Activities, prefer official expo-widgets (Expo SDK 56+):
@@ -17,57 +17,71 @@ https://github.com/csark0812/expo-targets/blob/main/docs/widgets.md
 async function main() {
   const response = await prompts([
     {
-      type: 'select',
-      name: 'type',
-      message: 'What type of target?',
+      type: "select",
+      name: "type",
+      message: "What type of target?",
       choices: [
-        { title: 'Share Extension', value: 'share' },
-        { title: 'Action Extension', value: 'action' },
-        { title: 'App Clip', value: 'clip' },
-        { title: 'Messages App', value: 'messages' },
-        { title: 'iMessage Stickers', value: 'imessage' },
-        { title: 'Wallet Extension', value: 'wallet' },
-        { title: 'Siri Intent', value: 'intent' },
+        { title: "Share Extension", value: "share" },
+        { title: "Action Extension", value: "action" },
+        { title: "App Clip", value: "clip" },
+        { title: "Messages App", value: "messages" },
         {
-          title: 'Widget (soft-deprecated — prefer expo-widgets for React/iOS)',
-          value: 'widget',
+          title: "iMessage Stickers (writes type: stickers)",
+          value: "imessage",
         },
+        { title: "Wallet Extension", value: "wallet" },
+        { title: "Siri Intent", value: "intent" },
+        {
+          title: "Widget (soft-deprecated — prefer expo-widgets for React/iOS)",
+          value: "widget",
+        },
+        { title: "Notification Service", value: "notification-service" },
+        { title: "Notification Content", value: "notification-content" },
+        { title: "Safari Web Extension", value: "safari" },
+        { title: "Content Blocker", value: "content-blocker" },
+        { title: "App Intent", value: "app-intent" },
+        { title: "Keyboard", value: "keyboard" },
+        { title: "Photo Editing", value: "photo-editing" },
+        { title: "File Provider", value: "file-provider" },
+        { title: "Broadcast Upload", value: "broadcast-upload" },
+        { title: "Call Directory", value: "call-directory" },
+        { title: "Credentials Provider", value: "credentials-provider" },
       ],
     },
     {
-      type: (_prev, values) => (values.type === 'widget' ? 'confirm' : null),
-      name: 'confirmNativeWidget',
+      type: (_prev, values) => (values.type === "widget" ? "confirm" : null),
+      name: "confirmNativeWidget",
       message:
-        'Continue with a native WidgetKit scaffold? (React/iOS widgets → expo-widgets)',
+        "Continue with a native WidgetKit scaffold? (React/iOS widgets → expo-widgets)",
       initial: false,
     },
     {
-      type: 'text',
-      name: 'name',
-      message: 'Target name (e.g., my-share):',
+      type: "text",
+      name: "name",
+      message: "Target name (e.g., my-share):",
       validate: (value) =>
-        value.length > 0 ? true : 'Target name is required',
+        value.length > 0 ? true : "Target name is required",
     },
     {
-      type: 'multiselect',
-      name: 'platforms',
-      message: 'Select platforms:',
+      type: "multiselect",
+      name: "platforms",
+      message: "Select platforms:",
       choices: [
-        { title: 'iOS', value: 'ios', selected: true },
-        { title: 'Android (coming soon)', value: 'android', disabled: true },
+        { title: "iOS", value: "ios", selected: true },
+        { title: "Android (coming soon)", value: "android", disabled: true },
       ],
     },
     {
       type: (_prev, values) =>
-        ['share', 'action', 'clip'].includes(values.type) ? 'confirm' : null,
-      name: 'useReactNative',
-      message: 'Use React Native for UI?',
+        ["share", "action", "clip"].includes(values.type) ? "confirm" : null,
+      name: "useReactNative",
+      message: "Use React Native for UI?",
       initial: true,
     },
     {
-      type: (_prev, values) => (values.type === 'intent' ? 'confirm' : null),
-      name: 'includeIntentUI',
-      message: 'Include custom UI extension? (displays custom visuals in Siri)',
+      type: (_prev, values) => (values.type === "intent" ? "confirm" : null),
+      name: "includeIntentUI",
+      message: "Include custom UI extension? (displays custom visuals in Siri)",
       initial: true,
     },
   ]);
@@ -76,17 +90,17 @@ async function main() {
     return;
   }
 
-  if (response.type === 'widget') {
+  if (response.type === "widget") {
     console.warn(`\n[expo-targets] ${WIDGET_HANDOFF}\n`);
     if (response.confirmNativeWidget === false) {
       console.log(
-        'Aborted. Install expo-widgets for React/iOS widgets, or re-run and confirm the native scaffold.'
+        "Aborted. Install expo-widgets for React/iOS widgets, or re-run and confirm the native scaffold.",
       );
       return;
     }
   }
 
-  const targetDir = path.join(process.cwd(), 'targets', response.name);
+  const targetDir = path.join(process.cwd(), "targets", response.name);
 
   if (fs.existsSync(targetDir)) {
     return;
@@ -101,24 +115,24 @@ async function main() {
     pascalName,
     response.platforms,
     response.useReactNative,
-    response.includeIntentUI
+    response.includeIntentUI,
   );
-  fs.writeFileSync(path.join(targetDir, 'expo-target.config.json'), config);
+  fs.writeFileSync(path.join(targetDir, "expo-target.config.json"), config);
 
-  if (response.platforms.includes('ios')) {
+  if (response.platforms.includes("ios")) {
     copyTemplate(
       response.type,
-      'ios',
+      "ios",
       targetDir,
       pascalName,
-      response.includeIntentUI
+      response.includeIntentUI,
     );
 
     if (response.useReactNative) {
-      const entryFile = path.join(targetDir, 'index.tsx');
+      const entryFile = path.join(targetDir, "index.tsx");
       fs.writeFileSync(
         entryFile,
-        getReactNativeTemplate(response.type, pascalName)
+        getReactNativeTemplate(response.type, pascalName),
       );
     }
   }
@@ -129,12 +143,12 @@ async function main() {
 
 export const ${pascalToCamel(pascalName)} = createTarget('${pascalName}');
 `;
-    fs.writeFileSync(path.join(targetDir, 'index.ts'), indexTs);
+    fs.writeFileSync(path.join(targetDir, "index.ts"), indexTs);
   }
 
-  if (response.type === 'widget') {
+  if (response.type === "widget") {
     console.warn(
-      '[expo-targets] Deprecated: native widget targets are soft-deprecated. Prefer expo-widgets for React/iOS widgets. See docs/widgets.md'
+      "[expo-targets] Deprecated: native widget targets are soft-deprecated. Prefer expo-widgets for React/iOS widgets. See docs/widgets.md",
     );
   }
 }
@@ -146,33 +160,34 @@ function generateConfig(
   pascalName: string,
   platforms: string[],
   useReactNative?: boolean,
-  includeIntentUi?: boolean
+  includeIntentUi?: boolean,
 ): string {
+  const configType = type === "imessage" ? "stickers" : type;
   const config: any = {
-    type,
+    type: configType,
     name: pascalName,
     displayName: kebabName
-      .split('-')
+      .split("-")
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' '),
+      .join(" "),
     platforms,
   };
 
-  if (platforms.includes('ios') && useReactNative) {
+  if (platforms.includes("ios") && useReactNative) {
     config.entry = `./targets/${kebabName}/index.tsx`;
-    config.excludedPackages = ['expo-updates', 'expo-dev-client'];
+    config.excludedPackages = ["expo-updates", "expo-dev-client"];
   }
 
-  if (type === 'intent' && platforms.includes('ios')) {
+  if (type === "intent" && platforms.includes("ios")) {
     config.ios = {
       intents: {
-        intentsSupported: ['INStartWorkoutIntent'],
+        intentsSupported: ["INStartWorkoutIntent"],
         ...(includeIntentUi && { ui: true }),
       },
     };
   }
 
-  if (type === 'wallet' && platforms.includes('ios')) {
+  if (type === "wallet" && platforms.includes("ios")) {
     config.ios = {
       wallet: {
         ui: true,
@@ -185,12 +200,13 @@ function generateConfig(
 
 // biome-ignore lint/complexity/useMaxParams: pre-existing complexity; tracked for refactor
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
 function copyTemplate(
   type: string,
   platform: string,
   targetDir: string,
   pascalName: string,
-  includeIntentUi?: boolean
+  includeIntentUi?: boolean,
 ) {
   const platformDir = path.join(targetDir, platform);
   fs.mkdirSync(platformDir, { recursive: true });
@@ -479,7 +495,7 @@ class PassProvider: PKIssuerProvisioningExtensionHandler {
         return config
     }
 }`,
-    'wallet-ui': `import UIKit
+    "wallet-ui": `import UIKit
 import PassKit
 
 class AuthorizationViewController: UIViewController, PKIssuerProvisioningExtensionAuthorizationProviding {
@@ -562,7 +578,7 @@ class IntentHandler: INExtension {
 //         completion(response)
 //     }
 // }`,
-    'intent-ui': `import IntentsUI
+    "intent-ui": `import IntentsUI
 
 class IntentViewController: UIViewController, INUIHostedViewControlling {
 
@@ -584,55 +600,66 @@ class IntentViewController: UIViewController, INUIHostedViewControlling {
 }`,
   };
 
-  const templateFn = templates[type] || templates.widget;
+  const genericStub = `import Foundation
+
+@objc(${pascalName}Handler)
+class ${pascalName}Handler: NSObject {
+  // Minimal stub — replace with the Apple extension principal for type "${type}".
+}
+`;
+
+  const templateFn =
+    templates[type] || (type === "imessage" ? templates.imessage : null);
   const template =
-    typeof templateFn === 'function' ? templateFn(pascalName) : templateFn;
-  let filename = 'Main.swift';
-  if (type === 'widget') {
-    filename = 'Widget.swift';
-  } else if (type === 'messages') {
-    filename = 'MessagesViewController.swift';
-  } else if (type === 'wallet') {
-    filename = 'PassProvider.swift';
-  } else if (type === 'intent') {
-    filename = 'IntentHandler.swift';
+    typeof templateFn === "function"
+      ? templateFn(pascalName)
+      : templateFn || genericStub;
+  let filename = "Main.swift";
+  if (type === "widget") {
+    filename = "Widget.swift";
+  } else if (type === "messages") {
+    filename = "MessagesViewController.swift";
+  } else if (type === "wallet") {
+    filename = "PassProvider.swift";
+  } else if (type === "intent") {
+    filename = "IntentHandler.swift";
   }
 
   fs.writeFileSync(path.join(platformDir, filename), template);
 
   // For wallet type, also create AuthorizationViewController.swift (combined wallet with UI)
-  if (type === 'wallet') {
-    const walletUiTemplate = templates['wallet-ui'];
+  if (type === "wallet") {
+    const walletUiTemplate = templates["wallet-ui"];
     fs.writeFileSync(
-      path.join(platformDir, 'AuthorizationViewController.swift'),
-      walletUiTemplate as string
+      path.join(platformDir, "AuthorizationViewController.swift"),
+      walletUiTemplate as string,
     );
   }
 
   // For intent type with UI, also create IntentViewController.swift
-  if (type === 'intent' && includeIntentUi) {
-    const intentUiTemplate = templates['intent-ui'];
+  if (type === "intent" && includeIntentUi) {
+    const intentUiTemplate = templates["intent-ui"];
     fs.writeFileSync(
-      path.join(platformDir, 'IntentViewController.swift'),
-      intentUiTemplate as string
+      path.join(platformDir, "IntentViewController.swift"),
+      intentUiTemplate as string,
     );
   }
 
-  if (type === 'imessage') {
-    const stickersDir = path.join(platformDir, 'Stickers.xcstickers');
+  if (type === "imessage") {
+    const stickersDir = path.join(platformDir, "Stickers.xcstickers");
     fs.mkdirSync(stickersDir, { recursive: true });
     fs.writeFileSync(
-      path.join(stickersDir, 'Contents.json'),
+      path.join(stickersDir, "Contents.json"),
       JSON.stringify(
         {
           info: {
             version: 1,
-            author: 'xcode',
+            author: "xcode",
           },
         },
         null,
-        2
-      )
+        2,
+      ),
     );
   }
 }
@@ -676,9 +703,9 @@ AppRegistry.registerComponent('${pascalName}', () => ${pascalName});
 
 function kebabToPascal(kebab: string): string {
   return kebab
-    .split('-')
+    .split("-")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join('');
+    .join("");
 }
 
 function pascalToCamel(pascal: string): string {

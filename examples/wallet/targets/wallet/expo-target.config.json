@@ -1,0 +1,14 @@
+{
+  "type": "wallet",
+  "name": "Wallet",
+  "displayName": "ET Wallet Target",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.example.wallet",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.wallet.wallet",
+    "displayName": "ET Wallet Target",
+    "wallet": {
+      "ui": true
+    }
+  }
+}

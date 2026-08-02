@@ -1,0 +1,11 @@
+{
+  "type": "notification-service",
+  "name": "TrickNSE",
+  "displayName": "ET Trick NSE",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.example.trick",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.trick.nse",
+    "displayName": "ET Trick NSE"
+  }
+}

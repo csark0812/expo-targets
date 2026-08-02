@@ -1,0 +1,18 @@
+{
+  "type": "smart-card",
+  "name": "SmartCard",
+  "displayName": "ET SmartCard Target",
+  "platforms": [
+    "ios"
+  ],
+  "appGroup": "group.com.expotargets.example.smart-card",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.smart-card.smart-card",
+    "displayName": "ET SmartCard Target",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "Token"
+      }
+    }
+  }
+}

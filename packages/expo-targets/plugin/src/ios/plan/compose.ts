@@ -47,7 +47,7 @@ export function composeXcodeTargetPlan({
       platformProjectRoot: paths.platformProjectRoot,
     }),
     assets: planAssets({ workspace, props, identity, paths }),
-    safari: planSafariResources({ workspace, props }),
+    safari: planSafariResources({ workspace, props, paths }),
     embed: planEmbed(props.type),
   };
 }

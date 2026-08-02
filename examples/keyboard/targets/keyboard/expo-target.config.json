@@ -1,0 +1,16 @@
+{
+  "type": "keyboard",
+  "name": "Keyboard",
+  "displayName": "ET Keyboard Target",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.example.keyboard",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.keyboard.keyboard",
+    "displayName": "ET Keyboard Target",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "KeyboardViewController"
+      }
+    }
+  }
+}

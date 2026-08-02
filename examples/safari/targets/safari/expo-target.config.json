@@ -1,0 +1,19 @@
+{
+  "type": "safari",
+  "name": "Safari",
+  "displayName": "ET Safari Target",
+  "platforms": [
+    "ios"
+  ],
+  "appGroup": "group.com.expotargets.example.safari",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.safari.safari",
+    "displayName": "ET Safari Target",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "SafariWebExtensionHandler"
+      }
+    }
+  },
+  "entry": "./targets/safari/index.tsx"
+}

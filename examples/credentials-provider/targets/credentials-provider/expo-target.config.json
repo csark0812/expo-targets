@@ -1,0 +1,16 @@
+{
+  "type": "credentials-provider",
+  "name": "CredentialsProvider",
+  "displayName": "ET Creds Target",
+  "platforms": ["ios"],
+  "appGroup": "group.com.expotargets.example.credentials-provider",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.credentials-provider.credentials-provider",
+    "displayName": "ET Creds Target",
+    "infoPlist": {
+      "NSExtension": {
+        "NSExtensionPrincipalClass": "CredentialProviderViewController"
+      }
+    }
+  }
+}

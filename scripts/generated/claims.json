@@ -1,0 +1,62 @@
+[
+  {
+    "id": "wallet",
+    "reason": "PassKit issuer provisioning requires Apple entitlement allow-list"
+  },
+  {
+    "id": "credentials-provider",
+    "reason": "AutoFill Settings toggle / ASCredentialProvider UI gated"
+  },
+  {
+    "id": "account-auth",
+    "reason": "Account auth modification requires system Settings"
+  },
+  {
+    "id": "authentication-services",
+    "reason": "SSO / AppSSO entitlement gated"
+  },
+  {
+    "id": "call-directory",
+    "reason": "Call Directory Settings enablement"
+  },
+  {
+    "id": "device-activity-monitor",
+    "reason": "Family Controls / DeviceActivity entitlement"
+  },
+  {
+    "id": "shield-action",
+    "reason": "Family Controls / ManagedSettings entitlement"
+  },
+  {
+    "id": "shield-config",
+    "reason": "Family Controls / ManagedSettings entitlement"
+  },
+  {
+    "id": "network-packet-tunnel",
+    "reason": "Network Extension entitlement / VPN personal"
+  },
+  {
+    "id": "network-app-proxy",
+    "reason": "Network Extension entitlement"
+  },
+  {
+    "id": "network-dns-proxy",
+    "reason": "Network Extension entitlement"
+  },
+  {
+    "id": "network-filter-data",
+    "reason": "Network Extension entitlement"
+  },
+  {
+    "id": "location-push",
+    "reason": "Location push special entitlement"
+  },
+  {
+    "id": "watch",
+    "reason": "Requires paired watchOS simulator or device for full DoD"
+  },
+  {
+    "id": "watch-widget",
+    "reason": "Requires paired watchOS simulator or device"
+  }
+]
