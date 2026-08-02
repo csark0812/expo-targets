@@ -2,7 +2,7 @@
 
 **Source of truth for** the config plugin's internal architecture.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-07-30 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-02 -->
 
 This is the internals guide for `packages/expo-targets/plugin`. For user-facing
 configuration see [configuration.md](../../../docs/configuration.md).
@@ -111,5 +111,5 @@ The layering is iOS-first but deliberately open in these places:
 
 New extension types start in `src/domain/characteristics.ts`; if a type needs
 behavior instead of data, add a flag there rather than a branch in the plan
-layer. Note that config-only extension types are closed to additions — see
+layer. Orphan config-only stubs are closed to additions — see
 [deprecations.md](../../../docs/deprecations.md).

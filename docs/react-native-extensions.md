@@ -2,7 +2,7 @@
 
 **Source of truth for** React Native extensions (runtime contract, Metro, type support).
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-07-30 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-02 -->
 
 Build share extensions, action extensions, App Clips, and iMessage apps using React Native instead of native Swift/Kotlin.
 
@@ -580,7 +580,7 @@ See working examples in the repository:
 
 - **[share](../examples/share/)** — React Native share extension
 - **[action](../examples/action/)** — React Native action extension
-- **[kitchen-sink](../examples/kitchen-sink/)** — Six primary types in one host
+- **[kitchen-sink](../examples/kitchen-sink/)** — Five primary types in one host (messages, not stickers)
 
 ```bash
 cd examples/share

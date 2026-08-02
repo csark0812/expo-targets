@@ -2,7 +2,7 @@
 
 **Source of truth for** the published package overview (monorepo canonical story lives in the root README).
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-07-30 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-02 -->
 
 Expo config plugin and runtime for Apple app extensions Expo does not ship — share, action, App Clips, messages, stickers, wallet, and more. React Native UIs are supported for share/action/clip/messages.
 
@@ -73,13 +73,13 @@ module.exports = withTargetsMetro(getDefaultConfig(__dirname));
 
 ### 4. Native modules (`ios/`, `android/`)
 
-App Group storage, WidgetCenter reload (legacy widgets), extension host bridges.
+App Group storage, WidgetCenter reload, extension host bridges.
 
 ## Documentation
 
 - [Getting started](../../docs/getting-started.md)
 - [React Native extensions](../../docs/react-native-extensions.md)
-- [Widgets handoff](../../docs/widgets.md)
+- [Widgets / Live Activities](../../docs/widgets.md)
 - [Deprecations](../../docs/deprecations.md)
 - [Configuration](../../docs/configuration.md)
 - [API](../../docs/api.md)

@@ -9,27 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Product posture:** expo-targets leads with extensions Expo does not ship (share/action/clip/messages, etc.). Soft-deprecate native iOS widgets in favor of official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) for React/iOS widgets and Live Activities. See `docs/widgets.md` and `docs/deprecations.md`.
-- `create-expo-target`: Share/Action/Clip lead the menu; Widget demoted with an `expo-widgets` handoff confirm; React Native defaults to **Yes** for share/action/clip.
+- **Product posture:** expo-targets owns Expo’s negative space (share/action/clip/messages/stickers/wallet and related Apple targets). Native WidgetKit + Live Activities are **first-class** here; official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) remains an alternate React/Expo-UI path — do not dual-generate. See `docs/widgets.md` and `docs/deprecations.md`.
+- `create-expo-target`: Share/Action/Clip/Messages lead the menu; Widget scaffolds native WidgetKit; React Native defaults to **Yes** for share/action/clip.
 - Docs governed by `@csark0812/skeleton` (registry + `AGENTS.md`).
-- Removed the Bun e2e suite (`tests/`) and CI/publish `bun run test` gates.
+- iOS config-plugin pipeline split into Observe → Plan → Apply; Biome replaces ESLint/Prettier.
 
 ### Removed
 
-- Automated Bun e2e / build-test harness under `tests/e2e`.
+- Automated Bun e2e / build-test harness under `tests/e2e` (and CI/publish `bun run test` gates).
 - iOS XCTest suite under `packages/expo-targets/ios/Tests`.
 - Legacy `apps/*` example suite (replaced by `examples/*`).
 
-### Deprecated
-
-- Native `type: "widget"` scaffolding and runtime usage warn in minors (CLI + `createTarget`). Removal reserved for a future major or when Expo covers Android widgets.
-
 ### Added
 
-- Thin `examples/*` Maestro-ready suite (10 SDK 54 hosts: share, action, messages, clip, stickers, widgets, kitchen-sink, native/share, native/action, native/clip).
-- Skeleton docs SSOT (`@csark0812/skeleton`), `docs/widgets.md`, `docs/deprecations.md`.
+- Thin `examples/*` Maestro-ready suite (SDK 54 hosts: share, action, messages, clip, stickers, widgets, kitchen-sink, native/share, native/action, native/clip) plus Bacon-parity stub hosts and Devicewright journeys.
+- Skeleton docs SSOT (`@csark0812/skeleton`), `docs/widgets.md`, `docs/deprecations.md`, `docs/limits.md`.
+- Bacon `ExtensionType` registry parity (`bun run compare:bacon-registry`).
 - Sharper RN extension runtime errors when `ExpoTargetsExtension` is missing; `getExtensionNativeModule()` helper.
 - `withTargetsMetro` entry validation/logging; `scanTargetsDirectory` export.
+- `mcp-dev` package (MCP stdio supervisor; not yet published to npm).
 
 ## [0.2.0] - 2025-12-09
 
@@ -76,6 +74,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `widget` - Home screen widgets (Glance API or RemoteViews)
 
-[Unreleased]: https://github.com/csark0812/expo-targets/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/csark0812/expo-targets/compare/v0.2.7...HEAD
 [0.2.0]: https://github.com/csark0812/expo-targets/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/csark0812/expo-targets/releases/tag/v0.1.0

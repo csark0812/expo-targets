@@ -2,7 +2,7 @@
 
 **Source of truth for** first-run setup (React Native share extension).
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-07-30 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-02 -->
 
 Build a React Native **share extension** with expo-targets.
 
@@ -172,7 +172,7 @@ Match App Group IDs in `app.json`, `expo-target.config.json`, and any native sui
 - **[React Native Extensions](./react-native-extensions.md)** — Runtime contract, Metro, messages
 - **[Configuration](./configuration.md)** — All options and extension types
 - **[API Reference](./api.md)** — JavaScript/TypeScript API
-- **[Widgets handoff](./widgets.md)** — When to use `expo-widgets`
+- **[Widgets](./widgets.md)** — WidgetKit ownership vs `expo-widgets` (no dual-generate)
 - **[Examples](../examples/)** — Thin hosts (start with [`examples/share`](../examples/share))
 
 ## Workflows: Managed vs Bare

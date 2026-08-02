@@ -11,7 +11,7 @@
 | Package overview                 | [README.md](../README.md)                                                            |
 | Agent cold-start                 | [AGENTS.md](../AGENTS.md)                                                            |
 | Getting started                  | [getting-started.md](../docs/getting-started.md)                                     |
-| Widgets handoff / coexistence    | [widgets.md](../docs/widgets.md)                                                     |
+| Widgets / Live Activities        | [widgets.md](../docs/widgets.md)                                                     |
 | React Native extensions          | [react-native-extensions.md](../docs/react-native-extensions.md)                     |
 | Configuration                    | [configuration.md](../docs/configuration.md)                                         |
 | API                              | [api.md](../docs/api.md)                                                             |

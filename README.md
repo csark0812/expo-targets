@@ -2,7 +2,7 @@
 
 **Source of truth for** package overview.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-07-30 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-02 -->
 
 Add **share extensions**, **action extensions**, **App Clips**, **iMessage apps**, **stickers**, **wallet extensions**, and other Apple targets Expo does not ship — including React Native UIs where supported.
 
@@ -98,17 +98,19 @@ close(); // Dismiss the extension
 | `messages`             | ✅   | —       | iMessage apps           |
 | `wallet`               | ✅   | —       | Wallet extensions       |
 | `widget`               | ✅\* | ✅†     | Home screen widgets     |
-| `safari`               | 📋   | —       | Safari web extensions   |
-| `notification-content` | 📋   | 🔜      | Rich notification UI    |
-| `notification-service` | 📋   | 🔜      | Notification processing |
-| `intent`               | 📋   | —       | Siri intents            |
-| `intent-ui`            | 📋   | —       | Siri intent UI          |
+| `safari`               | 🧱   | —       | Safari web extensions   |
+| `notification-content` | 🧱   | 🔜      | Rich notification UI    |
+| `notification-service` | 🧱   | 🔜      | Notification processing |
+| `intent`               | 🧱   | —       | Siri intents            |
+| `intent-ui`            | 🧱   | —       | Siri intent UI          |
 
-**Legend:** ✅ Production ready · 📋 Config-only\* · 🔜 Planned · — Not applicable
+**Legend:** ✅ Production ready · 🧱 Scaffold + example · 🔜 Planned · — Not applicable
 
-> \*Config-only types generate the Xcode target structure but require you to write all Swift code yourself. **No new config-only types** are being added. See [Deprecations](./docs/deprecations.md).
+> Scaffold types ship Xcode wiring plus an `examples/` host; deepen Swift to the Apple principal as needed. Lib floor vs Apple gates: [limits.md](./docs/limits.md). **No new orphan stubs** — [deprecations.md](./docs/deprecations.md).
 >
 > \*`widget` (iOS): first-class native WidgetKit + Live Activities. †Android widgets: bridge-grade. Details: [widgets.md](./docs/widgets.md).
+>
+> Full Bacon-parity `ExtensionType` set: [configuration.md](./docs/configuration.md) · [migrate from `@bacons/apple-targets`](./docs/migrate-from-bacons-apple-targets.md).
 
 ---
 
@@ -129,7 +131,7 @@ expo-targets uses **App Groups** to share data between your app and extensions, 
 
 ## Examples
 
-Thin hosts live under [`examples/`](./examples/). Start with share once the suite lands:
+Thin hosts live under [`examples/`](./examples/). Start with share:
 
 ```bash
 git clone https://github.com/csark0812/expo-targets.git
@@ -145,12 +147,12 @@ npm install && npx expo run:ios
 | [stickers](./examples/stickers)           | Asset-only sticker pack                                           |
 | [widgets](./examples/widgets)             | iOS WidgetKit + Live Activities ([widgets.md](./docs/widgets.md)) |
 | [messages](./examples/messages)           | React Native messages extension                                   |
-| [kitchen-sink](./examples/kitchen-sink)   | Six primary types in one host                                     |
+| [kitchen-sink](./examples/kitchen-sink)   | Five primary types in one host (messages, not stickers)           |
 | [native/share](./examples/native/share)   | Swift share + RN host                                             |
 | [native/action](./examples/native/action) | Swift action + RN host                                            |
 | [native/clip](./examples/native/clip)     | SwiftUI App Clip + RN host                                        |
 
-See [examples/README.md](./examples/README.md) for Maestro vs manual coverage.
+See [examples/README.md](./examples/README.md) for Maestro vs manual coverage and Bacon-parity stubs.
 
 ---
 
@@ -158,10 +160,10 @@ See [examples/README.md](./examples/README.md) for Maestro vs manual coverage.
 
 - **[Getting Started](./docs/getting-started.md)** — Build a React Native share extension
 - **[React Native Extensions](./docs/react-native-extensions.md)** — RN runtime contract + Metro
-- **[Widgets handoff](./docs/widgets.md)** — `expo-widgets` vs this library
+- **[Widgets](./docs/widgets.md)** — WidgetKit / Live Activities ownership vs `expo-widgets`
 - **[Configuration](./docs/configuration.md)** — All config options
 - **[API Reference](./docs/api.md)** — JavaScript/TypeScript API
-- **[Deprecations](./docs/deprecations.md)** — Soft-deprecate and freeze policy
+- **[Deprecations](./docs/deprecations.md)** — Roadmap freeze (no orphan stubs)
 
 ---
 

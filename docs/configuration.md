@@ -4,7 +4,7 @@
 
 <!-- doc-meta: owner=eng | last-reviewed=2026-08-02 -->
 
-> **Config-only freeze:** do not add new config-only extension types. See [deprecations.md](./deprecations.md). For widgets policy see [widgets.md](./widgets.md).
+> **Orphan-stub freeze:** do not add new `ExtensionType` values without registry + scaffold + example + Devicewright row. See [deprecations.md](./deprecations.md). Widgets policy: [widgets.md](./widgets.md).
 
 Every target is configured with an `expo-target.config.json` file in its directory.
 
@@ -966,9 +966,9 @@ You cannot use both in the same app. If you need both features, consider:
 
 **Reference:** [Apple's Messages Framework Documentation](https://developer.apple.com/documentation/messages)
 
-### Config-only leftover
+### Scaffold maturity
 
-Older docs used a 📋 “config-only” maturity label. New types must ship with an example + Devicewright journey (see [deprecations.md](./deprecations.md)). Existing Swift stubs in examples are starting points — replace with full Apple API conformance as needed for production apps.
+Older docs used a 📋 “config-only” maturity label. Prefer **scaffold + example**: the plugin wires the Xcode target and `examples/` hosts ship a starting principal. New types must include an example + Devicewright journey (see [deprecations.md](./deprecations.md)). Deepen stubs to full Apple API conformance as needed for production apps — [limits.md](./limits.md).
 
 **What expo-targets provides:**
 
@@ -977,12 +977,12 @@ Older docs used a 📋 “config-only” maturity label. New types must ship wit
 - Framework linking
 - Entitlements setup
 - Build system integration
+- Example host + Devicewright journey (per-type DoD)
 
-**What you must provide:**
+**What you must deepen for production:**
 
-- All Swift/Kotlin source files
-- Entry point classes conforming to required protocols
-- Complete implementation logic
+- Swift/Kotlin conformance beyond the stub principal where Apple APIs require it
+- Entitlement / Settings / device gates called out in [limits.md](./limits.md)
 
 **Example: Safari Extension**
 

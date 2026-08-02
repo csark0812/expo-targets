@@ -2,7 +2,7 @@
 
 **Source of truth for** the JavaScript/TypeScript runtime API.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-07-30 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-02 -->
 
 > Widget targets: first-class native WidgetKit + Live Activities — see [widgets.md](./widgets.md).
 
@@ -632,14 +632,14 @@ interface NonExtensionTarget extends BaseTarget {
 | `messages`   | ✅ iOS 10+     | —                            |
 | `share`      | ✅ iOS 8+      | 🔜                           |
 | `action`     | ✅ iOS 8+      | 🔜                           |
-| `wallet`     | 📋 iOS 14+     | —                            |
-| `intent`     | 📋 iOS 12+     | —                            |
-| `app-intent` | 📋 iOS 16+     | —                            |
-| Others       | 📋 Config-only | —                            |
+| `wallet`     | 🧱 iOS 14+     | —                            |
+| `intent`     | 🧱 iOS 12+     | —                            |
+| `app-intent` | 🧱 iOS 16+     | —                            |
+| Others       | 🧱 Scaffold    | —                            |
 
-**Legend:** ✅ Production ready · 📋 Config-only · 🔜 Planned · — Not applicable
+**Legend:** ✅ Production ready · 🧱 Scaffold + example · 🔜 Planned · — Not applicable
 
-> **Note:** Only **stickers** is asset-only (`requiresCode: false`). Other types (`wallet`, NE family, etc.) are scaffold + real principals — see [limits.md](./limits.md). Do not add orphan ExtensionTypes without example + Devicewright row ([deprecations.md](./deprecations.md)).
+> **Note:** Only **stickers** is asset-only (`requiresCode: false`). Other types (`wallet`, NE family, etc.) are scaffold + real principals — see [limits.md](./limits.md). Do not add orphan ExtensionTypes without example + Devicewright row ([deprecations.md](./deprecations.md)). Full type set: [configuration.md](./configuration.md).
 
 ### Android Notes
 

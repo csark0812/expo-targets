@@ -2,7 +2,7 @@
 
 **Source of truth for** mapping Bacon apple-targets projects onto expo-targets (`TargetConfig` / `createTarget` style).
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-01 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-02 -->
 
 This is a **field-map migration**, not a silent plugin swap. There is no Bacon `ConfigFunction` adapter or `@bacons/apple-targets` import shim.
 
