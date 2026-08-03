@@ -13,7 +13,7 @@ import {
 import { applyBuildSettings, removeBuildSetting } from './buildSettings';
 import { ensureBundleReactNativePhase } from './bundleReactNative';
 import { ensureCopyFrameworksIntoAppClipPhase } from './copyFrameworksIntoAppClip';
-import { configureAppClipEmbed, configureAppExtensionEmbed } from './embed';
+import { configureAppClipEmbed, configureAppExtensionEmbed, configureWatchContentEmbed } from './embed';
 import { addExternalFileReference } from './fileRefs';
 import { addTargetToVirtualGroup, ensureExpoTargetsGroup } from './groups';
 import {
@@ -226,8 +226,18 @@ function applyEmbed(
         clipProductName: targetProductName,
       });
     }
+    return;
   }
-  // 'none' = standalone product (e.g. watch apps); nothing to embed.
+
+  if (plan.embed.kind === 'watch-content') {
+    configureWatchContentEmbed({
+      project,
+      mainTargetUuid,
+      target,
+      targetProductName,
+    });
+  }
+  // 'none' = standalone product; nothing to embed.
 }
 
 /**

@@ -147,7 +147,7 @@ export interface EntitlementsPlan {
 }
 
 export interface EmbedPlan {
-  kind: 'foundation-extension' | 'app-clip' | 'none';
+  kind: 'foundation-extension' | 'app-clip' | 'watch-content' | 'none';
 }
 
 /**

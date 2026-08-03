@@ -100,12 +100,12 @@ export const OS_LIMIT_CLAIMS: readonly ClaimsEntry[] = [
   {
     id: "watch",
     reason:
-      "Paired watchOS Sim may boot via launchWatchPhonePair but WatchKit companion UI remains absent/opaque after honest install+AX (Apple ceiling — not silent hostOnly)",
+      "watchOS companion missing from Watch after honest pair+install attempt (iOS Simulator cannot embed watch binaries; Release-watchsimulator product must be simctl-installed onto the watch UDID)",
   },
   {
     id: "watch-widget",
     reason:
-      "Paired watchOS Sim may boot but Watch widget chrome (ET Watch Widget) is not reliably visible after honest pair+AX",
+      "Paired watchOS Sim boots/connects, but watch-widget ships as iOS WidgetKit appex (device family phone/pad) — ET Watch Widget chrome not on Watch after honest pair+AX/Smart Stack",
   },
 ] as const;
 

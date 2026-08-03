@@ -51,9 +51,12 @@ describe('TYPE_CHARACTERISTICS coverage', () => {
       expect(['application', 'app_extension']).toContain(
         characteristics.targetType
       );
-      expect(['foundation-extension', 'app-clip', 'none']).toContain(
-        characteristics.embedType
-      );
+      expect([
+        'foundation-extension',
+        'app-clip',
+        'watch-content',
+        'none',
+      ]).toContain(characteristics.embedType);
       expect(['direct', 'attributes', 'none']).toContain(
         characteristics.activationRulesLocation
       );
@@ -111,8 +114,11 @@ describe('flag matrix', () => {
     expect(typesWithFlag('isReactNativeWeb')).toEqual(['safari']);
   });
 
-  test('needsIsolatedSearchPaths covers clip only', () => {
-    expect(typesWithFlag('needsIsolatedSearchPaths')).toEqual(['clip']);
+  test('needsIsolatedSearchPaths covers clip and watch', () => {
+    expect(sorted(typesWithFlag('needsIsolatedSearchPaths'))).toEqual([
+      'clip',
+      'watch',
+    ]);
   });
 
   test('no type is both React Native native and React Native web', () => {

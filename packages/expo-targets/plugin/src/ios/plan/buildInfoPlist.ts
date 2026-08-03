@@ -23,6 +23,8 @@ export interface TargetInfoPlistOptions {
   targetIcon?: string;
   /** Human-facing extension name (spaces OK). Written into CFBundleDisplayName. */
   displayName?: string;
+  /** Host iOS app bundle id — required for watch companions (WKCompanionAppBundleIdentifier). */
+  companionAppBundleIdentifier?: string;
   intentsConfig?: {
     intentsSupported?: string[];
     intentsRestrictedWhileLocked?: string[];
@@ -357,6 +359,12 @@ export function getTargetInfoPlistForType(
   // override an existing Info.plist key, so write it here.
   if (options.displayName?.trim()) {
     basePlist.CFBundleDisplayName = options.displayName.trim();
+  }
+  if (type === 'watch' && options.companionAppBundleIdentifier?.trim()) {
+    basePlist.WKCompanionAppBundleIdentifier =
+      options.companionAppBundleIdentifier.trim();
+    // Single-target watchOS apps still declare the companion link.
+    basePlist.WKRunsIndependentlyOfCompanionApp = false;
   }
   const context: PlistContext = { basePlist, characteristics, type, options };
 

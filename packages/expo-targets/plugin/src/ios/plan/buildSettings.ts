@@ -135,14 +135,57 @@ function planIsolatedSearchPathSettings(): Record<string, string | string[]> {
 }
 
 function planInheritedSettings(
-  mainBuildSettings: Record<string, any>
+  mainBuildSettings: Record<string, any>,
+  type: string
 ): Record<string, string> {
   const settings: Record<string, string> = {};
   for (const key of ESSENTIAL_INHERITED_SETTINGS) {
+    // Watch companions must not inherit the host phone/pad device family.
+    if (type === 'watch' && key === 'TARGETED_DEVICE_FAMILY') {
+      continue;
+    }
     if (mainBuildSettings[key]) {
       settings[key] = mainBuildSettings[key];
     }
   }
+  return settings;
+}
+
+/**
+ * watchOS companion apps: SDK/family/deployment are watch-specific and must
+ * not inherit the iPhone host's IPHONEOS_* settings.
+ */
+function planWatchOsSettings(
+  deploymentTarget: string,
+  mainBuildSettings: Record<string, any>
+): Record<string, string | string[]> {
+  const settings: Record<string, string | string[]> = {
+    SDKROOT: 'watchos',
+    SUPPORTED_PLATFORMS: '"watchos watchsimulator"',
+    TARGETED_DEVICE_FAMILY: '"4"',
+    WATCHOS_DEPLOYMENT_TARGET: deploymentTarget,
+    SUPPORTS_MACCATALYST: 'NO',
+    ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: 'YES',
+    LIBRARY_SEARCH_PATHS: [
+      '"$(SDKROOT)/usr/lib/swift"',
+      '"$(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)"',
+    ],
+    FRAMEWORK_SEARCH_PATHS: '"$(PLATFORM_DIR)/Developer/Library/Frameworks"',
+    LD_RUNPATH_SEARCH_PATHS: [
+      '"@executable_path/Frameworks"',
+      '"@loader_path/Frameworks"',
+    ],
+    GENERATE_INFOPLIST_FILE: 'YES',
+  };
+
+  const team =
+    unquote(mainBuildSettings.DEVELOPMENT_TEAM) ||
+    process.env.APPLE_TEAM_ID ||
+    process.env.DEVELOPMENT_TEAM;
+  if (team) {
+    settings.DEVELOPMENT_TEAM = `"${team}"`;
+  }
+
   return settings;
 }
 
@@ -164,16 +207,25 @@ export function planBuildSettings({
   infoPlistReferencePath: string;
 }): Record<string, string | string[]> {
   const typeConfig = TYPE_CHARACTERISTICS[props.type];
+  const isWatch = props.type === 'watch';
 
   const settings: Record<string, string | string[]> = {
     PRODUCT_NAME: `"${identity.targetProductName}"`,
     PRODUCT_BUNDLE_IDENTIFIER: `"${identity.bundleIdentifier}"`,
     INFOPLIST_FILE: `"${infoPlistReferencePath}"`,
-    ...planInheritedSettings(mainBuildSettings),
+    ...planInheritedSettings(mainBuildSettings, props.type),
     ...planVersionSettings(expoConfig, mainBuildSettings),
     SWIFT_VERSION: planSwiftVersion(props, mainBuildSettings),
-    IPHONEOS_DEPLOYMENT_TARGET: identity.deploymentTarget,
   };
+
+  if (isWatch) {
+    Object.assign(
+      settings,
+      planWatchOsSettings(identity.deploymentTarget, mainBuildSettings)
+    );
+  } else {
+    settings.IPHONEOS_DEPLOYMENT_TARGET = identity.deploymentTarget;
+  }
 
   // Keep INFOPLIST_KEY as a belt-and-suspenders signal for Xcode UI; the
   // generated Info.plist already sets CFBundleDisplayName when displayName is set
@@ -192,9 +244,21 @@ export function planBuildSettings({
     settings.ASSETCATALOG_COMPILER_APPICON_NAME = '"iMessage App Icon"';
   }
 
+  // Re-assert watchOS family after planCodeSettings (which may inherit host 1,2).
+  if (isWatch) {
+    settings.TARGETED_DEVICE_FAMILY = '"4"';
+    settings.SDKROOT = 'watchos';
+    settings.SUPPORTED_PLATFORMS = '"watchos watchsimulator"';
+  }
+
   // SwiftUI App Clips isolate search paths from the host Pods tree. RN clips
-  // (`entry` set) need those Pods paths to `import React`.
-  if (typeConfig.needsIsolatedSearchPaths && !props.entry) {
+  // (`entry` set) need those Pods paths to `import React`. Watch always isolates
+  // (handled in planWatchOsSettings).
+  if (
+    !isWatch &&
+    typeConfig.needsIsolatedSearchPaths &&
+    !props.entry
+  ) {
     Object.assign(settings, planIsolatedSearchPathSettings());
   }
 

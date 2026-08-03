@@ -84,6 +84,22 @@ describe('getTargetInfoPlistForType (characterization)', () => {
     expect(parsed.CFBundleDisplayName).toBe('Fun Stickers');
   });
 
+  test('watch companion sets WKCompanionAppBundleIdentifier', () => {
+    const parsed = plist.parse(
+      getTargetInfoPlistForType('watch', {
+        displayName: 'ET Watch Target',
+        companionAppBundleIdentifier: 'com.expotargets.example.watch',
+      })
+    ) as {
+      WKCompanionAppBundleIdentifier?: string;
+      CFBundleDisplayName?: string;
+    };
+    expect(parsed.WKCompanionAppBundleIdentifier).toBe(
+      'com.expotargets.example.watch'
+    );
+    expect(parsed.CFBundleDisplayName).toBe('ET Watch Target');
+  });
+
   test('share extension with React Native entry uses ReactNativeViewController', () => {
     const parsed = plist.parse(
       getTargetInfoPlistForType('share', { entry: './index.tsx' })

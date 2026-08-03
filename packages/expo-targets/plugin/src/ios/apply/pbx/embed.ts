@@ -414,3 +414,133 @@ export function configureAppClipEmbed({
     comment: `${targetProductName}.app in Embed App Clips`,
   });
 }
+
+/** Same Products-directory spec as App Clips; destination path differs. */
+const WATCH_CONTENT_DST_SUBFOLDER_SPEC = 16;
+
+function findWatchContentEmbedPhase({
+  project,
+  mainTargetUuid,
+}: {
+  project: XcodeProject;
+  mainTargetUuid: string;
+}): { uuid: string; phase: any } | undefined {
+  const xcodeProject = project as any;
+  const copyFilesPhases =
+    xcodeProject.hash.project.objects.PBXCopyFilesBuildPhase || {};
+  const mainTarget =
+    xcodeProject.hash.project.objects.PBXNativeTarget?.[mainTargetUuid];
+
+  for (const entry of mainTarget?.buildPhases || []) {
+    const phase = copyFilesPhases[entry.value];
+    if (!phase) {
+      continue;
+    }
+    const isWatchPhase =
+      phase.name === '"Embed Watch Content"' ||
+      copyFilesPhases[`${entry.value}_comment`] === 'Embed Watch Content' ||
+      (phase.dstSubfolderSpec === WATCH_CONTENT_DST_SUBFOLDER_SPEC &&
+        typeof phase.dstPath === 'string' &&
+        phase.dstPath.includes('/Watch'));
+    if (isWatchPhase) {
+      return { uuid: entry.value, phase };
+    }
+  }
+}
+
+function ensureWatchContentEmbedPhase({
+  project,
+  mainTargetUuid,
+}: {
+  project: XcodeProject;
+  mainTargetUuid: string;
+}): any {
+  const existing = findWatchContentEmbedPhase({ project, mainTargetUuid });
+  if (existing) {
+    return existing.phase;
+  }
+
+  const xcodeProject = project as any;
+  const embedPhaseResult = xcodeProject.addBuildPhase(
+    [],
+    'PBXCopyFilesBuildPhase',
+    'Embed Watch Content',
+    mainTargetUuid
+  );
+  const embedPhaseUuid = embedPhaseResult?.uuid || embedPhaseResult;
+
+  if (!embedPhaseUuid) {
+    return;
+  }
+
+  return xcodeProject.hash.project.objects.PBXCopyFilesBuildPhase?.[
+    embedPhaseUuid
+  ];
+}
+
+/**
+ * Configure embed settings for a watchOS companion app.
+ * Reuses an existing "Embed Watch Content" phase so repeated prebuilds stay
+ * idempotent.
+ */
+export function configureWatchContentEmbed({
+  project,
+  mainTargetUuid,
+  target,
+  targetProductName,
+}: {
+  project: XcodeProject;
+  mainTargetUuid: string;
+  target: XcodeTarget;
+  targetProductName: string;
+}): void {
+  const xcodeProject = project as any;
+
+  const watchFileRef =
+    target.pbxNativeTarget?.productReference || target.target?.productReference;
+
+  if (!watchFileRef) {
+    return;
+  }
+
+  const phase = ensureWatchContentEmbedPhase({ project, mainTargetUuid });
+
+  if (!phase) {
+    return;
+  }
+
+  phase.dstPath = '"$(CONTENTS_FOLDER_PATH)/Watch"';
+  phase.dstSubfolderSpec = WATCH_CONTENT_DST_SUBFOLDER_SPEC;
+  phase.name = '"Embed Watch Content"';
+
+  if (!phase.files) {
+    phase.files = [];
+  }
+
+  const buildFileSection = xcodeProject.hash.project.objects.PBXBuildFile;
+  const alreadyEmbedded = phase.files.some(
+    (file: any) => buildFileSection?.[file.value]?.fileRef === watchFileRef
+  );
+  if (alreadyEmbedded) {
+    return;
+  }
+
+  const buildFileUuid = xcodeProject.generateUuid();
+
+  buildFileSection[buildFileUuid] = {
+    isa: 'PBXBuildFile',
+    fileRef: watchFileRef,
+    settings: {
+      ATTRIBUTES: ['RemoveHeadersOnCopy', 'CodeSignOnCopy'],
+    },
+    // Device iOS only — Simulator hosts cannot embed watchOS binaries.
+    platformFilter: 'ios',
+  };
+  buildFileSection[`${buildFileUuid}_comment`] =
+    `${targetProductName}.app in Embed Watch Content`;
+
+  phase.files.push({
+    value: buildFileUuid,
+    comment: `${targetProductName}.app in Embed Watch Content`,
+  });
+}

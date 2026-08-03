@@ -131,6 +131,15 @@ function resolveDeploymentTarget(
     ];
   let deploymentTarget = props.deploymentTarget;
 
+  // watchOS versions are not comparable to iOS host deployment targets.
+  if (props.type === 'watch') {
+    deploymentTarget = deploymentTarget || typeMinimum;
+    props.logger.log(
+      `Using watchOS deployment target: ${deploymentTarget}`
+    );
+    return deploymentTarget;
+  }
+
   if (!deploymentTarget) {
     if (
       mainAppTarget &&
@@ -192,6 +201,14 @@ const withTargetPods: ConfigPlugin<{
   if (!TYPE_CHARACTERISTICS[props.type].requiresCode) {
     props.logger.log(
       `Skipping Podfile for asset-only target: ${targetProductName}`
+    );
+    return config;
+  }
+
+  // watchOS companions are native SwiftUI only — CocoaPods/RN cannot target watchos here.
+  if (props.type === 'watch') {
+    props.logger.log(
+      `Skipping Podfile for watchOS companion: ${targetProductName}`
     );
     return config;
   }

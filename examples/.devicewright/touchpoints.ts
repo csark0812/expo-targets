@@ -380,7 +380,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     id: "watch",
     tranche: "T12",
     touchpoint:
-      "launchWatchPhonePair + visible Watch UI on watch UDID; else CLAIMS after honest attempt",
+      "Pair connected + watchOS companion on watch UDID + ET Watch Target AX; else CLAIMS after honest attempt",
     status: "concrete",
   },
   {

@@ -3,7 +3,7 @@ import * as path from 'node:path';
 
 import { findNativeTargetByProductName } from '../../../../test-utils/assertPbx';
 import { loadPbx } from '../../../../test-utils/loadPbx';
-import { configureAppClipEmbed, configureAppExtensionEmbed } from './embed';
+import { configureAppClipEmbed, configureAppExtensionEmbed, configureWatchContentEmbed } from './embed';
 
 const fixturePath = path.join(
   __dirname,
@@ -135,5 +135,57 @@ describe('configureAppClipEmbed phase shape', () => {
     embedClip(project, mainTarget.uuid, { uuid: 'missing' });
 
     expect(phasesNamed(project, 'Embed App Clips')).toHaveLength(0);
+  });
+});
+
+const WATCH_PRODUCT = 'WatchMinimalTarget';
+
+function setupWatchProject(): {
+  project: any;
+  mainTargetUuid: string;
+  watch: any;
+} {
+  const project = loadPbx(fixturePath);
+  const mainTarget = findNativeTargetByProductName(project, 'App')!;
+  const watch = addNativeTarget(project, {
+    productName: WATCH_PRODUCT,
+    type: 'application',
+  });
+  return { project, mainTargetUuid: mainTarget.uuid, watch };
+}
+
+function embedWatch(project: any, mainTargetUuid: string, target: any): void {
+  configureWatchContentEmbed({
+    project,
+    mainTargetUuid,
+    target,
+    targetProductName: WATCH_PRODUCT,
+  });
+}
+
+describe('configureWatchContentEmbed', () => {
+  test('reuses the existing Embed Watch Content phase when applied twice', () => {
+    const { project, mainTargetUuid, watch } = setupWatchProject();
+
+    embedWatch(project, mainTargetUuid, watch);
+    const phaseKeys = phasesNamed(project, 'Embed Watch Content');
+    expect(phaseKeys).toHaveLength(1);
+    expect(copyFilesPhases(project)[phaseKeys[0]].files).toHaveLength(1);
+
+    embedWatch(project, mainTargetUuid, watch);
+    const phaseKeysAfter = phasesNamed(project, 'Embed Watch Content');
+    expect(phaseKeysAfter).toEqual(phaseKeys);
+    expect(copyFilesPhases(project)[phaseKeysAfter[0]].files).toHaveLength(1);
+  });
+
+  test('configures the phase for the Watch destination', () => {
+    const { project, mainTargetUuid, watch } = setupWatchProject();
+
+    embedWatch(project, mainTargetUuid, watch);
+
+    const [phaseKey] = phasesNamed(project, 'Embed Watch Content');
+    const phase = copyFilesPhases(project)[phaseKey];
+    expect(phase.dstPath).toBe('"$(CONTENTS_FOLDER_PATH)/Watch"');
+    expect(phase.dstSubfolderSpec).toBe(16);
   });
 });
