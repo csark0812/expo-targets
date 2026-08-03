@@ -17,12 +17,7 @@ export const OS_LIMIT_CLAIMS: readonly ClaimsEntry[] = [
   {
     id: "live-activity",
     reason:
-      "Dynamic Island layout / ActivityKit push / StandBy not Sim-faithful; Watch chrome only when DW ≥ 0.1.8 pair boots (else S3a→CLAIMS). Host start+update+end is the green floor.",
-  },
-  {
-    id: "notification-service",
-    reason:
-      "Simulator often skips launching UNNotificationServiceExtension for simctl/mutable-content push; App Group / lock-screen mutation required for green",
+      "Lock Screen chrome may be idb-opaque after Always Allow; Watch Smart Stack only when pair is connected (not merely booted). DI / ActivityKit push / StandBy remain non-Sim-faithful. Host start+update+end alone is not green.",
   },
   {
     id: "content-blocker",
@@ -32,7 +27,12 @@ export const OS_LIMIT_CLAIMS: readonly ClaimsEntry[] = [
   {
     id: "stickers",
     reason:
-      "Sticker pack insert cells are AX-opaque on Simulator; named Fun Stickers pack selection is the green floor when insert cannot be asserted",
+      "Sticker pack insert cells are AX-opaque on Simulator after named Fun Stickers; CLAIMS only when insert proof is exhausted (ambient message/sticker labels are not green)",
+  },
+  {
+    id: "keyboard",
+    reason:
+      "Settings → Keyboards enable + ET Keyboard key attribution is often opaque on Simulator (globe / Next Keyboard / custom key AX); pluginkit + device.type soft-green removed",
   },
   {
     id: "intent",
@@ -99,9 +99,14 @@ export const OS_LIMIT_CLAIMS: readonly ClaimsEntry[] = [
   { id: "location-push", reason: "Location push special entitlement" },
   {
     id: "watch",
-    reason: "Requires paired watchOS simulator or device for full DoD",
+    reason:
+      "Paired watchOS Sim may boot via launchWatchPhonePair but WatchKit companion UI remains absent/opaque after honest install+AX (Apple ceiling — not silent hostOnly)",
   },
-  { id: "watch-widget", reason: "Requires paired watchOS simulator or device" },
+  {
+    id: "watch-widget",
+    reason:
+      "Paired watchOS Sim may boot but Watch widget chrome (ET Watch Widget) is not reliably visible after honest pair+AX",
+  },
 ] as const;
 
 const BY_ID = new Map(OS_LIMIT_CLAIMS.map((c) => [c.id, c]));

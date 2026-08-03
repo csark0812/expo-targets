@@ -38,6 +38,12 @@ describe("REQUIRED_V2", () => {
       false,
     );
   });
+
+  test("notification-service is absent from OS_LIMIT_CLAIMS (APNs Sandbox path)", () => {
+    expect(OS_LIMIT_CLAIMS.some((c) => c.id === "notification-service")).toBe(
+      false,
+    );
+  });
 });
 
 describe("CLAIMS + touchpoints", () => {

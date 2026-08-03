@@ -70,19 +70,6 @@ const STUB_SPECS: readonly PluginkitOsLimitSpec[] = [
     extensionPointPattern: /networkextension\.filter-data/i,
     stepLabel: "pluginkit-network-filter-data",
   },
-  {
-    id: "watch",
-    phase: 5,
-    extensionPointPattern: /./,
-    stepLabel: "host-only",
-    hostOnly: true,
-  },
-  {
-    id: "watch-widget",
-    phase: 5,
-    extensionPointPattern: /widgetkit-extension/i,
-    stepLabel: "pluginkit-watch-widget",
-  },
 ] as const;
 
 const RUNNERS = new Map<string, (d: DeviceSession) => Promise<TargetJourneyResult>>(

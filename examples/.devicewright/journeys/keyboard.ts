@@ -3,12 +3,19 @@
  *
  * Apple capability path:
  * Settings → General → Keyboard → Keyboards → third-party keyboard listed
- * + host type-into-field receives `typed:ET`.
+ * + enable ET Keyboard + host field receives `typed:ET` from the custom key
+ * (not Devicewright `device.type`, which uses the system keyboard).
  *
- * GREEN = OS lists the keyboard AND host field shows typed:ET.
+ * GREEN = Settings enable + typing attributed to ET Keyboard (ET key tap).
+ * Settings unreachable / keyboard switch opaque → os-limit (CLAIMS).
+ * Pluginkit alone is never green.
+ *
+ * Note: `App-prefs:…Keyboard` deep links are unreliable on iOS 26 (often land
+ * on Siri). Navigate Settings → General → Keyboard instead.
  */
 import { spawnSync } from "node:child_process";
 import type { DeviceSession } from "@csark0812/devicewright";
+import { assertOsLimitAllowed, claimForId } from "../claims";
 import { TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
@@ -20,29 +27,167 @@ import {
   tapProbeHit,
   waitForNamed,
 } from "./helpers";
-import { navigatePath, tapLabelInTree } from "./settings-nav";
+import {
+  navigatePath,
+  scrollUntilVisible,
+  tapLabelInTree,
+} from "./settings-nav";
 
 const SETTINGS_BUNDLE = "com.apple.Preferences";
 
 function onKeyboardSettingsPage(labels: string[]): boolean {
   return labels.some((l) =>
-    /Hardware Keyboard|Text Replacement|One-Handed Keyboard|Keyboards,\s*\d+/i.test(
-      l,
+    /Hardware Keyboard|Text Replacement|One-Handed Keyboard|Keyboards,\s*\d+|^Keyboards$/i.test(
+      l.trim(),
     ),
   );
 }
 
-function openKeyboardPrefs(udid: string): void {
-  for (const url of [
-    "App-prefs:root=General&path=Keyboard",
-    "prefs:root=General&path=Keyboard",
-    "App-prefs:General&path=Keyboard",
-  ]) {
-    spawnSync("xcrun", ["simctl", "openurl", udid, url], {
-      encoding: "utf8",
-      env: process.env,
+function osLimitKeyboard(
+  path: string,
+  steps: string[],
+  detail: string,
+): TargetJourneyResult {
+  assertOsLimitAllowed("keyboard");
+  const claim = claimForId("keyboard");
+  return {
+    id: "keyboard",
+    path,
+    phase: 5,
+    ok: true,
+    status: "os-limit",
+    steps: [...steps, "keyboard-demo-os-limit"],
+    failureKind: "os-limit",
+    error: `${claim?.reason ?? "ET Keyboard demo not Sim-reachable"} — ${detail}`,
+  };
+}
+
+async function openGeneralKeyboardSettings(
+  device: DeviceSession,
+  steps: string[],
+): Promise<void> {
+  spawnSync(
+    "xcrun",
+    ["simctl", "terminate", device.deviceId, SETTINGS_BUNDLE],
+    { encoding: "utf8", env: process.env },
+  );
+  await device.launchApp(SETTINGS_BUNDLE, { terminateRunning: true });
+  steps.push("settings-launch");
+  await sleep(900);
+  await dismissSystemAlerts(device);
+
+  // Pop nested Settings (e.g. leftover Siri/deep-link) back to root.
+  for (let i = 0; i < 4; i++) {
+    const labels = flattenLabels(await device.accessibilityTree());
+    if (labels.some((l) => /^General$/i.test(l.trim()))) break;
+    const backed = await tapLabelInTree(device, ["Settings", "BackButton", "Back"], {
+      exactOnly: true,
     });
+    if (!backed) break;
+    await sleep(400);
   }
+
+  await scrollUntilVisible(device, ["General"], 8);
+  await navigatePath(device, ["General"], steps);
+  await sleep(600);
+  await scrollUntilVisible(device, ["Keyboard"], 8);
+  await navigatePath(device, ["Keyboard"], steps);
+  await sleep(700);
+
+  if (
+    !onKeyboardSettingsPage(flattenLabels(await device.accessibilityTree()))
+  ) {
+    throw new Error("keyboard settings page not open after General → Keyboard");
+  }
+  steps.push("keyboard-settings-ok");
+}
+
+/** System QWERTY exposes a `q` key; ET Keyboard's ET button is AX-opaque. */
+function isSystemQwertyVisible(
+  tree: Awaited<ReturnType<DeviceSession["accessibilityTree"]>>,
+): boolean {
+  return tree.some((n) => (n.label ?? "").trim() === "q");
+}
+
+function findNextKeyboardNode(
+  tree: Awaited<ReturnType<DeviceSession["accessibilityTree"]>>,
+) {
+  return tree.find((n) => /^Next keyboard$/i.test((n.label ?? "").trim()));
+}
+
+/**
+ * Cycle "Next keyboard" until system QWERTY (`q`) disappears — ET chrome is up.
+ */
+async function switchToEtKeyboard(
+  device: DeviceSession,
+  steps: string[],
+): Promise<boolean> {
+  for (let i = 0; i < 6; i++) {
+    const tree = await device.accessibilityTree();
+    if (!isSystemQwertyVisible(tree) && findNextKeyboardNode(tree)) {
+      steps.push("et-keyboard-chrome-visible");
+      return true;
+    }
+    const next = findNextKeyboardNode(tree);
+    if (next?.frame) {
+      const f = next.frame;
+      await device.tap({
+        x: Math.round(f.x + f.width / 2),
+        y: Math.round(f.y + f.height / 2),
+      });
+      steps.push("next-keyboard-tap");
+    } else {
+      const tapped = await tapLabelInTree(device, [
+        "Next keyboard",
+        "Next Keyboard",
+        "next keyboard",
+      ]);
+      if (!tapped) {
+        await device.tap({ x: 42, y: 878 });
+        steps.push("next-keyboard-hotspot");
+      } else {
+        steps.push("next-keyboard-tap");
+      }
+    }
+    await sleep(700);
+  }
+  const tree = await device.accessibilityTree();
+  if (!isSystemQwertyVisible(tree) && findNextKeyboardNode(tree)) {
+    steps.push("et-keyboard-chrome-visible");
+    return true;
+  }
+  return false;
+}
+
+/** Tap ET key by canvas coords — custom keyboard buttons are not in host AX. */
+async function tapEtKeyboardKey(device: DeviceSession): Promise<void> {
+  const tree = await device.accessibilityTree();
+  const next = findNextKeyboardNode(tree);
+  const points: Array<{ x: number; y: number }> = [];
+  if (next?.frame) {
+    const f = next.frame;
+    const cx = Math.round(f.x + f.width / 2);
+    // ET sits in the keyboard canvas above the globe / Next keyboard bar.
+    points.push(
+      { x: 210, y: Math.round(f.y - 120) },
+      { x: cx, y: Math.round(f.y - 100) },
+      { x: 210, y: Math.round(f.y - 140) },
+      { x: 210, y: 725 },
+    );
+  } else {
+    points.push({ x: 210, y: 725 }, { x: 210, y: 700 }, { x: 210, y: 680 });
+  }
+  for (const pt of points) {
+    await device.tap(pt);
+    await sleep(350);
+    try {
+      await assertPayloadContains(device, "text-last-payload", "typed:ET", 800);
+      return;
+    } catch {
+      /* try next hotspot */
+    }
+  }
+  throw new Error("ET key tap did not produce typed:ET");
 }
 
 export async function runKeyboardJourney(
@@ -54,6 +199,7 @@ export async function runKeyboardJourney(
   const appexLabels = [
     entry.extensionName,
     entry.hostDisplayName,
+    "ET Keyboard Target — ET Keyboard",
     "ET Keyboard Target",
     "ET Keyboard",
   ].filter(Boolean);
@@ -66,62 +212,9 @@ export async function runKeyboardJourney(
     await waitForNamed(device, ["ready"], 15_000);
     steps.push("host-ready");
 
-    spawnSync(
-      "xcrun",
-      ["simctl", "terminate", device.deviceId, SETTINGS_BUNDLE],
-      { encoding: "utf8", env: process.env },
-    );
-    openKeyboardPrefs(device.deviceId);
-    await sleep(500);
-    await device.launchApp(SETTINGS_BUNDLE, { terminateRunning: true });
-    steps.push("settings-launch");
-    await sleep(700);
-    openKeyboardPrefs(device.deviceId);
-    await sleep(1_200);
-    steps.push("settings-prefs-keyboard");
-    await dismissSystemAlerts(device);
-
     let listedViaSettings = false;
     try {
-      let landed = onKeyboardSettingsPage(
-        flattenLabels(await device.accessibilityTree()),
-      );
-      if (!landed) {
-        spawnSync(
-          "xcrun",
-          ["simctl", "terminate", device.deviceId, SETTINGS_BUNDLE],
-          { encoding: "utf8", env: process.env },
-        );
-        await device.launchApp(SETTINGS_BUNDLE, { terminateRunning: true });
-        await sleep(1_000);
-        for (let i = 0; i < 10; i++) {
-          const labels = flattenLabels(await device.accessibilityTree());
-          if (
-            labels.some((l) => /^General$/i.test(l.trim())) &&
-            labels.some((l) =>
-              /Accessibility|Display & Brightness|Battery|VPN/i.test(l),
-            )
-          ) {
-            break;
-          }
-          if (
-            !(await tapLabelInTree(device, ["Settings", "Back"], {
-              exactOnly: true,
-            }))
-          ) {
-            await device.tap({ x: 40, y: 90 });
-          }
-          await sleep(300);
-        }
-        await navigatePath(device, ["General", "Keyboard"], steps);
-        landed = onKeyboardSettingsPage(
-          flattenLabels(await device.accessibilityTree()),
-        );
-      }
-      if (!landed) {
-        throw new Error("keyboard settings page not open");
-      }
-      steps.push("keyboard-settings-ok");
+      await openGeneralKeyboardSettings(device, steps);
 
       const treeBefore = await device.accessibilityTree();
       const keyboardsRow = treeBefore.find((n) =>
@@ -133,83 +226,75 @@ export async function runKeyboardJourney(
           x: Math.round(f.x + f.width / 2),
           y: Math.round(f.y + f.height / 2),
         });
-        await sleep(500);
-        steps.push("nav:Keyboards");
-      } else {
-        const openedList = await tapLabelInTree(device, [
-          "Add New Keyboard…",
-          "Add New Keyboard",
-        ]);
-        if (!openedList) {
-          throw new Error("Keyboards,N row missing");
-        }
+        await sleep(700);
         steps.push("keyboard-add-new-direct");
+      } else {
+        const tapped = await tapLabelInTree(device, ["Keyboards"]);
+        if (tapped) {
+          await sleep(700);
+          steps.push("keyboard-list-open");
+        }
       }
 
-      const listedNow = async () => {
-        const t = await device.accessibilityTree();
-        return flattenLabels(t).some((l) =>
-          appexLabels.some((a) => l.toLowerCase().includes(a.toLowerCase())),
-        );
-      };
-
-      if (await listedNow()) {
+      listedViaSettings = await tapLabelInTree(device, appexLabels);
+      if (listedViaSettings) {
         steps.push("keyboard-listed");
-        listedViaSettings = true;
       } else {
-        const add = await tapLabelInTree(device, [
+        const added = await tapLabelInTree(device, [
           "Add New Keyboard…",
           "Add New Keyboard",
-          "Add Keyboard",
         ]);
-        if (!add) throw new Error("Add New Keyboard missing");
-        steps.push("keyboard-add-new");
-        await sleep(700);
-        for (let i = 0; i < 14; i++) {
-          if (await listedNow()) {
-            listedViaSettings = true;
+        if (added) {
+          steps.push("keyboard-add-new");
+          await sleep(600);
+          listedViaSettings = await tapLabelInTree(device, appexLabels);
+          if (listedViaSettings) {
             steps.push("keyboard-listed");
-            break;
           }
-          await device.swipe({
-            xStart: 210,
-            yStart: 320,
-            xEnd: 210,
-            yEnd: 700,
-            duration: 0.35,
-          });
-          await sleep(400);
+        }
+        if (!listedViaSettings) {
+          for (const name of appexLabels) {
+            try {
+              const hit = await findNamedViaPointProbe(device, [name], {
+                timeoutMs: 2_500,
+                yStartRatio: 0.15,
+                yEndRatio: 0.95,
+                match: "includes",
+              });
+              await tapProbeHit(device, hit);
+              listedViaSettings = true;
+              steps.push("keyboard-listed");
+              await sleep(400);
+              break;
+            } catch {
+              /* next */
+            }
+          }
         }
         if (!listedViaSettings) throw new Error("appex not in Add New Keyboard");
       }
 
-      const enabled = await tapLabelInTree(device, appexLabels);
-      if (enabled) {
-        steps.push("keyboard-selected");
-        await sleep(500);
-        const toggled = await tapLabelInTree(device, [
-          "ET Keyboard",
-          "Allow Full Access",
-          "Full Access",
-        ]);
-        if (toggled) steps.push("keyboard-enable-attempted");
-      }
+      // Detail / Full Access when a row tap opens the keyboard settings page.
+      const toggled = await tapLabelInTree(device, [
+        "Allow Full Access",
+        "Full Access",
+      ]);
+      if (toggled) steps.push("keyboard-enable-attempted");
+      else steps.push("keyboard-selected");
     } catch (settingsErr) {
-      // Settings pane sticky across matrix rows — pluginkit proves OS registration.
-      steps.push(`keyboard-settings-skip:${String(settingsErr).slice(0, 80)}`);
-      const pk = spawnSync(
-        "xcrun",
-        ["simctl", "spawn", device.deviceId, "pluginkit", "-mAvvvvv"],
-        { encoding: "utf8", maxBuffer: 20 * 1024 * 1024, env: process.env },
+      return osLimitKeyboard(
+        path,
+        steps,
+        `Settings enable failed: ${String(settingsErr).slice(0, 160)}`,
       );
-      const out = `${pk.stdout ?? ""}\n${pk.stderr ?? ""}`;
-      const appexId = `${entry.hostBundleId}.keyboard`;
-      if (!out.toLowerCase().includes(appexId.toLowerCase())) {
-        throw new Error(
-          `keyboard appex missing from pluginkit (${appexId}); settingsErr=${settingsErr}`,
-        );
-      }
-      steps.push("keyboard-listed:pluginkit");
+    }
+
+    if (!listedViaSettings) {
+      return osLimitKeyboard(
+        path,
+        steps,
+        "ET Keyboard not listed/enabled in Settings (pluginkit alone is not green)",
+      );
     }
 
     await device.launchApp(entry.hostBundleId, { terminateRunning: true });
@@ -232,45 +317,38 @@ export async function runKeyboardJourney(
       },
     );
     await tapProbeHit(device, field);
-    await sleep(500);
-    // Clear any stale value, then type — single-shot type can drop the trailing T.
-    await device.type("ET");
-    await sleep(400);
-    let typedOk = false;
-    try {
-      await assertPayloadContains(device, "text-last-payload", "typed:ET", 2_000);
-      typedOk = true;
-    } catch {
-      await tapProbeHit(device, field);
-      await sleep(300);
-      await device.type("T");
-      await sleep(400);
-      try {
-        await assertPayloadContains(
-          device,
-          "text-last-payload",
-          "typed:ET",
-          3_000,
-        );
-        typedOk = true;
-        steps.push("type-into-field:retry-T");
-      } catch {
-        await tapProbeHit(device, field);
-        await sleep(300);
-        await device.type("ET");
-        await sleep(600);
-        await assertPayloadContains(
-          device,
-          "text-last-payload",
-          "typed:ET",
-          6_000,
-        );
-        typedOk = true;
-        steps.push("type-into-field:retry-ET");
-      }
+    await sleep(900);
+
+    // Custom keyboard keys are not in the host AX tree. Detect system QWERTY
+    // (`q`) vs ET chrome, switch via "Next keyboard", then tap canvas center.
+    const switched = await switchToEtKeyboard(device, steps);
+    if (!switched) {
+      return osLimitKeyboard(
+        path,
+        steps,
+        "Could not switch to ET Keyboard via Next keyboard (software keyboard required)",
+      );
     }
-    if (!typedOk) throw new Error("typed:ET missing");
-    steps.push("type-into-field");
+
+    let typedFromCustom = false;
+    try {
+      await tapEtKeyboardKey(device);
+      await sleep(500);
+      await assertPayloadContains(device, "text-last-payload", "typed:ET", 4_000);
+      typedFromCustom = true;
+      steps.push("et-keyboard-key-tap");
+    } catch {
+      steps.push("et-keyboard-key-miss");
+    }
+
+    if (!typedFromCustom) {
+      return osLimitKeyboard(
+        path,
+        steps,
+        "Could not attribute typed:ET to ET Keyboard key (device.type soft-green removed)",
+      );
+    }
+    steps.push("type-into-field:et-keyboard");
 
     return {
       id: "keyboard",

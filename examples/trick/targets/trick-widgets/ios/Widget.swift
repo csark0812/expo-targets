@@ -85,16 +85,7 @@ struct TrickActivityAttributes: ActivityAttributes {
 struct TrickLiveActivity: Widget {
   var body: some WidgetConfiguration {
     ActivityConfiguration(for: TrickActivityAttributes.self) { context in
-      VStack(alignment: .leading, spacing: 4) {
-        Text(context.attributes.title)
-          .font(.headline)
-        Text(context.state.status)
-          .font(.subheadline)
-          .foregroundStyle(.secondary)
-      }
-      .padding()
-      .activityBackgroundTint(Color.black.opacity(0.85))
-      .activitySystemActionForegroundColor(.white)
+      TrickLiveActivityContent(context: context)
     } dynamicIsland: { context in
       DynamicIsland {
         DynamicIslandExpandedRegion(.leading) {
@@ -113,6 +104,39 @@ struct TrickLiveActivity: Widget {
       } minimal: {
         Image(systemName: "sparkles")
       }
+    }
+    // Opt into watchOS Smart Stack (WWDC24) — required for Watch full-demo green.
+    .supplementalActivityFamilies([.small])
+  }
+}
+
+struct TrickLiveActivityContent: View {
+  @Environment(\.activityFamily) private var activityFamily
+  var context: ActivityViewContext<TrickActivityAttributes>
+
+  var body: some View {
+    switch activityFamily {
+    case .small:
+      VStack(alignment: .leading, spacing: 2) {
+        Text(context.attributes.title)
+          .font(.headline)
+          .minimumScaleFactor(0.7)
+        Text(context.state.status)
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      }
+      .padding(8)
+    default:
+      VStack(alignment: .leading, spacing: 4) {
+        Text(context.attributes.title)
+          .font(.headline)
+        Text(context.state.status)
+          .font(.subheadline)
+          .foregroundStyle(.secondary)
+      }
+      .padding()
+      .activityBackgroundTint(Color.black.opacity(0.85))
+      .activitySystemActionForegroundColor(.white)
     }
   }
 }

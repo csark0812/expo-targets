@@ -269,14 +269,8 @@ export async function runStickersJourney(
     steps.push("stickers-browser-surface-ok");
 
     if (bar === "B") {
-      return {
-        id: entry.id,
-        path: entry.path,
-        phase: 2,
-        ok: true,
-        status: "green",
-        steps,
-      };
+      // Browser surface alone is not full-demo green — continue into Fun Stickers.
+      steps.push("bar-b-continue-to-fun-pack");
     }
 
     steps.push("reveal-fun-pack");
@@ -289,11 +283,17 @@ export async function runStickersJourney(
     await sleep(500);
     await device.tap({ x: 210, y: 660 });
     await sleep(400);
+
+    // Full-demo green needs insert proof beyond named Fun Stickers + ambient
+    // "message/sticker" labels (those soft-green on any conversation chrome).
     const afterInsert = flattenLabels(await device.accessibilityTree());
-    if (
-      afterInsert.some((l) => /sticker|bip|Fun Stickers|message/i.test(l))
-    ) {
-      steps.push("sticker-insert-surface");
+    const insertProof = afterInsert.some(
+      (l) =>
+        /\bbip\b/i.test(l) ||
+        /sticker inserted|inserted sticker|attachment/i.test(l),
+    );
+    if (insertProof) {
+      steps.push("sticker-insert-proof");
       return {
         id: entry.id,
         path: entry.path,
@@ -317,7 +317,7 @@ export async function runStickersJourney(
       failureKind: "os-limit",
       error:
         claim?.reason ??
-        "Sticker insert AX-opaque after Fun Stickers pack selected",
+        "Sticker insert AX-opaque after named Fun Stickers; CLAIMS only after exhausted insert proof",
     };
   } catch (e) {
     const msg = String(e);

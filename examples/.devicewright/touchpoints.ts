@@ -1,6 +1,11 @@
 /**
  * Live-touchpoint catalog for REQUIRED matrix rows.
  * Touchpoints must exercise load/invoke, not mere PlugIns file presence.
+ *
+ * notification-service Phase 1 full-demo bar: green = lock-screen AX + App
+ * Group (both), matching this run’s title nonce + `[expo-targets]`. Host /
+ * pluginkit / App Group alone never exits green. Phase 2: keyboard / LA /
+ * stickers / watch also require visible OS demos (CLAIMS when Sim ceiling).
  */
 
 export type TouchpointDef = {
@@ -55,7 +60,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     id: "stickers",
     tranche: "V1",
     touchpoint:
-      "Pack catalog + Stickers browser + named Fun Stickers; insert AX-opaque → CLAIMS",
+      "Pack catalog + Stickers browser + named Fun Stickers + insert proof; AX-opaque insert → CLAIMS (ambient message labels ≠ green)",
     status: "concrete",
   },
   {
@@ -76,7 +81,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     id: "live-activity",
     tranche: "V1/T13",
     touchpoint:
-      "Trick host ActivityKit start + update + end; Lock preferred; Watch when pair boots; DI/push/StandBy CLAIMS",
+      "Trick host start+update+end + Lock chrome (ET Trick Live / Always Allow); Watch Smart Stack (CarouselLiveActivitiesAlertUI / ET Trick Live) when pair connected; else CLAIMS",
     status: "concrete",
   },
 
@@ -86,7 +91,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     type: "notification-service",
     tranche: "T1",
     touchpoint:
-      "mutable-content push → App Group / lock-screen [expo-targets] mutation (pluginkit alone insufficient; Sim skip → CLAIMS)",
+      "DW pushRemoteNotification (nonce title) → lock-screen AX + App Group both show nonce+[expo-targets] (simctl never launches NSE; needs APNS_* AuthKey)",
     status: "concrete",
   },
   {
@@ -256,7 +261,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     id: "keyboard",
     tranche: "T7",
     touchpoint:
-      "Settings Keyboard list (or pluginkit fallback) + host typed:ET required",
+      "Settings General→Keyboard enable ET Keyboard + Next keyboard switch + ET key → typed:ET (not device.type)",
     status: "concrete",
   },
   {
@@ -374,13 +379,15 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
   {
     id: "watch",
     tranche: "T12",
-    touchpoint: "Host install + paired watchOS sim/device os-limit",
+    touchpoint:
+      "launchWatchPhonePair + visible Watch UI on watch UDID; else CLAIMS after honest attempt",
     status: "concrete",
   },
   {
     id: "watch-widget",
     tranche: "T12",
-    touchpoint: "pluginkit lists watch widget appex; paired watch os-limit",
+    touchpoint:
+      "launchWatchPhonePair + visible ET Watch Widget chrome; else CLAIMS after honest attempt",
     status: "concrete",
   },
 ] as const;
