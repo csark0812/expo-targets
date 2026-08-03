@@ -17,6 +17,10 @@ export {
   getMainAppBuildSettings,
   removeBuildSetting,
 } from './buildSettings';
+export {
+  buildExtensionBundleShellScript,
+  ensureBundleReactNativePhase,
+} from './bundleReactNative';
 export { configureAppClipEmbed, configureAppExtensionEmbed } from './embed';
 export { addExternalFileReference, addTargetAssets } from './fileRefs';
 export {
