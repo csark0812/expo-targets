@@ -135,7 +135,9 @@ export async function runShareActionJourney(
 
     steps.push("tap-extension");
     await tapProbeHit(device, row);
-    await sleep(1_200);
+    // RN share/action appex is AX-opaque until ~2.5s after open; 1.2s settle
+    // left Save/Process hotspots empty and the slow bottom-up sweep timed out.
+    await sleep(2_500);
 
     // readyText probe is optional and expensive when AX-opaque — skip.
     steps.push("appex-ready-skip");
@@ -159,14 +161,14 @@ export async function runShareActionJourney(
               { x: 210, y: 280 },
             ]
           : [
-              // RN Action Process: tap-space ~y500 (AXFrame ~411 is shifted).
+              // RN share Save / action Process — tap-space ~y500 on Air.
               { x: 210, y: 500 },
               { x: 210, y: 490 },
               { x: 210, y: 480 },
               { x: 210, y: 420 },
             ];
       const complete = await findNamedViaPointProbe(device, completeLabels, {
-        timeoutMs: 10_000,
+        timeoutMs: 12_000,
         yStartRatio: 0.15,
         yEndRatio: 0.85,
         stepX: 45,
