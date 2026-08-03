@@ -21,7 +21,7 @@ import {
   waitForNamed,
 } from "./helpers";
 import {
-  assertFixtureViaMaestro,
+  assertContentBlockerFixture,
   startContentBlockerFixture,
 } from "./content-blocker-fixture";
 import {
@@ -250,14 +250,8 @@ export async function runContentBlockerJourney(
 
     await openSafariUrl(device, fixture.url, steps);
 
-    // idb AX cannot see Safari web text; Maestro hierarchy can.
-    const proof = assertFixtureViaMaestro(device.deviceId, steps);
-    if (!proof.ok) {
-      throw new Error(
-        `content-blocker css-display-none fixture failed: ${proof.detail}`,
-      );
-    }
-
+    // idb AX cannot see Safari web text — Devicewright assertWebContent.
+    await assertContentBlockerFixture(device, steps);
     steps.push("content-blocker-css-proof");
     return {
       id: "content-blocker",

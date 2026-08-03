@@ -6,16 +6,15 @@
  * + enable ET Keyboard + host field receives `typed:ET` from the custom key
  * (not Devicewright `device.type`, which uses the system keyboard).
  *
- * GREEN = Settings enable + typing attributed to ET Keyboard (ET key tap).
- * Settings unreachable / keyboard switch opaque → os-limit (CLAIMS).
- * Pluginkit alone is never green.
+ * GREEN = Settings lists ET Keyboard + software keyboard + ET key → typed:ET.
+ * Full Access is optional for textDocumentProxy.insertText (still toggled On
+ * when the Settings row exposes it). Pluginkit alone is never green.
  *
  * Note: `App-prefs:…Keyboard` deep links are unreliable on iOS 26 (often land
  * on Siri). Navigate Settings → General → Keyboard instead.
  */
 import { spawnSync } from "node:child_process";
 import type { DeviceSession } from "@csark0812/devicewright";
-import { assertOsLimitAllowed, claimForId } from "../claims";
 import { TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
@@ -43,22 +42,59 @@ function onKeyboardSettingsPage(labels: string[]): boolean {
   );
 }
 
-function osLimitKeyboard(
+function isToggleOn(value: unknown): boolean {
+  const v = String(value ?? "")
+    .trim()
+    .toLowerCase();
+  return v === "1" || v === "true" || v === "on";
+}
+
+/**
+ * Simulator often hides the software keyboard when hardware keyboard is
+ * connected. Force ConnectHardwareKeyboard off + Cmd+K after field focus.
+ */
+function ensureSimulatorSoftwareKeyboard(steps: string[]): void {
+  spawnSync(
+    "defaults",
+    [
+      "write",
+      "com.apple.iphonesimulator",
+      "ConnectHardwareKeyboard",
+      "-bool",
+      "false",
+    ],
+    { encoding: "utf8" },
+  );
+  const toggled = spawnSync(
+    "osascript",
+    [
+      "-e",
+      'tell application "Simulator" to activate\ndelay 0.25\ntell application "System Events" to keystroke "k" using command down',
+    ],
+    { encoding: "utf8" },
+  );
+  steps.push(
+    toggled.status === 0
+      ? "sim-software-keyboard-toggle"
+      : "sim-software-keyboard-toggle-skip",
+  );
+}
+
+/** Keyboard is required green — no CLAIMS escape. */
+function keyboardRed(
   path: string,
   steps: string[],
   detail: string,
 ): TargetJourneyResult {
-  assertOsLimitAllowed("keyboard");
-  const claim = claimForId("keyboard");
   return {
     id: "keyboard",
     path,
     phase: 5,
-    ok: true,
-    status: "os-limit",
-    steps: [...steps, "keyboard-demo-os-limit"],
-    failureKind: "os-limit",
-    error: `${claim?.reason ?? "ET Keyboard demo not Sim-reachable"} — ${detail}`,
+    ok: false,
+    status: "red",
+    steps: [...steps, "keyboard-demo-failed"],
+    failureKind: "product",
+    error: detail,
   };
 }
 
@@ -77,17 +113,50 @@ async function openGeneralKeyboardSettings(
   await dismissSystemAlerts(device);
 
   // Pop nested Settings (e.g. leftover Siri/deep-link) back to root.
-  for (let i = 0; i < 4; i++) {
+  // BackButton is an identifier — tapLabelInTree only matches labels.
+  for (let i = 0; i < 10; i++) {
     const labels = flattenLabels(await device.accessibilityTree());
-    if (labels.some((l) => /^General$/i.test(l.trim()))) break;
-    const backed = await tapLabelInTree(device, ["Settings", "BackButton", "Back"], {
-      exactOnly: true,
-    });
-    if (!backed) break;
-    await sleep(400);
+    const onRoot =
+      labels.some((l) => /^General$/i.test(l.trim())) &&
+      !labels.some((l) => /^Voice$/i.test(l.trim())) &&
+      !labels.some((l) => /^Siri$/i.test(l.trim()) && labels.includes("Voice"));
+    if (onRoot) break;
+    try {
+      await device.getById("BackButton", { timeoutMs: 1_200 }).tap();
+      steps.push("settings-back:id");
+    } catch {
+      const backed = await tapLabelInTree(device, ["Back"], { exactOnly: true });
+      if (!backed) {
+        await device.tap({ x: 40, y: 90 });
+        steps.push("settings-back-hotspot");
+      } else {
+        steps.push("settings-back:label");
+      }
+    }
+    await sleep(450);
   }
 
-  await scrollUntilVisible(device, ["General"], 8);
+  // Still nested? Cold-relaunch Settings.
+  {
+    const labels = flattenLabels(await device.accessibilityTree());
+    if (
+      !labels.some((l) => /^General$/i.test(l.trim())) ||
+      labels.some((l) => /^Voice$/i.test(l.trim()))
+    ) {
+      spawnSync(
+        "xcrun",
+        ["simctl", "terminate", device.deviceId, SETTINGS_BUNDLE],
+        { encoding: "utf8", env: process.env },
+      );
+      await sleep(400);
+      await device.launchApp(SETTINGS_BUNDLE, { terminateRunning: true });
+      await sleep(900);
+      await dismissSystemAlerts(device);
+      steps.push("settings-relaunch-root");
+    }
+  }
+
+  await scrollUntilVisible(device, ["General"], 10);
   await navigatePath(device, ["General"], steps);
   await sleep(600);
   await scrollUntilVisible(device, ["Keyboard"], 8);
@@ -115,16 +184,62 @@ function findNextKeyboardNode(
   return tree.find((n) => /^Next keyboard$/i.test((n.label ?? "").trim()));
 }
 
+function etKeyVisible(
+  tree: Awaited<ReturnType<DeviceSession["accessibilityTree"]>>,
+): boolean {
+  return tree.some((n) => {
+    const id = String(n.identifier ?? "");
+    const label = String(n.label ?? "").trim();
+    return id === "keyboard-key-et" || label === "ET";
+  });
+}
+
+function softwareKeyboardVisible(
+  tree: Awaited<ReturnType<DeviceSession["accessibilityTree"]>>,
+): boolean {
+  return (
+    isSystemQwertyVisible(tree) ||
+    !!findNextKeyboardNode(tree) ||
+    etKeyVisible(tree) ||
+    tree.some((n) => /^(shift|delete|space|return|emoji)$/i.test((n.label ?? "").trim()))
+  );
+}
+
+async function waitForSoftwareKeyboard(
+  device: DeviceSession,
+  steps: string[],
+): Promise<boolean> {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const tree = await device.accessibilityTree();
+    if (softwareKeyboardVisible(tree)) {
+      steps.push(`software-keyboard-visible:${attempt}`);
+      return true;
+    }
+    ensureSimulatorSoftwareKeyboard(steps);
+    await sleep(700);
+    // Re-tap field — Simulator sometimes eats the first focus after Cmd+K.
+    await tapLabelInTree(device, ["Type into field", "input-type-field"]);
+    await sleep(600);
+  }
+  return softwareKeyboardVisible(await device.accessibilityTree());
+}
+
 /**
- * Cycle "Next keyboard" until system QWERTY (`q`) disappears — ET chrome is up.
+ * Cycle "Next keyboard" until ET key AX appears (or QWERTY disappears with
+ * Next keyboard still present).
  */
 async function switchToEtKeyboard(
   device: DeviceSession,
   steps: string[],
 ): Promise<boolean> {
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 8; i++) {
     const tree = await device.accessibilityTree();
+    if (etKeyVisible(tree)) {
+      steps.push("et-keyboard-chrome-visible");
+      return true;
+    }
     if (!isSystemQwertyVisible(tree) && findNextKeyboardNode(tree)) {
+      // Likely a non-QWERTY keyboard (emoji / custom) — try tapping ET canvas.
       steps.push("et-keyboard-chrome-visible");
       return true;
     }
@@ -141,9 +256,13 @@ async function switchToEtKeyboard(
         "Next keyboard",
         "Next Keyboard",
         "next keyboard",
+        "Emoji",
       ]);
       if (!tapped) {
+        // Globe / next-keyboard dock corners on iPhone Air.
         await device.tap({ x: 42, y: 878 });
+        await sleep(200);
+        await device.tap({ x: 56, y: 860 });
         steps.push("next-keyboard-hotspot");
       } else {
         steps.push("next-keyboard-tap");
@@ -152,6 +271,10 @@ async function switchToEtKeyboard(
     await sleep(700);
   }
   const tree = await device.accessibilityTree();
+  if (etKeyVisible(tree)) {
+    steps.push("et-keyboard-chrome-visible");
+    return true;
+  }
   if (!isSystemQwertyVisible(tree) && findNextKeyboardNode(tree)) {
     steps.push("et-keyboard-chrome-visible");
     return true;
@@ -159,15 +282,30 @@ async function switchToEtKeyboard(
   return false;
 }
 
-/** Tap ET key by canvas coords — custom keyboard buttons are not in host AX. */
+/** Tap ET key — prefer AX id/label, else canvas above Next keyboard. */
 async function tapEtKeyboardKey(device: DeviceSession): Promise<void> {
   const tree = await device.accessibilityTree();
+  const et = tree.find((n) => {
+    const id = String(n.identifier ?? "");
+    const label = String(n.label ?? "").trim();
+    return id === "keyboard-key-et" || label === "ET";
+  });
+  if (et?.frame) {
+    const f = et.frame;
+    await device.tap({
+      x: Math.round(f.x + f.width / 2),
+      y: Math.round(f.y + f.height / 2),
+    });
+    await sleep(400);
+    await assertPayloadContains(device, "text-last-payload", "typed:ET", 3_000);
+    return;
+  }
+
   const next = findNextKeyboardNode(tree);
   const points: Array<{ x: number; y: number }> = [];
   if (next?.frame) {
     const f = next.frame;
     const cx = Math.round(f.x + f.width / 2);
-    // ET sits in the keyboard canvas above the globe / Next keyboard bar.
     points.push(
       { x: 210, y: Math.round(f.y - 120) },
       { x: cx, y: Math.round(f.y - 100) },
@@ -188,6 +326,65 @@ async function tapEtKeyboardKey(device: DeviceSession): Promise<void> {
     }
   }
   throw new Error("ET key tap did not produce typed:ET");
+}
+
+/**
+ * Best-effort Full Access On. Not required for insertText("ET") green, but we
+ * flip it when the detail page exposes the switch (RequestsOpenAccess).
+ */
+async function ensureFullAccessOn(
+  device: DeviceSession,
+  steps: string[],
+): Promise<void> {
+  const tree = await device.accessibilityTree();
+  const toggle =
+    tree.find((n) => /Allow Full Access/i.test((n.label ?? "").trim())) ??
+    tree.find((n) => /^Full Access$/i.test((n.label ?? "").trim()));
+  if (!toggle?.frame) {
+    // Still on the Keyboards list — open the ET Keyboard detail row first.
+    const opened = await tapLabelInTree(device, [
+      "ET Keyboard Target — ET Keyboard",
+      "ET Keyboard Target",
+      "ET Keyboard",
+    ]);
+    if (opened) {
+      steps.push("keyboard-detail-open");
+      await sleep(700);
+    } else {
+      steps.push("keyboard-full-access-absent");
+      return;
+    }
+  }
+  const after = await device.accessibilityTree();
+  const switchNode =
+    after.find((n) => /Allow Full Access/i.test((n.label ?? "").trim())) ??
+    after.find((n) => /^Full Access$/i.test((n.label ?? "").trim()));
+  if (!switchNode?.frame) {
+    steps.push("keyboard-full-access-absent");
+    return;
+  }
+  if (isToggleOn(switchNode.value)) {
+    steps.push("keyboard-full-access-already-on");
+    return;
+  }
+  const f = switchNode.frame;
+  await device.tap({
+    x: Math.round(f.x + f.width * 0.85),
+    y: Math.round(f.y + f.height / 2),
+  });
+  await sleep(600);
+  // Confirm alert — prefer exact Allow, avoid unrelated buttons.
+  await tapLabelInTree(device, ["Allow"], { exactOnly: true });
+  await sleep(400);
+  const confirmed = await device.accessibilityTree();
+  const again =
+    confirmed.find((n) => /Allow Full Access/i.test((n.label ?? "").trim())) ??
+    confirmed.find((n) => /^Full Access$/i.test((n.label ?? "").trim()));
+  steps.push(
+    isToggleOn(again?.value)
+      ? "keyboard-full-access-on"
+      : "keyboard-full-access-tap-unconfirmed",
+  );
 }
 
 export async function runKeyboardJourney(
@@ -275,14 +472,10 @@ export async function runKeyboardJourney(
       }
 
       // Detail / Full Access when a row tap opens the keyboard settings page.
-      const toggled = await tapLabelInTree(device, [
-        "Allow Full Access",
-        "Full Access",
-      ]);
-      if (toggled) steps.push("keyboard-enable-attempted");
-      else steps.push("keyboard-selected");
+      await ensureFullAccessOn(device, steps);
+      steps.push("keyboard-selected");
     } catch (settingsErr) {
-      return osLimitKeyboard(
+      return keyboardRed(
         path,
         steps,
         `Settings enable failed: ${String(settingsErr).slice(0, 160)}`,
@@ -290,7 +483,7 @@ export async function runKeyboardJourney(
     }
 
     if (!listedViaSettings) {
-      return osLimitKeyboard(
+      return keyboardRed(
         path,
         steps,
         "ET Keyboard not listed/enabled in Settings (pluginkit alone is not green)",
@@ -318,12 +511,21 @@ export async function runKeyboardJourney(
     );
     await tapProbeHit(device, field);
     await sleep(900);
+    ensureSimulatorSoftwareKeyboard(steps);
+    await sleep(700);
 
-    // Custom keyboard keys are not in the host AX tree. Detect system QWERTY
-    // (`q`) vs ET chrome, switch via "Next keyboard", then tap canvas center.
+    if (!(await waitForSoftwareKeyboard(device, steps))) {
+      return keyboardRed(
+        path,
+        steps,
+        "Software keyboard never appeared after field focus (Simulator hardware keyboard?)",
+      );
+    }
+
+    // Detect system QWERTY (`q`) vs ET chrome, switch via "Next keyboard".
     const switched = await switchToEtKeyboard(device, steps);
     if (!switched) {
-      return osLimitKeyboard(
+      return keyboardRed(
         path,
         steps,
         "Could not switch to ET Keyboard via Next keyboard (software keyboard required)",
@@ -342,7 +544,7 @@ export async function runKeyboardJourney(
     }
 
     if (!typedFromCustom) {
-      return osLimitKeyboard(
+      return keyboardRed(
         path,
         steps,
         "Could not attribute typed:ET to ET Keyboard key (device.type soft-green removed)",

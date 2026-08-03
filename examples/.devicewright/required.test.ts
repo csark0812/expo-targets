@@ -48,6 +48,14 @@ describe("REQUIRED_V2", () => {
   test("content-blocker is absent from OS_LIMIT_CLAIMS (local css-display-none fixture)", () => {
     expect(OS_LIMIT_CLAIMS.some((c) => c.id === "content-blocker")).toBe(false);
   });
+
+  test("stickers is absent from OS_LIMIT_CLAIMS (Sticker:*.png draft insert)", () => {
+    expect(OS_LIMIT_CLAIMS.some((c) => c.id === "stickers")).toBe(false);
+  });
+
+  test("keyboard is absent from OS_LIMIT_CLAIMS (Full Access + typed:ET)", () => {
+    expect(OS_LIMIT_CLAIMS.some((c) => c.id === "keyboard")).toBe(false);
+  });
 });
 
 describe("CLAIMS + touchpoints", () => {

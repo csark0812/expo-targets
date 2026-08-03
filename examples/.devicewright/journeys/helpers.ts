@@ -148,15 +148,27 @@ export async function dismissSystemAlerts(
     "Not Now",
     "Don't Allow",
     "Don’t Allow",
-    "Allow",
   ];
   for (let i = 0; i < attempts; i++) {
     const tree = await device.accessibilityTree();
     const flat = flattenLabels(tree);
+    // Paste/Autofill edit menu — dismiss by tapping away, never Paste itself.
+    const hasEditMenu = flat.some(
+      (l) =>
+        /^Paste$/i.test(l.trim()) ||
+        /^Auto-?Fill$/i.test(l.trim()) ||
+        /^Select All$/i.test(l.trim()),
+    );
+    if (hasEditMenu) {
+      await device.tap({ x: 210, y: 180 });
+      await sleep(400);
+      continue;
+    }
     const hasSheet = flat.some(
       (l) =>
         /open in .+\?/i.test(l) ||
         /Would Like to Send You Notifications/i.test(l) ||
+        /Enable Dictation/i.test(l) ||
         dismissLabels.some((d) => l.toLowerCase() === d.toLowerCase()),
     );
     if (!hasSheet) {

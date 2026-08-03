@@ -1,11 +1,14 @@
 /**
  * Local HTTP fixture for content-blocker Safari proof.
  * iOS Simulator reaches the Mac via 127.0.0.1 (shared loopback).
+ *
+ * Page-text asserts use Devicewright assertWeb* (DW 0.1.10+), not a
+ * hand-rolled Maestro YAML spawn.
  */
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
+import type { DeviceSession } from "@csark0812/devicewright";
 import { repoRoot } from "../root";
 
 export const FIXTURE_PAGE_OK = "ET_PAGE_OK";
@@ -53,34 +56,17 @@ export async function startContentBlockerFixture(): Promise<ContentBlockerFixtur
 }
 
 /**
- * Web content is opaque to idb AX; Maestro hierarchy sees the fixture markers.
+ * Prove css-display-none hid the ad marker while the page/control remain.
+ * Page must already be open in Safari (journey uses simctl openurl).
  */
-export function assertFixtureViaMaestro(
-  udid: string,
+export async function assertContentBlockerFixture(
+  device: DeviceSession,
   steps: string[],
-): { ok: boolean; detail: string } {
-  const yaml = path.join(
-    repoRoot(),
-    "examples/.devicewright/fixtures/content-blocker/assert-css.yaml",
-  );
-  const maestro =
-    process.env.MAESTRO_BIN ||
-    (fs.existsSync(`${process.env.HOME}/.maestro/bin/maestro`)
-      ? `${process.env.HOME}/.maestro/bin/maestro`
-      : "maestro");
-  const r = spawnSync(maestro, ["test", "--device", udid, yaml], {
-    encoding: "utf8",
-    env: process.env,
-    timeout: 90_000,
+): Promise<void> {
+  await device.assertWebContent({
+    visible: [FIXTURE_PAGE_OK, FIXTURE_CONTROL],
+    notVisible: [FIXTURE_AD_HIDDEN],
+    timeoutMs: 12_000,
   });
-  const out = `${r.stdout ?? ""}\n${r.stderr ?? ""}`;
-  if (r.status === 0) {
-    steps.push("fixture-maestro-ok");
-    return { ok: true, detail: "maestro assert-css passed" };
-  }
-  steps.push(`fixture-maestro-fail:${(out || "exit").slice(0, 120)}`);
-  return {
-    ok: false,
-    detail: out.trim().slice(0, 400) || `maestro exited ${r.status}`,
-  };
+  steps.push("fixture-dw-web-ok");
 }

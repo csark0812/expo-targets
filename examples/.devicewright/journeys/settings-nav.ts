@@ -187,15 +187,15 @@ export async function openSafariExtensionsOrBlockers(
   steps: string[],
   prefer: "extensions" | "blockers" = "extensions",
 ): Promise<void> {
+  // Require the preferred row — Content Blockers sits below Extensions on
+  // iOS 26, so treating Extensions as success leaves findExt empty.
   const primary =
-    prefer === "blockers"
-      ? ["Content Blockers", "Extensions"]
-      : ["Extensions", "Content Blockers"];
-  const visible = await scrollUntilVisible(device, primary, 14);
+    prefer === "blockers" ? ["Content Blockers"] : ["Extensions"];
+  const visible = await scrollUntilVisible(device, primary, 18);
   if (!visible) {
     const missing = await device.accessibilityTree();
     throw new Error(
-      `Safari settings: Extensions/Content Blockers missing after scroll; labels=${flattenLabels(missing).slice(0, 50).join("|")}`,
+      `Safari settings: ${primary[0]} missing after scroll; labels=${flattenLabels(missing).slice(0, 50).join("|")}`,
     );
   }
 
@@ -232,9 +232,10 @@ export async function openSafariExtensionsOrBlockers(
     if (stillOnSafariSettings(nodes)) return false;
     const labels = flattenLabels(nodes).map((l) => l.toLowerCase());
     if (prefer === "blockers") {
-      // iOS 26 list chrome: "Use Content Blockers On" + "All Websites".
+      // iOS 26 Content Blockers page: master toggle chrome only.
+      // Do NOT match "ET Blocker" — that row lives under Extensions.
       return labels.some((l) =>
-        /use content blockers|allow these content blockers|more content blockers|et blocker/i.test(
+        /use content blockers|allow these content blockers|more content blockers|all websites/i.test(
           l,
         ),
       );
@@ -249,12 +250,21 @@ export async function openSafariExtensionsOrBlockers(
     nodes: Awaited<ReturnType<DeviceSession["accessibilityTree"]>>,
   ) => {
     if (prefer === "blockers") {
-      const blocker = nodes.find(
-        (n) =>
-          /CONTENT_BLOCKER/i.test(String(n.identifier ?? "")) ||
-          (n.label ?? "").trim().toLowerCase() === "content blockers",
+      // iOS 26 id is "Content Blockers" (space), not CONTENT_BLOCKER.
+      // Never fall through to WEB_EXTENSIONS — that opens the wrong page.
+      return (
+        nodes.find(
+          (n) =>
+            String(n.identifier ?? "").trim().toLowerCase() ===
+            "content blockers",
+        ) ??
+        nodes.find((n) =>
+          /CONTENT_BLOCKER/i.test(String(n.identifier ?? "")),
+        ) ??
+        nodes.find((n) =>
+          /^content blockers/i.test((n.label ?? "").trim()),
+        )
       );
-      if (blocker) return blocker;
     }
     let hit = nodes.find(
       (n) => String(n.identifier ?? "").toUpperCase() === "WEB_EXTENSIONS",

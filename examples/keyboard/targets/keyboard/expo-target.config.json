@@ -9,7 +9,13 @@
     "displayName": "ET Keyboard Target",
     "infoPlist": {
       "NSExtension": {
-        "NSExtensionPrincipalClass": "KeyboardViewController"
+        "NSExtensionPrincipalClass": "KeyboardViewController",
+        "NSExtensionAttributes": {
+          "IsASCIICapable": true,
+          "PrefersRightToLeft": false,
+          "PrimaryLanguage": "en-US",
+          "RequestsOpenAccess": true
+        }
       }
     }
   }

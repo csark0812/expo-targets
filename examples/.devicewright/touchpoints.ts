@@ -60,7 +60,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     id: "stickers",
     tranche: "V1",
     touchpoint:
-      "Pack catalog + Stickers browser + named Fun Stickers + insert proof; AX-opaque insert → CLAIMS (ambient message labels ≠ green)",
+      "Pack catalog + Stickers browser + Fun Stickers + Sticker:*.png draft (attached to outgoing message) + Send",
     status: "concrete",
   },
   {
@@ -261,7 +261,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     id: "keyboard",
     tranche: "T7",
     touchpoint:
-      "Settings General→Keyboard enable ET Keyboard + Next keyboard switch + ET key → typed:ET (not device.type)",
+      "Settings General→Keyboard + Full Access + software keyboard + Next keyboard → ET key → typed:ET (not device.type)",
     status: "concrete",
   },
   {

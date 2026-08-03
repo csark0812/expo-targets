@@ -20,16 +20,6 @@ export const OS_LIMIT_CLAIMS: readonly ClaimsEntry[] = [
       "Lock Screen chrome may be idb-opaque after Always Allow; Watch Smart Stack only when pair is connected (not merely booted). DI / ActivityKit push / StandBy remain non-Sim-faithful. Host start+update+end alone is not green.",
   },
   {
-    id: "stickers",
-    reason:
-      "Sticker pack insert cells are AX-opaque on Simulator after named Fun Stickers; CLAIMS only when insert proof is exhausted (ambient message/sticker labels are not green)",
-  },
-  {
-    id: "keyboard",
-    reason:
-      "Settings → Keyboards enable + ET Keyboard key attribution is often opaque on Simulator (globe / Next Keyboard / custom key AX); pluginkit + device.type soft-green removed",
-  },
-  {
     id: "intent",
     reason:
       "Siri Intent invoke has no reliable Simulator AX path; Settings Apps host registration + pluginkit are the floor",
