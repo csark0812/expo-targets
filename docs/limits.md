@@ -20,20 +20,20 @@ Before documenting “not Sim-greenable,” attach a spike under `examples/.devi
 
 Each open leftover:
 
-| Field     | Meaning                              |
-| --------- | ------------------------------------ |
-| `id`      | REQUIRED matrix id                   |
-| `feature` | Surface that could not green         |
-| `home`    | `limits.md` \| later PR \| `wont-do` |
-| `spike`   | Path under `artifacts/spikes/`       |
-| `owner`   | PR author                            |
+| Field | Meaning |
+| ----- | ------- |
+| `id` | REQUIRED matrix id |
+| `feature` | Surface that could not green |
+| `home` | `limits.md` \| later PR \| `wont-do` |
+| `spike` | Path under `artifacts/spikes/` |
+| `owner` | PR author |
 
 **D1 done** when this policy + register section exist and every open leftover for the shipping PR has a row. **D1-scaffold** (stubs only) ≠ D1 done.
 
-| id            | feature                                     | home               | spike                | owner |
-| ------------- | ------------------------------------------- | ------------------ | -------------------- | ----- |
-| live-activity | Dynamic Island / ActivityKit push / StandBy | limits.md (CLAIMS) | —                    | eng   |
-| live-activity | Watch chrome when pair boots without AX     | CLAIMS after S3a   | TBD on operator miss | eng   |
+| id | feature | home | spike | owner |
+| -- | ------- | ---- | ----- | ----- |
+| live-activity | Dynamic Island / ActivityKit push / StandBy | limits.md (CLAIMS) | — | eng |
+| live-activity | Watch chrome when pair boots without AX | CLAIMS after S3a | TBD on operator miss | eng |
 
 Entitlement/Settings items use `home: wont-do` or the hard-stop table below; **revisit** when DW/Sim coverage improves (plan edit + spike re-run).
 
@@ -51,18 +51,18 @@ Deepen already-green ids before adding shallow types: share/action(+native); saf
 
 ## Lib floor vs hard stop
 
-| Family                                                                            | Lib floor (shippable here)                                         | Hard stop                                                           |
-| --------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------- |
-| Share / action / messages / clip / stickers / safari / content-blocker / keyboard | Deep Devicewright greens on Simulator                              | —                                                                   |
-| Notification service / content                                                    | Real principals; category push; expand → custom UI marker          | Simulator often skips NSE process                                   |
-| Photo editing                                                                     | Real `PHContentEditingController`; Photos Edit + pluginkit         | Sim rarely lists third-party editors                                |
-| File Provider                                                                     | Real `NSFileProviderExtension` + host `NSFileProviderManager.add`  | Full sync / File Provider UI depth                                  |
+| Family                                                                            | Lib floor (shippable here)                                         | Hard stop                                          |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------ | -------------------------------------------------- |
+| Share / action / messages / clip / stickers / safari / content-blocker / keyboard | Deep Devicewright greens on Simulator                              | —                                                  |
+| Notification service / content                                                    | Real principals; category push; expand → custom UI marker          | Simulator often skips NSE process                  |
+| Photo editing                                                                     | Real `PHContentEditingController`; Photos Edit + pluginkit         | Sim rarely lists third-party editors               |
+| File Provider                                                                     | Real `NSFileProviderExtension` + host `NSFileProviderManager.add`  | Full sync / File Provider UI depth                 |
 | Widgets + Live Activities                                                         | Native WidgetKit + ActivityKit (owned here); LA start+update+end   | Dual-engine with `expo-widgets` unsupported; DI/push/StandBy CLAIMS |
-| Wallet                                                                            | Real PassKit issuer handler                                        | `payment-pass-provisioning` Apple allow-list                        |
-| Network Extensions                                                                | Real `NE*Provider` subclasses that fail closed without entitlement | Network Extension entitlement / VPN Personal / MDM                  |
-| Credentials / SSO / Call Directory / Family Controls / location-push              | Minimal real principals + host contract                            | Entitlement and/or Settings-only enablement                         |
-| Watch / watch-widget                                                              | Scaffold; LA Watch chrome when DW pair boots                       | Paired watchOS simulator or device                                  |
-| Android                                                                           | Widget bridge (Glance / RemoteViews) only                          | No Apple-extension parity on Android                                |
+| Wallet                                                                            | Real PassKit issuer handler                                        | `payment-pass-provisioning` Apple allow-list       |
+| Network Extensions                                                                | Real `NE*Provider` subclasses that fail closed without entitlement | Network Extension entitlement / VPN Personal / MDM |
+| Credentials / SSO / Call Directory / Family Controls / location-push              | Minimal real principals + host contract                            | Entitlement and/or Settings-only enablement        |
+| Watch / watch-widget                                                              | Scaffold; LA Watch chrome when DW pair boots                       | Paired watchOS simulator or device                 |
+| Android                                                                           | Widget bridge (Glance / RemoteViews) only                          | No Apple-extension parity on Android               |
 
 Frozen Devicewright `os-limit` allowlist: [`examples/.devicewright/claims.ts`](../examples/.devicewright/claims.ts).
 
