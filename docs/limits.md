@@ -39,7 +39,7 @@ Entitlement/Settings items use `home: wont-do` or the hard-stop table below; **r
 
 ### Currently-green expansion backlog
 
-Deepen already-green ids before adding shallow types: share/action(+native); safari(+native)/content-blocker; widgets/keyboard/photo-editing/clip(+native)/stickers. Exit per id = required **P** surfaces green; S3a rows only for proven non-P features.
+Deepen already-green ids before adding shallow types: share/action(+native); safari(+native)/content-blocker; widgets/keyboard/photo-editing/clip(+native)/stickers; **file-provider** (Files Browse domain); **app-intent** (Shortcuts action). Exit per id = required **P** surfaces green; S3a rows only for proven non-P features.
 
 ## Config-only vs stubs
 

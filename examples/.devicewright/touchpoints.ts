@@ -163,7 +163,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     id: "app-intent",
     tranche: "T4",
     touchpoint:
-      "pluginkit lists appintents-extension appex (+ Shortcuts best-effort)",
+      "pluginkit appintents-extension + Shortcuts lists Say Hello / ET AppIntent",
     status: "concrete",
   },
   {
@@ -211,7 +211,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     id: "file-provider",
     tranche: "T6",
     touchpoint:
-      "pluginkit lists fileprovider-nonui appex (Files Browse domain best-effort)",
+      "Host registers NSFileProviderDomain + Files Browse lists ET FileProv (pluginkit alone insufficient)",
     status: "concrete",
   },
   {

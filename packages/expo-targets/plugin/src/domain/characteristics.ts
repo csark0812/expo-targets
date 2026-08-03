@@ -403,7 +403,7 @@ const BASE_TYPE_CHARACTERISTICS: Record<
     requiresCode: true,
     targetType: 'app_extension',
     embedType: 'foundation-extension',
-    frameworks: [],
+    frameworks: ['AppIntents'],
     productType: 'com.apple.product-type.extensionkit-extension',
     extensionPointIdentifier: 'com.apple.appintents-extension',
     defaultUsesAppGroups: false,
