@@ -140,8 +140,11 @@ function planInheritedSettings(
 ): Record<string, string> {
   const settings: Record<string, string> = {};
   for (const key of ESSENTIAL_INHERITED_SETTINGS) {
-    // Watch companions must not inherit the host phone/pad device family.
-    if (type === 'watch' && key === 'TARGETED_DEVICE_FAMILY') {
+    // Watch companions / watch widgets must not inherit the host phone/pad device family.
+    if (
+      (type === 'watch' || type === 'watch-widget') &&
+      key === 'TARGETED_DEVICE_FAMILY'
+    ) {
       continue;
     }
     if (mainBuildSettings[key]) {
@@ -207,7 +210,7 @@ export function planBuildSettings({
   infoPlistReferencePath: string;
 }): Record<string, string | string[]> {
   const typeConfig = TYPE_CHARACTERISTICS[props.type];
-  const isWatch = props.type === 'watch';
+  const isWatchOs = props.type === 'watch' || props.type === 'watch-widget';
 
   const settings: Record<string, string | string[]> = {
     PRODUCT_NAME: `"${identity.targetProductName}"`,
@@ -218,7 +221,7 @@ export function planBuildSettings({
     SWIFT_VERSION: planSwiftVersion(props, mainBuildSettings),
   };
 
-  if (isWatch) {
+  if (isWatchOs) {
     Object.assign(
       settings,
       planWatchOsSettings(identity.deploymentTarget, mainBuildSettings)
@@ -245,7 +248,7 @@ export function planBuildSettings({
   }
 
   // Re-assert watchOS family after planCodeSettings (which may inherit host 1,2).
-  if (isWatch) {
+  if (isWatchOs) {
     settings.TARGETED_DEVICE_FAMILY = '"4"';
     settings.SDKROOT = 'watchos';
     settings.SUPPORTED_PLATFORMS = '"watchos watchsimulator"';
@@ -254,11 +257,7 @@ export function planBuildSettings({
   // SwiftUI App Clips isolate search paths from the host Pods tree. RN clips
   // (`entry` set) need those Pods paths to `import React`. Watch always isolates
   // (handled in planWatchOsSettings).
-  if (
-    !isWatch &&
-    typeConfig.needsIsolatedSearchPaths &&
-    !props.entry
-  ) {
+  if (!isWatchOs && typeConfig.needsIsolatedSearchPaths && !props.entry) {
     Object.assign(settings, planIsolatedSearchPathSettings());
   }
 

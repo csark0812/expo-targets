@@ -387,7 +387,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     id: "watch-widget",
     tranche: "T12",
     touchpoint:
-      "launchWatchPhonePair + visible ET Watch Widget chrome; else CLAIMS after honest attempt",
+      "Pair connected + watch companion with nested PlugIns ET Watch Widget; else CLAIMS after honest attempt",
     status: "concrete",
   },
 ] as const;

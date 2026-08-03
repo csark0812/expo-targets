@@ -237,6 +237,24 @@ describe('planBuildSettings per type', () => {
     expect(settings.WATCHOS_DEPLOYMENT_TARGET).toBe('10.0');
     expect(settings.IPHONEOS_DEPLOYMENT_TARGET).toBeUndefined();
   });
+
+  test('watch-widget targets use watchOS SDK and device family 4', () => {
+    const settings = buildSettingsFor({
+      props: {
+        type: 'watch-widget',
+        name: 'WatchWidget',
+        deploymentTarget: '10.0',
+        displayName: 'ET Watch Widget',
+      },
+      mainBuildSettings: { TARGETED_DEVICE_FAMILY: '"1,2"' },
+    });
+
+    expect(settings.SDKROOT).toBe('watchos');
+    expect(settings.SUPPORTED_PLATFORMS).toBe('"watchos watchsimulator"');
+    expect(settings.TARGETED_DEVICE_FAMILY).toBe('"4"');
+    expect(settings.WATCHOS_DEPLOYMENT_TARGET).toBe('10.0');
+    expect(settings.IPHONEOS_DEPLOYMENT_TARGET).toBeUndefined();
+  });
 });
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: existing planner suite
@@ -540,6 +558,7 @@ describe('planEmbed', () => {
     expect(planEmbed('share')).toEqual({ kind: 'foundation-extension' });
     expect(planEmbed('clip')).toEqual({ kind: 'app-clip' });
     expect(planEmbed('watch')).toEqual({ kind: 'watch-content' });
+    expect(planEmbed('watch-widget')).toEqual({ kind: 'watch-extension' });
   });
 });
 

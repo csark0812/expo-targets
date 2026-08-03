@@ -199,18 +199,52 @@ export async function openSafariExtensionsOrBlockers(
     );
   }
 
+  const stillOnSafariSettings = (
+    nodes: Awaited<ReturnType<DeviceSession["accessibilityTree"]>>,
+  ) =>
+    nodes.some((n) => {
+      const id = String(n.identifier ?? "").toUpperCase();
+      const label = (n.label ?? "").trim();
+      return (
+        id === "WEB_EXTENSIONS" ||
+        /CONTENT_BLOCKER/i.test(id) ||
+        label === "Search Engine" ||
+        label === "Content Blockers"
+      );
+    });
+
+  const onExtensionsList = (
+    nodes: Awaited<ReturnType<DeviceSession["accessibilityTree"]>>,
+  ) => {
+    if (stillOnSafariSettings(nodes)) return false;
+    const labels = flattenLabels(nodes).map((l) => l.toLowerCase());
+    if (prefer === "blockers") {
+      return labels.some((l) =>
+        /allow these content blockers|more content blockers|et blocker/i.test(
+          l,
+        ),
+      );
+    }
+    return labels.some((l) =>
+      /allow these extensions|more extensions|et safari/i.test(l),
+    );
+  };
+
   let tree = await device.accessibilityTree();
   const findExt = (
     nodes: Awaited<ReturnType<DeviceSession["accessibilityTree"]>>,
   ) => {
+    if (prefer === "blockers") {
+      const blocker = nodes.find(
+        (n) =>
+          /CONTENT_BLOCKER/i.test(String(n.identifier ?? "")) ||
+          (n.label ?? "").trim().toLowerCase() === "content blockers",
+      );
+      if (blocker) return blocker;
+    }
     let hit = nodes.find(
       (n) => String(n.identifier ?? "").toUpperCase() === "WEB_EXTENSIONS",
     );
-    if (!hit && prefer === "blockers") {
-      hit = nodes.find((n) =>
-        /CONTENT_BLOCKER/i.test(String(n.identifier ?? "")),
-      );
-    }
     if (!hit) {
       hit = nodes.find((n) =>
         primary.some(
@@ -258,45 +292,46 @@ export async function openSafariExtensionsOrBlockers(
     throw new Error(`Safari settings: ${primary[0]} has no frame`);
   }
   steps.push(`extensions-row-y:${Math.round(f.y)}`);
-  // Prefer identifier locator, then chevron-side coord (center taps often no-op
-  // on this Settings row under iOS 26 / idb).
-  let opened = false;
-  try {
-    await device.getById("WEB_EXTENSIONS", { timeoutMs: 2_500 }).tap();
-    opened = true;
-    steps.push("extensions-tap:id");
-  } catch {
-    /* fall through */
-  }
-  if (!opened) {
+
+  const rowId = String(row.identifier ?? "").trim();
+  const tryOpen = async (tag: string) => {
+    if (rowId) {
+      try {
+        await device.getById(rowId, { timeoutMs: 2_500 }).tap();
+        steps.push(`extensions-tap:id:${tag}`);
+        return;
+      } catch {
+        /* fall through */
+      }
+    }
     await device.tap({
       x: Math.round(f.x + f.width - 40),
       y: Math.round(f.y + f.height / 2),
     });
-    steps.push("extensions-tap:chevron");
-  }
+    steps.push(`extensions-tap:chevron:${tag}`);
+  };
+
+  await tryOpen("1");
   await sleep(1000);
 
-  // Confirm we left Safari settings into the Extensions list.
-  const after = await device.accessibilityTree();
-  const afterLabels = flattenLabels(after).map((l) => l.toLowerCase());
-  const onList = afterLabels.some((l) =>
-    /allow these extensions|more extensions|content blocker|et blocker|et safari|off$/i.test(
-      l,
-    ),
-  );
-  if (!onList) {
+  let after = await device.accessibilityTree();
+  if (!onExtensionsList(after)) {
     tree = await device.accessibilityTree();
     row = findExt(tree);
     if (!row?.frame) {
       throw new Error(
-        `Safari Extensions page not opened; labels=${flattenLabels(after).slice(0, 40).join("|")}`,
+        `Safari Extensions page not opened; stillOnSettings=${stillOnSafariSettings(after)}; labels=${flattenLabels(after).slice(0, 40).join("|")}`,
       );
     }
     const f2 = row.frame;
     steps.push(`extensions-retry-y:${Math.round(f2.y)}`);
+    const retryId = String(row.identifier ?? "").trim();
     try {
-      await device.getById("WEB_EXTENSIONS", { timeoutMs: 2_000 }).tap();
+      if (retryId) {
+        await device.getById(retryId, { timeoutMs: 2_000 }).tap();
+      } else {
+        throw new Error("no-id");
+      }
     } catch {
       await device.tap({
         x: Math.round(f2.x + f2.width - 40),
@@ -304,18 +339,13 @@ export async function openSafariExtensionsOrBlockers(
       });
     }
     await sleep(1000);
-    const after2 = flattenLabels(await device.accessibilityTree()).map((l) =>
-      l.toLowerCase(),
+    after = await device.accessibilityTree();
+  }
+
+  if (!onExtensionsList(after)) {
+    throw new Error(
+      `Safari Extensions page not opened; stillOnSettings=${stillOnSafariSettings(after)}; labels=${flattenLabels(after).slice(0, 40).join("|")}`,
     );
-    if (
-      !after2.some((l) =>
-        /allow these extensions|more extensions|et blocker|et safari/i.test(l),
-      )
-    ) {
-      throw new Error(
-        `Safari Extensions page not opened; labels=${flattenLabels(after).slice(0, 40).join("|")}`,
-      );
-    }
   }
   steps.push("safari-extensions-open");
 }

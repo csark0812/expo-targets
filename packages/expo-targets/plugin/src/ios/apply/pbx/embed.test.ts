@@ -3,7 +3,9 @@ import * as path from 'node:path';
 
 import { findNativeTargetByProductName } from '../../../../test-utils/assertPbx';
 import { loadPbx } from '../../../../test-utils/loadPbx';
-import { configureAppClipEmbed, configureAppExtensionEmbed, configureWatchContentEmbed } from './embed';
+import { configureAppClipEmbed, configureAppExtensionEmbed, configureWatchAppExtensionEmbed, configureWatchContentEmbed, removeAppExtensionFromHostEmbed } from './embed';
+import { applyBuildSettings } from './buildSettings';
+import { findWatchCompanionTargetUuid } from './targetLifecycle';
 
 const fixturePath = path.join(
   __dirname,
@@ -187,5 +189,72 @@ describe('configureWatchContentEmbed', () => {
     const phase = copyFilesPhases(project)[phaseKey];
     expect(phase.dstPath).toBe('"$(CONTENTS_FOLDER_PATH)/Watch"');
     expect(phase.dstSubfolderSpec).toBe(16);
+  });
+});
+
+const WATCH_WIDGET_PRODUCT = 'WatchWidgetTarget';
+
+describe('configureWatchAppExtensionEmbed', () => {
+  test('embeds appex on the watch target, not the phone host', () => {
+    const { project, mainTargetUuid, watch } = setupWatchProject();
+    applyBuildSettings({
+      project,
+      target: watch,
+      buildSettings: {
+        SDKROOT: 'watchos',
+        WATCHOS_DEPLOYMENT_TARGET: '10.0',
+        TARGETED_DEVICE_FAMILY: '"4"',
+      },
+    });
+
+    const widget = addNativeTarget(project, {
+      productName: WATCH_WIDGET_PRODUCT,
+      type: 'app_extension',
+    });
+
+    const watchUuid = findWatchCompanionTargetUuid(project);
+    expect(watchUuid).toBe(watch.uuid);
+
+    configureWatchAppExtensionEmbed({
+      project,
+      watchTargetUuid: watchUuid!,
+      target: widget,
+      targetProductName: WATCH_WIDGET_PRODUCT,
+    });
+    removeAppExtensionFromHostEmbed({
+      project,
+      mainTargetUuid,
+      targetProductName: WATCH_WIDGET_PRODUCT,
+    });
+    configureWatchAppExtensionEmbed({
+      project,
+      watchTargetUuid: watchUuid!,
+      target: widget,
+      targetProductName: WATCH_WIDGET_PRODUCT,
+    });
+    removeAppExtensionFromHostEmbed({
+      project,
+      mainTargetUuid,
+      targetProductName: WATCH_WIDGET_PRODUCT,
+    });
+
+    const watchTarget =
+      project.hash.project.objects.PBXNativeTarget[watchUuid!];
+    const copyPhases = copyFilesPhases(project);
+    const watchEmbedPhases = (watchTarget.buildPhases || []).filter(
+      (entry: { value: string }) =>
+        copyPhases[entry.value]?.name === '"Embed App Extensions"'
+    );
+    expect(watchEmbedPhases).toHaveLength(1);
+    expect(copyPhases[watchEmbedPhases[0].value].files).toHaveLength(1);
+    expect(copyPhases[watchEmbedPhases[0].value].dstSubfolderSpec).toBe(13);
+
+    // Phone host must not keep the auto-embedded appex.
+    const host = project.hash.project.objects.PBXNativeTarget[mainTargetUuid];
+    const hostEmbed = (host.buildPhases || []).filter(
+      (entry: { value: string }) =>
+        copyPhases[entry.value]?.name === '"Embed App Extensions"'
+    );
+    expect(hostEmbed).toHaveLength(0);
   });
 });

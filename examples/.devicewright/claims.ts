@@ -105,7 +105,7 @@ export const OS_LIMIT_CLAIMS: readonly ClaimsEntry[] = [
   {
     id: "watch-widget",
     reason:
-      "Paired watchOS Sim boots/connects, but watch-widget ships as iOS WidgetKit appex (device family phone/pad) — ET Watch Widget chrome not on Watch after honest pair+AX/Smart Stack",
+      "Paired watchOS Sim boots/connects, but watch-widget nest (companion PlugIns + ET Watch Widget displayName) or companion AX missing after honest pair+install",
   },
 ] as const;
 

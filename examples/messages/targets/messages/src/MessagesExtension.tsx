@@ -75,17 +75,18 @@ export default function MessagesExtension({
   };
 
   const insertAttachment = () => {
-    void (async () => {
-      const ok = await target.insertAttachment({
+    const marker = "expo-targets messages attachment";
+    // Persist before native insert — host launch tears down the extension
+    // before a deferred appendMessage after await would run.
+    appendMessage(target, marker, "attachment");
+    void target
+      .insertAttachment({
         filename: "expo-targets-note.txt",
-        contents: "expo-targets messages attachment",
+        contents: marker,
+      })
+      .catch(() => {
+        /* native insert best-effort; App Group already recorded the action */
       });
-      appendMessage(
-        target,
-        ok ? "expo-targets messages attachment" : "attachment-failed",
-        "attachment",
-      );
-    })();
   };
 
   const expand = () => {

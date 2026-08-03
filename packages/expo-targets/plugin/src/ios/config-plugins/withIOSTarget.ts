@@ -2,6 +2,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import process from 'node:process';
 import type { ConfigPlugin } from '@expo/config-plugins';
+import { withDangerousMod } from '@expo/config-plugins';
 import {
   type ExtensionType,
   type IOSTargetConfigWithReactNative,
@@ -21,7 +22,8 @@ import {
   TYPE_CHARACTERISTICS,
 } from '../../domain';
 import type { Logger } from '../../logger';
-import { Paths } from '../utils/index';
+import { hasTargetBlock, removeTargetBlock } from '../apply/podfile';
+import { File, Paths } from '../utils/index';
 import { withEASCredentials } from './withEASCredentials';
 import { withTargetEntitlements } from './withEntitlements';
 import { withTargetPodfile } from './withPodfile';
@@ -132,7 +134,7 @@ function resolveDeploymentTarget(
   let deploymentTarget = props.deploymentTarget;
 
   // watchOS versions are not comparable to iOS host deployment targets.
-  if (props.type === 'watch') {
+  if (props.type === 'watch' || props.type === 'watch-widget') {
     deploymentTarget = deploymentTarget || typeMinimum;
     props.logger.log(
       `Using watchOS deployment target: ${deploymentTarget}`
@@ -205,12 +207,29 @@ const withTargetPods: ConfigPlugin<{
     return config;
   }
 
-  // watchOS companions are native SwiftUI only — CocoaPods/RN cannot target watchos here.
-  if (props.type === 'watch') {
+  // watchOS companions / widgets are native SwiftUI only — CocoaPods/RN cannot target watchos here.
+  if (props.type === 'watch' || props.type === 'watch-widget') {
     props.logger.log(
-      `Skipping Podfile for watchOS companion: ${targetProductName}`
+      `Skipping Podfile for watchOS target: ${targetProductName}`
     );
-    return config;
+    return withDangerousMod(config, [
+      'ios',
+      async (cfg) => {
+        const { platformProjectRoot } = cfg.modRequest;
+        const podfilePath = path.join(platformProjectRoot, 'Podfile');
+        const podfile = File.readFileIfExists(podfilePath);
+        if (podfile && hasTargetBlock(podfile, targetProductName)) {
+          props.logger.log(
+            `Removing leftover Podfile target for watchOS: ${targetProductName}`
+          );
+          File.writeFileSafe(
+            podfilePath,
+            removeTargetBlock(podfile, targetProductName)
+          );
+        }
+        return cfg;
+      },
+    ]);
   }
 
   const isWebBasedEntry = Boolean(props.entry) && isReactNativeWeb(props.type);

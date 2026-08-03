@@ -37,6 +37,51 @@ const WATCH_UI_RE: Record<WatchId, RegExp> = {
     /ET Watch Widget|ET WatchW|WatchWidget|watch-widget/i,
 };
 
+const COMPANION_UI_RE = /ET Watch Target|ET [Ww]atch/i;
+
+/**
+ * Nest-under-watch proof: companion .app on the watch UDID contains the
+ * WidgetKit appex (Smart Stack requires user add — not Sim-automatable).
+ */
+function verifyNestedWatchWidgetAppex(
+  watchUdid: string,
+  companionBundleId: string,
+  steps: string[],
+): boolean {
+  const container = spawnSync(
+    "xcrun",
+    ["simctl", "get_app_container", watchUdid, companionBundleId],
+    { encoding: "utf8", env: process.env },
+  );
+  if (container.status !== 0) {
+    steps.push("watch-plugins-container-missing");
+    return false;
+  }
+  const appPath = (container.stdout ?? "").trim();
+  const pluginsDir = path.join(appPath, "PlugIns");
+  if (!fs.existsSync(pluginsDir)) {
+    steps.push("watch-plugins-dir-missing");
+    return false;
+  }
+  for (const name of fs.readdirSync(pluginsDir)) {
+    if (!name.endsWith(".appex")) continue;
+    const plist = path.join(pluginsDir, name, "Info.plist");
+    const pl = spawnSync(
+      "plutil",
+      ["-extract", "CFBundleDisplayName", "raw", "-o", "-", plist],
+      { encoding: "utf8", env: process.env },
+    );
+    const display = (pl.stdout ?? "").trim();
+    steps.push(`watch-plugins-appex:${name}:${display || "?"}`);
+    if (/ET Watch Widget/i.test(display) || /WatchWidget/i.test(name)) {
+      steps.push("watch-widget-nested");
+      return true;
+    }
+  }
+  steps.push("watch-widget-plugins-absent");
+  return false;
+}
+
 function claimsWatch(
   id: WatchId,
   pathStr: string,
@@ -139,18 +184,19 @@ function findWatchSimulatorApp(
 
 /**
  * Install watchOS companion onto the watch sim (iOS Simulator hosts cannot
- * embed watch binaries).
+ * embed watch binaries). Nested PlugIns (watch-widget) install with the .app.
  */
 function ensureWatchCompanionOnWatch(
   watchUdid: string,
   companionBundleId: string,
   steps: string[],
+  productName = "ETWatchTargetTarget.app",
 ): boolean {
   if (isBundleOnSim(watchUdid, companionBundleId)) {
     steps.push("watch-companion-already-installed");
     return true;
   }
-  const app = findWatchSimulatorApp();
+  const app = findWatchSimulatorApp(productName);
   if (!app) {
     steps.push("watch-companion-app-missing");
     return false;
@@ -236,10 +282,9 @@ export async function runWatchJourney(
         );
       }
 
-      const companionBundleId = `${entry.hostBundleId}.${id === "watch" ? "watch" : "watch-widget"}`;
-      if (id === "watch") {
-        ensureWatchCompanionOnWatch(watchUdid, companionBundleId, steps);
-      }
+      // Both watch and watch-widget nest under host.watch companion BID.
+      const companionBundleId = `${entry.hostBundleId}.watch`;
+      ensureWatchCompanionOnWatch(watchUdid, companionBundleId, steps);
 
       const watchBundles = [companionBundleId, entry.hostBundleId];
       let launched = false;
@@ -298,13 +343,26 @@ export async function runWatchJourney(
       }
 
       if (id === "watch-widget") {
+        const nested = verifyNestedWatchWidgetAppex(
+          watchUdid,
+          companionBundleId,
+          steps,
+        );
+        const companionChrome = watchLabels.some((l) => COMPANION_UI_RE.test(l));
+        if (companionChrome) {
+          steps.push("watch-companion-ui-visible");
+        }
+        // Smart Stack needs a user-added complication — try anyway, then fall
+        // back to nest proof (companion launch + PlugIns appex display name).
         try {
           await watch.pressButton({ button: "HOME" });
           await sleep(800);
           await watch.swipe({
-            from: { x: 100, y: 180 },
-            to: { x: 100, y: 40 },
-            durationMs: 400,
+            xStart: 104,
+            yStart: 220,
+            xEnd: 104,
+            yEnd: 30,
+            duration: 0.45,
           });
           await sleep(1_200);
           const stackLabels = flattenLabels(await watch.accessibilityTree());
@@ -322,6 +380,18 @@ export async function runWatchJourney(
           }
         } catch (stackErr) {
           steps.push(`watch-stack-skip:${String(stackErr).slice(0, 60)}`);
+        }
+
+        if (nested && (companionChrome || launched)) {
+          steps.push("watch-ui-visible");
+          return {
+            id,
+            path: pathStr,
+            phase: 5,
+            ok: true,
+            status: "green",
+            steps,
+          };
         }
       }
 

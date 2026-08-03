@@ -13,12 +13,13 @@ import {
 import { applyBuildSettings, removeBuildSetting } from './buildSettings';
 import { ensureBundleReactNativePhase } from './bundleReactNative';
 import { ensureCopyFrameworksIntoAppClipPhase } from './copyFrameworksIntoAppClip';
-import { configureAppClipEmbed, configureAppExtensionEmbed, configureWatchContentEmbed } from './embed';
+import { configureAppClipEmbed, configureAppExtensionEmbed, configureWatchAppExtensionEmbed, configureWatchContentEmbed, removeAppExtensionFromHostEmbed } from './embed';
 import { addExternalFileReference } from './fileRefs';
 import { addTargetToVirtualGroup, ensureExpoTargetsGroup } from './groups';
 import {
   addTargetDependency,
   findTargetByProductName,
+  findWatchCompanionTargetUuid,
   removeDuplicateTargets,
   setProductType,
 } from './targetLifecycle';
@@ -236,6 +237,28 @@ function applyEmbed(
       target,
       targetProductName,
     });
+    return;
+  }
+
+  if (plan.embed.kind === 'watch-extension') {
+    const watchTargetUuid = findWatchCompanionTargetUuid(project);
+    if (!watchTargetUuid) {
+      throw new Error(
+        `watch-widget "${targetProductName}" requires a type: watch companion in the same app ` +
+          '(watchOS WidgetKit must nest under a Watch .app, not the iOS host)'
+      );
+    }
+    removeAppExtensionFromHostEmbed({
+      project,
+      mainTargetUuid,
+      targetProductName,
+    });
+    configureWatchAppExtensionEmbed({
+      project,
+      watchTargetUuid,
+      target,
+      targetProductName,
+    });
   }
   // 'none' = standalone product; nothing to embed.
 }
@@ -291,6 +314,17 @@ export function applyXcodeTargetPlan(
     mainTargetUuid: mainTarget.uuid,
     dependentTargetUuid: target.uuid,
   });
+
+  if (plan.embed.kind === 'watch-extension') {
+    const watchTargetUuid = findWatchCompanionTargetUuid(project);
+    if (watchTargetUuid) {
+      addTargetDependency({
+        project,
+        mainTargetUuid: watchTargetUuid,
+        dependentTargetUuid: target.uuid,
+      });
+    }
+  }
 
   applyEmbed(project, plan, { target, mainTargetUuid: mainTarget.uuid });
 

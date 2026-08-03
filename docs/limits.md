@@ -2,7 +2,7 @@
 
 **Source of truth for** lib floor vs Apple/account gates for extension types.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-02 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-03 -->
 
 ## Max Sim-greenable policy
 
@@ -61,7 +61,7 @@ Deepen already-green ids before adding shallow types: share/action(+native); saf
 | Wallet                                                                            | Real PassKit issuer handler                                        | `payment-pass-provisioning` Apple allow-list       |
 | Network Extensions                                                                | Real `NE*Provider` subclasses that fail closed without entitlement | Network Extension entitlement / VPN Personal / MDM |
 | Credentials / SSO / Call Directory / Family Controls / location-push              | Minimal real principals + host contract                            | Entitlement and/or Settings-only enablement        |
-| Watch / watch-widget                                                              | `watch`: watchOS companion (SDK/family 4) + Watch AX chrome; `watch-widget` still scaffold | `watch-widget` nest-under-watch; device-only Embed Watch Content |
+| Watch / watch-widget                                                              | `watch` + `watch-widget`: watchOS SDK/family 4; widget nests under Watch `.app` PlugIns | Device-only Embed Watch Content; Smart Stack needs user-added complication |
 | Android                                                                           | Widget bridge (Glance / RemoteViews) only                          | No Apple-extension parity on Android               |
 
 Frozen Devicewright `os-limit` allowlist: [`examples/.devicewright/claims.ts`](../examples/.devicewright/claims.ts).

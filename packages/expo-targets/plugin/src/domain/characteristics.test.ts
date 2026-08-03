@@ -55,6 +55,7 @@ describe('TYPE_CHARACTERISTICS coverage', () => {
         'foundation-extension',
         'app-clip',
         'watch-content',
+        'watch-extension',
         'none',
       ]).toContain(characteristics.embedType);
       expect(['direct', 'attributes', 'none']).toContain(
@@ -114,10 +115,11 @@ describe('flag matrix', () => {
     expect(typesWithFlag('isReactNativeWeb')).toEqual(['safari']);
   });
 
-  test('needsIsolatedSearchPaths covers clip and watch', () => {
+  test('needsIsolatedSearchPaths covers clip, watch, and watch-widget', () => {
     expect(sorted(typesWithFlag('needsIsolatedSearchPaths'))).toEqual([
       'clip',
       'watch',
+      'watch-widget',
     ]);
   });
 

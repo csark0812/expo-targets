@@ -108,26 +108,68 @@ export async function runPhotoEditingJourney(
     await sleep(1_000);
     steps.push("open-photo");
 
-    // iOS 26 Photos one-up: Edit may be toolbar label, Customize, or mid-bottom.
-    let editTapped = await tapLabelInTree(device, ["Edit", "Customize"], {
-      exactOnly: true,
-    });
+    // One-up chrome auto-hides — tap photo center to reveal toolbar before Edit.
+    await device.tap({ x: 210, y: 450 });
+    await sleep(500);
+
+    // Prefer Photos identifier (iOS 26); label tap often misses when chrome fades.
+    let editTapped = false;
+    try {
+      await device
+        .getById("PUOneUpBarButtonItemIdentifierEdit", { timeoutMs: 3_000 })
+        .tap();
+      editTapped = true;
+      steps.push("tap-edit:id");
+    } catch {
+      /* fall through */
+    }
+
+    const inEditChrome = (labels: string[]) =>
+      labels.some((l) =>
+        /^(Adjust|Filters|Crop|Crop and Rotate|Markup|Done|Cancel)$/i.test(
+          l.trim(),
+        ),
+      );
+    const inInfoPanel = (labels: string[]) =>
+      labels.some((l) =>
+        /Creation Date|Caption Entry|infoPanel|Filename|Camera Description/i.test(
+          l,
+        ),
+      );
+
     if (!editTapped) {
-      // Common Edit hotspot in Photos toolbar (iPhone Air).
+      editTapped = await tapLabelInTree(device, ["Edit", "Customize"], {
+        exactOnly: true,
+      });
+      if (editTapped) steps.push("tap-edit:label");
+    }
+    if (editTapped) {
+      await sleep(900);
+      let labels = flattenLabels(await device.accessibilityTree());
+      if (inInfoPanel(labels) && !inEditChrome(labels)) {
+        await device.tap({ x: 40, y: 90 }).catch(() => undefined);
+        await sleep(500);
+        editTapped = false;
+      }
+    }
+    if (!editTapped) {
+      // Reveal chrome again, then tap Edit frame coords (MCP: ~243,841 on Air).
+      await device.tap({ x: 210, y: 450 });
+      await sleep(400);
       for (const pt of [
-        { x: 210, y: 860 },
+        { x: 263, y: 860 },
+        { x: 243, y: 841 },
         { x: 280, y: 860 },
-        { x: 350, y: 100 },
-        { x: 210, y: 820 },
       ]) {
         await device.tap(pt);
-        await sleep(700);
+        await sleep(800);
         const labels = flattenLabels(await device.accessibilityTree());
-        if (
-          labels.some((l) =>
-            /^(Adjust|Filters|Crop|More|Done|Cancel)$/i.test(l.trim()),
-          )
-        ) {
+        if (inInfoPanel(labels) && !inEditChrome(labels)) {
+          await device.tap({ x: 40, y: 90 }).catch(() => undefined);
+          await sleep(400);
+          continue;
+        }
+        if (inEditChrome(labels)) {
           editTapped = true;
           steps.push(`tap-edit:hotspot:${pt.x},${pt.y}`);
           break;
@@ -146,19 +188,41 @@ export async function runPhotoEditingJourney(
     if (!steps.some((s) => s.startsWith("tap-edit"))) {
       steps.push("tap-edit");
     }
-    await sleep(1_200);
+    await sleep(800);
 
-    // Proven path (iOS 26 / iPhone Air): top-right More (…) → Extensions →
-    // ET PhotoEdit. Prefer label taps; fall back to More hotspot coords.
+    // Edit chrome More (…) at top (MCP/Maestro: ~304,72 on Air) → Extensions.
     let moreOpened = await tapLabelInTree(device, ["More"], { exactOnly: true });
-    if (!moreOpened) {
-      await device.tap({ x: 322, y: 90 });
-      moreOpened = true;
-      steps.push("edit-chrome:More:hotspot");
-    } else {
+    if (moreOpened) {
       steps.push("edit-chrome:More");
+    } else {
+      for (const pt of [
+        { x: 322, y: 90 },
+        { x: 304, y: 90 },
+        { x: 340, y: 90 },
+      ]) {
+        await device.tap(pt);
+        await sleep(600);
+        const labels = flattenLabels(await device.accessibilityTree());
+        if (labels.some((l) => /^Extensions$/i.test(l.trim()))) {
+          moreOpened = true;
+          steps.push(`edit-chrome:More:hotspot:${pt.x},${pt.y}`);
+          break;
+        }
+        // Dismiss stray menu
+        await device.tap({ x: 210, y: 450 }).catch(() => undefined);
+        await sleep(300);
+      }
     }
-    await sleep(700);
+    if (!moreOpened) {
+      throw new Error(
+        `Photos Edit More missing; labels=${flattenLabels(
+          await device.accessibilityTree(),
+        )
+          .slice(0, 40)
+          .join("|")}`,
+      );
+    }
+    await sleep(500);
 
     const extensionsTapped = await tapLabelInTree(device, ["Extensions"], {
       exactOnly: true,

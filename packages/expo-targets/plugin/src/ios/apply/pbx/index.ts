@@ -21,7 +21,7 @@ export {
   buildExtensionBundleShellScript,
   ensureBundleReactNativePhase,
 } from './bundleReactNative';
-export { configureAppClipEmbed, configureAppExtensionEmbed, configureWatchContentEmbed } from './embed';
+export { configureAppClipEmbed, configureAppExtensionEmbed, configureWatchAppExtensionEmbed, configureWatchContentEmbed, removeAppExtensionFromHostEmbed } from './embed';
 export { addExternalFileReference, addTargetAssets } from './fileRefs';
 export {
   addBuildSourceFileToGroup,
@@ -34,6 +34,7 @@ export {
   addTargetDependency,
   findAllTargetsByProductName,
   findTargetByProductName,
+  findWatchCompanionTargetUuid,
   getApplicationNativeTarget,
   getProjectName,
   hasTargetDependency,

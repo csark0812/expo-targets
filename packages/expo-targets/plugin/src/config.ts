@@ -161,7 +161,7 @@ export const TYPE_MINIMUM_DEPLOYMENT_TARGETS: Record<ExtensionType, string> = {
   'print-service': '14.0',
   'smart-card': '10.0',
   'virtual-conference': '15.0',
-  'watch-widget': '9.0',
+  'watch-widget': '10.0',
 };
 
 export const TYPE_BUNDLE_IDENTIFIER_SUFFIXES: Record<ExtensionType, string> = {

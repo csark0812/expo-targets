@@ -7,7 +7,7 @@ import type { ExtensionType } from './types';
 export interface BaseTypeCharacteristics {
   requiresCode: boolean; // Needs Swift files, code signing, build settings
   targetType: 'application' | 'app_extension'; // Xcode target creation type
-  embedType: 'foundation-extension' | 'app-clip' | 'watch-content' | 'none'; // How to embed in parent app
+  embedType: 'foundation-extension' | 'app-clip' | 'watch-content' | 'watch-extension' | 'none'; // How to embed in parent app
   frameworks: string[]; // Frameworks to link
   productType: string; // Xcode product type
   extensionPointIdentifier: string; // Extension point (empty for standalone)
@@ -43,7 +43,11 @@ const REACT_NATIVE_NATIVE = new Set<ExtensionType>([
 
 const REACT_NATIVE_WEB = new Set<ExtensionType>(['safari']);
 
-const ISOLATED_SEARCH_PATHS = new Set<ExtensionType>(['clip', 'watch']);
+const ISOLATED_SEARCH_PATHS = new Set<ExtensionType>([
+  'clip',
+  'watch',
+  'watch-widget',
+]);
 
 /** Initial dual set = UI extension points; headless → native-only; asset/spine → rn-only. */
 const RN_EXAMPLE_DUAL = new Set<ExtensionType>([
@@ -779,7 +783,7 @@ const BASE_TYPE_CHARACTERISTICS: Record<
   'watch-widget': {
     requiresCode: true,
     targetType: 'app_extension',
-    embedType: 'foundation-extension',
+    embedType: 'watch-extension',
     frameworks: ['WidgetKit', 'SwiftUI'],
     productType: 'com.apple.product-type.app-extension',
     extensionPointIdentifier: 'com.apple.widgetkit-extension',
