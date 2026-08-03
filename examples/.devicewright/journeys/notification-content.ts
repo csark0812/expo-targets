@@ -8,7 +8,6 @@
  * (`ET NCE Content`). Apps-settings host registration alone is insufficient.
  */
 import type { DeviceSession } from "@csark0812/devicewright";
-import { claimForId } from "../claims";
 import { TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
@@ -213,10 +212,14 @@ export async function runNotificationContentJourney(
     }
     steps.push("expand-notification");
 
-    let hit = await waitForNceMarker(device);
-    if (!hit) {
-      // Second expand attempt: focus ListCell then pull down again.
-      await tapLabelInTree(device, ["expand for rich content", "ET NCE"]);
+    let hit = await waitForNceMarker(device, 12_000);
+    for (let attempt = 0; !hit && attempt < 3; attempt++) {
+      steps.push(`expand-retry-${attempt + 1}`);
+      await tapLabelInTree(device, [
+        "expand for rich content",
+        "ET NCE",
+        "Show Notifications",
+      ]);
       await sleep(600);
       const treeRetry = await device.accessibilityTree();
       const cellRetry = treeRetry.find(
@@ -229,12 +232,18 @@ export async function runNotificationContentJourney(
       );
       if (cellRetry?.frame) {
         const f = cellRetry.frame;
+        await device.tap({
+          x: Math.round(f.x + f.width / 2),
+          y: Math.round(f.y + f.height / 2),
+          duration: 2.2,
+        });
+        await sleep(800);
         await device.swipe({
           xStart: Math.round(f.x + f.width / 2),
           yStart: Math.round(f.y + f.height / 2),
           xEnd: Math.round(f.x + f.width / 2),
-          yEnd: Math.round(f.y + f.height / 2 + 220),
-          duration: 0.6,
+          yEnd: Math.round(f.y + f.height / 2 + 240),
+          duration: 0.65,
         });
         await sleep(1_500);
       }
@@ -242,76 +251,26 @@ export async function runNotificationContentJourney(
     }
 
     if (!hit) {
-      if (id === "notification-content") {
-        const { spawnSync } = await import("node:child_process");
-        const r = spawnSync(
-          "xcrun",
-          ["simctl", "spawn", device.deviceId, "pluginkit", "-mAvvvvv"],
-          { encoding: "utf8", maxBuffer: 20 * 1024 * 1024, env: process.env },
-        );
-        const out = `${r.stdout ?? ""}\n${r.stderr ?? ""}`;
-        const appexId = `${entry.hostBundleId}.notification-content`;
-        const pk =
-          out.toLowerCase().includes(appexId.toLowerCase()) &&
-          /usernotifications\.content-extension/i.test(out);
-        if (pk && steps.includes("push-category")) {
-          steps.push("pluginkit-content-extension");
-          steps.push("nce-rn-ui-os-limit");
-          await device.pressButton({ button: "HOME" });
-          return {
-            id,
-            path,
-            phase: 4,
-            ok: true,
-            status: "os-limit",
-            steps,
-            failureKind: "os-limit",
-            error:
-              claimForId("notification-content")?.reason ??
-              "Simulator NCE RN rich UI expand — marker required for green",
-          };
-        }
-      }
-      if (id === "native-notification-content") {
-        const treeAfter = await device.accessibilityTree();
-        const labels = flattenLabels(treeAfter);
-        // Native: Simulator often skips rich UI — accept category delivery +
-        // pluginkit registration of the content-extension appex.
-        const delivered = labels.some(
-          (l) => /ET NCE/i.test(l) && /expand for rich content/i.test(l),
-        );
-        const { spawnSync } = await import("node:child_process");
-        const r = spawnSync(
-          "xcrun",
-          ["simctl", "spawn", device.deviceId, "pluginkit", "-mAvvvvv"],
-          { encoding: "utf8", maxBuffer: 20 * 1024 * 1024, env: process.env },
-        );
-        const out = `${r.stdout ?? ""}\n${r.stderr ?? ""}`;
-        const appexId = `${entry.hostBundleId}.notification-content`;
-        const pk =
-          out.toLowerCase().includes(appexId.toLowerCase()) &&
-          /usernotifications\.content-extension/i.test(out);
-        if (delivered && pk) {
-          steps.push("nce-category-delivered");
-          steps.push("pluginkit-content-extension");
-          await device.pressButton({ button: "HOME" });
-          return {
-            id,
-            path,
-            phase: 4,
-            ok: true,
-            status: "green",
-            steps,
-          };
-        }
-      }
       const treeAfter = await device.accessibilityTree();
       const labels = flattenLabels(treeAfter);
       throw new Error(
-        `NCE marker missing after expand; labels=${labels.slice(0, 50).join("|")}`,
+        `NCE custom UI marker missing after expand (required for green); labels=${labels.slice(0, 50).join("|")}`,
       );
     }
     steps.push("nce-content-ui");
+
+    // Best-effort action chip (Sim-greenable); not required for id green under A.
+    try {
+      const action = await findNamedViaPointProbe(
+        device,
+        ["NCE Acknowledge", "Acknowledge"],
+        { timeoutMs: 3_000, yStartRatio: 0.2, yEndRatio: 0.9 },
+      );
+      await tapProbeHit(device, action);
+      steps.push("nce-action-ack");
+    } catch {
+      steps.push("nce-action-skip");
+    }
 
     await device.pressButton({ button: "HOME" });
     await sleep(400);

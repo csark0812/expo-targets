@@ -386,6 +386,22 @@ export function generateSafariResources(
     targetDisplayName
   );
 
+  // Content scripts referenced by manifest — emit stub JS with a Sim marker.
+  const contentScripts = config.manifest?.content_scripts ?? [];
+  for (const script of contentScripts) {
+    for (const js of script.js ?? ['content.js']) {
+      const contentPath = path.join(resourcesPath, js);
+      if (!fs.existsSync(contentPath)) {
+        File.writeFileSafe(
+          contentPath,
+          `// ${targetDisplayName} content script\n` +
+            `document.documentElement.setAttribute('data-et-safari', 'expo-targets uitest safari content');\n` +
+            `try { document.body?.setAttribute('data-et-safari', 'expo-targets uitest safari content'); } catch (_) {}\n`
+        );
+      }
+    }
+  }
+
   // Generate placeholder icons
   generatePlaceholderIcons(resourcesPath);
 }

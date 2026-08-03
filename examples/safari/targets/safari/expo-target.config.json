@@ -11,6 +11,15 @@
       "NSExtension": {
         "NSExtensionPrincipalClass": "SafariWebExtensionHandler"
       }
+    },
+    "manifest": {
+      "permissions": ["storage", "nativeMessaging"],
+      "content_scripts": [
+        {
+          "matches": ["*://example.com/*", "*://*.example.com/*"],
+          "js": ["content.js"]
+        }
+      ]
     }
   },
   "entry": "./targets/safari/index.tsx"

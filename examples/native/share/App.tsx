@@ -1,3 +1,4 @@
+import { Asset } from 'expo-asset';
 import { StatusBar } from 'expo-status-bar';
 import { AppGroupStorage } from 'expo-targets';
 import { useCallback, useEffect, useState } from 'react';
@@ -18,7 +19,27 @@ const STORAGE_KEY = 'nativeShare:items';
 /** Marker string asserted by ShareSheetSmoke after Save to App. */
 export const UITEST_NATIVE_SHARE_MARKER = 'expo-targets uitest share payload';
 
-type SharedItem = { type: string; content: string; timestamp: number };
+/** Image-path marker written when Save stores an image UTType item. */
+export const UITEST_NATIVE_SHARE_IMAGE_TYPE = '"type":"image"';
+
+type SharedItem = {
+  type: string;
+  content: string;
+  timestamp: number;
+  itemCount?: number;
+};
+
+async function openImageShareSheet() {
+  const [asset] = await Asset.loadAsync(require('./assets/icon.png'));
+  let url = asset.localUri ?? asset.uri;
+  if (!url) {
+    throw new Error('icon.png asset has no localUri/uri');
+  }
+  if (!url.includes('://')) {
+    url = `file://${url}`;
+  }
+  await Share.share({ url });
+}
 
 function formatStoredList(
   raw: SharedItem[] | string | null | undefined
@@ -73,6 +94,7 @@ export default function App() {
                 type: 'text',
                 content: 'seeded from host',
                 timestamp: Date.now() / 1000,
+                itemCount: 1,
               },
             ])
           );
@@ -102,6 +124,17 @@ export default function App() {
         }}
       >
         <Text style={styles.buttonText}>Open Share Sheet</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        testID="btn-open-image-share"
+        style={styles.button}
+        onPress={() => {
+          void openImageShareSheet().catch((error) => {
+            console.warn('[ETNShare] image Share.share failed', error);
+          });
+        }}
+      >
+        <Text style={styles.buttonText}>Open Image Share</Text>
       </TouchableOpacity>
       <TouchableOpacity
         testID="btn-refresh"

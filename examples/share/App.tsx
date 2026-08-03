@@ -1,3 +1,4 @@
+import { Asset } from 'expo-asset';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -10,8 +11,23 @@ import {
 } from 'react-native';
 import { shareTarget } from './targets/share';
 
-/** Marker string asserted by ShareSheetSmoke after Save. */
+/** Marker string asserted by ShareSheetSmoke after text Save. */
 export const UITEST_SHARE_MARKER = 'expo-targets uitest share payload';
+
+/** Host payload substring for the image / multi-item deepening path. */
+export const UITEST_SHARE_IMAGE_KIND = '"kind":"image"';
+
+async function openImageShareSheet() {
+  const [asset] = await Asset.loadAsync(require('./assets/icon.png'));
+  let url = asset.localUri ?? asset.uri;
+  if (!url) {
+    throw new Error('icon.png asset has no localUri/uri');
+  }
+  if (!url.includes('://')) {
+    url = `file://${url}`;
+  }
+  await Share.share({ url });
+}
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: host contract demo screen
 export default function App() {
@@ -46,6 +62,7 @@ export default function App() {
               {
                 id: 'seed',
                 sharedAt: new Date().toISOString(),
+                kind: 'text',
                 content: { text: 'seeded from host' },
               },
             ],
@@ -76,6 +93,17 @@ export default function App() {
         }}
       >
         <Text style={styles.buttonText}>Open Share Sheet</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        testID="btn-open-image-share"
+        style={styles.button}
+        onPress={() => {
+          void openImageShareSheet().catch((error) => {
+            console.warn('[ETShare] image Share.share failed', error);
+          });
+        }}
+      >
+        <Text style={styles.buttonText}>Open Image Share</Text>
       </TouchableOpacity>
       <TouchableOpacity
         testID="btn-refresh"

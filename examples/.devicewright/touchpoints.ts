@@ -19,56 +19,64 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
   {
     id: "share",
     tranche: "V1",
-    touchpoint: "Share sheet → Save → host payload marker",
+    touchpoint:
+      "Share sheet text Save → host marker; image share → kind:image marker",
     status: "concrete",
   },
   {
     id: "action",
     tranche: "V1",
-    touchpoint: "Share sheet → Process → host payload marker",
+    touchpoint:
+      "Share sheet image Process → grayscale + kind:image host marker",
     status: "concrete",
   },
   {
     id: "native-share",
     tranche: "V1",
-    touchpoint: "Share sheet → Save to App → host payload marker",
+    touchpoint:
+      "Share sheet text Save to App → host marker; image → type:image",
     status: "concrete",
   },
   {
     id: "native-action",
     tranche: "V1",
-    touchpoint: "Share sheet → Process Image → host payload marker",
+    touchpoint:
+      "Share sheet Process Image → Original + kind:image + returnedItems",
     status: "concrete",
   },
   {
     id: "messages",
     tranche: "V1",
-    touchpoint: "Messages extension open + host sync marker",
+    touchpoint:
+      "Messages drawer → Expand/Compact + session + attachment + Send template → host payload",
     status: "concrete",
   },
   {
     id: "stickers",
     tranche: "V1",
-    touchpoint: "Sticker pack catalog visible on host",
+    touchpoint:
+      "Sticker pack catalog + Stickers browser; insert AX-opaque (asset-only policy)",
     status: "concrete",
   },
   {
     id: "clip",
     tranche: "V1",
-    touchpoint: "App Clip host contract + clip launch path",
+    touchpoint:
+      "App Clip host contract + launchApp(clip bundle) invocation marker",
     status: "concrete",
   },
   {
     id: "widgets",
     tranche: "V1/T13",
-    touchpoint: "WidgetKit spine host + widget tile present",
+    touchpoint:
+      "WidgetKit spine + family:systemSmall seed + systemMedium family note",
     status: "concrete",
   },
   {
     id: "live-activity",
     tranche: "V1/T13",
     touchpoint:
-      "Trick host starts ActivityKit Live Activity; Lock Screen / DI when Sim allows, else WidgetKit family pluginkit",
+      "Trick host ActivityKit start + update + end; Lock preferred; Watch when pair boots; DI/push/StandBy CLAIMS",
     status: "concrete",
   },
 
@@ -86,7 +94,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     type: "notification-content",
     tranche: "T1",
     touchpoint:
-      "category push + expanded RN content UI marker (ET NCE Content); native keeps pluginkit fallback",
+      "category push + expand → ET NCE Content custom UI marker (required green)",
     status: "concrete",
   },
   {
@@ -94,7 +102,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     type: "notification-content",
     tranche: "T1",
     touchpoint:
-      "category push delivered + content-extension appex in pluginkit (native; rich UI best-effort)",
+      "category push + expand → ET NCE Content custom UI marker (required green)",
     status: "concrete",
   },
 
@@ -120,7 +128,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     type: "clip",
     tranche: "T2",
     touchpoint:
-      "Native clip host contract + clip launch path (REQUIRED promote)",
+      "Native clip host + launchApp(clip bundle) invocation (REQUIRED promote)",
     status: "concrete",
   },
 
@@ -130,7 +138,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     type: "safari",
     tranche: "T3",
     touchpoint:
-      "Settings Apps → Safari → Extensions lists ET Safari Target → Allow Extension → Safari example.com",
+      "Host popup/content-script/native-msg markers + Settings Safari Extensions → Allow → Safari",
     status: "concrete",
   },
   {
@@ -138,7 +146,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     type: "safari",
     tranche: "T3",
     touchpoint:
-      "Settings Apps → Safari → Extensions lists native appex → Allow Extension → Safari surface",
+      "Host popup/content-script/native-msg markers + Settings Safari Extensions → Allow",
     status: "concrete",
   },
   {
@@ -146,7 +154,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     type: "content-blocker",
     tranche: "T3",
     touchpoint:
-      "Settings Safari Content Blockers enable + Safari ads.example.com block attempt",
+      "Host rules:N + reload control + Settings Content Blockers enable + Safari block attempt",
     status: "concrete",
   },
 
@@ -196,7 +204,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     id: "photo-editing",
     tranche: "T6",
     touchpoint:
-      "Photos Edit lists ET PhotoEdit, or pluginkit lists photo-editing appex (real PHContentEditingController)",
+      "Done-persistence host surface + Photos Edit / pluginkit photo-editing appex",
     status: "concrete",
   },
   {
@@ -247,7 +255,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     id: "keyboard",
     tranche: "T7",
     touchpoint:
-      "Settings Keyboard lists ET Keyboard Target + enable attempt (ET key principal)",
+      "Settings Keyboard lists ET Keyboard + host type-into-field (typed:ET)",
     status: "concrete",
   },
   {

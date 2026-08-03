@@ -11,6 +11,6 @@
       "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" },
       "BackgroundColor": { "light": "#FFFFFF", "dark": "#1C1C1E" }
     },
-    "activationRules": [{ "type": "image", "maxCount": 1 }]
+    "activationRules": [{ "type": "image", "maxCount": 5 }]
   }
 }

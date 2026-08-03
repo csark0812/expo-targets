@@ -62,6 +62,9 @@ export default function App() {
                 id: 'seed',
                 processedAt: new Date().toISOString(),
                 filter: 'seed',
+                kind: 'image',
+                imageCount: 0,
+                multiItem: false,
               },
             ],
           });

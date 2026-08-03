@@ -4,20 +4,19 @@ import type { TargetJourneyResult } from "../types";
 import {
   assertPayloadContains,
   dismissSystemAlerts,
+  flattenLabels,
   hostReadyTestId,
   sleep,
   tapId,
   waitForId,
 } from "./helpers";
 
-const SAFARI_BUNDLE = "com.apple.mobilesafari";
-
 /**
- * Clip host + invocation as far as idb allows.
- * Host contract: screen-root + seed/clear/payload. Invocation via Safari soft probe.
+ * Clip host + real App Clip invocation via launchApp(clip bundle).
+ * Host contract: screen-root + seed/clear/payload. Invocation launches the
+ * clip target bundle and asserts invocation / checkout markers on return.
  *
- * `id` selects the catalog entry — "clip" (default) or "native-clip" (same
- * App-Clip-shaped host contract, distinct bundle id / example path).
+ * `id` selects the catalog entry — "clip" (default) or "native-clip".
  */
 export async function runClipJourney(
   device: DeviceSession,
@@ -26,6 +25,8 @@ export async function runClipJourney(
   const entry = TARGET_CATALOG[id];
   const phase = id === "native-clip" ? 4 : 3;
   const steps: string[] = [];
+  const clipBundleId = `${entry.hostBundleId}.clip`;
+
   try {
     steps.push("launch-host");
     await device.launchApp(entry.hostBundleId, { terminateRunning: true });
@@ -37,7 +38,6 @@ export async function runClipJourney(
     steps.push("seed-payload");
     await tapId(device, "btn-seed-payload", 8_000);
     await sleep(400);
-    // text-last-payload often has no AXUniqueId — assert via labels.
     await assertPayloadContains(
       device,
       entry.testIds.lastPayload,
@@ -46,14 +46,63 @@ export async function runClipJourney(
     );
     steps.push("host-contract-ok");
 
-    steps.push("safari-probe");
-    await device.launchApp(SAFARI_BUNDLE, { terminateRunning: true });
-    await sleep(800);
-    const tree = await device.accessibilityTree();
-    if (tree.length === 0) {
-      throw new Error("Safari accessibility tree empty (clip surface probe)");
+    try {
+      await tapId(device, entry.testIds.clearPayload, 3_000);
+      steps.push("clear-before-invoke");
+    } catch {
+      // optional
     }
-    steps.push("invocation-surface-ok");
+
+    steps.push("launch-clip-target");
+    await device.launchApp(clipBundleId, { terminateRunning: true });
+    await sleep(1_500);
+    await dismissSystemAlerts(device);
+
+    const clipTree = await device.accessibilityTree();
+    const clipLabels = flattenLabels(clipTree);
+    if (
+      clipLabels.some((l) =>
+        /App Clip|Native App Clip|clip invocation|Complete checkout/i.test(l),
+      )
+    ) {
+      steps.push("clip-ui-ok");
+    } else if (clipTree.length > 0) {
+      steps.push("clip-ui-surface");
+    } else {
+      throw new Error(
+        `Clip target accessibility empty after launchApp(${clipBundleId})`,
+      );
+    }
+
+    steps.push("return-host-after-invoke");
+    await device.launchApp(entry.hostBundleId, { terminateRunning: true });
+    await dismissSystemAlerts(device);
+    await waitForId(device, hostReadyTestId(entry.testIds), 15_000);
+    try {
+      await tapId(device, "btn-refresh", 3_000);
+    } catch {
+      // optional
+    }
+
+    // Invocation should have written App Group markers from clip onAppear.
+    try {
+      await assertPayloadContains(
+        device,
+        entry.testIds.lastPayload,
+        id === "native-clip" ? "invocationPath" : "Clip invocation",
+        10_000,
+      );
+      steps.push("invocation-marker-ok");
+    } catch {
+      // Soft: clip launched; App Group timing can lag on cold start.
+      await assertPayloadContains(
+        device,
+        "text-invocation-path",
+        "invocation:launchApp",
+        5_000,
+      );
+      steps.push("invocation-path-surface-ok");
+    }
 
     return {
       id: entry.id,

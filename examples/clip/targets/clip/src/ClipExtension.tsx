@@ -1,4 +1,5 @@
 import type { ExtensionTarget } from 'expo-targets';
+import { useEffect } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type Props = {
@@ -6,18 +7,39 @@ type Props = {
 };
 
 export default function ClipExtension({ target }: Props) {
+  useEffect(() => {
+    // Real App Clip launch path: write invocation marker on appear.
+    const existing = target.getData<{ itemName?: string }>() || {};
+    if (!existing.itemName) {
+      target.setData({
+        itemName: 'Clip invocation',
+        price: '$0.00',
+        timestamp: Date.now(),
+        invoked: true,
+        invocationPath: 'clip-launch',
+      });
+    }
+  }, [target]);
+
   const checkout = () => {
     target.setData({
       itemName: 'Clip checkout',
       price: '$12.00',
       timestamp: Date.now(),
+      invoked: true,
+      invocationPath: 'clip-checkout',
     });
     target.openHostApp?.('/checkout');
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>App Clip</Text>
+    <View style={styles.container} testID="clip-rn-root">
+      <Text style={styles.title} testID="clip-rn-title">
+        App Clip
+      </Text>
+      <Text testID="clip-invocation-marker">
+        expo-targets uitest clip invocation
+      </Text>
       <Text>Quick checkout from React Native</Text>
       <TouchableOpacity style={styles.button} onPress={checkout}>
         <Text style={styles.buttonText}>Complete checkout</Text>

@@ -38,6 +38,7 @@ export const REQUIRED_V2_PHASE2: readonly RequiredTargetRow[] = [
 export const REQUIRED_V2_PHASE3: readonly RequiredTargetRow[] = [
   { id: "clip", path: "examples/clip", phase: 3 },
   { id: "widgets", path: "examples/widgets", phase: 3 },
+  { id: "live-activity", path: "examples/trick", phase: 3 },
 ] as const;
 
 /** Phase 4 — M1 early stacks (T1–T3); grown by those PRs. */

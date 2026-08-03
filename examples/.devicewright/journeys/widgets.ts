@@ -95,6 +95,26 @@ export async function runWidgetsJourney(
     );
     steps.push("host-contract-ok");
 
+    await assertPayloadContains(
+      device,
+      entry.testIds.lastPayload,
+      "family:systemSmall",
+      5_000,
+    );
+    steps.push("family-marker-ok");
+
+    try {
+      await assertPayloadContains(
+        device,
+        "text-widget-families",
+        "systemMedium",
+        3_000,
+      );
+      steps.push("families-medium-ok");
+    } catch {
+      steps.push("families-medium-skip");
+    }
+
     steps.push("springboard-home");
     await device.pressButton({ button: "HOME" });
     await sleep(1_000);

@@ -11,8 +11,8 @@
       },
       "devDependencies": {
         "@biomejs/biome": "2.5.6",
-        "@csark0812/devicewright": "^0.1.6",
-        "@csark0812/skeleton": "^1.5.5",
+        "@csark0812/devicewright": "^0.1.8",
+        "@csark0812/skeleton": "^1.5.7",
         "typescript": "~5.3.3",
       },
     },
@@ -191,7 +191,9 @@
       "name": "@expo-targets/example-content-blocker",
       "version": "1.0.0",
       "dependencies": {
+        "blocker-reload": "file:./modules/blocker-reload",
         "expo": "~57.0.9",
+        "expo-modules-core": "~57.0.8",
         "expo-splash-screen": "~57.0.5",
         "expo-status-bar": "~57.0.1",
         "expo-targets": "workspace:*",
@@ -466,6 +468,7 @@
       "version": "1.0.0",
       "dependencies": {
         "expo": "~57.0.9",
+        "expo-asset": "~57.0.8",
         "expo-splash-screen": "~57.0.5",
         "expo-status-bar": "~57.0.1",
         "expo-targets": "workspace:*",
@@ -672,6 +675,7 @@
       "version": "1.0.0",
       "dependencies": {
         "expo": "~57.0.9",
+        "expo-asset": "~57.0.8",
         "expo-splash-screen": "~57.0.5",
         "expo-status-bar": "~57.0.1",
         "expo-targets": "workspace:*",
@@ -1135,9 +1139,9 @@
 
     "@biomejs/cli-win32-x64": ["@biomejs/cli-win32-x64@2.5.6", "", { "os": "win32", "cpu": "x64" }, "sha512-WN05KwXnTO/2J45RQPvzZMXf7tZUIofHoR35xIPfCo7pQ2RFidxI8sfb5mGsaTxdMmEOzHzOPRCdA5/fCpc7xQ=="],
 
-    "@csark0812/devicewright": ["@csark0812/devicewright@0.1.6", "", { "dependencies": { "@modelcontextprotocol/sdk": "^1.12.0", "zod": "^3.24.0" }, "bin": { "devicewright": "build/bin/cli.js", "devicewright-mcp": "build/bin/mcp.js", "devicewright-doctor": "build/bin/doctor.js" } }, "sha512-THlkv0frMa7BSgkncV51NHp7PDwwYczs81t2oracuOk3nNdedTKfDWuW/bEH0t4zQgro99B7mdi1oHrU5I4jig=="],
+    "@csark0812/devicewright": ["@csark0812/devicewright@0.1.8", "", { "dependencies": { "@modelcontextprotocol/sdk": "^1.12.0", "zod": "^3.24.0" }, "bin": { "devicewright": "build/bin/cli.js", "devicewright-mcp": "build/bin/mcp.js", "devicewright-doctor": "build/bin/doctor.js" } }, "sha512-IW0YNZSylNqmfcepJafO5gE1NECpP3UCchEJMNXhMluEVV7nBcXZYWViyw7czOArcf6TWVUNUb8mUYz/w+oRCQ=="],
 
-    "@csark0812/skeleton": ["@csark0812/skeleton@1.5.5", "", { "dependencies": { "ajv": "^8.17.1", "github-slugger": "^2.0.0", "remark": "^15.0.1", "remark-gfm": "^4.0.1", "tinyglobby": "^0.2.14", "unist-util-visit": "^5.0.0", "yaml": "^2.8.0" }, "bin": { "skeleton": "dist/cli.js" } }, "sha512-YNXotMr5fWLqM3LJi+3IrTgrXrfJtBXnpeKaQA21tZp/qp/1N5r5VAGRX0ap9m9pPmkrZrm2fBhMu2624qCu3g=="],
+    "@csark0812/skeleton": ["@csark0812/skeleton@1.5.7", "", { "dependencies": { "ajv": "^8.17.1", "github-slugger": "^2.0.0", "remark": "^15.0.1", "remark-gfm": "^4.0.1", "tinyglobby": "^0.2.14", "unist-util-visit": "^5.0.0", "yaml": "^2.8.0" }, "bin": { "skeleton": "dist/cli.js" } }, "sha512-+ymzlfDxlwx2J8bSk2UrKF05XQFMuJsnoGtnJYmu2tOHNZxCFcvyE6Gzevc8XBICKGfyovOI/ET1fBih+IjSrg=="],
 
     "@expo-targets/cli": ["@expo-targets/cli@workspace:packages/expo-targets-cli"],
 
@@ -2492,6 +2496,8 @@
     "@expo-targets/example-classkit-context/typescript": ["typescript@6.0.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="],
 
     "@expo-targets/example-clip/typescript": ["typescript@6.0.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="],
+
+    "@expo-targets/example-content-blocker/blocker-reload": ["blocker-reload@file:examples/content-blocker/modules/blocker-reload", { "peerDependencies": { "expo": "*", "react": "*", "react-native": "*" } }],
 
     "@expo-targets/example-content-blocker/typescript": ["typescript@6.0.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="],
 

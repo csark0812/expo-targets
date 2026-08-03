@@ -4,27 +4,51 @@ import SwiftUI
 struct HelloEntry: TimelineEntry {
     let date: Date
     let message: String
+    let familyMarker: String
 }
 
 struct Provider: TimelineProvider {
     let appGroup = "group.com.expotargets.example.widgets"
 
     func placeholder(in context: Context) -> HelloEntry {
-        HelloEntry(date: Date(), message: "Hello Widget!")
+        HelloEntry(
+            date: Date(),
+            message: "Hello Widget!",
+            familyMarker: familyMarker(for: context.family)
+        )
     }
 
     func getSnapshot(in context: Context, completion: @escaping (HelloEntry) -> ()) {
-        completion(HelloEntry(date: Date(), message: loadMessage()))
+        completion(
+            HelloEntry(
+                date: Date(),
+                message: loadMessage(),
+                familyMarker: familyMarker(for: context.family)
+            )
+        )
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<HelloEntry>) -> ()) {
-        let entry = HelloEntry(date: Date(), message: loadMessage())
+        let entry = HelloEntry(
+            date: Date(),
+            message: loadMessage(),
+            familyMarker: familyMarker(for: context.family)
+        )
         let nextUpdate = Calendar.current.date(byAdding: .minute, value: 15, to: Date())!
         completion(Timeline(entries: [entry], policy: .after(nextUpdate)))
     }
 
     private func loadMessage() -> String {
         UserDefaults(suiteName: appGroup)?.string(forKey: "HelloWidget:message") ?? "No message yet"
+    }
+
+    private func familyMarker(for family: WidgetFamily) -> String {
+        switch family {
+        case .systemSmall: return "family:systemSmall"
+        case .systemMedium: return "family:systemMedium"
+        case .systemLarge: return "family:systemLarge"
+        default: return "family:other"
+        }
     }
 }
 
@@ -38,7 +62,7 @@ struct HelloWidget: Widget {
         }
         .configurationDisplayName("Hello Widget")
         .description("A simple message widget")
-        .supportedFamilies([.systemSmall])
+        .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
 
@@ -80,6 +104,9 @@ struct HelloWidgetView: View {
                 .foregroundColor(textPrimary)
                 .multilineTextAlignment(.center)
                 .lineLimit(3)
+            Text(entry.familyMarker)
+                .font(.caption2)
+                .foregroundColor(textPrimary.opacity(0.7))
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)

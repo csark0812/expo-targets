@@ -144,6 +144,37 @@ public class ExpoTargetsMessagesModule: Module {
       }
     }
 
+    // Insert a plain-text attachment into the conversation
+    AsyncFunction("insertAttachment") { (payload: [String: Any]) -> Bool in
+      let filename = (payload["filename"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+      let resolvedName = (filename?.isEmpty == false) ? filename! : "expo-targets-note.txt"
+      let contents = (payload["contents"] as? String) ?? "expo-targets messages attachment"
+      let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(resolvedName)
+
+      do {
+        try contents.write(to: tempURL, atomically: true, encoding: .utf8)
+      } catch {
+        return false
+      }
+
+      return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Bool, Error>) in
+        DispatchQueue.main.async {
+          guard let msViewController = self.findMessagesViewController(),
+                let conversation = msViewController.activeConversation else {
+            continuation.resume(returning: false)
+            return
+          }
+          conversation.insertAttachment(tempURL, withAlternateFilename: resolvedName) { error in
+            if let error {
+              continuation.resume(throwing: error)
+            } else {
+              continuation.resume(returning: true)
+            }
+          }
+        }
+      }
+    }
+
     // Create new session ID
     // Note: MSSession doesn't expose identifier, so we generate a UUID for tracking
     Function("createSession") { () -> String in

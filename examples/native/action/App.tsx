@@ -31,7 +31,14 @@ async function openImageShareSheet() {
   await Share.share({ url });
 }
 
-type ProcessedItem = { filter: string; timestamp: number };
+type ProcessedItem = {
+  filter: string;
+  timestamp: number;
+  kind?: string;
+  imageCount?: number;
+  multiItem?: boolean;
+  returnedItems?: boolean;
+};
 
 function formatStoredList(
   raw: ProcessedItem[] | string | null | undefined
@@ -82,7 +89,14 @@ export default function App() {
           storage.set(
             STORAGE_KEY,
             JSON.stringify([
-              { filter: 'grayscale', timestamp: Date.now() / 1000 },
+              {
+                filter: 'grayscale',
+                timestamp: Date.now() / 1000,
+                kind: 'image',
+                imageCount: 1,
+                multiItem: false,
+                returnedItems: false,
+              },
             ])
           );
           refresh();

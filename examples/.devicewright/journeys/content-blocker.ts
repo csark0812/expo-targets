@@ -5,16 +5,19 @@
  * Settings → Apps → Safari → Content Blockers (or Extensions) → appex listed
  * → Allow Extension / enable toggle.
  *
- * GREEN = OS lists the blocker, enable surface opens, and Safari blocked-URL
- * check is attempted (network proof best-effort on Simulator).
+ * GREEN = host rule-count + reload control, OS lists the blocker, enable
+ * surface opens, and Safari blocked-URL check is attempted (network proof
+ * best-effort on Simulator).
  */
 import type { DeviceSession } from "@csark0812/devicewright";
 import { TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
+  assertPayloadContains,
   dismissSystemAlerts,
   flattenLabels,
   sleep,
+  tapId,
   waitForNamed,
 } from "./helpers";
 import {
@@ -43,6 +46,23 @@ export async function runContentBlockerJourney(
     await dismissSystemAlerts(device);
     await waitForNamed(device, ["ready"], 15_000);
     steps.push("host-ready");
+
+    await assertPayloadContains(device, "text-rule-count", "rules:4", 8_000);
+    steps.push("host-rule-count");
+
+    try {
+      await tapId(device, "btn-reload-blocker", 5_000);
+      await sleep(800);
+      await assertPayloadContains(
+        device,
+        entry.testIds.lastPayload,
+        "rules:4",
+        6_000,
+      );
+      steps.push("host-reload-control");
+    } catch {
+      steps.push("host-reload-control-skip");
+    }
 
     await openSystemSafariSettings(device, steps);
     await openSafariExtensionsOrBlockers(device, steps, "blockers");

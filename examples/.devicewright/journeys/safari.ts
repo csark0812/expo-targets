@@ -7,11 +7,13 @@
  *
  * GREEN proves OS lists the appex under Safari Extensions and exposes the
  * enable surface when present — not mere Settings → Apps host registration.
+ * Also asserts host popup/content-script/native-msg surface markers.
  */
 import type { DeviceSession } from "@csark0812/devicewright";
 import { TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
+  assertPayloadContains,
   dismissSystemAlerts,
   flattenLabels,
   sleep,
@@ -28,6 +30,19 @@ const SAFARI_BUNDLE = "com.apple.mobilesafari";
 const EXTENSION_LABELS: Record<string, string[]> = {
   safari: ["ET Safari Target", "ET Safari"],
   "native-safari": ["ET Safari Target", "ET Safari N", "ET Safari"],
+};
+
+const SURFACE_MARKERS: Record<string, string[]> = {
+  safari: [
+    "expo-targets uitest safari rn",
+    "expo-targets uitest safari content",
+    "expo-targets uitest safari native-msg",
+  ],
+  "native-safari": [
+    "expo-targets uitest safari popup",
+    "expo-targets uitest safari content",
+    "expo-targets uitest safari native-msg",
+  ],
 };
 
 export async function runSafariJourney(
@@ -49,6 +64,16 @@ export async function runSafariJourney(
     await dismissSystemAlerts(device);
     await waitForNamed(device, ["ready"], 15_000);
     steps.push("host-ready");
+
+    for (const marker of SURFACE_MARKERS[id] ?? []) {
+      await assertPayloadContains(
+        device,
+        entry.testIds.lastPayload,
+        marker,
+        8_000,
+      );
+    }
+    steps.push("host-surface-markers");
 
     await openSystemSafariSettings(device, steps);
     await openSafariExtensionsOrBlockers(device, steps, "extensions");

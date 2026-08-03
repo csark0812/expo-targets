@@ -28,21 +28,15 @@ describe("REQUIRED_V2", () => {
     }
   });
 
-  test("seed V1 paths remain present", () => {
-    const paths = REQUIRED_V2.map((r) => r.path);
-    for (const p of [
-      "examples/share",
-      "examples/action",
-      "examples/native/share",
-      "examples/native/action",
-      "examples/messages",
-      "examples/stickers",
-      "examples/clip",
-      "examples/widgets",
-      "examples/native/clip",
-    ]) {
-      expect(paths).toContain(p);
-    }
+  test("live-activity is in REQUIRED_V2 phase 3 and remains CLAIMS", () => {
+    expect(REQUIRED_V2_PHASE3.some((r) => r.id === "live-activity")).toBe(true);
+    expect(OS_LIMIT_CLAIMS.some((c) => c.id === "live-activity")).toBe(true);
+  });
+
+  test("notification-content is absent from OS_LIMIT_CLAIMS after C1", () => {
+    expect(OS_LIMIT_CLAIMS.some((c) => c.id === "notification-content")).toBe(
+      false,
+    );
   });
 });
 

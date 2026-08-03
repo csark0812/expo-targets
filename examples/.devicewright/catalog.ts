@@ -141,7 +141,7 @@ export const TARGET_CATALOG: Record<string, TargetCatalogEntry> = {
     hostDisplayName: "ET Widgets",
     extensionName: "Hello Widget",
     extensionAliases: [],
-    payloadMarker: "Hello from host",
+    payloadMarker: "Hello from host|family:systemSmall",
     completeButton: "",
     testIds: {
       screenRoot: "screen-root",
@@ -159,7 +159,7 @@ export const TARGET_CATALOG: Record<string, TargetCatalogEntry> = {
     payloadMarker: "ready",
     completeButton: "",
     testIds: {
-      screenRoot: "screen-root",
+      screenRoot: "status-target-ready",
       clearPayload: "btn-end-live",
       lastPayload: "text-live-id",
     },
@@ -247,7 +247,7 @@ export const TARGET_CATALOG: Record<string, TargetCatalogEntry> = {
     hostDisplayName: "ET N Clip",
     extensionName: "Native Clip",
     extensionAliases: ["Native Clip", "native-clip"],
-    payloadMarker: "ready",
+    payloadMarker: "itemName",
     completeButton: "",
     testIds: {
       screenRoot: "screen-root",

@@ -1,18 +1,19 @@
 /**
  * ET Trick — showcase host for deepened Apple extension targets + Live Activities.
  */
-import * as Notifications from 'expo-notifications';
-import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import * as Notifications from "expo-notifications";
+import { StatusBar } from "expo-status-bar";
+import { useCallback, useEffect, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import {
   registerFileDomain,
   unregisterFileDomain,
-} from './modules/trick-file-domain';
+} from "./modules/trick-file-domain";
 import {
   endAllLiveActivities,
   startLiveActivity,
-} from './modules/trick-live-activity';
+  updateLiveActivity,
+} from "./modules/trick-live-activity";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -24,7 +25,7 @@ Notifications.setNotificationHandler({
   }),
 });
 
-const NCE_CATEGORY = 'myNotificationCategory';
+const NCE_CATEGORY = "myNotificationCategory";
 
 type Cap = {
   id: string;
@@ -36,81 +37,81 @@ type Cap = {
 
 const CAPS: Cap[] = [
   {
-    id: 'nse',
-    title: 'Notification Service',
-    appex: 'ET Trick NSE',
-    how: 'simctl push with mutable-content:1. NSE appends [expo-targets] (App Group marker).',
-    surface: 'usernotifications.service',
+    id: "nse",
+    title: "Notification Service",
+    appex: "ET Trick NSE",
+    how: "simctl push with mutable-content:1. NSE appends [expo-targets] (App Group marker).",
+    surface: "usernotifications.service",
   },
   {
-    id: 'nce',
-    title: 'Notification Content',
-    appex: 'ET Trick NCE',
-    how: 'Schedule / push category myNotificationCategory, then expand.',
-    surface: 'content-extension · ET Trick NCE',
+    id: "nce",
+    title: "Notification Content",
+    appex: "ET Trick NCE",
+    how: "Schedule / push category myNotificationCategory, then expand.",
+    surface: "content-extension · ET Trick NCE",
   },
   {
-    id: 'photo',
-    title: 'Photo Editing',
-    appex: 'ET Trick Photo',
-    how: 'Photos → Edit → Extensions · grayscale PHContentEditingController.',
-    surface: 'com.apple.photo-editing',
+    id: "photo",
+    title: "Photo Editing",
+    appex: "ET Trick Photo",
+    how: "Photos → Edit → Extensions · grayscale PHContentEditingController.",
+    surface: "com.apple.photo-editing",
   },
   {
-    id: 'files',
-    title: 'File Provider',
-    appex: 'ET Trick Files',
-    how: 'Register domain below, then Files → Browse.',
-    surface: 'fileprovider-nonui',
+    id: "files",
+    title: "File Provider",
+    appex: "ET Trick Files",
+    how: "Register domain below, then Files → Browse.",
+    surface: "fileprovider-nonui",
   },
   {
-    id: 'keyboard',
-    title: 'Keyboard',
-    appex: 'ET Trick Keyboard',
-    how: 'Settings → General → Keyboard → Add New Keyboard.',
-    surface: 'keyboard-service',
+    id: "keyboard",
+    title: "Keyboard",
+    appex: "ET Trick Keyboard",
+    how: "Settings → General → Keyboard → Add New Keyboard.",
+    surface: "keyboard-service",
   },
   {
-    id: 'safari',
-    title: 'Safari Web Extension',
-    appex: 'ET Trick Safari',
-    how: 'Settings → Apps → Safari → Extensions → Allow.',
-    surface: 'Safari.web-extension',
+    id: "safari",
+    title: "Safari Web Extension",
+    appex: "ET Trick Safari",
+    how: "Settings → Apps → Safari → Extensions → Allow.",
+    surface: "Safari.web-extension",
   },
   {
-    id: 'blocker',
-    title: 'Content Blocker',
-    appex: 'ET Trick Blocker',
-    how: 'Settings → Apps → Safari → Extensions / Content Blockers.',
-    surface: 'content-blocking',
+    id: "blocker",
+    title: "Content Blocker",
+    appex: "ET Trick Blocker",
+    how: "Settings → Apps → Safari → Extensions / Content Blockers.",
+    surface: "content-blocking",
   },
   {
-    id: 'share',
-    title: 'Share',
-    appex: 'ET Trick Share',
-    how: 'Share Sheet from any app → ET Trick Share.',
-    surface: 'share-services',
+    id: "share",
+    title: "Share",
+    appex: "ET Trick Share",
+    how: "Share Sheet from any app → ET Trick Share.",
+    surface: "share-services",
   },
   {
-    id: 'action',
-    title: 'Action',
-    appex: 'ET Trick Action',
-    how: 'Share Sheet action row for images.',
-    surface: 'ui-services',
+    id: "action",
+    title: "Action",
+    appex: "ET Trick Action",
+    how: "Share Sheet action row for images.",
+    surface: "ui-services",
   },
   {
-    id: 'messages',
-    title: 'Messages',
-    appex: 'ET Trick Messages',
-    how: 'Messages app → Apps drawer.',
-    surface: 'message-payload-provider',
+    id: "messages",
+    title: "Messages",
+    appex: "ET Trick Messages",
+    how: "Messages app → Apps drawer.",
+    surface: "message-payload-provider",
   },
   {
-    id: 'widgets',
-    title: 'Widget + Live Activity',
-    appex: 'ET Trick Widget',
-    how: 'Home Screen widget · Start Live Activity below (ActivityKit).',
-    surface: 'WidgetKit + ActivityKit',
+    id: "widgets",
+    title: "Widget + Live Activity",
+    appex: "ET Trick Widget",
+    how: "Home Screen widget · Start Live Activity below (ActivityKit).",
+    surface: "WidgetKit + ActivityKit",
   },
 ];
 
@@ -141,7 +142,7 @@ function HostMeta(props: {
         Safari, share, messages, widgets + Live Activities.
       </Text>
       <Text testID="status-target-ready" style={styles.ready}>
-        {ready ? 'ready' : 'booting'}
+        {ready ? "ready" : "booting"}
       </Text>
       <Text testID="text-notif-perm" style={styles.meta}>
         notifications: {perm}
@@ -166,10 +167,12 @@ function HostMeta(props: {
 
 function HostActions(props: {
   lastLocal: string;
+  liveStatus: string;
   onScheduleNce: () => void;
   onRegisterFiles: () => void;
   onUnregisterFiles: () => void;
   onStartLive: () => void;
+  onUpdateLive: () => void;
   onEndLive: () => void;
 }) {
   return (
@@ -206,6 +209,16 @@ function HostActions(props: {
         <Text style={styles.ctaText}>Start Live Activity</Text>
       </Pressable>
       <Pressable
+        testID="btn-update-live"
+        style={styles.ctaSecondary}
+        onPress={props.onUpdateLive}
+      >
+        <Text style={styles.ctaText}>Update Live Activity</Text>
+      </Pressable>
+      <Text testID="text-live-status" style={styles.meta}>
+        live status: {props.liveStatus}
+      </Text>
+      <Pressable
         testID="btn-end-live"
         style={styles.ctaGhost}
         onPress={props.onEndLive}
@@ -219,18 +232,19 @@ function HostActions(props: {
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: host state + demo action surface
 function useTrickHost() {
   const [ready, setReady] = useState(false);
-  const [perm, setPerm] = useState('pending');
-  const [lastLocal, setLastLocal] = useState('none');
-  const [filesDomain, setFilesDomain] = useState('not-registered');
-  const [liveId, setLiveId] = useState('none');
-  const [statusLine, setStatusLine] = useState('');
+  const [perm, setPerm] = useState("pending");
+  const [lastLocal, setLastLocal] = useState("none");
+  const [filesDomain, setFilesDomain] = useState("not-registered");
+  const [liveId, setLiveId] = useState("none");
+  const [liveStatus, setLiveStatus] = useState("none");
+  const [statusLine, setStatusLine] = useState("");
 
   const boot = useCallback(async () => {
     try {
       await Notifications.setNotificationCategoryAsync(NCE_CATEGORY, []);
       const current = await Notifications.getPermissionsAsync();
       let status = current.status;
-      if (status !== 'granted') {
+      if (status !== "granted") {
         const asked = await Notifications.requestPermissionsAsync();
         status = asked.status;
       }
@@ -258,12 +272,13 @@ function useTrickHost() {
     lastLocal,
     filesDomain,
     liveId,
+    liveStatus,
     statusLine,
     onScheduleNce: () => {
       void Notifications.scheduleNotificationAsync({
         content: {
-          title: 'ET Trick',
-          body: 'Expand me for rich NCE content',
+          title: "ET Trick",
+          body: "Expand me for rich NCE content",
           categoryIdentifier: NCE_CATEGORY,
         },
         trigger: null,
@@ -273,7 +288,7 @@ function useTrickHost() {
       void registerFileDomain()
         .then((name) => {
           setFilesDomain(`registered:${name}`);
-          setStatusLine('Files domain registered');
+          setStatusLine("Files domain registered");
         })
         .catch((e) => {
           setFilesDomain(`error:${String(e)}`);
@@ -283,24 +298,42 @@ function useTrickHost() {
     onUnregisterFiles: () => {
       void unregisterFileDomain()
         .then(() => {
-          setFilesDomain('not-registered');
-          setStatusLine('Files domain removed');
+          setFilesDomain("not-registered");
+          setStatusLine("Files domain removed");
         })
         .catch((e) => setStatusLine(String(e)));
     },
     onStartLive: () => {
-      void startLiveActivity('ET Trick Live', 'active')
+      void startLiveActivity("ET Trick Live", "active")
         .then((id) => {
           setLiveId(id);
+          setLiveStatus("active");
           setStatusLine(`Live Activity ${id}`);
+        })
+        .catch((e) => setStatusLine(String(e)));
+    },
+    onUpdateLive: () => {
+      if (liveId === "none") {
+        setStatusLine("No Live Activity to update");
+        return;
+      }
+      void updateLiveActivity(liveId, "updated")
+        .then((ok) => {
+          if (ok) {
+            setLiveStatus("updated");
+            setStatusLine(`Live Activity updated ${liveId}`);
+          } else {
+            setStatusLine("Live Activity update failed");
+          }
         })
         .catch((e) => setStatusLine(String(e)));
     },
     onEndLive: () => {
       void endAllLiveActivities()
         .then(() => {
-          setLiveId('none');
-          setStatusLine('Live Activities ended');
+          setLiveId("none");
+          setLiveStatus("none");
+          setStatusLine("Live Activities ended");
         })
         .catch((e) => setStatusLine(String(e)));
     },
@@ -322,10 +355,12 @@ export default function App() {
         />
         <HostActions
           lastLocal={host.lastLocal}
+          liveStatus={host.liveStatus}
           onScheduleNce={host.onScheduleNce}
           onRegisterFiles={host.onRegisterFiles}
           onUnregisterFiles={host.onUnregisterFiles}
           onStartLive={host.onStartLive}
+          onUpdateLive={host.onUpdateLive}
           onEndLive={host.onEndLive}
         />
         {CAPS.map((cap) => (
@@ -337,50 +372,50 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0B1220' },
+  root: { flex: 1, backgroundColor: "#0B1220" },
   scroll: { padding: 24, paddingTop: 64, paddingBottom: 48, gap: 12 },
   brand: {
     fontSize: 36,
-    fontWeight: '800',
-    color: '#F4F7FB',
+    fontWeight: "800",
+    color: "#F4F7FB",
     letterSpacing: -0.5,
   },
-  tagline: { fontSize: 15, lineHeight: 22, color: '#9AA8BC' },
-  ready: { color: '#5CFFB0', fontWeight: '700', marginTop: 4 },
-  meta: { color: '#6B7C93', fontSize: 12, fontFamily: 'Courier' },
-  status: { color: '#FFD166', fontSize: 12 },
+  tagline: { fontSize: 15, lineHeight: 22, color: "#9AA8BC" },
+  ready: { color: "#5CFFB0", fontWeight: "700", marginTop: 4 },
+  meta: { color: "#6B7C93", fontSize: 12, fontFamily: "Courier" },
+  status: { color: "#FFD166", fontSize: 12 },
   cta: {
     marginTop: 8,
-    backgroundColor: '#2F6BFF',
+    backgroundColor: "#2F6BFF",
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   ctaSecondary: {
-    backgroundColor: '#1E3A6E',
+    backgroundColor: "#1E3A6E",
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   ctaGhost: {
     paddingVertical: 10,
-    alignItems: 'center',
+    alignItems: "center",
   },
-  ctaText: { color: '#fff', fontWeight: '700', fontSize: 15 },
-  ctaGhostText: { color: '#9AA8BC', fontWeight: '600', fontSize: 13 },
+  ctaText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  ctaGhostText: { color: "#9AA8BC", fontWeight: "600", fontSize: 13 },
   card: {
     marginTop: 4,
     padding: 16,
     borderRadius: 14,
-    backgroundColor: '#141E2E',
+    backgroundColor: "#141E2E",
     borderWidth: 1,
-    borderColor: '#243247',
+    borderColor: "#243247",
     gap: 6,
   },
-  cardTitle: { color: '#F4F7FB', fontSize: 17, fontWeight: '700' },
-  appex: { color: '#7EB6FF', fontSize: 13, fontWeight: '600' },
-  body: { color: '#C5D0DF', fontSize: 13, lineHeight: 19 },
-  surface: { color: '#6B7C93', fontSize: 11, marginTop: 4 },
+  cardTitle: { color: "#F4F7FB", fontSize: 17, fontWeight: "700" },
+  appex: { color: "#7EB6FF", fontSize: 13, fontWeight: "600" },
+  body: { color: "#C5D0DF", fontSize: 13, lineHeight: 19 },
+  surface: { color: "#6B7C93", fontSize: 11, marginTop: 4 },
 });

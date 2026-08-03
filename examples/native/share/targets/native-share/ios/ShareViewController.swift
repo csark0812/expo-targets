@@ -57,16 +57,35 @@ class ShareViewController: UIViewController {
             detailLabel.text = "No content"
             return
         }
+        let group = DispatchGroup()
         for item in inputItems {
             for provider in item.attachments ?? [] {
-                if provider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) {
+                if provider.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
+                    group.enter()
+                    provider.loadItem(forTypeIdentifier: UTType.image.identifier) { [weak self] data, _ in
+                        defer { group.leave() }
+                        var summary = "image"
+                        if let url = data as? URL {
+                            summary = url.lastPathComponent
+                        } else if data is UIImage {
+                            summary = "UIImage"
+                        }
+                        DispatchQueue.main.async {
+                            self?.items.append((type: "image", content: summary))
+                        }
+                    }
+                } else if provider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) {
+                    group.enter()
                     provider.loadItem(forTypeIdentifier: UTType.plainText.identifier) { [weak self] data, _ in
+                        defer { group.leave() }
                         if let text = data as? String {
                             DispatchQueue.main.async { self?.items.append((type: "text", content: text)) }
                         }
                     }
                 } else if provider.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
+                    group.enter()
                     provider.loadItem(forTypeIdentifier: UTType.url.identifier) { [weak self] data, _ in
+                        defer { group.leave() }
                         if let url = data as? URL {
                             DispatchQueue.main.async { self?.items.append((type: "url", content: url.absoluteString)) }
                         }
@@ -74,23 +93,40 @@ class ShareViewController: UIViewController {
                 }
             }
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+        group.notify(queue: .main) { [weak self] in
             guard let self else { return }
-            detailLabel.text = items.isEmpty ? "No content" : items.map(\.content).joined(separator: "\n")
+            let multi = self.items.count > 1 ? " multi:\(self.items.count)" : ""
+            detailLabel.text = items.isEmpty
+                ? "No content"
+                : items.map { "\($0.type):\($0.content)" }.joined(separator: "\n") + multi
         }
     }
 
     @objc private func saveTapped() {
         guard let defaults = UserDefaults(suiteName: appGroup) else { return }
-        struct SharedItem: Codable { let type: String; let content: String; let timestamp: Double }
+        struct SharedItem: Codable {
+            let type: String
+            let content: String
+            let timestamp: Double
+            let itemCount: Int
+        }
         var saved: [SharedItem] = []
         if let json = defaults.string(forKey: "nativeShare:items"),
            let data = json.data(using: .utf8),
            let existing = try? JSONDecoder().decode([SharedItem].self, from: data) {
             saved = existing
         }
+        let count = max(items.count, 1)
         for item in items {
-            saved.insert(SharedItem(type: item.type, content: item.content, timestamp: Date().timeIntervalSince1970), at: 0)
+            saved.insert(
+                SharedItem(
+                    type: item.type,
+                    content: item.content,
+                    timestamp: Date().timeIntervalSince1970,
+                    itemCount: count
+                ),
+                at: 0
+            )
         }
         if let data = try? JSONEncoder().encode(Array(saved.prefix(50))),
            let json = String(data: data, encoding: .utf8) {

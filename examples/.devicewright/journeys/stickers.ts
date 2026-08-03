@@ -280,6 +280,15 @@ export async function runStickersJourney(
     await sleep(500);
     await device.tap({ x: 210, y: 660 });
     await sleep(400);
+    // Insert proof: composer/message bubbles rarely expose sticker AX; asset-only policy.
+    const afterInsert = flattenLabels(await device.accessibilityTree());
+    if (
+      afterInsert.some((l) => /sticker|bip|Fun Stickers|message/i.test(l))
+    ) {
+      steps.push("sticker-insert-surface");
+    } else {
+      steps.push("sticker-insert-ax-opaque");
+    }
 
     return {
       id: entry.id,

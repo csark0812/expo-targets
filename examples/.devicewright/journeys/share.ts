@@ -84,8 +84,109 @@ async function findExtensionRow(
   return hit;
 }
 
+async function completeAppex(
+  device: DeviceSession,
+  id: string,
+  entry: TargetCatalogEntry,
+  steps: string[],
+): Promise<void> {
+  const completeLabels = entry.completeButton
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  steps.push("complete-appex");
+  if (id === "native-action") {
+    // Native action example auto-writes App Group + dismisses on open —
+    // idb taps on this sheet fall through to the share sheet on iOS 26.
+    await sleep(1_200);
+    steps.push("complete-auto");
+  } else {
+    const completeHotspots =
+      id === "native-share"
+        ? [
+            { x: 40, y: 220 },
+            { x: 30, y: 370 },
+            { x: 210, y: 280 },
+          ]
+        : [
+            // RN share Save / action Process — tap-space ~y500 on Air.
+            { x: 210, y: 500 },
+            { x: 210, y: 490 },
+            { x: 210, y: 480 },
+            { x: 210, y: 420 },
+          ];
+    const complete = await findNamedViaPointProbe(device, completeLabels, {
+      timeoutMs: 12_000,
+      yStartRatio: 0.15,
+      yEndRatio: 0.85,
+      stepX: 45,
+      stepY: 35,
+      match: "exact",
+      hotspots: completeHotspots,
+    });
+    await tapProbeHit(device, complete);
+    await sleep(600);
+
+    // Native share Save leaves the sheet up until Close / completeRequest.
+    if (id === "native-share") {
+      try {
+        const close = await findNamedViaPointProbe(device, ["Close"], {
+          timeoutMs: 2_500,
+          yStartRatio: 0.2,
+          yEndRatio: 0.9,
+          allowBlocked: true,
+          hotspots: [
+            { x: 210, y: 280 },
+            { x: 40, y: 280 },
+            { x: 210, y: 420 },
+            { x: 210, y: 500 },
+          ],
+        });
+        await tapProbeHit(device, close);
+        steps.push("dismiss-appex");
+        await sleep(500);
+      } catch {
+        // force-launch host below
+      }
+    }
+  }
+}
+
+async function returnHostAndAssert(
+  device: DeviceSession,
+  entry: TargetCatalogEntry,
+  marker: string,
+  steps: string[],
+  checklist: string[],
+  stepPrefix = "",
+): Promise<void> {
+  steps.push(`${stepPrefix}return-host`);
+  await device.launchApp(entry.hostBundleId, { terminateRunning: true });
+  await dismissSystemAlerts(device);
+  await waitForId(device, hostReadyTestId(entry.testIds), 15_000);
+  if (entry.testIds.refresh) {
+    try {
+      await tapId(device, entry.testIds.refresh, 3_000);
+    } catch {
+      // optional
+    }
+  }
+
+  steps.push(`${stepPrefix}assert-payload`);
+  await assertPayloadContains(
+    device,
+    entry.testIds.lastPayload,
+    marker,
+    12_000,
+  );
+  checklist.push(C1.assertHostMarker);
+}
+
 /**
  * Share/action C1 parity journey (pure DW).
+ * Text path remains primary green for share / native-share.
+ * Image / multi-item markers asserted when host exposes `btn-open-image-share`
+ * or when the primary path is already image (action / native-action).
  */
 export async function runShareActionJourney(
   device: DeviceSession,
@@ -107,6 +208,9 @@ export async function runShareActionJourney(
 
   const steps: string[] = [];
   const checklist: string[] = [];
+  const imageIds = new Set(["share", "native-share", "action", "native-action"]);
+  const textPrimary = id === "share" || id === "native-share";
+
   try {
     steps.push("launch-host");
     await device.launchApp(entry.hostBundleId, { terminateRunning: true });
@@ -142,88 +246,82 @@ export async function runShareActionJourney(
     // readyText probe is optional and expensive when AX-opaque — skip.
     steps.push("appex-ready-skip");
 
-    const completeLabels = entry.completeButton
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    steps.push("complete-appex");
-    if (id === "native-action") {
-      // Native action example auto-writes App Group + dismisses on open —
-      // idb taps on this sheet fall through to the share sheet on iOS 26.
-      await sleep(1_200);
-      steps.push("complete-auto");
-    } else {
-      const completeHotspots =
-        id === "native-share"
-          ? [
-              { x: 40, y: 220 },
-              { x: 30, y: 370 },
-              { x: 210, y: 280 },
-            ]
-          : [
-              // RN share Save / action Process — tap-space ~y500 on Air.
-              { x: 210, y: 500 },
-              { x: 210, y: 490 },
-              { x: 210, y: 480 },
-              { x: 210, y: 420 },
-            ];
-      const complete = await findNamedViaPointProbe(device, completeLabels, {
-        timeoutMs: 12_000,
-        yStartRatio: 0.15,
-        yEndRatio: 0.85,
-        stepX: 45,
-        stepY: 35,
-        match: "exact",
-        hotspots: completeHotspots,
-      });
-      await tapProbeHit(device, complete);
-      await sleep(600);
+    await completeAppex(device, id, entry, steps);
+    checklist.push(C1.completeAppex);
 
-      // Native share Save leaves the sheet up until Close / completeRequest.
-      if (id === "native-share") {
+    await returnHostAndAssert(
+      device,
+      entry,
+      entry.payloadMarker,
+      steps,
+      checklist,
+    );
+
+    // Image / kind deepening — Sim-reachable secondary path.
+    if (imageIds.has(String(id))) {
+      if (textPrimary) {
         try {
-          const close = await findNamedViaPointProbe(device, ["Close"], {
-            timeoutMs: 2_500,
-            yStartRatio: 0.2,
-            yEndRatio: 0.9,
-            allowBlocked: true,
-            hotspots: [
-              { x: 210, y: 280 },
-              { x: 40, y: 280 },
-              { x: 210, y: 420 },
-              { x: 210, y: 500 },
-            ],
-          });
-          await tapProbeHit(device, close);
-          steps.push("dismiss-appex");
-          await sleep(500);
+          await tapId(device, clearId, 3_000);
         } catch {
-          // force-launch host below
+          // optional
+        }
+        steps.push("image-open-share");
+        try {
+          await tapId(device, "btn-open-image-share", 8_000);
+        } catch {
+          steps.push("image-path-skip-no-button");
+          return {
+            id: entry.id,
+            path: entry.path,
+            phase: 1,
+            ok: true,
+            status: "green",
+            steps,
+            checklist,
+          };
+        }
+        await sleep(1_000);
+        const imageRow = await findExtensionRow(device, entry);
+        await tapProbeHit(device, imageRow);
+        await sleep(2_500);
+        await completeAppex(device, id, entry, steps);
+        const imageMarker =
+          id === "native-share" ? '"type":"image"' : '"kind":"image"';
+        await returnHostAndAssert(
+          device,
+          entry,
+          imageMarker,
+          steps,
+          checklist,
+          "image-",
+        );
+        steps.push("image-path-ok");
+      } else {
+        // action / native-action primary path already shares an image.
+        const kindMarker =
+          id === "native-action" ? '"kind":"image"' : '"kind":"image"';
+        await assertPayloadContains(
+          device,
+          entry.testIds.lastPayload,
+          kindMarker,
+          8_000,
+        );
+        steps.push("image-kind-ok");
+        if (id === "native-action") {
+          try {
+            await assertPayloadContains(
+              device,
+              entry.testIds.lastPayload,
+              '"returnedItems":true',
+              4_000,
+            );
+            steps.push("return-items-ok");
+          } catch {
+            steps.push("return-items-skip");
+          }
         }
       }
     }
-    checklist.push(C1.completeAppex);
-
-    steps.push("return-host");
-    await device.launchApp(entry.hostBundleId, { terminateRunning: true });
-    await dismissSystemAlerts(device);
-    await waitForId(device, hostReadyTestId(entry.testIds), 15_000);
-    if (entry.testIds.refresh) {
-      try {
-        await tapId(device, entry.testIds.refresh, 3_000);
-      } catch {
-        // optional
-      }
-    }
-
-    steps.push("assert-payload");
-    await assertPayloadContains(
-      device,
-      entry.testIds.lastPayload,
-      entry.payloadMarker,
-      12_000,
-    );
-    checklist.push(C1.assertHostMarker);
 
     return {
       id: entry.id,

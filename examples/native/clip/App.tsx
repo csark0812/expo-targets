@@ -7,6 +7,8 @@ const storage = new AppGroupStorage(
   'group.com.expotargets.example.native.clip'
 );
 
+export const CLIP_BUNDLE_ID = 'com.expotargets.example.native.clip.clip';
+
 export default function App() {
   const [payload, setPayload] = useState('none');
   const [ready, setReady] = useState(false);
@@ -15,8 +17,12 @@ export default function App() {
     const itemName = storage.get<string>('native-clip:lastItemName');
     const price = storage.get<string>('native-clip:lastPrice');
     const timestamp = storage.get<number>('native-clip:checkoutTimestamp');
+    const invoked = storage.get<boolean>('native-clip:invoked');
+    const invocationPath = storage.get<string>('native-clip:invocationPath');
     if (itemName || price || timestamp) {
-      setPayload(JSON.stringify({ itemName, price, timestamp }));
+      setPayload(
+        JSON.stringify({ itemName, price, timestamp, invoked, invocationPath })
+      );
     } else {
       setPayload('none');
     }
@@ -34,6 +40,10 @@ export default function App() {
       <StatusBar style="auto" />
       <Text style={styles.title}>Native Clip example</Text>
       <Text testID="status-target-ready">{ready ? 'ready' : 'loading'}</Text>
+      <Text testID="text-clip-bundle">{CLIP_BUNDLE_ID}</Text>
+      <Text testID="text-invocation-path">
+        invocation:launchApp({CLIP_BUNDLE_ID})
+      </Text>
       <TouchableOpacity
         testID="btn-seed-payload"
         style={styles.button}
@@ -56,10 +66,19 @@ export default function App() {
           storage.remove('native-clip:lastItemName');
           storage.remove('native-clip:lastPrice');
           storage.remove('native-clip:checkoutTimestamp');
+          storage.remove('native-clip:invoked');
+          storage.remove('native-clip:invocationPath');
           refresh();
         }}
       >
         <Text style={styles.buttonText}>Clear payload</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        testID="btn-refresh"
+        style={styles.button}
+        onPress={refresh}
+      >
+        <Text style={styles.buttonText}>Refresh</Text>
       </TouchableOpacity>
       <Text testID="text-last-payload" style={styles.payload}>
         {payload}

@@ -2,7 +2,8 @@
  * Consumer journey helpers — thin wraps over `@csark0812/devicewright/suite`.
  *
  * Share-sheet rows: prefer `findSheetRowProbe` + `tapProbeHit` (iOS 26).
- * Messages/stickers keep caller-owned hotspots on the generic primitive.
+ * Open MSMessages RN sheets: use `messages-sheet.ts` (describePoint ladder;
+ * accessibilityTree omits extension chrome — see that module’s invariants).
  */
 import type { AccessibilityNode, DeviceSession } from "@csark0812/devicewright";
 import {
@@ -120,8 +121,14 @@ export function hostReadyTestId(testIds: {
   clearPayload?: string;
   packCatalog?: string;
 }): string {
-  // Prefer controls that expose AXUniqueId. screen-root / status-* Text often
-  // only appear as labels (same iOS 26 AX gap as last-payload).
+  // Prefer status-/screen roots over clearPayload — end/clear buttons may sit
+  // behind permission sheets and are the wrong ready signal for LA/Trick.
+  if (
+    testIds.screenRoot.startsWith("status-") ||
+    testIds.screenRoot === "screen-root"
+  ) {
+    return testIds.openShareSheet ?? testIds.screenRoot;
+  }
   return testIds.openShareSheet ?? testIds.clearPayload ?? testIds.screenRoot;
 }
 
@@ -140,7 +147,8 @@ export async function dismissSystemAlerts(
     "Close",
     "Not Now",
     "Don't Allow",
-    "Don't Allow",
+    "Don’t Allow",
+    "Allow",
   ];
   for (let i = 0; i < attempts; i++) {
     const tree = await device.accessibilityTree();
@@ -148,6 +156,7 @@ export async function dismissSystemAlerts(
     const hasSheet = flat.some(
       (l) =>
         /open in .+\?/i.test(l) ||
+        /Would Like to Send You Notifications/i.test(l) ||
         dismissLabels.some((d) => l.toLowerCase() === d.toLowerCase()),
     );
     if (!hasSheet) {

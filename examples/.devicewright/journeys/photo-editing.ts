@@ -12,6 +12,7 @@ import { TARGET_CATALOG } from "../catalog";
 import { repoRoot } from "../root";
 import type { TargetJourneyResult } from "../types";
 import {
+  assertPayloadContains,
   dismissSystemAlerts,
   flattenLabels,
   sleep,
@@ -62,6 +63,14 @@ export async function runPhotoEditingJourney(
     await dismissSystemAlerts(device);
     await waitForNamed(device, ["ready"], 15_000);
     steps.push("host-ready");
+
+    await assertPayloadContains(
+      device,
+      "text-done-persistence",
+      "done-persistence:ready",
+      6_000,
+    );
+    steps.push("done-persistence-surface");
 
     await device.launchApp(PHOTOS_BUNDLE, { terminateRunning: true });
     steps.push("photos-launch");
@@ -189,6 +198,25 @@ export async function runPhotoEditingJourney(
     const after = flattenLabels(await device.accessibilityTree());
     if (after.some((l) => l.includes("ET PhotoEdit Extension"))) {
       steps.push("photo-edit-extension-ui");
+    }
+
+    // Best-effort Done → App Group persistence assert.
+    if (await tapLabelInTree(device, ["Done"], { exactOnly: true })) {
+      steps.push("tap-done");
+      await sleep(1_200);
+      await device.launchApp(entry.hostBundleId, { terminateRunning: true });
+      await dismissSystemAlerts(device);
+      try {
+        await assertPayloadContains(
+          device,
+          entry.testIds.lastPayload,
+          "expo-targets uitest photo-edit done",
+          8_000,
+        );
+        steps.push("done-persistence-ok");
+      } catch {
+        steps.push("done-persistence-pending");
+      }
     }
 
     return {

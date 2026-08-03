@@ -15,14 +15,9 @@ export type ClaimsEntry = {
 
 export const OS_LIMIT_CLAIMS: readonly ClaimsEntry[] = [
   {
-    id: "notification-content",
-    reason:
-      "Simulator NCE RN rich UI expand — pluginkit + category delivered; marker required for green",
-  },
-  {
     id: "live-activity",
     reason:
-      "Lock Screen / Dynamic Island Live Activity chrome varies by Simulator model; host ActivityKit start + WidgetKit family is the floor",
+      "Dynamic Island layout / ActivityKit push / StandBy not Sim-faithful; Watch chrome only when DW ≥ 0.1.8 pair boots (else S3a→CLAIMS). Host start+update+end is the green floor.",
   },
   {
     id: "wallet",
