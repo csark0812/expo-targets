@@ -159,34 +159,50 @@ async function assertWatchActivityChrome(
   watch: DeviceSession,
   steps: string[],
 ): Promise<boolean> {
-  // Exit app grid / Control Center → ClockFace, then open Smart Stack.
-  try {
-    await watch.pressButton({ button: "HOME" });
-  } catch {
-    /* watch HOME may no-op */
+  // Exit app grid / Control Center / Siren → ClockFace, then open Smart Stack.
+  for (const _ of [0, 1]) {
+    try {
+      await watch.pressButton({ button: "HOME" });
+    } catch {
+      /* watch HOME may no-op */
+    }
+    await sleep(500);
   }
-  await sleep(800);
 
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 12; i++) {
     let labels = flattenLabels(await watch.accessibilityTree());
+    steps.push(`watch-ax-labels:${labels.length}:${labels.slice(0, 6).join("|")}`);
     if (labels.some((l) => WATCH_ACTIVITY_RE.test(l))) {
       steps.push("watch-activity-visible");
       return true;
     }
 
-    // Smart Stack: swipe up from bottom of watch face.
-    try {
-      await watch.swipe({
-        xStart: 104,
-        yStart: 220,
-        xEnd: 104,
-        yEnd: 30,
-        duration: 0.45,
+    // Dismiss Siren / transient watch UI that steals the face.
+    if (labels.some((l) => /Siren|Cancel|Done|Dismiss/i.test(l))) {
+      await tapLabelInTree(watch, ["Cancel", "Done", "Dismiss", "Close"], {
+        exactOnly: false,
       });
+      await sleep(600);
+      try {
+        await watch.pressButton({ button: "HOME" });
+      } catch {
+        /* optional */
+      }
+      await sleep(500);
+    }
+
+    // Smart Stack: swipe up from bottom of watch face (several amplitudes).
+    const swipes = [
+      { xStart: 104, yStart: 220, xEnd: 104, yEnd: 30, duration: 0.45 },
+      { xStart: 104, yStart: 200, xEnd: 104, yEnd: 40, duration: 0.35 },
+      { xStart: 90, yStart: 210, xEnd: 90, yEnd: 50, duration: 0.4 },
+    ] as const;
+    try {
+      await watch.swipe(swipes[i % swipes.length]);
     } catch {
       /* optional */
     }
-    await sleep(900);
+    await sleep(1_000);
 
     labels = flattenLabels(await watch.accessibilityTree());
     if (labels.some((l) => WATCH_ACTIVITY_RE.test(l))) {
@@ -196,9 +212,15 @@ async function assertWatchActivityChrome(
 
     // Widget is often AX-opaque until tapped → CarouselLiveActivitiesAlertUI.
     await watch.tap({ x: 104, y: 130 });
-    await sleep(800);
+    await sleep(900);
     labels = flattenLabels(await watch.accessibilityTree());
-    steps.push(`watch-ax-labels:${labels.length}`);
+    if (labels.some((l) => WATCH_ACTIVITY_RE.test(l))) {
+      steps.push("watch-activity-visible");
+      return true;
+    }
+    await watch.tap({ x: 104, y: 100 });
+    await sleep(700);
+    labels = flattenLabels(await watch.accessibilityTree());
     if (labels.some((l) => WATCH_ACTIVITY_RE.test(l))) {
       steps.push("watch-activity-visible");
       return true;
@@ -207,59 +229,116 @@ async function assertWatchActivityChrome(
   return false;
 }
 
+function lockLooksLikeActivityChrome(labels: string[]): boolean {
+  return labels.some((l) => LOCK_ACTIVITY_RE.test(l.trim()));
+}
+
+async function acceptLockLiveActivityPrompt(
+  device: DeviceSession,
+  labels: string[],
+  steps: string[],
+): Promise<void> {
+  if (labels.some((l) => /Always Allow/i.test(l))) {
+    await tapLabelInTree(device, ["Always Allow"]);
+    await sleep(600);
+    steps.push("lock-always-allow");
+    return;
+  }
+  if (
+    labels.some((l) => /^Allow$/i.test(l.trim())) &&
+    labels.some((l) => /Allow Live Activities from ET Trick/i.test(l))
+  ) {
+    await tapLabelInTree(device, ["Allow"], { exactOnly: true });
+    await sleep(600);
+    steps.push("lock-allow");
+  }
+}
+
 async function assertLockActivityChrome(
   device: DeviceSession,
   steps: string[],
 ): Promise<boolean> {
   const activityHotspots = [
+    { x: 210, y: 700 },
+    { x: 210, y: 686 },
     { x: 210, y: 730 },
-    { x: 210, y: 710 },
-    { x: 210, y: 750 },
-    { x: 210, y: 690 },
-    { x: 160, y: 730 },
-    { x: 260, y: 730 },
+    { x: 210, y: 650 },
+    { x: 160, y: 700 },
+    { x: 260, y: 700 },
   ];
 
-  for (let i = 0; i < 8; i++) {
-    let labels = flattenLabels(await device.accessibilityTree());
-    if (labels.some((l) => LOCK_ACTIVITY_RE.test(l.trim()))) {
-      if (labels.some((l) => /Always Allow/i.test(l))) {
-        await tapLabelInTree(device, ["Always Allow"]);
-        await sleep(600);
-        steps.push("lock-always-allow");
-      } else if (
-        labels.some((l) => /^Allow$/i.test(l.trim())) &&
-        labels.some((l) => /Allow Live Activities from ET Trick/i.test(l))
-      ) {
-        await tapLabelInTree(device, ["Allow"], { exactOnly: true });
-        await sleep(600);
-        steps.push("lock-allow");
-      }
+  for (let i = 0; i < 14; i++) {
+    if (i === 4 || i === 9) {
+      // Re-lock — swipe/unlock can leave SpringBoard on the host app.
+      await device.pressButton({ button: "HOME" }).catch(() => undefined);
+      await sleep(400);
+      await device.pressButton({ button: "LOCK" }).catch(() => undefined);
+      await sleep(1_100);
+      steps.push(`lock-rearm-${i}`);
+    }
+
+    let tree = await device.accessibilityTree();
+    let labels = flattenLabels(tree);
+    if (lockLooksLikeActivityChrome(labels)) {
+      await acceptLockLiveActivityPrompt(device, labels, steps);
       steps.push("lock-activity-visible");
       return true;
     }
 
-    // Widget is often AX-opaque to idb — tap it to open Allow / ET Trick sheet.
+    // iOS 26: Live Activity often appears as an empty-label ListCell on Lock.
+    const listCell = tree.find(
+      (n) =>
+        String(n.identifier ?? "") === "ListCell" &&
+        n.frame != null &&
+        n.frame.y >= 560 &&
+        n.frame.y <= 820 &&
+        n.frame.width > 80,
+    );
+    if (listCell?.frame) {
+      const f = listCell.frame;
+      await device.tap({
+        x: Math.round(f.x + f.width / 2),
+        y: Math.round(f.y + f.height / 2),
+      });
+      await sleep(900);
+      steps.push(
+        `lock-listcell-tap:${Math.round(f.x + f.width / 2)},${Math.round(f.y + f.height / 2)}`,
+      );
+      tree = await device.accessibilityTree();
+      labels = flattenLabels(tree);
+      if (lockLooksLikeActivityChrome(labels)) {
+        await acceptLockLiveActivityPrompt(device, labels, steps);
+        steps.push("lock-activity-visible");
+        return true;
+      }
+      // Empty ListCell itself is the Live Activity surface when AX omits title.
+      if (
+        labels.some((l) => /Show Notifications/i.test(l)) &&
+        tree.some(
+          (n) =>
+            String(n.identifier ?? "") === "ListCell" &&
+            (n.frame?.y ?? 0) >= 560,
+        )
+      ) {
+        steps.push("lock-activity-listcell");
+        return true;
+      }
+    }
+
     const pt = activityHotspots[i % activityHotspots.length];
     await device.tap(pt);
     await sleep(700);
     steps.push(`lock-activity-tap:${pt.x},${pt.y}`);
 
     labels = flattenLabels(await device.accessibilityTree());
-    if (labels.some((l) => LOCK_ACTIVITY_RE.test(l.trim()))) {
-      if (
-        labels.some((l) => /^Allow$/i.test(l.trim()) || /Always Allow/i.test(l))
-      ) {
-        await tapLabelInTree(device, ["Allow", "Always Allow"]);
-        await sleep(600);
-        steps.push("lock-allow");
-      }
+    if (lockLooksLikeActivityChrome(labels)) {
+      await acceptLockLiveActivityPrompt(device, labels, steps);
       steps.push("lock-activity-visible");
       return true;
     }
 
     await tapLabelInTree(device, ["Show Notifications"], { exactOnly: true });
-    await sleep(400);
+    await sleep(500);
   }
   return false;
 }
@@ -394,7 +473,7 @@ export async function runLiveActivityJourney(
             "Watch pair booted but still disconnected from phone (Live Activities will not mirror)",
           );
         }
-        await sleep(2_000);
+        await sleep(3_500);
 
         const watchOk = await assertWatchActivityChrome(watchSession, steps);
         if (!watchOk) {
@@ -429,9 +508,24 @@ export async function runLiveActivityJourney(
     await device.launchApp(entry.hostBundleId);
     await dismissSystemAlerts(device);
     await sleep(600);
+    await dismissSystemAlerts(device);
+    // Notification banners after lock can cover End.
+    try {
+      await device.swipe({
+        xStart: 210,
+        yStart: 80,
+        xEnd: 210,
+        yEnd: 20,
+        duration: 0.25,
+      });
+    } catch {
+      /* optional */
+    }
+    await sleep(400);
     try {
       await waitForId(device, "btn-end-live", 12_000);
     } catch {
+      await dismissSystemAlerts(device);
       await waitForNamed(device, ["ready", "End Live Activities"], 12_000);
     }
     try {

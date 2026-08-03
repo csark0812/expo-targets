@@ -126,6 +126,9 @@ struct TrickLiveActivityContent: View {
           .foregroundStyle(.secondary)
       }
       .padding(8)
+      .accessibilityElement(children: .combine)
+      .accessibilityLabel(context.attributes.title)
+      .accessibilityIdentifier("ET Trick Live")
     default:
       VStack(alignment: .leading, spacing: 4) {
         Text(context.attributes.title)
@@ -137,6 +140,10 @@ struct TrickLiveActivityContent: View {
       .padding()
       .activityBackgroundTint(Color.black.opacity(0.85))
       .activitySystemActionForegroundColor(.white)
+      // idb often sees Lock Live Activities as an empty ListCell without this.
+      .accessibilityElement(children: .combine)
+      .accessibilityLabel(context.attributes.title)
+      .accessibilityIdentifier("ET Trick Live")
     }
   }
 }

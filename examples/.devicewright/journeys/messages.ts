@@ -15,6 +15,7 @@ import {
 import {
   assertMessagesPresentationStyle,
   dismissMessagesComposerAlerts,
+  probeMessagesSheetControl,
   tapMessagesSheetControl,
   waitForMessagesHostReady,
   waitForMessagesSheetReady,
@@ -282,19 +283,27 @@ export async function runMessagesJourney(
       "btn-insert-attachment",
     ]);
     steps.push("insert-attachment");
+    // Confirm the control fired (layout may shift after session row).
+    await probeMessagesSheetControl(device, ["attachment:saved"], {
+      timeoutMs: 8_000,
+      match: "includes",
+    });
+    steps.push("assert-attachment-saved");
+    await sleep(500);
 
-    // Session id row may shift layout; ladder absorbs it.
+    // Session id / attachment:saved rows may shift layout; ladder absorbs it.
     await tapMessagesSheetControl(device, [
       "Send template",
       "btn-send-template",
     ]);
     steps.push("send-template");
-    await sleep(800);
+    await sleep(1_200);
 
     steps.push("assert-host-payload");
     await device.launchApp(entry.hostBundleId);
     await waitForMessagesHostReady(device);
-    if (entry.testIds.refresh) {
+    const refreshHost = async () => {
+      if (!entry.testIds.refresh) return;
       try {
         await tapId(device, entry.testIds.refresh, 5_000);
       } catch {
@@ -309,7 +318,8 @@ export async function runMessagesJourney(
           // optional
         }
       }
-    }
+    };
+    await refreshHost();
     await assertPayloadContains(
       device,
       entry.testIds.lastPayload,
@@ -319,18 +329,20 @@ export async function runMessagesJourney(
     steps.push("a-bar-payload");
 
     // Session + attachment markers must land in App Group (not best-effort).
+    await refreshHost();
     await assertPayloadContains(
       device,
       entry.testIds.lastPayload,
       "Session bubble from expo-targets",
-      8_000,
+      10_000,
     );
     steps.push("assert-session-payload");
+    await refreshHost();
     await assertPayloadContains(
       device,
       entry.testIds.lastPayload,
       "expo-targets messages attachment",
-      8_000,
+      10_000,
     );
     steps.push("assert-attachment-payload");
 
@@ -339,6 +351,7 @@ export async function runMessagesJourney(
       !steps.includes("compact") ||
       !steps.includes("send-session") ||
       !steps.includes("insert-attachment") ||
+      !steps.includes("assert-attachment-saved") ||
       !steps.includes("send-template");
     if (missingExtras) {
       throw new Error(

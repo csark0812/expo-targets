@@ -213,8 +213,22 @@ export async function runNotificationContentJourney(
     steps.push("expand-notification");
 
     let hit = await waitForNceMarker(device, 12_000);
-    for (let attempt = 0; !hit && attempt < 3; attempt++) {
+    for (let attempt = 0; !hit && attempt < 5; attempt++) {
       steps.push(`expand-retry-${attempt + 1}`);
+      // Re-pull NC between retries — iOS 26 often collapses after a miss.
+      if (attempt > 0) {
+        await device.pressButton({ button: "HOME" }).catch(() => undefined);
+        await sleep(400);
+        await device.swipe({
+          xStart: 210,
+          yStart: 10,
+          xEnd: 210,
+          yEnd: 420,
+          duration: 0.45,
+        });
+        await sleep(900);
+        steps.push(`notification-center-reopen-${attempt + 1}`);
+      }
       await tapLabelInTree(device, [
         "expand for rich content",
         "ET NCE",
@@ -235,19 +249,19 @@ export async function runNotificationContentJourney(
         await device.tap({
           x: Math.round(f.x + f.width / 2),
           y: Math.round(f.y + f.height / 2),
-          duration: 2.2,
+          duration: 2.4,
         });
-        await sleep(800);
+        await sleep(900);
         await device.swipe({
           xStart: Math.round(f.x + f.width / 2),
           yStart: Math.round(f.y + f.height / 2),
           xEnd: Math.round(f.x + f.width / 2),
-          yEnd: Math.round(f.y + f.height / 2 + 240),
-          duration: 0.65,
+          yEnd: Math.round(f.y + f.height / 2 + 280),
+          duration: 0.7,
         });
-        await sleep(1_500);
+        await sleep(1_800);
       }
-      hit = await waitForNceMarker(device, 8_000);
+      hit = await waitForNceMarker(device, 10_000);
     }
 
     if (!hit) {

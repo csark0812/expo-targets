@@ -19,18 +19,23 @@ function appendMessage(
   caption: string,
   kind: string,
 ) {
-  const existing = target.getData<{ messages: StoredMessage[] }>();
-  target.setData({
-    messages: [
-      ...(existing?.messages ?? []),
-      {
-        id: Date.now().toString(),
-        caption,
-        kind,
-        sentAt: new Date().toISOString(),
-      },
-    ],
-  });
+  const next: StoredMessage = {
+    id: `${Date.now()}-${kind}`,
+    caption,
+    kind,
+    sentAt: new Date().toISOString(),
+  };
+  // App Group reads can lag a prior setData — merge with retry so a later
+  // append (template) cannot drop session/attachment entries.
+  for (let i = 0; i < 4; i++) {
+    const existing = target.getData<{ messages: StoredMessage[] }>();
+    const messages = [...(existing?.messages ?? []), next];
+    target.setData({ messages });
+    const verify = target.getData<{ messages: StoredMessage[] }>();
+    if (verify?.messages?.some((m) => m.id === next.id || m.kind === kind)) {
+      return;
+    }
+  }
 }
 
 export default function MessagesExtension({
@@ -41,6 +46,7 @@ export default function MessagesExtension({
     () => target.getPresentationStyle() ?? "compact",
   );
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [attachmentSaved, setAttachmentSaved] = useState(false);
 
   useEffect(() => {
     target.requestPresentationStyle("expanded");
@@ -79,6 +85,7 @@ export default function MessagesExtension({
     // Persist before native insert — host launch tears down the extension
     // before a deferred appendMessage after await would run.
     appendMessage(target, marker, "attachment");
+    setAttachmentSaved(true);
     void target
       .insertAttachment({
         filename: "expo-targets-note.txt",
@@ -110,6 +117,14 @@ export default function MessagesExtension({
       <Text testID="text-presentation-style">style:{style}</Text>
       {sessionId ? (
         <Text testID="text-session-id">session:{sessionId.slice(0, 8)}</Text>
+      ) : null}
+      {attachmentSaved ? (
+        <Text
+          testID="text-attachment-saved"
+          accessibilityLabel="attachment:saved"
+        >
+          attachment:saved
+        </Text>
       ) : null}
 
       <TouchableOpacity
