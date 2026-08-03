@@ -331,7 +331,7 @@ export async function navigatePath(
   steps: string[],
 ): Promise<void> {
   for (const label of segments) {
-    let tapped = await tapLabelInTree(device, [label]);
+    let tapped = await tapLabelInTree(device, [label], { exactOnly: true });
     for (let i = 0; i < 6 && !tapped; i++) {
       await device.swipe({
         xStart: 210,
@@ -341,7 +341,7 @@ export async function navigatePath(
         duration: 0.4,
       });
       await sleep(400);
-      tapped = await tapLabelInTree(device, [label]);
+      tapped = await tapLabelInTree(device, [label], { exactOnly: true });
     }
     if (!tapped) {
       const tree = await device.accessibilityTree();
@@ -354,66 +354,318 @@ export async function navigatePath(
   }
 }
 
+function isAllowOn(value: unknown): boolean {
+  const v = String(value ?? "")
+    .trim()
+    .toLowerCase();
+  return v === "1" || v === "true" || v === "on";
+}
+
+function isAllowOff(value: unknown): boolean {
+  const v = String(value ?? "")
+    .trim()
+    .toLowerCase();
+  return v === "0" || v === "false" || v === "off" || v === "";
+}
+
+/**
+ * iOS 26 Settings exposes “Allow Extension” as AXCheckBox / type CheckBox
+ * (role_description “switch”). DW nodes use `type` + `identifier`, not
+ * `role`. Center taps miss the trailing control — idb-proven: tap ~85% width.
+ */
+function findAllowExtensionControl(
+  tree: Awaited<ReturnType<DeviceSession["accessibilityTree"]>>,
+) {
+  return (
+    tree.find((n) => (n.identifier ?? "").trim() === "Allow Extension") ??
+    tree.find((n) => {
+      const type = (n.type ?? "").toLowerCase();
+      const label = (n.label ?? "").toLowerCase();
+      return (
+        label.includes("allow extension") &&
+        (type.includes("checkbox") ||
+          type.includes("switch") ||
+          type.includes("toggle"))
+      );
+    })
+  );
+}
+
+/** Trailing-switch fractions — center/getById taps are no-ops on this CheckBox. */
+const ALLOW_TAP_FRACTIONS = [0.85, 0.8, 0.9] as const;
+
+async function tapAllowExtensionMidRight(
+  device: DeviceSession,
+  frame: { x: number; y: number; width: number; height: number },
+  fraction: number,
+): Promise<void> {
+  await device.tap({
+    x: Math.round(frame.x + frame.width * fraction),
+    y: Math.round(frame.y + frame.height / 2),
+  });
+}
+
 /**
  * Open an appex row under Safari Extensions / Content Blockers and turn on
  * “Allow Extension” when present (Apple’s enable step). Listing alone proves
- * registration; this step proves the OS exposes the enable surface.
+ * registration; when the enable surface is present this asserts the control
+ * ends On (not merely that a label was tapped).
+ *
+ * Prefer `appexIds` (appex bundle identifiers) — multiple hosts share the
+ * display name “ET Safari Target” on the Extensions list.
  */
 export async function openAppexAndAllowExtension(
   device: DeviceSession,
   appexLabels: string[],
   steps: string[],
+  opts: { appexIds?: string[] } = {},
 ): Promise<void> {
-  const opened = await tapLabelInTree(device, appexLabels);
+  const ids = (opts.appexIds ?? []).filter(Boolean);
+  let opened = false;
+  for (const id of ids) {
+    try {
+      await device.getById(id, { timeoutMs: 2_500 }).tap();
+      opened = true;
+      steps.push(`appex-row-tap:id:${id}`);
+      break;
+    } catch {
+      /* try next id / labels */
+    }
+  }
+  if (!opened) {
+    // Prefer label that includes On/Off suffix from the list row when ids miss.
+    opened = await tapLabelInTree(device, [
+      ...appexLabels.flatMap((l) => [`${l}, Off`, `${l}, On`, l]),
+    ]);
+  }
   if (!opened) {
     const tree = await device.accessibilityTree();
     throw new Error(
-      `Safari Extensions: appex row missing ${JSON.stringify(appexLabels)}; labels=${flattenLabels(tree).slice(0, 40).join("|")}`,
+      `Safari Extensions: appex row missing ids=${JSON.stringify(ids)} labels=${JSON.stringify(appexLabels)}; tree=${tree
+        .map((n) => `${n.identifier ?? ""}:${n.label ?? ""}`)
+        .slice(0, 40)
+        .join("|")}`,
     );
   }
   steps.push("appex-detail-open");
   await sleep(500);
 
-  const tree = await device.accessibilityTree();
-  const labels = flattenLabels(tree).map((l) => l.toLowerCase());
-  const hasAllow = labels.some((l) =>
-    /allow extension|allow in|content blocker/i.test(l),
-  );
-  if (!hasAllow) {
-    // Still on the list page or OS hid the toggle — listing was already proven.
-    steps.push("appex-allow-surface-missing");
-    return;
+  let tree = await device.accessibilityTree();
+  let allow = findAllowExtensionControl(tree);
+  if (!allow) {
+    const labels = flattenLabels(tree).map((l) => l.toLowerCase());
+    const hasAllowCopy = labels.some((l) =>
+      /allow extension|allow in/i.test(l),
+    );
+    if (!hasAllowCopy) {
+      throw new Error(
+        `Allow Extension surface missing after opening appex detail; labels=${flattenLabels(tree).slice(0, 40).join("|")}`,
+      );
+    }
+    throw new Error(
+      `Allow Extension control missing despite copy; labels=${flattenLabels(tree).slice(0, 40).join("|")}`,
+    );
   }
 
-  // Prefer an off switch next to Allow Extension; otherwise tap the Allow row.
-  const offSwitch = tree.find((n) => {
-    const role = (n.role ?? "").toLowerCase();
-    const value = String(n.value ?? "").toLowerCase();
-    const label = (n.label ?? "").toLowerCase();
-    return (
-      (role.includes("switch") || role.includes("toggle")) &&
-      (value === "0" || value === "false" || value === "off") &&
-      (label.includes("allow") || !label)
+  if (isAllowOn(allow.value)) {
+    steps.push("appex-allow-already-on");
+    return;
+  }
+  if (!allow.frame) {
+    throw new Error("Allow Extension control has no frame");
+  }
+  if (!isAllowOff(allow.value)) {
+    throw new Error(
+      `Allow Extension unexpected value=${JSON.stringify(allow.value)}`,
     );
+  }
+
+  let how = "none";
+  for (const fraction of ALLOW_TAP_FRACTIONS) {
+    if (!allow?.frame) break;
+    await tapAllowExtensionMidRight(device, allow.frame, fraction);
+    how = `mid-right:${fraction}`;
+    await sleep(450);
+    tree = await device.accessibilityTree();
+    allow = findAllowExtensionControl(tree);
+    if (allow && isAllowOn(allow.value)) break;
+  }
+  if (!allow || !isAllowOn(allow.value)) {
+    throw new Error(
+      `Allow Extension still off after tap (${how}); value=${JSON.stringify(allow?.value)} type=${allow?.type}`,
+    );
+  }
+  steps.push(`appex-allow-toggled-on:${how}`);
+}
+
+/**
+ * In Safari on example.com: Page Menu → extension row → popup chrome.
+ * Proves the appex UI actually opens (not just content-script side effects).
+ */
+export async function openSafariExtensionPopup(
+  device: DeviceSession,
+  appexLabels: string[],
+  steps: string[],
+): Promise<void> {
+  // Dismiss one-time Highlights coaching if present.
+  await tapLabelInTree(device, ["Not Now"], { exactOnly: true });
+  await sleep(300);
+
+  let openedMenu = false;
+  try {
+    await device.getById("PageFormatMenuButton", { timeoutMs: 3_000 }).tap();
+    openedMenu = true;
+    steps.push("safari-page-menu:id");
+  } catch {
+    openedMenu = await tapLabelInTree(device, ["Page Menu"]);
+    if (openedMenu) steps.push("safari-page-menu:label");
+  }
+  if (!openedMenu) {
+    throw new Error("Safari Page Menu not found");
+  }
+  await sleep(700);
+
+  // Prefer exact extension display name; try each matching row (RN + native
+  // both show as “ET Safari Target” on the Page Menu).
+  const names = [
+    ...appexLabels,
+    ...appexLabels.map((l) => l.replace(/ Target$/i, "")),
+  ].filter(Boolean);
+  const want = names.map((n) => n.toLowerCase());
+  const menuTree = await device.accessibilityTree();
+  const rows = menuTree.filter((n) => {
+    const label = (n.label ?? "").trim().toLowerCase();
+    if (!label || !n.frame || n.frame.width < 8) return false;
+    return want.some((w) => label === w || label.includes(w));
   });
-  if (offSwitch?.frame) {
-    const f = offSwitch.frame;
+  if (!rows.length) {
+    throw new Error(
+      `Safari Page Menu: extension row missing ${JSON.stringify(names)}; labels=${flattenLabels(menuTree).slice(0, 50).join("|")}`,
+    );
+  }
+
+  let popupOk = false;
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r]!;
+    const f = row.frame!;
     await device.tap({
       x: Math.round(f.x + f.width / 2),
       y: Math.round(f.y + f.height / 2),
     });
-    await sleep(400);
-    steps.push("appex-allow-toggled-on");
+    steps.push(`safari-extension-row-tapped:${r}`);
+    await sleep(1_000);
+
+    for (let i = 0; i < 8; i++) {
+      const tree = await device.accessibilityTree();
+      const labels = flattenLabels(tree);
+      const hasHeading = labels.some((l) =>
+        appexLabels.some((a) => l.toLowerCase().includes(a.toLowerCase())),
+      );
+      const hasDone = labels.some((l) => /^done$/i.test(l.trim()));
+      if (hasHeading && hasDone) {
+        popupOk = true;
+        break;
+      }
+      await sleep(300);
+    }
+    if (popupOk) break;
+
+    // Re-open Page Menu for the next candidate row.
+    try {
+      await device.getById("PageFormatMenuButton", { timeoutMs: 2_000 }).tap();
+    } catch {
+      await tapLabelInTree(device, ["Page Menu"]);
+    }
+    await sleep(600);
+    await tapLabelInTree(device, ["Not Now"], { exactOnly: true });
+  }
+
+  if (!popupOk) {
+    const tree = await device.accessibilityTree();
+    throw new Error(
+      `Safari extension popup did not open; labels=${flattenLabels(tree).slice(0, 40).join("|")}`,
+    );
+  }
+  steps.push("safari-extension-popup-ok");
+
+  // Close popup so later host asserts are clean.
+  await tapLabelInTree(device, ["Done"], { exactOnly: true });
+  await sleep(400);
+  steps.push("safari-extension-popup-dismissed");
+}
+
+/**
+ * On an appex detail page, set a website permission row to Allow
+ * (e.g. “example.com, Ask” → Allow). Soft-ok if the row is already Allow.
+ */
+export async function allowAppexOnWebsite(
+  device: DeviceSession,
+  hostname: string,
+  steps: string[],
+): Promise<void> {
+  const host = hostname.toLowerCase();
+  const tree = await device.accessibilityTree();
+  const allLabels = flattenLabels(tree).map((l) => l.toLowerCase());
+  if (
+    allLabels.some(
+      (l) => l.includes(host) && l.includes("allow") && !l.includes("ask"),
+    )
+  ) {
+    steps.push(`website-perm-already-allow:${hostname}`);
     return;
   }
 
-  const tappedAllow = await tapLabelInTree(device, [
-    "Allow Extension",
-    "Allow",
-  ]);
-  if (tappedAllow) {
-    steps.push("appex-allow-tapped");
-  } else {
-    steps.push("appex-allow-already-on");
+  const row =
+    tree.find((n) => {
+      const label = (n.label ?? "").toLowerCase();
+      return (
+        label.includes(host) &&
+        (label.includes("ask") || label.includes("deny") || label.includes(","))
+      );
+    }) ??
+    tree.find((n) => (n.label ?? "").toLowerCase().includes(host));
+  if (!row) {
+    steps.push(`website-perm-row-missing:${hostname}`);
+    return;
   }
+
+  if (row.frame) {
+    await device.tap({
+      x: Math.round(row.frame.x + row.frame.width / 2),
+      y: Math.round(row.frame.y + row.frame.height / 2),
+    });
+    await sleep(500);
+    steps.push(`website-perm-open:${hostname}`);
+  }
+
+  // Re-check — tapping an already-Allow row can be a no-op sheet.
+  const after = flattenLabels(await device.accessibilityTree()).map((l) =>
+    l.toLowerCase(),
+  );
+  if (
+    after.some(
+      (l) => l.includes(host) && l.includes("allow") && !l.includes("ask"),
+    )
+  ) {
+    steps.push(`website-perm-already-allow:${hostname}`);
+    return;
+  }
+
+  const allowed = await tapLabelInTree(device, ["Allow"], { exactOnly: true });
+  if (!allowed) {
+    const alt = await tapLabelInTree(device, [
+      "Always Allow",
+      "Allow on Every Website",
+      "Allow for One Day",
+    ]);
+    if (!alt) {
+      throw new Error(
+        `Could not set ${hostname} permission to Allow; labels=${flattenLabels(await device.accessibilityTree()).slice(0, 40).join("|")}`,
+      );
+    }
+    steps.push(`website-perm-allowed-alt:${hostname}`);
+  } else {
+    steps.push(`website-perm-allowed:${hostname}`);
+  }
+  await sleep(400);
 }

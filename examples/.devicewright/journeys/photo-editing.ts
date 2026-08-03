@@ -1,10 +1,11 @@
 /**
  * Photo Editing extension deep journey.
  *
- * Apple capability: Photos Edit → third-party PHContentEditingController.
+ * Apple capability: Photos Edit → More → Extensions → ET PhotoEdit → Done
+ * → App Group persistence on host.
  *
- * GREEN = after addMedia + Photos Edit, the extension is listed / opens
- * (`ET PhotoEdit Extension` / `ET PhotoEdit Target`).
+ * GREEN = extension UI opens AND Done writes App Group marker
+ * (`expo-targets uitest photo-edit done`). Pluginkit alone is not green.
  */
 import path from "node:path";
 import type { DeviceSession } from "@csark0812/devicewright";
@@ -27,9 +28,9 @@ const FIXTURE = path.join(
 );
 
 const EXTENSION_LABELS = [
+  "ET PhotoEdit",
   "ET PhotoEdit Extension",
   "ET PhotoEdit Target",
-  "ET PhotoEdit",
 ];
 
 export async function runPhotoEditingJourney(
@@ -87,7 +88,6 @@ export async function runPhotoEditingJourney(
         { exactOnly: true },
       );
       if (!tapped) {
-        // Bottom primary CTA hotspot on iPhone Air.
         await device.tap({ x: 200, y: 780 });
       }
       steps.push(
@@ -108,30 +108,33 @@ export async function runPhotoEditingJourney(
     await sleep(1_000);
     steps.push("open-photo");
 
-    const editTapped = await tapLabelInTree(device, ["Edit", "Customize"], {
+    // iOS 26 Photos one-up: Edit may be toolbar label, Customize, or mid-bottom.
+    let editTapped = await tapLabelInTree(device, ["Edit", "Customize"], {
       exactOnly: true,
     });
     if (!editTapped) {
-      // Fallback: prove photo-editing appex is registered at the OS extension point.
-      const { spawnSync } = await import("node:child_process");
-      const r = spawnSync(
-        "xcrun",
-        ["simctl", "spawn", device.deviceId, "pluginkit", "-mAvvvvv"],
-        { encoding: "utf8", maxBuffer: 20 * 1024 * 1024, env: process.env },
-      );
-      const out = `${r.stdout ?? ""}\n${r.stderr ?? ""}`;
-      const appexId = `${entry.hostBundleId}.photo-editing`;
-      if (out.includes(appexId) && /com\.apple\.photo-editing/i.test(out)) {
-        steps.push("pluginkit-photo-editing");
-        return {
-          id: "photo-editing",
-          path: pathStr,
-          phase: 5,
-          ok: true,
-          status: "green",
-          steps,
-        };
+      // Common Edit hotspot in Photos toolbar (iPhone Air).
+      for (const pt of [
+        { x: 210, y: 860 },
+        { x: 280, y: 860 },
+        { x: 350, y: 100 },
+        { x: 210, y: 820 },
+      ]) {
+        await device.tap(pt);
+        await sleep(700);
+        const labels = flattenLabels(await device.accessibilityTree());
+        if (
+          labels.some((l) =>
+            /^(Adjust|Filters|Crop|More|Done|Cancel)$/i.test(l.trim()),
+          )
+        ) {
+          editTapped = true;
+          steps.push(`tap-edit:hotspot:${pt.x},${pt.y}`);
+          break;
+        }
       }
+    }
+    if (!editTapped) {
       throw new Error(
         `Photos Edit control missing; labels=${flattenLabels(
           await device.accessibilityTree(),
@@ -140,84 +143,112 @@ export async function runPhotoEditingJourney(
           .join("|")}`,
       );
     }
-    steps.push("tap-edit");
+    if (!steps.some((s) => s.startsWith("tap-edit"))) {
+      steps.push("tap-edit");
+    }
     await sleep(1_200);
 
-    // Extensions chrome: overflow / More / … often hides third-party editors.
-    for (const name of [
-      "Extensions",
-      "More",
-      "…",
-      "...",
-      "Markup",
-      "Filters",
-    ]) {
-      if (await tapLabelInTree(device, [name], { exactOnly: true })) {
-        steps.push(`edit-chrome:${name}`);
-        await sleep(700);
-      }
+    // Proven path (iOS 26 / iPhone Air): top-right More (…) → Extensions →
+    // ET PhotoEdit. Prefer label taps; fall back to More hotspot coords.
+    let moreOpened = await tapLabelInTree(device, ["More"], { exactOnly: true });
+    if (!moreOpened) {
+      await device.tap({ x: 322, y: 90 });
+      moreOpened = true;
+      steps.push("edit-chrome:More:hotspot");
+    } else {
+      steps.push("edit-chrome:More");
     }
-    // Bottom-trailing overflow hotspot on iPhone Air edit chrome.
-    await device.tap({ x: 380, y: 820 });
-    await sleep(600);
+    await sleep(700);
 
-    const tree = await device.accessibilityTree();
-    const labels = flattenLabels(tree);
-    const hit = labels.some((l) => EXTENSION_LABELS.some((n) => l.includes(n)));
-    if (!hit) {
-      // Edit chrome opened but third-party extensions may be behind a menu
-      // Simulator Photos often omits — prove OS registration instead.
-      const { spawnSync } = await import("node:child_process");
-      const r = spawnSync(
-        "xcrun",
-        ["simctl", "spawn", device.deviceId, "pluginkit", "-mAvvvvv"],
-        { encoding: "utf8", maxBuffer: 20 * 1024 * 1024, env: process.env },
-      );
-      const out = `${r.stdout ?? ""}\n${r.stderr ?? ""}`;
-      const appexId = `${entry.hostBundleId}.photo-editing`;
-      if (out.includes(appexId) && /com\.apple\.photo-editing/i.test(out)) {
-        steps.push("photos-edit-open");
-        steps.push("pluginkit-photo-editing");
-        return {
-          id: "photo-editing",
-          path: pathStr,
-          phase: 5,
-          ok: true,
-          status: "green",
-          steps,
-        };
-      }
+    const extensionsTapped = await tapLabelInTree(device, ["Extensions"], {
+      exactOnly: true,
+    });
+    if (!extensionsTapped) {
       throw new Error(
-        `photo-editing extension not listed in Edit UI; labels=${labels.slice(0, 50).join("|")}`,
+        `Photos Edit More menu missing Extensions; labels=${flattenLabels(
+          await device.accessibilityTree(),
+        )
+          .slice(0, 40)
+          .join("|")}`,
+      );
+    }
+    steps.push("edit-chrome:Extensions");
+    await sleep(900);
+
+    const listed = flattenLabels(await device.accessibilityTree());
+    const hit = listed.some((l) =>
+      EXTENSION_LABELS.some((n) => l.includes(n)),
+    );
+    if (!hit) {
+      throw new Error(
+        `photo-editing extension not listed in Extensions sheet; labels=${listed.slice(0, 50).join("|")}`,
       );
     }
     steps.push("photo-edit-extension-listed");
 
-    await tapLabelInTree(device, EXTENSION_LABELS);
-    await sleep(1_000);
+    const openedExt = await tapLabelInTree(device, EXTENSION_LABELS);
+    if (!openedExt) {
+      throw new Error(
+        `Could not tap photo-editing extension; labels=${flattenLabels(
+          await device.accessibilityTree(),
+        )
+          .slice(0, 40)
+          .join("|")}`,
+      );
+    }
+    await sleep(1_200);
+
     const after = flattenLabels(await device.accessibilityTree());
-    if (after.some((l) => l.includes("ET PhotoEdit Extension"))) {
-      steps.push("photo-edit-extension-ui");
+    const uiVisible =
+      after.some((l) => /ET PhotoEdit/i.test(l)) ||
+      after.some((n) => n.includes("photo-edit-marker"));
+    // AX often omits the marker label; nav-bar identifier "ET PhotoEdit" is enough.
+    const tree = await device.accessibilityTree();
+    const navHit = tree.some(
+      (n) =>
+        String(n.identifier ?? "").includes("ET PhotoEdit") ||
+        /ET PhotoEdit Extension/i.test(String(n.label ?? "")),
+    );
+    if (!uiVisible && !navHit) {
+      throw new Error(
+        `photo-editing extension UI did not open; labels=${after.slice(0, 40).join("|")}`,
+      );
+    }
+    steps.push("photo-edit-extension-ui");
+
+    // Extension Done (checkmark) — finishContentEditing writes App Group.
+    let doneTapped = await tapLabelInTree(device, ["Done"], { exactOnly: true });
+    if (!doneTapped) {
+      await device.tap({ x: 378, y: 90 });
+      doneTapped = true;
+      steps.push("tap-done:hotspot");
+    } else {
+      steps.push("tap-done");
+    }
+    await sleep(1_500);
+
+    // Photos may still show Edit chrome with pending edits — commit with Done.
+    const stillEditing = flattenLabels(await device.accessibilityTree());
+    if (
+      stillEditing.some((l) => /^(Adjust|Filters|Crop)/i.test(l)) ||
+      stillEditing.some((l) => l === "More")
+    ) {
+      const commit = await tapLabelInTree(device, ["Done"], { exactOnly: true });
+      if (!commit) await device.tap({ x: 378, y: 90 });
+      steps.push("photos-commit-done");
+      await sleep(1_200);
     }
 
-    // Best-effort Done → App Group persistence assert.
-    if (await tapLabelInTree(device, ["Done"], { exactOnly: true })) {
-      steps.push("tap-done");
-      await sleep(1_200);
-      await device.launchApp(entry.hostBundleId, { terminateRunning: true });
-      await dismissSystemAlerts(device);
-      try {
-        await assertPayloadContains(
-          device,
-          entry.testIds.lastPayload,
-          "expo-targets uitest photo-edit done",
-          8_000,
-        );
-        steps.push("done-persistence-ok");
-      } catch {
-        steps.push("done-persistence-pending");
-      }
-    }
+    await device.launchApp(entry.hostBundleId, { terminateRunning: true });
+    await dismissSystemAlerts(device);
+    await waitForNamed(device, ["ready"], 12_000);
+    await assertPayloadContains(
+      device,
+      entry.testIds.lastPayload,
+      "expo-targets uitest photo-edit done",
+      10_000,
+    );
+    steps.push("done-persistence-ok");
 
     return {
       id: "photo-editing",

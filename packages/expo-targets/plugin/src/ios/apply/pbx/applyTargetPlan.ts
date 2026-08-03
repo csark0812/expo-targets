@@ -12,6 +12,7 @@ import {
 } from './buildPhases';
 import { applyBuildSettings, removeBuildSetting } from './buildSettings';
 import { ensureBundleReactNativePhase } from './bundleReactNative';
+import { ensureCopyFrameworksIntoAppClipPhase } from './copyFrameworksIntoAppClip';
 import { configureAppClipEmbed, configureAppExtensionEmbed } from './embed';
 import { addExternalFileReference } from './fileRefs';
 import { addTargetToVirtualGroup, ensureExpoTargetsGroup } from './groups';
@@ -217,6 +218,14 @@ function applyEmbed(
       target,
       targetProductName,
     });
+    // RN App Clips need host Frameworks copied into AppClips/*.app (DYLD).
+    if (plan.bundleReactNative) {
+      ensureCopyFrameworksIntoAppClipPhase({
+        project,
+        mainTargetUuid,
+        clipProductName: targetProductName,
+      });
+    }
   }
   // 'none' = standalone product (e.g. watch apps); nothing to embed.
 }

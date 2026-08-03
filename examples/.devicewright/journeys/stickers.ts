@@ -1,4 +1,5 @@
 import type { DeviceSession } from "@csark0812/devicewright";
+import { assertOsLimitAllowed, claimForId } from "../claims";
 import { TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
@@ -188,10 +189,14 @@ async function revealFunPack(device: DeviceSession): Promise<void> {
     if (await tryNamedPack(3_000)) return;
   }
 
-  // Icons never expose AX labels on this OS — slot taps are the contract.
-  // Re-assert the primary Fun Stickers slot before returning.
-  await device.tap({ x: 190, y: 566 });
-  await sleep(900);
+  // Icons never expose AX labels on this OS — EDIT list must name the pack.
+  throw new Error(
+    `Fun Stickers pack not named in Stickers UI; tried slots+EDIT; labels=${flattenLabels(
+      await device.accessibilityTree(),
+    )
+      .slice(0, 50)
+      .join("|")}`,
+  );
 }
 
 /**
@@ -210,7 +215,11 @@ export async function runStickersJourney(
     steps.push("register-host");
     await device.launchApp(entry.hostBundleId, { terminateRunning: true });
     await dismissSystemAlerts(device);
-    await waitForId(device, hostReadyTestId(entry.testIds), 20_000);
+    try {
+      await waitForId(device, hostReadyTestId(entry.testIds), 6_000);
+    } catch {
+      await waitForNamed(device, ["ready"], 15_000);
+    }
     await sleep(800);
 
     if (bar === "A") {
@@ -280,23 +289,35 @@ export async function runStickersJourney(
     await sleep(500);
     await device.tap({ x: 210, y: 660 });
     await sleep(400);
-    // Insert proof: composer/message bubbles rarely expose sticker AX; asset-only policy.
     const afterInsert = flattenLabels(await device.accessibilityTree());
     if (
       afterInsert.some((l) => /sticker|bip|Fun Stickers|message/i.test(l))
     ) {
       steps.push("sticker-insert-surface");
-    } else {
-      steps.push("sticker-insert-ax-opaque");
+      return {
+        id: entry.id,
+        path: entry.path,
+        phase: 2,
+        ok: true,
+        status: "green",
+        steps,
+      };
     }
 
+    steps.push("sticker-insert-ax-opaque");
+    assertOsLimitAllowed("stickers");
+    const claim = claimForId("stickers");
     return {
       id: entry.id,
       path: entry.path,
       phase: 2,
       ok: true,
-      status: "green",
+      status: "os-limit",
       steps,
+      failureKind: "os-limit",
+      error:
+        claim?.reason ??
+        "Sticker insert AX-opaque after Fun Stickers pack selected",
     };
   } catch (e) {
     const msg = String(e);

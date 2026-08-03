@@ -57,7 +57,9 @@ export { runSafariJourney } from "./safari";
 export { runShareActionJourney } from "./share";
 export {
   navigatePath,
+  allowAppexOnWebsite,
   openAppexAndAllowExtension,
+  openSafariExtensionPopup,
   openSafariExtensionsOrBlockers,
   openSettingsApps,
   openSystemSafariSettings,

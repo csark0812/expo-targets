@@ -3,8 +3,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { getMessage, helloWidget, updateMessage } from './targets/hello-widget';
 
-/** Seeded host marker: message + family intent note for Devicewright. */
-export const UITEST_WIDGET_SEED = 'Hello from host|family:systemSmall';
+/** Seeded host marker for Devicewright (avoid `|` — can confuse AX splits). */
+export const UITEST_WIDGET_SEED = 'Hello from host · family:systemSmall';
 
 export default function App() {
   const [payload, setPayload] = useState('none');
@@ -49,8 +49,24 @@ export default function App() {
       >
         <Text style={styles.buttonText}>Clear payload</Text>
       </TouchableOpacity>
-      <Text testID="text-last-payload" style={styles.payload}>
+      {/* Split seed parts — AX often truncates pipe-joined payload labels. */}
+      <Text
+        testID="text-last-payload"
+        style={styles.payload}
+        numberOfLines={4}
+        accessibilityLabel={payload}
+      >
         {payload}
+      </Text>
+      <Text testID="text-seed-message" style={styles.payload}>
+        {payload.includes('Hello from host')
+          ? 'seed:Hello from host'
+          : `seed-miss:${payload}`}
+      </Text>
+      <Text testID="text-seed-family" style={styles.payload}>
+        {payload.includes('family:systemSmall')
+          ? 'seed:family:systemSmall'
+          : `family-miss:${payload}`}
       </Text>
     </View>
   );

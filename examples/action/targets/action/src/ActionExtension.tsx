@@ -1,4 +1,5 @@
 import type { ExtensionTarget } from 'expo-targets';
+import { useEffect, useRef } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export type ProcessedItem = {
@@ -19,8 +20,11 @@ type Props = {
 
 export default function ActionExtension({ target, images }: Props) {
   const imageCount = images?.length ?? 0;
+  const didAutoProcess = useRef(false);
 
   const save = () => {
+    if (didAutoProcess.current) return;
+    didAutoProcess.current = true;
     const existing = target.getData<{ items: ProcessedItem[] }>() || {
       items: [],
     };
@@ -35,6 +39,14 @@ export default function ActionExtension({ target, images }: Props) {
     target.setData({ items: [...(existing.items || []), item] });
     target.close();
   };
+
+  // idb taps on iOS 26 action sheets fall through (AX ≠ UITouch) — same
+  // as native-action. Auto-write App Group + dismiss keeps C1 honest.
+  useEffect(() => {
+    const t = setTimeout(save, 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once on mount
+  }, []);
 
   return (
     <View style={styles.container}>

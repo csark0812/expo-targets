@@ -33,14 +33,14 @@ export default function ClipExtension({ target }: Props) {
   };
 
   return (
-    <View style={styles.container} testID="clip-rn-root">
+    <View style={[styles.container, { backgroundColor: '#fff' }]} testID="clip-rn-root">
       <Text style={styles.title} testID="clip-rn-title">
         App Clip
       </Text>
-      <Text testID="clip-invocation-marker">
+      <Text testID="clip-invocation-marker" style={styles.marker}>
         expo-targets uitest clip invocation
       </Text>
-      <Text>Quick checkout from React Native</Text>
+      <Text style={styles.body}>Quick checkout from React Native</Text>
       <TouchableOpacity style={styles.button} onPress={checkout}>
         <Text style={styles.buttonText}>Complete checkout</Text>
       </TouchableOpacity>
@@ -50,7 +50,9 @@ export default function ClipExtension({ target }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, gap: 12, justifyContent: 'center' },
-  title: { fontSize: 20, fontWeight: '700' },
+  title: { fontSize: 20, fontWeight: '700', color: '#111' },
+  marker: { color: '#111' },
+  body: { color: '#333' },
   button: {
     backgroundColor: '#007AFF',
     padding: 12,

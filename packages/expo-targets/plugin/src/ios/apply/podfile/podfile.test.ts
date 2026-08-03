@@ -4,6 +4,7 @@ import * as path from 'node:path';
 import { normalizePodfile } from '../../../../test-utils/normalizePodfile';
 import {
   ensureMainTargetUsesFrameworks,
+  generateReactNativeTargetBlock,
   generateStandaloneTargetBlock,
   hasTargetBlock,
   insertTargetBlock,
@@ -50,6 +51,26 @@ describe('generateStandaloneTargetBlock', () => {
     });
 
     expect(block).toContain('use_frameworks! :linkage => :static');
+  });
+});
+
+describe('generateReactNativeTargetBlock', () => {
+  test('share/action inherit search_paths only', () => {
+    const block = generateReactNativeTargetBlock({
+      targetName: 'ExampleShareTarget',
+      deploymentTarget: '15.1',
+      extensionType: 'share',
+    });
+    expect(block).toContain('inherit! :search_paths');
+  });
+
+  test('clip also inherits search_paths (host copies frameworks into AppClips)', () => {
+    const block = generateReactNativeTargetBlock({
+      targetName: 'ExampleClipTarget',
+      deploymentTarget: '15.1',
+      extensionType: 'clip',
+    });
+    expect(block).toContain('inherit! :search_paths');
   });
 });
 

@@ -48,28 +48,28 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     id: "messages",
     tranche: "V1",
     touchpoint:
-      "Messages drawer → Expand/Compact + session + attachment + Send template → host payload",
+      "Messages drawer → Expand/Compact + session + attachment + Send template → host payload (session+attachment required)",
     status: "concrete",
   },
   {
     id: "stickers",
     tranche: "V1",
     touchpoint:
-      "Sticker pack catalog + Stickers browser; insert AX-opaque (asset-only policy)",
+      "Pack catalog + Stickers browser + named Fun Stickers; insert AX-opaque → CLAIMS",
     status: "concrete",
   },
   {
     id: "clip",
     tranche: "V1",
     touchpoint:
-      "App Clip host contract + launchApp(clip bundle) invocation marker",
+      "App Clip Frameworks+jsbundle + launchApp(_XCAppClipURL) + checkout App Group",
     status: "concrete",
   },
   {
     id: "widgets",
     tranche: "V1/T13",
     touchpoint:
-      "WidgetKit spine + family:systemSmall seed + systemMedium family note",
+      "Seed Hello from host + family:systemSmall (seed-derived) + SpringBoard Small widget tile",
     status: "concrete",
   },
   {
@@ -86,7 +86,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     type: "notification-service",
     tranche: "T1",
     touchpoint:
-      "pluginkit lists usernotifications.service appex (real UNNotificationServiceExtension; Simulator often skips mutation process)",
+      "mutable-content push → App Group / lock-screen [expo-targets] mutation (pluginkit alone insufficient; Sim skip → CLAIMS)",
     status: "concrete",
   },
   {
@@ -128,7 +128,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     type: "clip",
     tranche: "T2",
     touchpoint:
-      "Native clip host + launchApp(clip bundle) invocation (REQUIRED promote)",
+      "Native clip Frameworks+jsbundle + launchApp(_XCAppClipURL) + checkout",
     status: "concrete",
   },
 
@@ -138,7 +138,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     type: "safari",
     tranche: "T3",
     touchpoint:
-      "Host popup/content-script/native-msg markers + Settings Safari Extensions → Allow → Safari",
+      "Allow On + example.com + Safari Page Menu opens ET Safari Target popup + native App Group",
     status: "concrete",
   },
   {
@@ -146,7 +146,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     type: "safari",
     tranche: "T3",
     touchpoint:
-      "Host popup/content-script/native-msg markers + Settings Safari Extensions → Allow",
+      "Allow On + example.com + Safari Page Menu opens extension popup + native App Group",
     status: "concrete",
   },
   {
@@ -154,7 +154,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     type: "content-blocker",
     tranche: "T3",
     touchpoint:
-      "Host rules:N + reload control + Settings Content Blockers enable + Safari block attempt",
+      "Host rules:4 + reload + Allow Extension On + Safari ads.example.com block (inconclusive → CLAIMS)",
     status: "concrete",
   },
 
@@ -170,14 +170,14 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     id: "intent",
     tranche: "T4",
     touchpoint:
-      "Settings Apps host registration (IntentsSupported is build-time; Siri invoke not attempted)",
+      "Settings Apps host registration; Siri invoke os-limit (CLAIMS)",
     status: "concrete",
   },
   {
     id: "intent-ui",
     tranche: "T4",
     touchpoint:
-      "pluginkit lists intents-ui-service appex (IntentViewController principal)",
+      "pluginkit intents-ui-service + os-limit (Siri presentation CLAIMS)",
     status: "concrete",
   },
   {
@@ -204,7 +204,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     id: "photo-editing",
     tranche: "T6",
     touchpoint:
-      "Done-persistence host surface + Photos Edit / pluginkit photo-editing appex",
+      "Photos Edit → More → Extensions → ET PhotoEdit → Done → App Group photo-edit done",
     status: "concrete",
   },
   {
@@ -217,7 +217,8 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
   {
     id: "file-provider-ui",
     tranche: "T6",
-    touchpoint: "pluginkit lists fileprovider-actionsui appex",
+    touchpoint:
+      "pluginkit fileprovider-actionsui + os-limit (CLAIMS)",
     status: "concrete",
   },
   {
@@ -255,19 +256,21 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     id: "keyboard",
     tranche: "T7",
     touchpoint:
-      "Settings Keyboard lists ET Keyboard + host type-into-field (typed:ET)",
+      "Settings Keyboard list (or pluginkit fallback) + host typed:ET required",
     status: "concrete",
   },
   {
     id: "broadcast-upload",
     tranche: "T8",
-    touchpoint: "pluginkit lists broadcast-services-upload appex",
+    touchpoint:
+      "pluginkit broadcast-services-upload + os-limit (CLAIMS)",
     status: "concrete",
   },
   {
     id: "broadcast-setup-ui",
     tranche: "T8",
-    touchpoint: "pluginkit lists broadcast-services-setupui appex",
+    touchpoint:
+      "pluginkit broadcast-services-setupui + os-limit (CLAIMS)",
     status: "concrete",
   },
   {

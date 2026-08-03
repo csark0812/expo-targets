@@ -17,13 +17,18 @@ export default function App() {
   const [nativeMsg, setNativeMsg] = useState('none');
 
   const refresh = useCallback(() => {
+    let native = 'none';
     try {
-      setNativeMsg(storage.get<string>('safari:lastNativeMsg') ?? 'none');
+      native = storage.get<string>('safari:lastNativeMsg') ?? 'none';
     } catch {
-      setNativeMsg('none');
+      native = 'none';
     }
+    setNativeMsg(native);
+    const contentLive =
+      native !== 'none' ? UITEST_SAFARI_CONTENT : 'content-pending';
+    const nativeLive = native !== 'none' ? native : 'native-pending';
     setPayload(
-      `popup:${UITEST_SAFARI_POPUP}|content-script:${UITEST_SAFARI_CONTENT}|native-msg:${UITEST_SAFARI_NATIVE}`
+      `popup:${UITEST_SAFARI_POPUP}|content-script:${contentLive}|native-msg:${nativeLive}`,
     );
     setReady(true);
   }, []);
@@ -42,8 +47,12 @@ export default function App() {
         com.expotargets.example.native.safari
       </Text>
       <Text testID="text-safari-popup">{UITEST_SAFARI_POPUP}</Text>
-      <Text testID="text-safari-content">{UITEST_SAFARI_CONTENT}</Text>
-      <Text testID="text-safari-native-msg">{UITEST_SAFARI_NATIVE}</Text>
+      <Text testID="text-safari-content">
+        {nativeMsg !== 'none' ? UITEST_SAFARI_CONTENT : 'content-pending'}
+      </Text>
+      <Text testID="text-safari-native-msg">
+        {nativeMsg !== 'none' ? UITEST_SAFARI_NATIVE : 'native-pending'}
+      </Text>
       <TouchableOpacity
         testID="btn-refresh-safari"
         style={styles.button}
@@ -55,6 +64,12 @@ export default function App() {
         testID="btn-clear-payload"
         style={styles.button}
         onPress={() => {
+          try {
+            storage.set('safari:lastNativeMsg', '');
+            storage.set('safari:lastNativeMsgAt', 0);
+          } catch {
+            /* ignore */
+          }
           setPayload('none');
           setNativeMsg('none');
         }}
@@ -62,7 +77,7 @@ export default function App() {
         <Text style={styles.buttonText}>Clear</Text>
       </TouchableOpacity>
       <Text testID="text-native-msg-status" style={styles.payload}>
-        lastNative:{nativeMsg}
+        lastNative:{nativeMsg || 'none'}
       </Text>
       <Text testID="text-last-payload" style={styles.payload}>
         {payload}

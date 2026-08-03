@@ -318,29 +318,21 @@ export async function runMessagesJourney(
     );
     steps.push("a-bar-payload");
 
-    // Best-effort: session + attachment markers also landed in App Group.
-    try {
-      await assertPayloadContains(
-        device,
-        entry.testIds.lastPayload,
-        "Session bubble from expo-targets",
-        5_000,
-      );
-      steps.push("assert-session-payload");
-    } catch {
-      steps.push("session-payload-miss");
-    }
-    try {
-      await assertPayloadContains(
-        device,
-        entry.testIds.lastPayload,
-        "expo-targets messages attachment",
-        5_000,
-      );
-      steps.push("assert-attachment-payload");
-    } catch {
-      steps.push("attachment-payload-miss");
-    }
+    // Session + attachment markers must land in App Group (not best-effort).
+    await assertPayloadContains(
+      device,
+      entry.testIds.lastPayload,
+      "Session bubble from expo-targets",
+      8_000,
+    );
+    steps.push("assert-session-payload");
+    await assertPayloadContains(
+      device,
+      entry.testIds.lastPayload,
+      "expo-targets messages attachment",
+      8_000,
+    );
+    steps.push("assert-attachment-payload");
 
     const missingExtras =
       !steps.includes("expand") ||

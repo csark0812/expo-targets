@@ -4,14 +4,17 @@
  * Apple capability: `com.apple.usernotifications.service` appex with a real
  * `UNNotificationServiceExtension` that mutates titles (` [expo-targets]`).
  *
- * GREEN = pluginkit lists our service appex. Mutable-content → App Group /
- * lock-screen mutation is best-effort (Simulator often skips the NSE process
- * even when the appex is installed).
+ * GREEN = mutable-content push → App Group mutation marker (or lock-screen
+ * mutated title). Pluginkit alone is not green.
+ *
+ * When Simulator skips launching the NSE process after honest attempts,
+ * return os-limit (CLAIMS) — not soft green.
  */
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import type { DeviceSession } from "@csark0812/devicewright";
+import { assertOsLimitAllowed, claimForId } from "../claims";
 import { TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
@@ -146,38 +149,66 @@ export async function runNotificationServiceJourney(
     }
     if (title?.includes(MUTATED_MARKER)) {
       steps.push("nse-mutated-title-appgroup");
-    } else {
-      await device.pressButton({ button: "LOCK" });
-      await sleep(600);
-      await tapLabelInTree(device, ["Show Notifications"], { exactOnly: true });
-      await sleep(600);
-      const labels = flattenLabels(await device.accessibilityTree());
-      if (
-        labels.some(
-          (l) => l.includes(MUTATED_MARKER) || /ET NSE.*expo-targets/i.test(l),
-        )
-      ) {
-        steps.push("nse-mutated-title-lockscreen");
-      } else {
-        // Simulator frequently skips launching the NSE process; appex presence
-        // + real UNNotificationServiceExtension principal is the floor.
-        steps.push("nse-mutation-os-skipped");
+      try {
+        await device.pressButton({ button: "HOME" });
+      } catch {
+        /* ignore */
       }
+      return {
+        id,
+        path: pathStr,
+        phase: 4,
+        ok: true,
+        status: "green",
+        steps,
+      };
     }
 
+    await device.pressButton({ button: "LOCK" });
+    await sleep(600);
+    await tapLabelInTree(device, ["Show Notifications"], { exactOnly: true });
+    await sleep(600);
+    const labels = flattenLabels(await device.accessibilityTree());
+    if (
+      labels.some(
+        (l) => l.includes(MUTATED_MARKER) || /ET NSE.*expo-targets/i.test(l),
+      )
+    ) {
+      steps.push("nse-mutated-title-lockscreen");
+      try {
+        await device.pressButton({ button: "HOME" });
+      } catch {
+        /* ignore */
+      }
+      return {
+        id,
+        path: pathStr,
+        phase: 4,
+        ok: true,
+        status: "green",
+        steps,
+      };
+    }
+
+    steps.push("nse-mutation-os-skipped");
+    assertOsLimitAllowed(id);
+    const claim = claimForId(id);
     try {
       await device.pressButton({ button: "HOME" });
     } catch {
       /* ignore */
     }
-
     return {
       id,
       path: pathStr,
       phase: 4,
       ok: true,
-      status: "green",
+      status: "os-limit",
       steps,
+      failureKind: "os-limit",
+      error:
+        claim?.reason ??
+        "NSE mutation skipped on Simulator after App Group + lock-screen checks",
     };
   } catch (e) {
     try {

@@ -2,12 +2,12 @@
  * Safari Web Extension deep journey.
  *
  * Apple capability path (iOS 26):
- * Settings → Apps → Safari → Extensions → extension listed → Allow Extension.
- * Soft follow-on: Safari loads example.com (browser surface alive).
+ * Settings → Apps → Safari → Extensions → extension listed → Allow Extension
+ * → allow example.com → Safari loads example.com → content script native-ping
+ * → host App Group `safari:lastNativeMsg` updates.
  *
- * GREEN proves OS lists the appex under Safari Extensions and exposes the
- * enable surface when present — not mere Settings → Apps host registration.
- * Also asserts host popup/content-script/native-msg surface markers.
+ * GREEN proves registration + Allow On + Safari Page Menu opens the extension
+ * popup + content/native App Group runtime signal (not host scaffolding alone).
  */
 import type { DeviceSession } from "@csark0812/devicewright";
 import { TARGET_CATALOG } from "../catalog";
@@ -17,10 +17,13 @@ import {
   dismissSystemAlerts,
   flattenLabels,
   sleep,
+  tapId,
   waitForNamed,
 } from "./helpers";
 import {
+  allowAppexOnWebsite,
   openAppexAndAllowExtension,
+  openSafariExtensionPopup,
   openSafariExtensionsOrBlockers,
   openSystemSafariSettings,
 } from "./settings-nav";
@@ -32,17 +35,16 @@ const EXTENSION_LABELS: Record<string, string[]> = {
   "native-safari": ["ET Safari Target", "ET Safari N", "ET Safari"],
 };
 
-const SURFACE_MARKERS: Record<string, string[]> = {
-  safari: [
-    "expo-targets uitest safari rn",
-    "expo-targets uitest safari content",
-    "expo-targets uitest safari native-msg",
-  ],
-  "native-safari": [
-    "expo-targets uitest safari popup",
-    "expo-targets uitest safari content",
-    "expo-targets uitest safari native-msg",
-  ],
+/** Appex bundle ids — display names collide across RN / native / trick hosts. */
+const EXTENSION_BUNDLE_IDS: Record<string, string[]> = {
+  safari: ["com.expotargets.example.safari.safari"],
+  "native-safari": ["com.expotargets.example.native.safari.safari"],
+};
+
+const NATIVE_MARKER = "expo-targets uitest safari native-msg";
+const POPUP_MARKERS: Record<string, string> = {
+  safari: "expo-targets uitest safari rn",
+  "native-safari": "expo-targets uitest safari popup",
 };
 
 export async function runSafariJourney(
@@ -65,25 +67,40 @@ export async function runSafariJourney(
     await waitForNamed(device, ["ready"], 15_000);
     steps.push("host-ready");
 
-    for (const marker of SURFACE_MARKERS[id] ?? []) {
+    // Clear prior App Group native pings so post-Safari assert is fresh.
+    try {
+      await tapId(device, entry.testIds.clearPayload, 3_000);
+      steps.push("host-cleared");
+    } catch {
+      steps.push("host-clear-skip");
+    }
+
+    // Popup scaffolding only — content/native must come from appex runtime.
+    const popup = POPUP_MARKERS[id];
+    if (popup) {
       await assertPayloadContains(
         device,
-        entry.testIds.lastPayload,
-        marker,
-        8_000,
+        "text-safari-popup",
+        popup,
+        5_000,
       );
     }
-    steps.push("host-surface-markers");
+    steps.push("host-popup-marker");
 
     await openSystemSafariSettings(device, steps);
     await openSafariExtensionsOrBlockers(device, steps, "extensions");
 
+    const appexIds = EXTENSION_BUNDLE_IDS[id] ?? [];
     let listed = false;
     for (let i = 0; i < 16; i++) {
       const t = await device.accessibilityTree();
-      listed = flattenLabels(t).some((l) =>
-        appexLabels.some((a) => l.toLowerCase().includes(a.toLowerCase())),
-      );
+      listed =
+        t.some((n) =>
+          appexIds.some((a) => (n.identifier ?? "") === a),
+        ) ||
+        flattenLabels(t).some((l) =>
+          appexLabels.some((a) => l.toLowerCase().includes(a.toLowerCase())),
+        );
       if (listed) break;
       await sleep(500);
     }
@@ -95,13 +112,14 @@ export async function runSafariJourney(
     }
     steps.push("web-extension-listed");
 
-    await openAppexAndAllowExtension(device, appexLabels, steps);
+    await openAppexAndAllowExtension(device, appexLabels, steps, { appexIds });
+    await allowAppexOnWebsite(device, "example.com", steps);
 
     await device.launchApp(SAFARI_BUNDLE, { terminateRunning: true });
     await sleep(700);
     if (typeof device.openUrl === "function") {
       await device.openUrl("https://example.com");
-      await sleep(1_200);
+      await sleep(2_000);
       steps.push("safari-openurl");
     }
     const tree = await device.accessibilityTree();
@@ -117,6 +135,59 @@ export async function runSafariJourney(
       );
     }
     steps.push("safari-surface-ok");
+
+    await openSafariExtensionPopup(device, appexLabels, steps);
+
+    // Content script / popup → background → native handler → App Group.
+    await device.launchApp(entry.hostBundleId, { terminateRunning: true });
+    await dismissSystemAlerts(device);
+    await waitForNamed(device, ["ready"], 12_000);
+    try {
+      await tapId(device, "btn-refresh-safari", 4_000);
+    } catch {
+      try {
+        await tapId(device, "btn-refresh", 2_000);
+      } catch {
+        /* optional */
+      }
+    }
+    await sleep(500);
+
+    let nativeOk = false;
+    for (let i = 0; i < 16; i++) {
+      try {
+        await assertPayloadContains(
+          device,
+          "text-native-msg-status",
+          NATIVE_MARKER,
+          1_500,
+        );
+        nativeOk = true;
+        break;
+      } catch {
+        try {
+          await tapId(device, "btn-refresh-safari", 1_500);
+        } catch {
+          /* retry */
+        }
+        await sleep(500);
+      }
+    }
+    if (!nativeOk) {
+      const t = await device.accessibilityTree();
+      throw new Error(
+        `Safari native-msg App Group marker missing after example.com; labels=${flattenLabels(t).slice(0, 40).join("|")}`,
+      );
+    }
+    steps.push("safari-runtime-native-msg");
+
+    await assertPayloadContains(
+      device,
+      entry.testIds.lastPayload,
+      "content-script:expo-targets uitest safari content",
+      5_000,
+    );
+    steps.push("safari-runtime-content-marker");
 
     return {
       id,

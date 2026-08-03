@@ -386,18 +386,58 @@ export function generateSafariResources(
     targetDisplayName
   );
 
-  // Content scripts referenced by manifest — emit stub JS with a Sim marker.
-  const contentScripts = config.manifest?.content_scripts ?? [];
+  // Content scripts — default example.com injector when config omits them.
+  // Stub pings native via background so App Group gets a real runtime marker.
+  const contentScripts =
+    config.manifest?.content_scripts &&
+    config.manifest.content_scripts.length > 0
+      ? config.manifest.content_scripts
+      : [
+          {
+            matches: ['*://example.com/*', '*://*.example.com/*'],
+            js: ['content.js'],
+          },
+        ];
+
+  // Re-write manifest with resolved content_scripts (keeps permissions as-is).
+  if (
+    !config.manifest?.content_scripts ||
+    config.manifest.content_scripts.length === 0
+  ) {
+    generateManifest(path.join(resourcesPath, 'manifest.json'), {
+      name: targetDisplayName,
+      ...config.manifest,
+      content_scripts: contentScripts,
+      permissions: [
+        ...(config.manifest?.permissions ?? ['storage']),
+        'nativeMessaging',
+      ].filter((p, i, a) => a.indexOf(p) === i),
+    });
+  }
+
+  const contentStub = `// ${targetDisplayName} content script — Devicewright runtime proof
+(function () {
+  var MARKER = 'expo-targets uitest safari content';
+  try {
+    document.documentElement.setAttribute('data-et-safari', MARKER);
+    if (document.body) document.body.setAttribute('data-et-safari', MARKER);
+  } catch (_) {}
+  try {
+    if (typeof browser !== 'undefined' && browser.runtime && browser.runtime.sendMessage) {
+      browser.runtime.sendMessage({
+        type: 'native',
+        payload: { type: 'content-ping', url: String(location.href || ''), marker: MARKER }
+      }).catch(function () {});
+    }
+  } catch (_) {}
+})();
+`;
+
   for (const script of contentScripts) {
     for (const js of script.js ?? ['content.js']) {
       const contentPath = path.join(resourcesPath, js);
       if (!fs.existsSync(contentPath)) {
-        File.writeFileSafe(
-          contentPath,
-          `// ${targetDisplayName} content script\n` +
-            `document.documentElement.setAttribute('data-et-safari', 'expo-targets uitest safari content');\n` +
-            `try { document.body?.setAttribute('data-et-safari', 'expo-targets uitest safari content'); } catch (_) {}\n`
-        );
+        File.writeFileSafe(contentPath, contentStub);
       }
     }
   }

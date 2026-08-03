@@ -141,7 +141,7 @@ export const TARGET_CATALOG: Record<string, TargetCatalogEntry> = {
     hostDisplayName: "ET Widgets",
     extensionName: "Hello Widget",
     extensionAliases: [],
-    payloadMarker: "Hello from host|family:systemSmall",
+    payloadMarker: "Hello from host · family:systemSmall",
     completeButton: "",
     testIds: {
       screenRoot: "screen-root",

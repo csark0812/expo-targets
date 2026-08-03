@@ -29,8 +29,17 @@ Debug binaries are an **operator** fail. For each REQUIRED_V2 example:
 cd examples/share   # or action|messages|…
 bun install
 npx expo prebuild --platform ios
-npx expo run:ios --configuration Release
+# --no-bundler is required: without it, run:ios installs then hangs forever on
+# Metro + "Logs for your project will appear below" (Build Succeeded ≠ exit).
+npx expo run:ios --configuration Release --device <UDID> --no-bundler
 ```
+
+Do **not** pipe `expo run:ios` through `tail` (e.g. `| tee log | tail -40`) — `tail`
+waits for EOF, so a Metro hang looks like “no output / stuck” in agent terminals.
+
+`--ensure-install` already passes `--no-bundler`, but it **skips when the host is
+already on the sim**. Stale binaries need an explicit rebuild (uninstall or re-run
+the Release command above) — ensure-install alone will not refresh them.
 
 ### Opt-in ensure-install
 

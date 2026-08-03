@@ -20,6 +20,46 @@ export const OS_LIMIT_CLAIMS: readonly ClaimsEntry[] = [
       "Dynamic Island layout / ActivityKit push / StandBy not Sim-faithful; Watch chrome only when DW ≥ 0.1.8 pair boots (else S3a→CLAIMS). Host start+update+end is the green floor.",
   },
   {
+    id: "notification-service",
+    reason:
+      "Simulator often skips launching UNNotificationServiceExtension for simctl/mutable-content push; App Group / lock-screen mutation required for green",
+  },
+  {
+    id: "content-blocker",
+    reason:
+      "Safari content-blocker network block is inconclusive on Simulator after Allow On (DNS vs extension indistinguishable)",
+  },
+  {
+    id: "stickers",
+    reason:
+      "Sticker pack insert cells are AX-opaque on Simulator; named Fun Stickers pack selection is the green floor when insert cannot be asserted",
+  },
+  {
+    id: "intent",
+    reason:
+      "Siri Intent invoke has no reliable Simulator AX path; Settings Apps host registration + pluginkit are the floor",
+  },
+  {
+    id: "intent-ui",
+    reason:
+      "Intent UI (Siri presentation) is not Sim-drivable via AX; pluginkit intents-ui-service is the floor",
+  },
+  {
+    id: "file-provider-ui",
+    reason:
+      "File Provider Actions UI has no reliable Simulator entry surface beyond pluginkit fileprovider-actionsui",
+  },
+  {
+    id: "broadcast-upload",
+    reason:
+      "ReplayKit broadcast upload picker is not Sim-drivable for third-party upload extensions beyond pluginkit",
+  },
+  {
+    id: "broadcast-setup-ui",
+    reason:
+      "ReplayKit broadcast setup UI is not Sim-drivable beyond pluginkit broadcast-services-setupui",
+  },
+  {
     id: "wallet",
     reason: "PassKit issuer provisioning requires Apple entitlement allow-list",
   },

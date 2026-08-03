@@ -95,8 +95,8 @@ async function completeAppex(
     .map((s) => s.trim())
     .filter(Boolean);
   steps.push("complete-appex");
-  if (id === "native-action") {
-    // Native action example auto-writes App Group + dismisses on open —
+  if (id === "native-action" || id === "action") {
+    // Action examples auto-write App Group + dismiss on open —
     // idb taps on this sheet fall through to the share sheet on iOS 26.
     await sleep(1_200);
     steps.push("complete-auto");

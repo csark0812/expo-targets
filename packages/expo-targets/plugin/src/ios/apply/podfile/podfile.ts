@@ -179,6 +179,9 @@ export function generateReactNativeTargetBlock({
 }): string {
   const customPods = indentCustomPods(podsRbContent);
 
+  // App Clips still use search_paths here; framework embedding for the clip
+  // product is handled by a dedicated PBX shell phase (inherit! :complete
+  // breaks ExpoModulesCore resolution under nested targets).
   return `
   target '${targetName}' do
     platform :ios, '${deploymentTarget}'
