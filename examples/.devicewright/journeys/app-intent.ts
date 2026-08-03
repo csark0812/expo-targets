@@ -2,7 +2,7 @@
  * App Intents (ExtensionKit) deep journey.
  *
  * GREEN (P): pluginkit lists appintents-extension + Shortcuts shows
- * "Say Hello" / ET AppIntent host action (not pluginkit-only).
+ * "ET Greet" (not pluginkit-only).
  */
 import { spawnSync } from "node:child_process";
 import type { DeviceSession } from "@csark0812/devicewright";
@@ -20,6 +20,7 @@ import { tapLabelInTree } from "./settings-nav";
 
 const SHORTCUTS_BUNDLE = "com.apple.shortcuts";
 const ACTION_MARKERS = [
+  "ET Greet",
   "Say Hello",
   "ET AppIntent",
   "Hello from ET AppIntent",
@@ -45,8 +46,9 @@ async function assertShortcutsListsAction(
   await device.launchApp(SHORTCUTS_BUNDLE, { terminateRunning: true });
   await sleep(1_500);
 
-  // Gallery / search surfaces vary by iOS — try host name + Say Hello.
+  // Gallery / search surfaces vary by iOS — prefer ET Greet (intent title).
   const searchTargets = [
+    "ET Greet",
     "Say Hello",
     hostDisplayName,
     "ET AppIntent",
@@ -76,15 +78,19 @@ async function assertShortcutsListsAction(
     }
 
     try {
-      const search = await findNamedViaPointProbe(device, ["Search", "search"], {
-        timeoutMs: 2_000,
-        yStartRatio: 0.0,
-        yEndRatio: 0.35,
-        match: "includes",
-      });
+      const search = await findNamedViaPointProbe(
+        device,
+        ["Search", "search"],
+        {
+          timeoutMs: 2_000,
+          yStartRatio: 0.0,
+          yEndRatio: 0.35,
+          match: "includes",
+        },
+      );
       await tapProbeHit(device, search);
       await sleep(400);
-      await device.type("Say Hello");
+      await device.type("ET Greet");
       await sleep(1_000);
     } catch {
       await tapLabelInTree(device, searchTargets);
@@ -103,7 +109,7 @@ async function assertShortcutsListsAction(
 
   const labels = flattenLabels(await device.accessibilityTree());
   throw new Error(
-    `Shortcuts missing Say Hello / ET AppIntent; labels=${labels.slice(0, 80).join(", ")}`,
+    `Shortcuts missing ET Greet / ET AppIntent; labels=${labels.slice(0, 80).join(", ")}`,
   );
 }
 

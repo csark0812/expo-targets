@@ -1,11 +1,6 @@
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useState } from "react";
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import {
   registerFileDomain,
   unregisterFileDomain,
@@ -36,7 +31,10 @@ export default function App() {
       <Text style={styles.title}>ET FileProv</Text>
       <Text testID="status-target-ready">{ready ? "ready" : "booting"}</Text>
       <Text testID="text-extension-type">file-provider</Text>
-      <Text testID="text-files-domain" accessibilityLabel={`files-domain:${domain}`}>
+      <Text
+        testID="text-files-domain"
+        accessibilityLabel={`files-domain:${domain}`}
+      >
         files-domain:{domain}
       </Text>
       <Pressable

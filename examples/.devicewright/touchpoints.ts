@@ -163,7 +163,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     id: "app-intent",
     tranche: "T4",
     touchpoint:
-      "pluginkit appintents-extension + Shortcuts lists Say Hello / ET AppIntent",
+      "pluginkit appintents-extension + Shortcuts lists ET Greet",
     status: "concrete",
   },
   {

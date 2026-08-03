@@ -102,6 +102,17 @@ describe('getTargetInfoPlistForType (characterization)', () => {
     expect(parsed.NSExtension).toBeUndefined();
     expect(parsed.NSAppClip).toBeDefined();
   });
+
+  test('app-intent uses ExtensionKit EXAppExtensionAttributes (not NSExtension)', () => {
+    const parsed = plist.parse(getTargetInfoPlistForType('app-intent')) as {
+      NSExtension?: unknown;
+      EXAppExtensionAttributes?: { EXExtensionPointIdentifier?: string };
+    };
+    expect(parsed.NSExtension).toBeUndefined();
+    expect(parsed.EXAppExtensionAttributes?.EXExtensionPointIdentifier).toBe(
+      'com.apple.appintents-extension'
+    );
+  });
 });
 
 describe('buildShareExtensionActivationRules', () => {

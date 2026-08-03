@@ -2,7 +2,7 @@ import ExpoModulesCore
 import FileProvider
 
 public class FileProviderDomainModule: Module {
-  private let domainId = "com.expotargets.example.file-provider.files"
+  private let domainId = "com.expotargets.example.file-provider.file-provider"
   private let displayName = "ET FileProv"
 
   public func definition() -> ModuleDefinition {

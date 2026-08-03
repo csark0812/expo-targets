@@ -91,6 +91,19 @@ function applyExtensionPointIdentifier({
     return;
   }
 
+  // ExtensionKit (app-intent): EXAppExtensionAttributes, not NSExtension —
+  // matches bacon / Apple packaging for com.apple.appintents-extension.
+  if (
+    characteristics.productType ===
+    'com.apple.product-type.extensionkit-extension'
+  ) {
+    basePlist.EXAppExtensionAttributes = {
+      EXExtensionPointIdentifier: characteristics.extensionPointIdentifier,
+      ...(basePlist.EXAppExtensionAttributes || {}),
+    };
+    return;
+  }
+
   basePlist.NSExtension = {
     NSExtensionPointIdentifier: characteristics.extensionPointIdentifier,
     ...(basePlist.NSExtension || {}),

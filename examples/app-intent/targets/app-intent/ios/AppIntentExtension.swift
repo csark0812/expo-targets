@@ -1,33 +1,33 @@
 import AppIntents
-import Foundation
 
-/// Sim-greenable App Intent for the appintents-extension example.
-struct SayHelloIntent: AppIntent {
-  static var title: LocalizedStringResource = "Say Hello"
-  static var description = IntentDescription(
-    "Returns a greeting from the expo-targets app-intent example."
-  )
-
-  func perform() async throws -> some IntentResult & ReturnsValue<String> {
-    .result(value: "Hello from ET AppIntent")
-  }
-}
+/// ExtensionKit App Intents entry — matches docs/configuration.md shape.
+@main
+struct ETAppIntentsExtension: AppIntentsExtension {}
 
 struct ETAppIntentShortcuts: AppShortcutsProvider {
   static var appShortcuts: [AppShortcut] {
     AppShortcut(
-      intent: SayHelloIntent(),
+      intent: ETGreetIntent(),
       phrases: [
         "Say hello in \(.applicationName)",
-        "Hello in \(.applicationName)",
         "Greet me in \(.applicationName)",
+        "Hello in \(.applicationName)",
       ],
-      shortTitle: "Say Hello",
+      shortTitle: "ET Greet",
       systemImageName: "hand.wave"
     )
   }
 }
 
-/// ExtensionKit principal retained for scaffold compatibility.
-@objc(AppIntentExtension)
-class AppIntentExtension: NSObject {}
+/// Stable AX title for Shortcuts Gallery / search.
+struct ETGreetIntent: AppIntent {
+  static var title: LocalizedStringResource = "ET Greet"
+  static var description = IntentDescription(
+    "Returns a greeting from the expo-targets app-intent example."
+  )
+  static var openAppWhenRun: Bool = true
+
+  func perform() async throws -> some IntentResult & ReturnsValue<String> {
+    .result(value: "Hello from ET AppIntent")
+  }
+}
