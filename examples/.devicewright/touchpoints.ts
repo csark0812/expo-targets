@@ -159,7 +159,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     type: "content-blocker",
     tranche: "T3",
     touchpoint:
-      "Host rules:4 + reload + Allow Extension On + Safari ads.example.com block (inconclusive → CLAIMS)",
+      "Host rules:4 + reload + Allow Extension On + Safari local fixture css-display-none (.et-blocked-ad)",
     status: "concrete",
   },
 

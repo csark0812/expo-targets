@@ -20,11 +20,6 @@ export const OS_LIMIT_CLAIMS: readonly ClaimsEntry[] = [
       "Lock Screen chrome may be idb-opaque after Always Allow; Watch Smart Stack only when pair is connected (not merely booted). DI / ActivityKit push / StandBy remain non-Sim-faithful. Host start+update+end alone is not green.",
   },
   {
-    id: "content-blocker",
-    reason:
-      "Safari content-blocker network block is inconclusive on Simulator after Allow On (DNS vs extension indistinguishable)",
-  },
-  {
     id: "stickers",
     reason:
       "Sticker pack insert cells are AX-opaque on Simulator after named Fun Stickers; CLAIMS only when insert proof is exhausted (ambient message/sticker labels are not green)",

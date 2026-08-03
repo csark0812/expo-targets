@@ -44,6 +44,10 @@ describe("REQUIRED_V2", () => {
       false,
     );
   });
+
+  test("content-blocker is absent from OS_LIMIT_CLAIMS (local css-display-none fixture)", () => {
+    expect(OS_LIMIT_CLAIMS.some((c) => c.id === "content-blocker")).toBe(false);
+  });
 });
 
 describe("CLAIMS + touchpoints", () => {

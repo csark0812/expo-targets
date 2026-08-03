@@ -182,6 +182,30 @@ function referenceSafariResources(
   }
 }
 
+function referenceBundleResources(
+  project: XcodeProject,
+  plan: XcodeTargetPlan,
+  { target, groupUuid }: { target: XcodeTarget; groupUuid: string }
+): void {
+  for (const resource of plan.bundleResources) {
+    if (!fs.existsSync(resource.sourcePath)) {
+      continue;
+    }
+    const fileRefUuid = addExternalFileReference({
+      project,
+      groupUuid,
+      filePath: resource.referencePath,
+      fileName: resource.file,
+    });
+    addFileToBuildPhase({
+      project,
+      targetUuid: target.uuid,
+      fileRefUuid,
+      phaseType: 'PBXResourcesBuildPhase',
+    });
+  }
+}
+
 function linkFrameworks(
   project: XcodeProject,
   plan: XcodeTargetPlan,
@@ -307,6 +331,7 @@ export function applyXcodeTargetPlan(
   if (plan.safari) {
     referenceSafariResources(project, plan, { target, groupUuid });
   }
+  referenceBundleResources(project, plan, { target, groupUuid });
   linkFrameworks(project, plan, target);
 
   addTargetDependency({

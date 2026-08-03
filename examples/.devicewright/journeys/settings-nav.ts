@@ -201,17 +201,30 @@ export async function openSafariExtensionsOrBlockers(
 
   const stillOnSafariSettings = (
     nodes: Awaited<ReturnType<DeviceSession["accessibilityTree"]>>,
-  ) =>
-    nodes.some((n) => {
+  ) => {
+    const labels = flattenLabels(nodes);
+    // Already on the pushed list pages — not Safari settings root.
+    if (
+      labels.some((l) =>
+        /Use Content Blockers|Allow these extensions|More Extensions|Allow these content blockers/i.test(
+          l,
+        ),
+      )
+    ) {
+      return false;
+    }
+    return nodes.some((n) => {
       const id = String(n.identifier ?? "").toUpperCase();
       const label = (n.label ?? "").trim();
       return (
         id === "WEB_EXTENSIONS" ||
-        /CONTENT_BLOCKER/i.test(id) ||
         label === "Search Engine" ||
-        label === "Content Blockers"
+        // Content Blockers row on Safari settings (not the list title alone).
+        (label === "Content Blockers" &&
+          labels.some((l) => /Search Engine|AutoFill|Extensions/i.test(l)))
       );
     });
+  };
 
   const onExtensionsList = (
     nodes: Awaited<ReturnType<DeviceSession["accessibilityTree"]>>,
@@ -219,8 +232,9 @@ export async function openSafariExtensionsOrBlockers(
     if (stillOnSafariSettings(nodes)) return false;
     const labels = flattenLabels(nodes).map((l) => l.toLowerCase());
     if (prefer === "blockers") {
+      // iOS 26 list chrome: "Use Content Blockers On" + "All Websites".
       return labels.some((l) =>
-        /allow these content blockers|more content blockers|et blocker/i.test(
+        /use content blockers|allow these content blockers|more content blockers|et blocker/i.test(
           l,
         ),
       );

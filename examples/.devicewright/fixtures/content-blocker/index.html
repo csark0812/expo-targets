@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ET Blocker Fixture</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        padding: 24px;
+      }
+      .et-blocked-ad {
+        margin-top: 16px;
+        padding: 12px;
+        background: #fcc;
+        font-size: 22px;
+      }
+      .et-control {
+        margin-top: 16px;
+        padding: 12px;
+        background: #cfc;
+        font-size: 22px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>ET_PAGE_OK</h1>
+    <p>content-blocker css-display-none fixture</p>
+    <!-- Hidden by blockerList.json rule: css-display-none .et-blocked-ad -->
+    <div class="et-blocked-ad">ET_AD_SHOULD_HIDE</div>
+    <div class="et-control">ET_CONTROL_VISIBLE</div>
+  </body>
+</html>

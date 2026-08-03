@@ -130,6 +130,14 @@ export interface SafariResourcesPlan {
   manifest?: Record<string, any>;
 }
 
+/** Extra files copied into the appex bundle (e.g. content-blocker JSON). */
+export interface BundleResourcePlan {
+  file: string;
+  sourcePath: string;
+  /** Path stored in the PBX file reference, relative to `ios/`. */
+  referencePath: string;
+}
+
 export interface InfoPlistPlan {
   path: string;
   /** Path stored in the `INFOPLIST_FILE` build setting, relative to `ios/`. */
@@ -187,6 +195,8 @@ export interface XcodeTargetPlan {
   swiftFiles: SwiftFilePlan[];
   assets: AssetPlan;
   safari?: SafariResourcesPlan;
+  /** Appex Copy Bundle Resources beyond Assets / Safari Resources. */
+  bundleResources: BundleResourcePlan[];
   embed: EmbedPlan;
   /** Present for React Native targets that ship a JS `entry`. */
   bundleReactNative?: BundleReactNativePlan;

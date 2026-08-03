@@ -23,6 +23,11 @@ export type TargetWorkspace = {
   targetBuildPath: string;
   /** Existing user Swift files, relative to `targetDirectory`. */
   swiftFiles: string[];
+  /**
+   * Extra files to Copy Bundle Resources (relative to `targetDirectory`).
+   * Content blockers need `blockerList.json` in the appex root.
+   */
+  bundleResourceFiles: string[];
   /** Absolute path to the user's `Assets.xcassets` / `Stickers.xcassets`. */
   userAssetsPath: string;
   hasUserAssets: boolean;
@@ -98,6 +103,14 @@ export function buildTargetWorkspace({
     swiftFiles: typeConfig.requiresCode
       ? observeSwiftFiles(targetDirectory)
       : [],
+    bundleResourceFiles:
+      type === 'content-blocker'
+        ? globSync('*.json', {
+            cwd: targetDirectory,
+            absolute: false,
+            ignore: ['**/build/**'],
+          })
+        : [],
     userAssetsPath,
     hasUserAssets: File.isDirectory(userAssetsPath),
     userSafariResourcesPath: path.join(targetDirectory, 'Resources'),

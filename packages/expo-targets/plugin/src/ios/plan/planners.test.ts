@@ -59,6 +59,7 @@ function makeWorkspace(
     targetDirectory,
     targetBuildPath: path.join(targetDirectory, 'build'),
     swiftFiles: [],
+    bundleResourceFiles: [],
     userAssetsPath: path.join(targetDirectory, 'Assets.xcassets'),
     hasUserAssets: false,
     userSafariResourcesPath: path.join(targetDirectory, 'Resources'),
@@ -559,6 +560,35 @@ describe('planEmbed', () => {
     expect(planEmbed('clip')).toEqual({ kind: 'app-clip' });
     expect(planEmbed('watch')).toEqual({ kind: 'watch-content' });
     expect(planEmbed('watch-widget')).toEqual({ kind: 'watch-extension' });
+  });
+});
+
+describe('composeXcodeTargetPlan content-blocker', () => {
+  test('plans blockerList.json as a bundle resource', () => {
+    const plan = composeXcodeTargetPlan({
+      props: makeProps({
+        type: 'content-blocker',
+        name: 'Blocker',
+        displayName: 'ET Blocker',
+      }),
+      expoConfig: { ios: { bundleIdentifier: MAIN_BUNDLE_ID } },
+      workspace: makeWorkspace({
+        type: 'content-blocker',
+        directory: 'targets/content-blocker',
+        bundleResourceFiles: ['blockerList.json'],
+      }),
+      paths: {
+        projectRoot: PROJECT_ROOT,
+        platformProjectRoot: path.join(PROJECT_ROOT, 'ios'),
+      },
+      mainBuildSettings: {},
+    });
+    expect(plan.bundleResources).toEqual([
+      expect.objectContaining({
+        file: 'blockerList.json',
+        referencePath: expect.stringContaining('blockerList.json'),
+      }),
+    ]);
   });
 });
 

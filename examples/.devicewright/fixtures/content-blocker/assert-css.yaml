@@ -1,0 +1,9 @@
+# Assert Safari loaded the local content-blocker fixture and css-display-none
+# hid .et-blocked-ad. Page must already be open (journey uses simctl openurl).
+appId: com.apple.mobilesafari
+---
+- extendedWaitUntil:
+    visible: "ET_PAGE_OK"
+    timeout: 12000
+- assertVisible: "ET_CONTROL_VISIBLE"
+- assertNotVisible: "ET_AD_SHOULD_HIDE"
