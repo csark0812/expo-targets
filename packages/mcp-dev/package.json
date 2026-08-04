@@ -15,6 +15,11 @@
   "publishConfig": {
     "access": "public"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/csark0812/expo-targets"
+  },
+  "homepage": "https://github.com/csark0812/expo-targets/tree/main/packages/mcp-dev#readme",
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf build",
