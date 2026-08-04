@@ -37,7 +37,7 @@ Examples:
     node packages/my-mcp/build/bin/mcp.js
 
   # After publish:
-  npx -y mcp-dev --watch "src/**/*.ts" --rebuild "npm run build" -- node ./build/mcp.js
+  npx -y @csark0812/mcp-dev --watch "src/**/*.ts" --rebuild "npm run build" -- node ./build/mcp.js
 `;
 }
 
