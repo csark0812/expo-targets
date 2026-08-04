@@ -16,6 +16,7 @@ import { ensureCopyFrameworksIntoAppClipPhase } from './copyFrameworksIntoAppCli
 import {
   configureAppClipEmbed,
   configureAppExtensionEmbed,
+  configureExtensionKitEmbed,
   configureWatchAppExtensionEmbed,
   configureWatchContentEmbed,
   removeAppExtensionFromHostEmbed,
@@ -242,21 +243,18 @@ function applyEmbed(
     return;
   }
 
-  if (plan.embed.kind === 'app-clip') {
-    configureAppClipEmbed({
+  if (plan.embed.kind === 'extensionkit-extension') {
+    configureExtensionKitEmbed({
       project,
       mainTargetUuid,
       target,
       targetProductName,
     });
-    // RN App Clips need host Frameworks copied into AppClips/*.app (DYLD).
-    if (plan.bundleReactNative) {
-      ensureCopyFrameworksIntoAppClipPhase({
-        project,
-        mainTargetUuid,
-        clipProductName: targetProductName,
-      });
-    }
+    return;
+  }
+
+  if (plan.embed.kind === 'app-clip') {
+    applyAppClipEmbed(project, plan, { target, mainTargetUuid });
     return;
   }
 
@@ -271,26 +269,67 @@ function applyEmbed(
   }
 
   if (plan.embed.kind === 'watch-extension') {
-    const watchTargetUuid = findWatchCompanionTargetUuid(project);
-    if (!watchTargetUuid) {
-      throw new Error(
-        `watch-widget "${targetProductName}" requires a type: watch companion in the same app ` +
-          '(watchOS WidgetKit must nest under a Watch .app, not the iOS host)'
-      );
-    }
-    removeAppExtensionFromHostEmbed({
-      project,
-      mainTargetUuid,
-      targetProductName,
-    });
-    configureWatchAppExtensionEmbed({
-      project,
-      watchTargetUuid,
+    applyWatchExtensionEmbed(project, {
       target,
+      mainTargetUuid,
       targetProductName,
     });
   }
   // 'none' = standalone product; nothing to embed.
+}
+
+function applyAppClipEmbed(
+  project: XcodeProject,
+  plan: XcodeTargetPlan,
+  { target, mainTargetUuid }: { target: XcodeTarget; mainTargetUuid: string }
+): void {
+  const { targetProductName } = plan.identity;
+  configureAppClipEmbed({
+    project,
+    mainTargetUuid,
+    target,
+    targetProductName,
+  });
+  // RN App Clips need host Frameworks copied into AppClips/*.app (DYLD).
+  if (plan.bundleReactNative) {
+    ensureCopyFrameworksIntoAppClipPhase({
+      project,
+      mainTargetUuid,
+      clipProductName: targetProductName,
+    });
+  }
+}
+
+function applyWatchExtensionEmbed(
+  project: XcodeProject,
+  {
+    target,
+    mainTargetUuid,
+    targetProductName,
+  }: {
+    target: XcodeTarget;
+    mainTargetUuid: string;
+    targetProductName: string;
+  }
+): void {
+  const watchTargetUuid = findWatchCompanionTargetUuid(project);
+  if (!watchTargetUuid) {
+    throw new Error(
+      `watch-widget "${targetProductName}" requires a type: watch companion in the same app ` +
+        '(watchOS WidgetKit must nest under a Watch .app, not the iOS host)'
+    );
+  }
+  removeAppExtensionFromHostEmbed({
+    project,
+    mainTargetUuid,
+    targetProductName,
+  });
+  configureWatchAppExtensionEmbed({
+    project,
+    watchTargetUuid,
+    target,
+    targetProductName,
+  });
 }
 
 function stripBuildPhasesWhenNoCode({

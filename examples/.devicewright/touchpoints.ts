@@ -133,7 +133,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     type: "clip",
     tranche: "T2",
     touchpoint:
-      "Native clip Frameworks+jsbundle + launchApp(_XCAppClipURL) + checkout",
+      "Native Swift AppClips/*.app + launchApp(_XCAppClipURL) + Complete checkout → invocationPath",
     status: "concrete",
   },
 
@@ -235,7 +235,8 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
   {
     id: "quicklook-preview",
     tranche: "T6",
-    touchpoint: "Settings Apps host registration",
+    touchpoint:
+      "pluginkit quicklook.preview + Files opens et-preview.etql → ET QL Preview (Open In / App Group)",
     status: "concrete",
   },
   {
@@ -248,7 +249,8 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
   {
     id: "message-filter",
     tranche: "T7",
-    touchpoint: "Settings Apps host registration",
+    touchpoint:
+      "pluginkit identitylookup.message-filter + Messages Unknown Senders / Text Message Filter lists ET MsgFilter Target (CLAIMS — Settings/filter surfaces opaque on Sim)",
     status: "concrete",
   },
   {
@@ -324,7 +326,8 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
   {
     id: "spotlight",
     tranche: "T11",
-    touchpoint: "Settings Apps host registration",
+    touchpoint:
+      "pluginkit spotlight.import + et-import.etspot → App Group importer marker and/or Spotlight search (CLAIMS if indexer opaque)",
     status: "concrete",
   },
   {

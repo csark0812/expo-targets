@@ -16,12 +16,15 @@ import { runIntentUiJourney } from "./intent-ui";
 import { runKeyboardJourney } from "./keyboard";
 import { runLiveActivityJourney } from "./live-activity";
 import { runLocationPushJourney } from "./location-push";
+import { runMessageFilterJourney } from "./message-filter";
 import { runMessagesJourney } from "./messages";
 import { runNotificationContentJourney } from "./notification-content";
 import { runNotificationServiceJourney } from "./notification-service";
 import { runPhotoEditingJourney } from "./photo-editing";
+import { runQuicklookPreviewJourney } from "./quicklook-preview";
 import { runSafariJourney } from "./safari";
 import { runShareActionJourney } from "./share";
+import { runSpotlightJourney } from "./spotlight";
 import { runStickersJourney } from "./stickers";
 import { stubClusterJourneyFor } from "./stub-cluster";
 import { runWalletUiJourney } from "./wallet-ui";
@@ -50,12 +53,15 @@ export { runIntentUiJourney } from "./intent-ui";
 export { runKeyboardJourney } from "./keyboard";
 export { runLiveActivityJourney } from "./live-activity";
 export { runLocationPushJourney } from "./location-push";
+export { runMessageFilterJourney } from "./message-filter";
 export { runMessagesJourney } from "./messages";
 export { runNotificationContentJourney } from "./notification-content";
 export { runNotificationServiceJourney } from "./notification-service";
 export { runPhotoEditingJourney } from "./photo-editing";
+export { runQuicklookPreviewJourney } from "./quicklook-preview";
 export { runSafariJourney } from "./safari";
 export { runShareActionJourney } from "./share";
+export { runSpotlightJourney } from "./spotlight";
 export {
   navigatePath,
   allowAppexOnWebsite,
@@ -81,10 +87,7 @@ export type JourneyRunner = (
 /** ids proven via generic Settings→Apps→search host→host settings page. */
 const APPS_SETTINGS_IDS = [
   "quicklook-thumbnail",
-  "quicklook-preview",
-  "message-filter",
   "unwanted-communication",
-  "spotlight",
   "spotlight-delegate",
   "bg-download",
   "matter",
@@ -124,6 +127,9 @@ const LIVE: Record<string, JourneyRunner> = {
   "broadcast-upload": (d) => runBroadcastUploadJourney(d),
   "broadcast-setup-ui": (d) => runBroadcastSetupUiJourney(d),
   "call-directory": (d) => runCallDirectoryJourney(d),
+  "message-filter": (d) => runMessageFilterJourney(d),
+  "quicklook-preview": (d) => runQuicklookPreviewJourney(d),
+  spotlight: (d) => runSpotlightJourney(d),
   "location-push": (d) => runLocationPushJourney(d),
   watch: (d) => runWatchJourney(d, "watch"),
   "watch-widget": (d) => runWatchWidgetJourney(d),

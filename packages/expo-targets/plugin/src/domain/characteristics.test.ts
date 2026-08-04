@@ -55,6 +55,7 @@ describe('TYPE_CHARACTERISTICS entry shape', () => {
       );
       expect([
         'foundation-extension',
+        'extensionkit-extension',
         'app-clip',
         'watch-content',
         'watch-extension',

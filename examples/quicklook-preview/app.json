@@ -16,7 +16,27 @@
         ]
       },
       "infoPlist": {
-        "CFBundleDisplayName": "ET QLPreview"
+        "CFBundleDisplayName": "ET QLPreview",
+        "UIFileSharingEnabled": true,
+        "LSSupportsOpeningDocumentsInPlace": true,
+        "UTExportedTypeDeclarations": [
+          {
+            "UTTypeIdentifier": "com.expotargets.etql",
+            "UTTypeDescription": "ET Quick Look fixture",
+            "UTTypeConformsTo": ["public.data", "public.content"],
+            "UTTypeTagSpecification": {
+              "public.filename-extension": ["etql"]
+            }
+          }
+        ],
+        "CFBundleDocumentTypes": [
+          {
+            "CFBundleTypeName": "ET Quick Look fixture",
+            "CFBundleTypeRole": "Viewer",
+            "LSItemContentTypes": ["com.expotargets.etql"],
+            "CFBundleTypeExtensions": ["etql"]
+          }
+        ]
       }
     },
     "plugins": [

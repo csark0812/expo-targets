@@ -157,6 +157,7 @@ export interface EntitlementsPlan {
 export interface EmbedPlan {
   kind:
     | 'foundation-extension'
+    | 'extensionkit-extension'
     | 'app-clip'
     | 'watch-content'
     | 'watch-extension'

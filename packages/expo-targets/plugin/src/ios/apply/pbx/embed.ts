@@ -282,6 +282,142 @@ export function configureAppExtensionEmbed({
 }
 
 const APP_CLIP_DST_SUBFOLDER_SPEC = 16;
+/** Products Directory — same as App Clips / XcodeGen ExtensionKit embed. */
+const EXTENSIONKIT_DST_SUBFOLDER_SPEC = 16;
+const EXTENSIONKIT_EMBED_PHASE_NAME = 'Embed ExtensionKit Extensions';
+
+/**
+ * Find the "Embed ExtensionKit Extensions" copy-files phase on the host app.
+ */
+function findExtensionKitEmbedPhase({
+  project,
+  mainTargetUuid,
+}: {
+  project: XcodeProject;
+  mainTargetUuid: string;
+}): { uuid: string; phase: any } | undefined {
+  const xcodeProject = project as any;
+  const copyFilesPhases =
+    xcodeProject.hash.project.objects.PBXCopyFilesBuildPhase;
+  const mainTarget =
+    xcodeProject.hash.project.objects.PBXNativeTarget?.[mainTargetUuid];
+  if (!(mainTarget?.buildPhases && copyFilesPhases)) {
+    return;
+  }
+
+  for (const entry of mainTarget.buildPhases) {
+    const phase = copyFilesPhases[entry.value];
+    if (!phase) continue;
+    const isKit =
+      phase.name === `"${EXTENSIONKIT_EMBED_PHASE_NAME}"` ||
+      copyFilesPhases[`${entry.value}_comment`] ===
+        EXTENSIONKIT_EMBED_PHASE_NAME ||
+      (phase.dstSubfolderSpec === EXTENSIONKIT_DST_SUBFOLDER_SPEC &&
+        typeof phase.dstPath === 'string' &&
+        (phase.dstPath.includes('EXTENSIONS_FOLDER_PATH') ||
+          phase.dstPath.includes('/Extensions')));
+    if (isKit) {
+      return { uuid: entry.value, phase };
+    }
+  }
+}
+
+function ensureExtensionKitEmbedPhase({
+  project,
+  mainTargetUuid,
+}: {
+  project: XcodeProject;
+  mainTargetUuid: string;
+}): any {
+  const existing = findExtensionKitEmbedPhase({ project, mainTargetUuid });
+  if (existing) {
+    return existing.phase;
+  }
+
+  const xcodeProject = project as any;
+  const embedPhaseResult = xcodeProject.addBuildPhase(
+    [],
+    'PBXCopyFilesBuildPhase',
+    EXTENSIONKIT_EMBED_PHASE_NAME,
+    mainTargetUuid
+  );
+  const embedPhaseUuid = embedPhaseResult?.uuid || embedPhaseResult;
+  if (!embedPhaseUuid) {
+    return;
+  }
+  return xcodeProject.hash.project.objects.PBXCopyFilesBuildPhase?.[
+    embedPhaseUuid
+  ];
+}
+
+/**
+ * Embed an ExtensionKit appex into Extensions/ (not PlugIns/).
+ * iOS rejects EXAppExtensionAttributes appexes under PlugIns with
+ * "Invalid placeholder attributes".
+ */
+export function configureExtensionKitEmbed({
+  project,
+  mainTargetUuid,
+  target,
+  targetProductName,
+}: {
+  project: XcodeProject;
+  mainTargetUuid: string;
+  target: XcodeTarget;
+  targetProductName: string;
+}): void {
+  const xcodeProject = project as any;
+  const productFileRef =
+    target.pbxNativeTarget?.productReference || target.target?.productReference;
+  if (!productFileRef) {
+    return;
+  }
+
+  // addTarget(app_extension) auto-embeds into PlugIns — strip that copy.
+  removeAppExtensionFromHostEmbed({
+    project,
+    mainTargetUuid,
+    targetProductName,
+  });
+
+  const phase = ensureExtensionKitEmbedPhase({ project, mainTargetUuid });
+  if (!phase) {
+    return;
+  }
+
+  // Match XcodeGen: productsDirectory + $(EXTENSIONS_FOLDER_PATH).
+  phase.dstPath = '"$(EXTENSIONS_FOLDER_PATH)"';
+  phase.dstSubfolderSpec = EXTENSIONKIT_DST_SUBFOLDER_SPEC;
+  phase.name = `"${EXTENSIONKIT_EMBED_PHASE_NAME}"`;
+
+  if (!phase.files) {
+    phase.files = [];
+  }
+
+  const buildFileSection = xcodeProject.hash.project.objects.PBXBuildFile;
+  const alreadyEmbedded = phase.files.some(
+    (file: any) => buildFileSection?.[file.value]?.fileRef === productFileRef
+  );
+  if (alreadyEmbedded) {
+    return;
+  }
+
+  const buildFileUuid = xcodeProject.generateUuid();
+  buildFileSection[buildFileUuid] = {
+    isa: 'PBXBuildFile',
+    fileRef: productFileRef,
+    settings: {
+      ATTRIBUTES: [...EMBED_ATTRIBUTES],
+    },
+  };
+  buildFileSection[`${buildFileUuid}_comment`] =
+    `${targetProductName}.appex in ${EXTENSIONKIT_EMBED_PHASE_NAME}`;
+
+  phase.files.push({
+    value: buildFileUuid,
+    comment: `${targetProductName}.appex in ${EXTENSIONKIT_EMBED_PHASE_NAME}`,
+  });
+}
 
 /**
  * Find the "Embed App Clips" copy-files phase already attached to the host app.

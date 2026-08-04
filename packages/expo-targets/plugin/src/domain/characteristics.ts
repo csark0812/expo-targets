@@ -9,6 +9,7 @@ export interface BaseTypeCharacteristics {
   targetType: 'application' | 'app_extension'; // Xcode target creation type
   embedType:
     | 'foundation-extension'
+    | 'extensionkit-extension'
     | 'app-clip'
     | 'watch-content'
     | 'watch-extension'
@@ -335,7 +336,8 @@ const BASE_TYPE_CHARACTERISTICS: Record<
     frameworks: [],
     productType: 'com.apple.product-type.app-extension',
     extensionPointIdentifier: 'com.apple.spotlight.import',
-    defaultUsesAppGroups: false,
+    // Journey proof uses App Group importer markers; sync groups by default.
+    defaultUsesAppGroups: true,
     requiresEntitlements: true,
     basePlist: {},
     supportsActivationRules: false,
@@ -411,7 +413,8 @@ const BASE_TYPE_CHARACTERISTICS: Record<
   'app-intent': {
     requiresCode: true,
     targetType: 'app_extension',
-    embedType: 'foundation-extension',
+    // ExtensionKit must land in Extensions/, not PlugIns/ (simctl rejects PlugIns).
+    embedType: 'extensionkit-extension',
     frameworks: ['AppIntents'],
     productType: 'com.apple.product-type.extensionkit-extension',
     extensionPointIdentifier: 'com.apple.appintents-extension',

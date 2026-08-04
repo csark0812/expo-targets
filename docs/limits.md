@@ -2,7 +2,7 @@
 
 **Source of truth for** lib floor vs Apple/account gates for extension types.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-03 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-04 -->
 
 ## Max Sim-greenable policy
 
@@ -34,6 +34,8 @@ Each open leftover:
 | -- | ------- | ---- | ----- | ----- |
 | live-activity | Dynamic Island / ActivityKit push / StandBy | limits.md (CLAIMS) | — | eng |
 | live-activity | Watch chrome when pair boots without AX | CLAIMS after S3a | TBD on operator miss | eng |
+| message-filter | Messages Unknown Senders / Text Message Filter list / inbound SMS invoke | CLAIMS | [spikes/message-filter-ql-spotlight-2026-08-04.md](../examples/.devicewright/artifacts/spikes/message-filter-ql-spotlight-2026-08-04.md) | eng |
+| spotlight | CSImportExtension indexer → App Group / Spotlight hit | CLAIMS | [spikes/message-filter-ql-spotlight-2026-08-04.md](../examples/.devicewright/artifacts/spikes/message-filter-ql-spotlight-2026-08-04.md) | eng |
 
 Entitlement/Settings items use `home: wont-do` or the hard-stop table below; **revisit** when DW/Sim coverage improves (plan edit + spike re-run).
 

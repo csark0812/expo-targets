@@ -39,61 +39,88 @@ function pluginkitHasAppIntent(udid: string, appexId: string): boolean {
   );
 }
 
+function labelsHaveAction(labels: string[]): boolean {
+  return labels.some((l) =>
+    ACTION_MARKERS.some((m) => l.toLowerCase().includes(m.toLowerCase())),
+  );
+}
+
 async function assertShortcutsListsAction(
   device: DeviceSession,
   hostDisplayName: string,
 ): Promise<void> {
   await device.launchApp(SHORTCUTS_BUNDLE, { terminateRunning: true });
-  await sleep(1_500);
+  await sleep(1_800);
+  await dismissSystemAlerts(device);
 
-  // Gallery / search surfaces vary by iOS — prefer ET Greet (intent title).
-  const searchTargets = [
-    "ET Greet",
-    "Say Hello",
-    hostDisplayName,
-    "ET AppIntent",
-    "Search",
-  ];
-
-  for (let round = 0; round < 5; round++) {
-    const labels = flattenLabels(await device.accessibilityTree());
-    if (
-      labels.some((l) =>
-        ACTION_MARKERS.some((m) => l.toLowerCase().includes(m.toLowerCase())),
-      )
-    ) {
-      return;
+  // iOS 26 Shortcuts often opens on a Files-like tab — prefer Gallery / All Shortcuts.
+  for (const tab of ["Gallery", "All Shortcuts", "Shortcuts"]) {
+    const hit = await tapLabelInTree(device, [tab], { exactOnly: true });
+    if (hit) {
+      await sleep(700);
+      break;
     }
+  }
+
+  for (let round = 0; round < 7; round++) {
+    const labels = flattenLabels(await device.accessibilityTree());
+    if (labelsHaveAction(labels)) return;
 
     try {
       await findNamedViaPointProbe(device, ACTION_MARKERS, {
         timeoutMs: 2_500,
-        yStartRatio: 0.15,
+        yStartRatio: 0.1,
         yEndRatio: 0.95,
         match: "includes",
       });
       return;
     } catch {
-      // try search / scroll
+      // continue
     }
 
+    // Search bar (top) — type intent title, then host name.
+    const query = round % 2 === 0 ? "ET Greet" : hostDisplayName;
     try {
       const search = await findNamedViaPointProbe(
         device,
         ["Search", "search"],
         {
-          timeoutMs: 2_000,
+          timeoutMs: 2_500,
           yStartRatio: 0.0,
-          yEndRatio: 0.35,
+          yEndRatio: 0.4,
           match: "includes",
         },
       );
       await tapProbeHit(device, search);
-      await sleep(400);
-      await device.type("ET Greet");
-      await sleep(1_000);
+      await sleep(350);
+      // Clear prior query best-effort.
+      try {
+        await device.type("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+      } catch {
+        /* optional */
+      }
+      await device.type(query);
+      await sleep(1_200);
+      if (labelsHaveAction(flattenLabels(await device.accessibilityTree()))) {
+        return;
+      }
+      try {
+        await findNamedViaPointProbe(device, ACTION_MARKERS, {
+          timeoutMs: 2_000,
+          match: "includes",
+        });
+        return;
+      } catch {
+        /* next round */
+      }
     } catch {
-      await tapLabelInTree(device, searchTargets);
+      await tapLabelInTree(device, [
+        "ET Greet",
+        "Say Hello",
+        hostDisplayName,
+        "ET AppIntent",
+        "Apps",
+      ]);
       await sleep(700);
     }
 

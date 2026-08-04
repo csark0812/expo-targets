@@ -14,7 +14,6 @@ import {
   flattenLabels,
   sleep,
   tapProbeHit,
-  waitForNamed,
 } from "./helpers";
 import { tapLabelInTree } from "./settings-nav";
 
@@ -53,24 +52,68 @@ function labelsListDomain(labels: string[]): boolean {
   );
 }
 
-async function assertFilesListsDomain(device: DeviceSession): Promise<void> {
+async function openFilesBrowse(device: DeviceSession, steps: string[]): Promise<void> {
   await device.launchApp(FILES_BUNDLE, { terminateRunning: true });
   await sleep(1_400);
-  await tapLabelInTree(device, ["Browse", "Locations"]);
-  await sleep(900);
+  await dismissSystemAlerts(device);
 
+  // iOS 26 Files often lands on Recents — force the Browse tab.
   for (let i = 0; i < 4; i++) {
+    const labels = flattenLabels(await device.accessibilityTree());
+    const onBrowse =
+      labels.some((l) => /^Locations$/i.test(l.trim())) ||
+      labels.some((l) => /On My iPhone|iCloud Drive|Shared/i.test(l));
+    if (onBrowse) {
+      steps.push("files-browse-surface");
+      return;
+    }
+    const tapped = await tapLabelInTree(device, ["Browse", "Locations"], {
+      exactOnly: true,
+    });
+    if (!tapped) {
+      // Tab bar hotspot (iPhone Air): Browse is typically the right tab.
+      try {
+        await findNamedViaPointProbe(device, ["Browse"], {
+          timeoutMs: 2_000,
+          yStartRatio: 0.85,
+          yEndRatio: 1.0,
+          match: "includes",
+        }).then((hit) => tapProbeHit(device, hit));
+      } catch {
+        await device.tap({ x: 315, y: 880 });
+        steps.push("files-browse-tab-hotspot");
+      }
+    } else {
+      steps.push("files-browse-tab");
+    }
+    await sleep(800);
+  }
+}
+
+async function assertFilesListsDomain(
+  device: DeviceSession,
+  steps: string[],
+): Promise<void> {
+  await openFilesBrowse(device, steps);
+  await sleep(700);
+
+  for (let i = 0; i < 6; i++) {
     const labels = flattenLabels(await device.accessibilityTree());
     if (labelsListDomain(labels)) return;
     try {
       await findNamedViaPointProbe(device, DOMAIN_MARKERS, {
         timeoutMs: 2_500,
-        yStartRatio: 0.2,
+        yStartRatio: 0.15,
         yEndRatio: 0.95,
         match: "includes",
       });
       return;
     } catch {
+      // Sidebar / Locations list may need scroll; also re-tap Browse if Recents stuck.
+      if (labels.some((l) => /No Recents|Recently opened/i.test(l))) {
+        await tapLabelInTree(device, ["Browse"], { exactOnly: true });
+        await sleep(600);
+      }
       await device.swipe({
         xStart: 210,
         yStart: 700,
@@ -104,29 +147,53 @@ export async function runFileProviderJourney(
     await waitForNamed(device, ["ready"], 20_000);
     steps.push("host-ready");
 
-    // Prefer auto-register on boot; tap Register if domain status still error.
-    try {
-      await waitForNamed(device, ["files-domain:registered:"], 4_000);
-      steps.push("domain-registered");
-    } catch {
+    // Prefer auto-register on boot; tap Register if domain status still pending/error.
+    // waitForNamed / point-probe often miss long labels — also accept flattenLabels.
+    const domainStatus = async (): Promise<string | undefined> => {
+      const labels = flattenLabels(await device.accessibilityTree());
+      return labels.find((l) => /files-domain:/i.test(l));
+    };
+    const isRegistered = (s?: string) =>
+      !!s && /files-domain:registered/i.test(s);
+
+    let status = await domainStatus();
+    for (let i = 0; i < 8 && !isRegistered(status); i++) {
+      await sleep(500);
+      status = await domainStatus();
+    }
+    steps.push(`domain-status:${status ?? "missing"}`);
+
+    if (!isRegistered(status)) {
       try {
         const reg = await findNamedViaPointProbe(
           device,
           ["Register domain", "btn-register-domain"],
           {
-            timeoutMs: 6_000,
-            yStartRatio: 0.3,
-            yEndRatio: 0.9,
+            timeoutMs: 8_000,
+            yStartRatio: 0.25,
+            yEndRatio: 0.95,
+            match: "includes",
           },
         );
         await tapProbeHit(device, reg);
-        await sleep(1_200);
-        await waitForNamed(device, ["files-domain:registered:"], 8_000);
-        steps.push("domain-registered");
+        await sleep(1_500);
+        for (let i = 0; i < 12 && !isRegistered(status); i++) {
+          await sleep(500);
+          status = await domainStatus();
+        }
+        steps.push(`domain-status-after-register:${status ?? "missing"}`);
       } catch (e) {
-        throw new Error(`file-provider domain register failed: ${String(e)}`);
+        throw new Error(
+          `file-provider domain register failed (rebuild host if Register/domain UI missing): ${String(e)}; status=${status ?? "missing"}`,
+        );
       }
     }
+    if (!isRegistered(status)) {
+      throw new Error(
+        `file-provider domain not registered after boot/register; status=${status ?? "missing"}`,
+      );
+    }
+    steps.push("domain-registered");
 
     const appexId = `${entry.hostBundleId}.file-provider`;
     const pkAppex = pluginkitMentions(device.deviceId, [appexId]);
@@ -143,7 +210,7 @@ export async function runFileProviderJourney(
     steps.push("pluginkit-fileprovider");
 
     steps.push("files-launch");
-    await assertFilesListsDomain(device);
+    await assertFilesListsDomain(device, steps);
     steps.push("files-domain-listed");
 
     return {

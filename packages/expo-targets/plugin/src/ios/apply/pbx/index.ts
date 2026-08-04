@@ -24,6 +24,7 @@ export {
 export {
   configureAppClipEmbed,
   configureAppExtensionEmbed,
+  configureExtensionKitEmbed,
   configureWatchAppExtensionEmbed,
   configureWatchContentEmbed,
   removeAppExtensionFromHostEmbed,

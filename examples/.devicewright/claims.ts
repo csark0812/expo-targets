@@ -63,6 +63,16 @@ export const OS_LIMIT_CLAIMS: readonly ClaimsEntry[] = [
   { id: "authentication-services", reason: "SSO / AppSSO entitlement gated" },
   { id: "call-directory", reason: "Call Directory Settings enablement" },
   {
+    id: "message-filter",
+    reason:
+      "Messages Settings detail is AX-blank on Simulator (Apps→Messages often Settings|Apps|BackButton only); Unknown Senders / Text Message Filter / Manage Filtering / SMS Filtering Settings search returns no results; App-prefs:com.apple.MobileSMS / App-prefs:MESSAGES are no-ops on this Sim — cannot list or enable ET MsgFilter Target or prove inbound filter invoke",
+  },
+  {
+    id: "spotlight",
+    reason:
+      "CSImportExtension + UTI register and Files can open et-import.etspot on Simulator, but importer never writes App Group markers (mdimport unavailable in simctl; Spotlight search alone is untrusted)",
+  },
+  {
     id: "device-activity-monitor",
     reason: "Family Controls / DeviceActivity entitlement",
   },
