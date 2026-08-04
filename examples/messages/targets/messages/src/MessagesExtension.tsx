@@ -1,6 +1,6 @@
-import type { MessagesExtensionTarget } from "expo-targets";
-import { useEffect, useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import type { MessagesExtensionTarget } from 'expo-targets';
+import { useEffect, useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type Props = {
   target: MessagesExtensionTarget;
@@ -14,10 +14,37 @@ type StoredMessage = {
   sentAt: string;
 };
 
+type ExtensionButtonProps = {
+  testID: string;
+  accessibilityLabel: string;
+  label: string;
+  style: object;
+  onPress: () => void;
+};
+
+function ExtensionButton({
+  testID,
+  accessibilityLabel,
+  label,
+  style,
+  onPress,
+}: ExtensionButtonProps) {
+  return (
+    <TouchableOpacity
+      testID={testID}
+      accessibilityLabel={accessibilityLabel}
+      style={style}
+      onPress={onPress}
+    >
+      <Text style={styles.buttonText}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
 function appendMessage(
   target: MessagesExtensionTarget,
   caption: string,
-  kind: string,
+  kind: string
 ) {
   const next: StoredMessage = {
     id: `${Date.now()}-${kind}`,
@@ -38,32 +65,44 @@ function appendMessage(
   }
 }
 
-export default function MessagesExtension({
-  target,
-  participantCount = 1,
-}: Props) {
+function usePresentationStyle(target: MessagesExtensionTarget) {
   const [style, setStyle] = useState(
-    () => target.getPresentationStyle() ?? "compact",
+    () => target.getPresentationStyle() ?? 'compact'
   );
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [attachmentSaved, setAttachmentSaved] = useState(false);
 
   useEffect(() => {
-    target.requestPresentationStyle("expanded");
-    setStyle("expanded");
-    const sub = target.addEventListener("onPresentationStyleChange", (next) => {
+    target.requestPresentationStyle('expanded');
+    setStyle('expanded');
+    const sub = target.addEventListener('onPresentationStyleChange', (next) => {
       setStyle(next);
     });
     return () => sub.remove();
   }, [target]);
 
+  const expand = () => {
+    target.requestPresentationStyle('expanded');
+    setStyle('expanded');
+  };
+
+  const compact = () => {
+    target.requestPresentationStyle('compact');
+    setStyle('compact');
+  };
+
+  return { style, expand, compact };
+}
+
+function useMessagesActions(target: MessagesExtensionTarget) {
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [attachmentSaved, setAttachmentSaved] = useState(false);
+
   const sendTemplate = () => {
     target.sendMessage({
-      caption: "Hello from expo-targets",
-      subcaption: "Messages example",
+      caption: 'Hello from expo-targets',
+      subcaption: 'Messages example',
     });
-    appendMessage(target, "Hello from expo-targets", "template");
-    target.requestPresentationStyle("compact");
+    appendMessage(target, 'Hello from expo-targets', 'template');
+    target.requestPresentationStyle('compact');
   };
 
   const sendSession = () => {
@@ -71,24 +110,24 @@ export default function MessagesExtension({
     setSessionId(id);
     target.sendUpdate(
       {
-        caption: "Session bubble from expo-targets",
+        caption: 'Session bubble from expo-targets',
         subcaption: `session:${id.slice(0, 8)}`,
         url: `expotargets://messages/session/${id}`,
       },
-      id,
+      id
     );
-    appendMessage(target, "Session bubble from expo-targets", "session");
+    appendMessage(target, 'Session bubble from expo-targets', 'session');
   };
 
   const insertAttachment = () => {
-    const marker = "expo-targets messages attachment";
+    const marker = 'expo-targets messages attachment';
     // Persist before native insert — host launch tears down the extension
     // before a deferred appendMessage after await would run.
-    appendMessage(target, marker, "attachment");
+    appendMessage(target, marker, 'attachment');
     setAttachmentSaved(true);
     void target
       .insertAttachment({
-        filename: "expo-targets-note.txt",
+        filename: 'expo-targets-note.txt',
         contents: marker,
       })
       .catch(() => {
@@ -96,16 +135,38 @@ export default function MessagesExtension({
       });
   };
 
-  const expand = () => {
-    target.requestPresentationStyle("expanded");
-    setStyle("expanded");
+  return {
+    sessionId,
+    attachmentSaved,
+    sendTemplate,
+    sendSession,
+    insertAttachment,
   };
+}
 
-  const compact = () => {
-    target.requestPresentationStyle("compact");
-    setStyle("compact");
-  };
+type MessagesExtensionViewProps = {
+  participantCount: number;
+  style: string;
+  sessionId: string | null;
+  attachmentSaved: boolean;
+  onExpand: () => void;
+  onCompact: () => void;
+  onSendSession: () => void;
+  onInsertAttachment: () => void;
+  onSendTemplate: () => void;
+};
 
+function MessagesExtensionView({
+  participantCount,
+  style,
+  sessionId,
+  attachmentSaved,
+  onExpand,
+  onCompact,
+  onSendSession,
+  onInsertAttachment,
+  onSendTemplate,
+}: MessagesExtensionViewProps) {
   return (
     <View style={styles.container} testID="messages-extension-root">
       <Text style={styles.title} testID="text-messages-title">
@@ -126,65 +187,81 @@ export default function MessagesExtension({
           attachment:saved
         </Text>
       ) : null}
-
-      <TouchableOpacity
+      <ExtensionButton
         testID="btn-expand"
         accessibilityLabel="Expand"
+        label="Expand"
         style={styles.button}
-        onPress={expand}
-      >
-        <Text style={styles.buttonText}>Expand</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
+        onPress={onExpand}
+      />
+      <ExtensionButton
         testID="btn-compact"
         accessibilityLabel="Compact"
+        label="Compact"
         style={styles.buttonSecondary}
-        onPress={compact}
-      >
-        <Text style={styles.buttonText}>Compact</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
+        onPress={onCompact}
+      />
+      <ExtensionButton
         testID="btn-send-session"
         accessibilityLabel="Send session"
+        label="Send session"
         style={styles.button}
-        onPress={sendSession}
-      >
-        <Text style={styles.buttonText}>Send session</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
+        onPress={onSendSession}
+      />
+      <ExtensionButton
         testID="btn-insert-attachment"
         accessibilityLabel="Insert attachment"
+        label="Insert attachment"
         style={styles.button}
-        onPress={insertAttachment}
-      >
-        <Text style={styles.buttonText}>Insert attachment</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
+        onPress={onInsertAttachment}
+      />
+      <ExtensionButton
         testID="btn-send-template"
         accessibilityLabel="Send template"
+        label="Send template"
         style={styles.button}
-        onPress={sendTemplate}
-      >
-        <Text style={styles.buttonText}>Send template</Text>
-      </TouchableOpacity>
+        onPress={onSendTemplate}
+      />
     </View>
   );
 }
 
+export default function MessagesExtension({
+  target,
+  participantCount = 1,
+}: Props) {
+  const { style, expand, compact } = usePresentationStyle(target);
+  const actions = useMessagesActions(target);
+
+  return (
+    <MessagesExtensionView
+      participantCount={participantCount}
+      style={style}
+      sessionId={actions.sessionId}
+      attachmentSaved={actions.attachmentSaved}
+      onExpand={expand}
+      onCompact={compact}
+      onSendSession={actions.sendSession}
+      onInsertAttachment={actions.insertAttachment}
+      onSendTemplate={actions.sendTemplate}
+    />
+  );
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, gap: 10, justifyContent: "center" },
-  title: { fontSize: 20, fontWeight: "700" },
+  container: { flex: 1, padding: 20, gap: 10, justifyContent: 'center' },
+  title: { fontSize: 20, fontWeight: '700' },
   button: {
-    backgroundColor: "#007AFF",
+    backgroundColor: '#007AFF',
     padding: 12,
     borderRadius: 8,
-    alignItems: "center",
+    alignItems: 'center',
   },
   buttonSecondary: {
-    backgroundColor: "#5856D6",
+    backgroundColor: '#5856D6',
     padding: 12,
     borderRadius: 8,
-    alignItems: "center",
+    alignItems: 'center',
   },
-  buttonText: { color: "#fff", fontWeight: "600" },
+  buttonText: { color: '#fff', fontWeight: '600' },
 });

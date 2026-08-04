@@ -7,7 +7,12 @@ import type { ExtensionType } from './types';
 export interface BaseTypeCharacteristics {
   requiresCode: boolean; // Needs Swift files, code signing, build settings
   targetType: 'application' | 'app_extension'; // Xcode target creation type
-  embedType: 'foundation-extension' | 'app-clip' | 'watch-content' | 'watch-extension' | 'none'; // How to embed in parent app
+  embedType:
+    | 'foundation-extension'
+    | 'app-clip'
+    | 'watch-content'
+    | 'watch-extension'
+    | 'none'; // How to embed in parent app
   frameworks: string[]; // Frameworks to link
   productType: string; // Xcode product type
   extensionPointIdentifier: string; // Extension point (empty for standalone)

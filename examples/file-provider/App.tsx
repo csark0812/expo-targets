@@ -1,14 +1,14 @@
-import { StatusBar } from "expo-status-bar";
-import { useCallback, useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StatusBar } from 'expo-status-bar';
+import { useCallback, useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   registerFileDomain,
   unregisterFileDomain,
-} from "./modules/file-provider-domain";
+} from './modules/file-provider-domain';
 
 export default function App() {
   const [ready, setReady] = useState(false);
-  const [domain, setDomain] = useState("not-registered");
+  const [domain, setDomain] = useState('not-registered');
 
   const boot = useCallback(async () => {
     try {
@@ -29,7 +29,7 @@ export default function App() {
     <View style={styles.container} testID="screen-root">
       <StatusBar style="auto" />
       <Text style={styles.title}>ET FileProv</Text>
-      <Text testID="status-target-ready">{ready ? "ready" : "booting"}</Text>
+      <Text testID="status-target-ready">{ready ? 'ready' : 'booting'}</Text>
       <Text testID="text-extension-type">file-provider</Text>
       <Text
         testID="text-files-domain"
@@ -55,7 +55,7 @@ export default function App() {
         style={styles.buttonSecondary}
         onPress={() => {
           void unregisterFileDomain()
-            .then(() => setDomain("not-registered"))
+            .then(() => setDomain('not-registered'))
             .catch((e) => setDomain(`error:${String(e)}`));
         }}
       >
@@ -70,23 +70,23 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     padding: 24,
     gap: 10,
   },
-  title: { fontSize: 20, fontWeight: "600", marginBottom: 12 },
+  title: { fontSize: 20, fontWeight: '600', marginBottom: 12 },
   button: {
-    backgroundColor: "#007AFF",
+    backgroundColor: '#007AFF',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 8,
   },
   buttonSecondary: {
-    backgroundColor: "#5856D6",
+    backgroundColor: '#5856D6',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 8,
   },
-  buttonText: { color: "#fff", fontWeight: "600" },
+  buttonText: { color: '#fff', fontWeight: '600' },
 });

@@ -9,23 +9,60 @@ const storage = new AppGroupStorage(
 
 export const CLIP_BUNDLE_ID = 'com.expotargets.example.native.clip.clip';
 
-export default function App() {
+type HostButtonProps = {
+  testID: string;
+  label: string;
+  onPress: () => void;
+};
+
+function HostButton({ testID, label, onPress }: HostButtonProps) {
+  return (
+    <TouchableOpacity testID={testID} style={styles.button} onPress={onPress}>
+      <Text style={styles.buttonText}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+function readClipPayload(): string {
+  const itemName = storage.get<string>('native-clip:lastItemName');
+  const price = storage.get<string>('native-clip:lastPrice');
+  const timestamp = storage.get<number>('native-clip:checkoutTimestamp');
+  const invoked = storage.get<boolean>('native-clip:invoked');
+  const invocationPath = storage.get<string>('native-clip:invocationPath');
+  if (itemName || price || timestamp) {
+    return JSON.stringify({
+      itemName,
+      price,
+      timestamp,
+      invoked,
+      invocationPath,
+    });
+  }
+  return 'none';
+}
+
+function seedClipPayload(refresh: () => void) {
+  storage.set('native-clip:lastItemName', 'seeded item');
+  storage.set('native-clip:lastPrice', '$19.99');
+  storage.set('native-clip:checkoutTimestamp', Math.floor(Date.now() / 1000));
+  refresh();
+}
+
+function clearClipPayload(refresh: () => void) {
+  storage.remove('native-clip:lastItemName');
+  storage.remove('native-clip:lastPrice');
+  storage.remove('native-clip:checkoutTimestamp');
+  storage.remove('native-clip:invoked');
+  storage.remove('native-clip:invocationPath');
+  refresh();
+}
+
+function useClipHost() {
   const [payload, setPayload] = useState('none');
   const [ready, setReady] = useState(false);
 
   const refresh = useCallback(() => {
-    const itemName = storage.get<string>('native-clip:lastItemName');
-    const price = storage.get<string>('native-clip:lastPrice');
-    const timestamp = storage.get<number>('native-clip:checkoutTimestamp');
-    const invoked = storage.get<boolean>('native-clip:invoked');
-    const invocationPath = storage.get<string>('native-clip:invocationPath');
-    if (itemName || price || timestamp) {
-      setPayload(
-        JSON.stringify({ itemName, price, timestamp, invoked, invocationPath })
-      );
-    } else {
-      setPayload('none');
-    }
+    setPayload(readClipPayload());
     setReady(true);
   }, []);
 
@@ -35,6 +72,16 @@ export default function App() {
     return () => clearInterval(interval);
   }, [refresh]);
 
+  return { payload, ready, refresh };
+}
+
+type ClipHostViewProps = {
+  payload: string;
+  ready: boolean;
+  refresh: () => void;
+};
+
+function ClipHostView({ payload, ready, refresh }: ClipHostViewProps) {
   return (
     <View style={styles.container} testID="screen-root">
       <StatusBar style="auto" />
@@ -44,47 +91,27 @@ export default function App() {
       <Text testID="text-invocation-path">
         invocation:launchApp({CLIP_BUNDLE_ID})
       </Text>
-      <TouchableOpacity
+      <HostButton
         testID="btn-seed-payload"
-        style={styles.button}
-        onPress={() => {
-          storage.set('native-clip:lastItemName', 'seeded item');
-          storage.set('native-clip:lastPrice', '$19.99');
-          storage.set(
-            'native-clip:checkoutTimestamp',
-            Math.floor(Date.now() / 1000)
-          );
-          refresh();
-        }}
-      >
-        <Text style={styles.buttonText}>Seed payload</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
+        label="Seed payload"
+        onPress={() => seedClipPayload(refresh)}
+      />
+      <HostButton
         testID="btn-clear-payload"
-        style={styles.button}
-        onPress={() => {
-          storage.remove('native-clip:lastItemName');
-          storage.remove('native-clip:lastPrice');
-          storage.remove('native-clip:checkoutTimestamp');
-          storage.remove('native-clip:invoked');
-          storage.remove('native-clip:invocationPath');
-          refresh();
-        }}
-      >
-        <Text style={styles.buttonText}>Clear payload</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        testID="btn-refresh"
-        style={styles.button}
-        onPress={refresh}
-      >
-        <Text style={styles.buttonText}>Refresh</Text>
-      </TouchableOpacity>
+        label="Clear payload"
+        onPress={() => clearClipPayload(refresh)}
+      />
+      <HostButton testID="btn-refresh" label="Refresh" onPress={refresh} />
       <Text testID="text-last-payload" style={styles.payload}>
         {payload}
       </Text>
     </View>
   );
+}
+
+export default function App() {
+  const host = useClipHost();
+  return <ClipHostView {...host} />;
 }
 
 const styles = StyleSheet.create({

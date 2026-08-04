@@ -29,7 +29,7 @@ export default function App() {
     const nativeLive = native !== 'none' ? native : 'native-pending';
     // popup is host scaffolding; content/native only go live after appex runtime ping.
     setPayload(
-      `popup:${UITEST_SAFARI_POPUP}|content-script:${contentLive}|native-msg:${nativeLive}`,
+      `popup:${UITEST_SAFARI_POPUP}|content-script:${contentLive}|native-msg:${nativeLive}`
     );
     setReady(true);
   }, []);

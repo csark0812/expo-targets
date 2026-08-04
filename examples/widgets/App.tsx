@@ -24,7 +24,9 @@ export default function App() {
       <StatusBar style="auto" />
       <Text style={styles.title}>Widgets example</Text>
       <Text testID="status-target-ready">{ready ? 'ready' : 'loading'}</Text>
-      <Text testID="text-widget-families">families:systemSmall,systemMedium</Text>
+      <Text testID="text-widget-families">
+        families:systemSmall,systemMedium
+      </Text>
       <Text testID="text-widget-intent-note">
         intent: StaticConfiguration · seed family:systemSmall
       </Text>

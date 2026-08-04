@@ -21,7 +21,13 @@ export {
   buildExtensionBundleShellScript,
   ensureBundleReactNativePhase,
 } from './bundleReactNative';
-export { configureAppClipEmbed, configureAppExtensionEmbed, configureWatchAppExtensionEmbed, configureWatchContentEmbed, removeAppExtensionFromHostEmbed } from './embed';
+export {
+  configureAppClipEmbed,
+  configureAppExtensionEmbed,
+  configureWatchAppExtensionEmbed,
+  configureWatchContentEmbed,
+  removeAppExtensionFromHostEmbed,
+} from './embed';
 export { addExternalFileReference, addTargetAssets } from './fileRefs';
 export {
   addBuildSourceFileToGroup,

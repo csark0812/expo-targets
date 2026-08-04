@@ -33,7 +33,10 @@ export default function ClipExtension({ target }: Props) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: '#fff' }]} testID="clip-rn-root">
+    <View
+      style={[styles.container, { backgroundColor: '#fff' }]}
+      testID="clip-rn-root"
+    >
       <Text style={styles.title} testID="clip-rn-title">
         App Clip
       </Text>

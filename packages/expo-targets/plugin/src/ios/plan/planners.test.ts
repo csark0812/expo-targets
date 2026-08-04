@@ -188,7 +188,7 @@ describe('planBuildSettings', () => {
   });
 });
 
-describe('planBuildSettings per type', () => {
+describe('planBuildSettings for App Clips', () => {
   test('isolates search paths for App Clips only', () => {
     const settings = buildSettingsFor({
       props: { type: 'clip', name: 'MyClip' },
@@ -208,7 +208,9 @@ describe('planBuildSettings per type', () => {
     expect(settings.LIBRARY_SEARCH_PATHS).toBeUndefined();
     expect(settings.ENABLE_PREVIEWS).toBeUndefined();
   });
+});
 
+describe('planBuildSettings for stickers', () => {
   test('asset-only sticker targets get the iMessage app icon setting', () => {
     const settings = buildSettingsFor({
       props: { type: 'stickers', name: 'MyStickers' },
@@ -220,7 +222,9 @@ describe('planBuildSettings per type', () => {
     );
     expect(settings.CODE_SIGN_ENTITLEMENTS).toBeUndefined();
   });
+});
 
+describe('planBuildSettings for watch targets', () => {
   test('watch targets use watchOS SDK and device family 4', () => {
     const settings = buildSettingsFor({
       props: {
@@ -258,8 +262,7 @@ describe('planBuildSettings per type', () => {
   });
 });
 
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: existing planner suite
-describe('planSwiftSources', () => {
+describe('planSwiftSources React Native generation', () => {
   test('generates a ReactNativeViewController when the user has no Swift', () => {
     const plans = swiftSourcesFor({ entry: './index.tsx' });
 
@@ -285,13 +288,14 @@ describe('planSwiftSources', () => {
       moduleName: 'Action',
       targetName: 'Action',
     });
-    // Product name still derives from displayName for Xcode.
     expect(
       identityFor(makeProps({ displayName: 'Example Action' }))
         .targetProductName
     ).toBe('ExampleActionTarget');
   });
+});
 
+describe('planSwiftSources user overrides', () => {
   test('prefers a user-provided ReactNativeViewController', () => {
     const plans = swiftSourcesFor(
       { entry: './index.tsx' },

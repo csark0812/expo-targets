@@ -55,7 +55,7 @@ describe('getFrameworksForType', () => {
   });
 });
 
-describe('getTargetInfoPlistForType (characterization)', () => {
+describe('getTargetInfoPlistForType golden output', () => {
   test('share extension Info.plist matches golden output', () => {
     const parsed = plist.parse(getTargetInfoPlistForType('share'));
     expect(normalizePlist(parsed)).toBe(
@@ -76,7 +76,9 @@ describe('getTargetInfoPlistForType (characterization)', () => {
       normalizePlist(readGolden('stickers-info-plist.json'))
     );
   });
+});
 
+describe('getTargetInfoPlistForType options', () => {
   test('displayName becomes CFBundleDisplayName (not PRODUCT_NAME)', () => {
     const parsed = plist.parse(
       getTargetInfoPlistForType('stickers', { displayName: 'Fun Stickers' })

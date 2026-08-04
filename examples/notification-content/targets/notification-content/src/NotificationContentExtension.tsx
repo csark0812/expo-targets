@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 export type NotificationContentProps = {
   title?: string;
@@ -18,10 +18,10 @@ export default function NotificationContentExtension({
   return (
     <View style={styles.root} testID="nce-rn-root">
       <Text style={styles.title} testID="nce-rn-title">
-        {title ?? "Notification"}
+        {title ?? 'Notification'}
       </Text>
       <Text style={styles.body} testID="nce-rn-body">
-        {body ?? ""}
+        {body ?? ''}
       </Text>
       <Text
         style={styles.marker}
@@ -59,25 +59,25 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     padding: 16,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     gap: 8,
   },
-  title: { fontSize: 17, fontWeight: "600" },
+  title: { fontSize: 17, fontWeight: '600' },
   body: { fontSize: 15 },
-  marker: { fontSize: 13, color: "#666" },
-  actions: { flexDirection: "row", gap: 8, marginTop: 4 },
+  marker: { fontSize: 13, color: '#666' },
+  actions: { flexDirection: 'row', gap: 8, marginTop: 4 },
   chip: {
-    backgroundColor: "#007AFF",
+    backgroundColor: '#007AFF',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
   },
   chipSecondary: {
-    backgroundColor: "#5856D6",
+    backgroundColor: '#5856D6',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
   },
-  chipText: { color: "#fff", fontWeight: "600", fontSize: 13 },
-  meta: { fontSize: 12, color: "#999", marginTop: 4 },
+  chipText: { color: '#fff', fontWeight: '600', fontSize: 13 },
+  meta: { fontSize: 12, color: '#999', marginTop: 4 },
 });

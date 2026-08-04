@@ -1,4 +1,4 @@
-import { requireNativeModule } from "expo-modules-core";
+import { requireNativeModule } from 'expo-modules-core';
 
 type Native = {
   start(title: string, status: string): Promise<string>;
@@ -6,18 +6,18 @@ type Native = {
   endAll(): Promise<void>;
 };
 
-const native = requireNativeModule<Native>("TrickLiveActivity");
+const native = requireNativeModule<Native>('TrickLiveActivity');
 
 export async function startLiveActivity(
-  title = "ET Trick",
-  status = "live",
+  title = 'ET Trick',
+  status = 'live'
 ): Promise<string> {
   return native.start(title, status);
 }
 
 export async function updateLiveActivity(
   activityId: string,
-  status: string,
+  status: string
 ): Promise<boolean> {
   return native.update(activityId, status);
 }

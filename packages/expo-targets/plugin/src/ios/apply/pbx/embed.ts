@@ -612,6 +612,66 @@ export function configureWatchAppExtensionEmbed({
   });
 }
 
+function buildFileMatchesTarget(
+  buildFile: { fileRef?: string } | undefined,
+  fileRefSection: Record<string, { path?: string; name?: string }>,
+  targetFileName: string
+): boolean {
+  if (!buildFile?.fileRef) {
+    return false;
+  }
+  const names = [
+    fileRefSection?.[buildFile.fileRef]?.path,
+    fileRefSection?.[buildFile.fileRef]?.name,
+  ]
+    .filter((value): value is string => typeof value === 'string')
+    .map((value) => value.replace(/"/g, ''));
+  return names.includes(targetFileName);
+}
+
+function pruneHostEmbedPhase({
+  objects,
+  mainTarget,
+  entry,
+  targetFileName,
+}: {
+  objects: Record<string, any>;
+  mainTarget: { buildPhases: { value: string }[] };
+  entry: { value: string };
+  targetFileName: string;
+}): void {
+  const copyFilesPhases = objects.PBXCopyFilesBuildPhase || {};
+  const buildFileSection = objects.PBXBuildFile || {};
+  const fileRefSection = objects.PBXFileReference || {};
+  const phase = copyFilesPhases[entry.value];
+  if (!phase || phase.dstSubfolderSpec !== APP_EXTENSION_DST_SUBFOLDER_SPEC) {
+    return;
+  }
+  if (!Array.isArray(phase.files)) {
+    return;
+  }
+
+  const kept = phase.files.filter((file: { value: string }) => {
+    const buildFile = buildFileSection[file.value];
+    if (!buildFileMatchesTarget(buildFile, fileRefSection, targetFileName)) {
+      return true;
+    }
+    delete buildFileSection[file.value];
+    delete buildFileSection[`${file.value}_comment`];
+    return false;
+  });
+
+  phase.files = kept;
+
+  if (kept.length === 0) {
+    mainTarget.buildPhases = mainTarget.buildPhases.filter(
+      (phaseEntry: { value: string }) => phaseEntry.value !== entry.value
+    );
+    delete copyFilesPhases[entry.value];
+    delete copyFilesPhases[`${entry.value}_comment`];
+  }
+}
+
 /**
  * `xcode.addTarget(..., 'app_extension')` auto-embeds into the iOS host.
  * Watch widgets must nest under the Watch companion instead — strip the host copy.
@@ -627,53 +687,14 @@ export function removeAppExtensionFromHostEmbed({
 }): void {
   const xcodeProject = project as any;
   const objects = xcodeProject.hash.project.objects;
-  const copyFilesPhases = objects.PBXCopyFilesBuildPhase || {};
-  const buildFileSection = objects.PBXBuildFile || {};
-  const fileRefSection = objects.PBXFileReference || {};
   const mainTarget = objects.PBXNativeTarget?.[mainTargetUuid];
   if (!mainTarget?.buildPhases) {
     return;
   }
 
   const targetFileName = `${targetProductName}.appex`;
-
   for (const entry of [...mainTarget.buildPhases]) {
-    const phase = copyFilesPhases[entry.value];
-    if (!phase || phase.dstSubfolderSpec !== APP_EXTENSION_DST_SUBFOLDER_SPEC) {
-      continue;
-    }
-    if (!Array.isArray(phase.files)) {
-      continue;
-    }
-
-    const kept = phase.files.filter((file: { value: string }) => {
-      const buildFile = buildFileSection[file.value];
-      if (!buildFile?.fileRef) {
-        return true;
-      }
-      const names = [
-        fileRefSection?.[buildFile.fileRef]?.path,
-        fileRefSection?.[buildFile.fileRef]?.name,
-      ]
-        .filter((value): value is string => typeof value === 'string')
-        .map((value) => value.replace(/"/g, ''));
-      if (!names.includes(targetFileName)) {
-        return true;
-      }
-      delete buildFileSection[file.value];
-      delete buildFileSection[`${file.value}_comment`];
-      return false;
-    });
-
-    phase.files = kept;
-
-    if (kept.length === 0) {
-      mainTarget.buildPhases = mainTarget.buildPhases.filter(
-        (phaseEntry: { value: string }) => phaseEntry.value !== entry.value
-      );
-      delete copyFilesPhases[entry.value];
-      delete copyFilesPhases[`${entry.value}_comment`];
-    }
+    pruneHostEmbedPhase({ objects, mainTarget, entry, targetFileName });
   }
 }
 

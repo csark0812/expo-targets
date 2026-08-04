@@ -65,6 +65,28 @@ function observeSwiftFiles(targetDirectory: string): string[] {
   }).filter((file) => !isTestOrBuildSwiftFile(file));
 }
 
+function observeBundleResourceFiles(
+  type: ExtensionType,
+  targetDirectory: string
+): string[] {
+  if (type !== 'content-blocker') {
+    return [];
+  }
+  return globSync('*.json', {
+    cwd: targetDirectory,
+    absolute: false,
+    ignore: ['**/build/**'],
+  });
+}
+
+function userAssetsCatalogPath(
+  targetDirectory: string,
+  type: ExtensionType
+): string {
+  const catalog = type === 'stickers' ? 'Stickers.xcassets' : 'Assets.xcassets';
+  return path.join(targetDirectory, catalog);
+}
+
 /**
  * Read the on-disk state of a target directory.
  */
@@ -85,10 +107,7 @@ export function buildTargetWorkspace({
     targetDirectory: directory,
   });
   const absoluteTargetRoot = path.join(projectRoot, directory);
-  const userAssetsPath = path.join(
-    targetDirectory,
-    type === 'stickers' ? 'Stickers.xcassets' : 'Assets.xcassets'
-  );
+  const userAssetsPath = userAssetsCatalogPath(targetDirectory, type);
 
   return {
     projectRoot,
@@ -103,14 +122,7 @@ export function buildTargetWorkspace({
     swiftFiles: typeConfig.requiresCode
       ? observeSwiftFiles(targetDirectory)
       : [],
-    bundleResourceFiles:
-      type === 'content-blocker'
-        ? globSync('*.json', {
-            cwd: targetDirectory,
-            absolute: false,
-            ignore: ['**/build/**'],
-          })
-        : [],
+    bundleResourceFiles: observeBundleResourceFiles(type, targetDirectory),
     userAssetsPath,
     hasUserAssets: File.isDirectory(userAssetsPath),
     userSafariResourcesPath: path.join(targetDirectory, 'Resources'),

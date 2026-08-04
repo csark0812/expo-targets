@@ -28,14 +28,58 @@ async function openImageShareSheet() {
 /** Marker written by ActionExtension.save (`filter: 'grayscale'`). */
 export const UITEST_ACTION_MARKER = 'grayscale';
 
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: host contract demo screen
-export default function App() {
+type HostButtonProps = {
+  testID: string;
+  label: string;
+  onPress: () => void;
+};
+
+function HostButton({ testID, label, onPress }: HostButtonProps) {
+  return (
+    <TouchableOpacity testID={testID} style={styles.button} onPress={onPress}>
+      <Text style={styles.buttonText}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+function openImageShareSheetSafe() {
+  void openImageShareSheet().catch((error) => {
+    console.warn('[ETAction] Share.share failed', error);
+  });
+}
+
+function seedActionPayload(refresh: () => void) {
+  actionTarget.setData({
+    items: [
+      {
+        id: 'seed',
+        processedAt: new Date().toISOString(),
+        filter: 'seed',
+        kind: 'image',
+        imageCount: 0,
+        multiItem: false,
+      },
+    ],
+  });
+  refresh();
+}
+
+function clearActionPayload(refresh: () => void) {
+  actionTarget.setData({ items: [] });
+  refresh();
+}
+
+function formatActionPayload(data: { items?: unknown[] } | null | undefined) {
+  return data?.items?.length ? JSON.stringify(data.items) : 'none';
+}
+
+function useActionHost() {
   const [payload, setPayload] = useState('none');
   const [ready, setReady] = useState(false);
 
   const refresh = useCallback(() => {
     const data = actionTarget.getData<{ items: unknown[] }>();
-    setPayload(data?.items?.length ? JSON.stringify(data.items) : 'none');
+    setPayload(formatActionPayload(data));
     setReady(true);
   }, []);
 
@@ -47,65 +91,47 @@ export default function App() {
     return () => sub.remove();
   }, [refresh]);
 
+  return { payload, ready, refresh };
+}
+
+type ActionHostViewProps = {
+  payload: string;
+  ready: boolean;
+  refresh: () => void;
+};
+
+function ActionHostView({ payload, ready, refresh }: ActionHostViewProps) {
   return (
     <View style={styles.container} testID="screen-root">
       <StatusBar style="auto" />
       <Text style={styles.title}>Action example</Text>
       <Text testID="status-target-ready">{ready ? 'ready' : 'loading'}</Text>
-      <TouchableOpacity
+      <HostButton
         testID="btn-seed-payload"
-        style={styles.button}
-        onPress={() => {
-          actionTarget.setData({
-            items: [
-              {
-                id: 'seed',
-                processedAt: new Date().toISOString(),
-                filter: 'seed',
-                kind: 'image',
-                imageCount: 0,
-                multiItem: false,
-              },
-            ],
-          });
-          refresh();
-        }}
-      >
-        <Text style={styles.buttonText}>Seed payload</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
+        label="Seed payload"
+        onPress={() => seedActionPayload(refresh)}
+      />
+      <HostButton
         testID="btn-clear-payload"
-        style={styles.button}
-        onPress={() => {
-          actionTarget.setData({ items: [] });
-          refresh();
-        }}
-      >
-        <Text style={styles.buttonText}>Clear payload</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
+        label="Clear payload"
+        onPress={() => clearActionPayload(refresh)}
+      />
+      <HostButton
         testID="btn-open-share-sheet"
-        style={styles.button}
-        onPress={() => {
-          void openImageShareSheet().catch((error) => {
-            console.warn('[ETAction] Share.share failed', error);
-          });
-        }}
-      >
-        <Text style={styles.buttonText}>Open Share Sheet</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        testID="btn-refresh"
-        style={styles.button}
-        onPress={refresh}
-      >
-        <Text style={styles.buttonText}>Refresh</Text>
-      </TouchableOpacity>
+        label="Open Share Sheet"
+        onPress={openImageShareSheetSafe}
+      />
+      <HostButton testID="btn-refresh" label="Refresh" onPress={refresh} />
       <Text testID="text-last-payload" style={styles.payload}>
         {payload}
       </Text>
     </View>
   );
+}
+
+export default function App() {
+  const host = useActionHost();
+  return <ActionHostView {...host} />;
 }
 
 const styles = StyleSheet.create({

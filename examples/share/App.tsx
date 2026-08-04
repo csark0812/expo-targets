@@ -17,6 +17,20 @@ export const UITEST_SHARE_MARKER = 'expo-targets uitest share payload';
 /** Host payload substring for the image / multi-item deepening path. */
 export const UITEST_SHARE_IMAGE_KIND = '"kind":"image"';
 
+type HostButtonProps = {
+  testID: string;
+  label: string;
+  onPress: () => void;
+};
+
+function HostButton({ testID, label, onPress }: HostButtonProps) {
+  return (
+    <TouchableOpacity testID={testID} style={styles.button} onPress={onPress}>
+      <Text style={styles.buttonText}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
 async function openImageShareSheet() {
   const [asset] = await Asset.loadAsync(require('./assets/icon.png'));
   let url = asset.localUri ?? asset.uri;
@@ -29,14 +43,49 @@ async function openImageShareSheet() {
   await Share.share({ url });
 }
 
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: host contract demo screen
-export default function App() {
+function openTextShareSheet() {
+  void Share.share({
+    message: UITEST_SHARE_MARKER,
+    url: 'https://example.com/expo-targets-share',
+  });
+}
+
+function openImageShareSheetSafe() {
+  void openImageShareSheet().catch((error) => {
+    console.warn('[ETShare] image Share.share failed', error);
+  });
+}
+
+function seedSharePayload(refresh: () => void) {
+  shareTarget.setData({
+    items: [
+      {
+        id: 'seed',
+        sharedAt: new Date().toISOString(),
+        kind: 'text',
+        content: { text: 'seeded from host' },
+      },
+    ],
+  });
+  refresh();
+}
+
+function clearSharePayload(refresh: () => void) {
+  shareTarget.setData({ items: [] });
+  refresh();
+}
+
+function formatSharePayload(data: { items?: unknown[] } | null | undefined) {
+  return data?.items?.length ? JSON.stringify(data.items) : 'none';
+}
+
+function useShareHost() {
   const [payload, setPayload] = useState('none');
   const [ready, setReady] = useState(false);
 
   const refresh = useCallback(() => {
     const data = shareTarget.getData<{ items: unknown[] }>();
-    setPayload(data?.items?.length ? JSON.stringify(data.items) : 'none');
+    setPayload(formatSharePayload(data));
     setReady(true);
   }, []);
 
@@ -48,75 +97,52 @@ export default function App() {
     return () => sub.remove();
   }, [refresh]);
 
+  return { payload, ready, refresh };
+}
+
+type ShareHostViewProps = {
+  payload: string;
+  ready: boolean;
+  refresh: () => void;
+};
+
+function ShareHostView({ payload, ready, refresh }: ShareHostViewProps) {
   return (
     <View style={styles.container} testID="screen-root">
       <StatusBar style="auto" />
       <Text style={styles.title}>Share example</Text>
       <Text testID="status-target-ready">{ready ? 'ready' : 'loading'}</Text>
-      <TouchableOpacity
+      <HostButton
         testID="btn-seed-payload"
-        style={styles.button}
-        onPress={() => {
-          shareTarget.setData({
-            items: [
-              {
-                id: 'seed',
-                sharedAt: new Date().toISOString(),
-                kind: 'text',
-                content: { text: 'seeded from host' },
-              },
-            ],
-          });
-          refresh();
-        }}
-      >
-        <Text style={styles.buttonText}>Seed payload</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
+        label="Seed payload"
+        onPress={() => seedSharePayload(refresh)}
+      />
+      <HostButton
         testID="btn-clear-payload"
-        style={styles.button}
-        onPress={() => {
-          shareTarget.setData({ items: [] });
-          refresh();
-        }}
-      >
-        <Text style={styles.buttonText}>Clear payload</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
+        label="Clear payload"
+        onPress={() => clearSharePayload(refresh)}
+      />
+      <HostButton
         testID="btn-open-share-sheet"
-        style={styles.button}
-        onPress={() => {
-          void Share.share({
-            message: UITEST_SHARE_MARKER,
-            url: 'https://example.com/expo-targets-share',
-          });
-        }}
-      >
-        <Text style={styles.buttonText}>Open Share Sheet</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
+        label="Open Share Sheet"
+        onPress={openTextShareSheet}
+      />
+      <HostButton
         testID="btn-open-image-share"
-        style={styles.button}
-        onPress={() => {
-          void openImageShareSheet().catch((error) => {
-            console.warn('[ETShare] image Share.share failed', error);
-          });
-        }}
-      >
-        <Text style={styles.buttonText}>Open Image Share</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        testID="btn-refresh"
-        style={styles.button}
-        onPress={refresh}
-      >
-        <Text style={styles.buttonText}>Refresh</Text>
-      </TouchableOpacity>
+        label="Open Image Share"
+        onPress={openImageShareSheetSafe}
+      />
+      <HostButton testID="btn-refresh" label="Refresh" onPress={refresh} />
       <Text testID="text-last-payload" style={styles.payload}>
         {payload}
       </Text>
     </View>
   );
+}
+
+export default function App() {
+  const host = useShareHost();
+  return <ShareHostView {...host} />;
 }
 
 const styles = StyleSheet.create({

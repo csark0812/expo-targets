@@ -353,69 +353,57 @@ export function generatePlaceholderIcons(resourcesPath: string): void {
   }
 }
 
-/**
- * Generate all Safari web extension resources
- */
-export function generateSafariResources(
-  resourcesPath: string,
-  config: {
-    name: string;
-    displayName?: string;
-    manifest?: Partial<SafariManifestConfig>;
+function defaultContentScripts(): NonNullable<
+  SafariManifestConfig['content_scripts']
+> {
+  return [
+    {
+      matches: ['*://example.com/*', '*://*.example.com/*'],
+      js: ['content.js'],
+    },
+  ];
+}
+
+function resolveContentScripts(
+  manifest: Partial<SafariManifestConfig> | undefined
+): NonNullable<SafariManifestConfig['content_scripts']> {
+  if (manifest?.content_scripts && manifest.content_scripts.length > 0) {
+    return manifest.content_scripts;
   }
-): void {
-  File.ensureDirectoryExists(resourcesPath);
+  return defaultContentScripts();
+}
 
-  const targetDisplayName = config.displayName || config.name;
-
-  // Generate popup.html
-  generatePopupHtml(path.join(resourcesPath, 'popup.html'), targetDisplayName);
-
-  // Generate manifest.json with optional overrides
+function rewriteManifestWithDefaultContentScripts({
+  resourcesPath,
+  displayName,
+  manifest,
+  contentScripts,
+}: {
+  resourcesPath: string;
+  displayName: string;
+  manifest: Partial<SafariManifestConfig> | undefined;
+  contentScripts: NonNullable<SafariManifestConfig['content_scripts']>;
+}): void {
+  if (manifest?.content_scripts && manifest.content_scripts.length > 0) {
+    return;
+  }
   generateManifest(path.join(resourcesPath, 'manifest.json'), {
-    name: targetDisplayName,
-    ...config.manifest,
+    name: displayName,
+    ...manifest,
+    content_scripts: contentScripts,
+    permissions: [
+      ...(manifest?.permissions ?? ['storage']),
+      'nativeMessaging',
+    ].filter((p, i, a) => a.indexOf(p) === i),
   });
+}
 
-  // Generate background.js
-  generateBackgroundScript(path.join(resourcesPath, 'background.js'));
-
-  // Generate placeholder popup.js (will be replaced by bundle)
-  generatePlaceholderPopupScript(
-    path.join(resourcesPath, 'popup.js'),
-    targetDisplayName
-  );
-
-  // Content scripts — default example.com injector when config omits them.
-  // Stub pings native via background so App Group gets a real runtime marker.
-  const contentScripts =
-    config.manifest?.content_scripts &&
-    config.manifest.content_scripts.length > 0
-      ? config.manifest.content_scripts
-      : [
-          {
-            matches: ['*://example.com/*', '*://*.example.com/*'],
-            js: ['content.js'],
-          },
-        ];
-
-  // Re-write manifest with resolved content_scripts (keeps permissions as-is).
-  if (
-    !config.manifest?.content_scripts ||
-    config.manifest.content_scripts.length === 0
-  ) {
-    generateManifest(path.join(resourcesPath, 'manifest.json'), {
-      name: targetDisplayName,
-      ...config.manifest,
-      content_scripts: contentScripts,
-      permissions: [
-        ...(config.manifest?.permissions ?? ['storage']),
-        'nativeMessaging',
-      ].filter((p, i, a) => a.indexOf(p) === i),
-    });
-  }
-
-  const contentStub = `// ${targetDisplayName} content script — Devicewright runtime proof
+function writeContentScriptStubs(
+  resourcesPath: string,
+  contentScripts: NonNullable<SafariManifestConfig['content_scripts']>,
+  displayName: string
+): void {
+  const contentStub = `// ${displayName} content script — Devicewright runtime proof
 (function () {
   var MARKER = 'expo-targets uitest safari content';
   try {
@@ -441,8 +429,42 @@ export function generateSafariResources(
       }
     }
   }
+}
 
-  // Generate placeholder icons
+/**
+ * Generate all Safari web extension resources
+ */
+export function generateSafariResources(
+  resourcesPath: string,
+  config: {
+    name: string;
+    displayName?: string;
+    manifest?: Partial<SafariManifestConfig>;
+  }
+): void {
+  File.ensureDirectoryExists(resourcesPath);
+
+  const targetDisplayName = config.displayName || config.name;
+  const contentScripts = resolveContentScripts(config.manifest);
+
+  generatePopupHtml(path.join(resourcesPath, 'popup.html'), targetDisplayName);
+  generateManifest(path.join(resourcesPath, 'manifest.json'), {
+    name: targetDisplayName,
+    ...config.manifest,
+  });
+  generateBackgroundScript(path.join(resourcesPath, 'background.js'));
+  generatePlaceholderPopupScript(
+    path.join(resourcesPath, 'popup.js'),
+    targetDisplayName
+  );
+
+  rewriteManifestWithDefaultContentScripts({
+    resourcesPath,
+    displayName: targetDisplayName,
+    manifest: config.manifest,
+    contentScripts,
+  });
+  writeContentScriptStubs(resourcesPath, contentScripts, targetDisplayName);
   generatePlaceholderIcons(resourcesPath);
 }
 

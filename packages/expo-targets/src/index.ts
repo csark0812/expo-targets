@@ -8,8 +8,8 @@ export type {
   IOSTargetConfig,
   ReactNativeCompatibleType,
   TargetConfig,
-} from "../plugin/src/config";
-export type { SharedData } from "./modules/extension/index";
+} from '../plugin/src/config';
+export type { SharedData } from './modules/extension/index';
 // Extension module
 export {
   close,
@@ -17,14 +17,14 @@ export {
   getExtensionNativeModule,
   getSharedData,
   openHostApp,
-} from "./modules/extension/index";
+} from './modules/extension/index';
 export type {
   AttachmentPayload,
   ConversationInfo,
   MessageLayout,
   PresentationStyle,
   SelectedMessage,
-} from "./modules/messages/index";
+} from './modules/messages/index';
 // Messages module
 export {
   addEventListener as addMessagesEventListener,
@@ -35,8 +35,8 @@ export {
   requestPresentationStyle,
   sendMessage,
   sendUpdate,
-} from "./modules/messages/index";
-export type { BrowserTab } from "./modules/safari/index";
+} from './modules/messages/index';
+export type { BrowserTab } from './modules/safari/index';
 // Safari module
 export {
   closePopup,
@@ -50,13 +50,13 @@ export {
   useMessageListener,
   useSendToContentScript,
   useSendToNative,
-} from "./modules/safari/index";
+} from './modules/safari/index';
 // Storage module
 export {
   AppGroupStorage,
   clearSharedData,
   refreshAllTargets,
-} from "./modules/storage/index";
+} from './modules/storage/index';
 export type {
   BaseTarget,
   ExtensionTarget,
@@ -64,5 +64,5 @@ export type {
   NonExtensionTarget,
   SafariExtensionTarget,
   Target,
-} from "./Target";
-export { createTarget } from "./Target";
+} from './Target';
+export { createTarget } from './Target';

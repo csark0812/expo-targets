@@ -28,7 +28,7 @@ export default function App() {
       native !== 'none' ? UITEST_SAFARI_CONTENT : 'content-pending';
     const nativeLive = native !== 'none' ? native : 'native-pending';
     setPayload(
-      `popup:${UITEST_SAFARI_POPUP}|content-script:${contentLive}|native-msg:${nativeLive}`,
+      `popup:${UITEST_SAFARI_POPUP}|content-script:${contentLive}|native-msg:${nativeLive}`
     );
     setReady(true);
   }, []);

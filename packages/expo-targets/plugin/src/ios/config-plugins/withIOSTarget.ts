@@ -123,6 +123,53 @@ function resolveTargetEntitlements(
   return entitlements;
 }
 
+function resolveWatchDeploymentTarget(
+  props: IosTargetProps,
+  typeMinimum: string
+): string {
+  const deploymentTarget = props.deploymentTarget || typeMinimum;
+  props.logger.log(`Using watchOS deployment target: ${deploymentTarget}`);
+  return deploymentTarget;
+}
+
+function resolveDefaultDeploymentTarget(
+  props: IosTargetProps,
+  typeMinimum: string,
+  mainAppTarget: string | undefined
+): string {
+  if (props.deploymentTarget) {
+    return props.deploymentTarget;
+  }
+  if (
+    mainAppTarget &&
+    Number.parseFloat(mainAppTarget) > Number.parseFloat(typeMinimum)
+  ) {
+    props.logger.log(`Inherited deployment target: ${mainAppTarget}`);
+    return mainAppTarget;
+  }
+  props.logger.log(`Using type minimum deployment target: ${typeMinimum}`);
+  return typeMinimum;
+}
+
+function raiseForExpoModulesIfNeeded(
+  props: IosTargetProps,
+  deploymentTarget: string
+): string {
+  const isNativeRnExtension = props.entry && isReactNativeNative(props.type);
+  if (
+    !isNativeRnExtension ||
+    Number.parseFloat(deploymentTarget) >=
+      Number.parseFloat(EXPO_MODULES_MINIMUM_DEPLOYMENT_TARGET)
+  ) {
+    return deploymentTarget;
+  }
+  props.logger.log(
+    `React Native extension requires ExpoModulesCore (iOS ${EXPO_MODULES_MINIMUM_DEPLOYMENT_TARGET}), ` +
+      `raising deployment target from ${deploymentTarget} to ${EXPO_MODULES_MINIMUM_DEPLOYMENT_TARGET}`
+  );
+  return EXPO_MODULES_MINIMUM_DEPLOYMENT_TARGET;
+}
+
 function resolveDeploymentTarget(
   props: IosTargetProps,
   mainAppTarget: string | undefined
@@ -131,48 +178,17 @@ function resolveDeploymentTarget(
     TYPE_MINIMUM_DEPLOYMENT_TARGETS[
       props.type as keyof typeof TYPE_MINIMUM_DEPLOYMENT_TARGETS
     ];
-  let deploymentTarget = props.deploymentTarget;
 
-  // watchOS versions are not comparable to iOS host deployment targets.
   if (props.type === 'watch' || props.type === 'watch-widget') {
-    deploymentTarget = deploymentTarget || typeMinimum;
-    props.logger.log(
-      `Using watchOS deployment target: ${deploymentTarget}`
-    );
-    return deploymentTarget;
+    return resolveWatchDeploymentTarget(props, typeMinimum);
   }
 
-  if (!deploymentTarget) {
-    if (
-      mainAppTarget &&
-      Number.parseFloat(mainAppTarget) > Number.parseFloat(typeMinimum)
-    ) {
-      deploymentTarget = mainAppTarget;
-      props.logger.log(`Inherited deployment target: ${deploymentTarget}`);
-    } else {
-      deploymentTarget = typeMinimum;
-      props.logger.log(
-        `Using type minimum deployment target: ${deploymentTarget}`
-      );
-    }
-  }
-
-  // Native React Native extensions require ExpoModulesCore, which has minimum iOS 15.1
-  // Web-based extensions (safari) don't require ExpoModulesCore
-  const isNativeRnExtension = props.entry && isReactNativeNative(props.type);
-  if (
-    isNativeRnExtension &&
-    Number.parseFloat(deploymentTarget) <
-      Number.parseFloat(EXPO_MODULES_MINIMUM_DEPLOYMENT_TARGET)
-  ) {
-    props.logger.log(
-      `React Native extension requires ExpoModulesCore (iOS ${EXPO_MODULES_MINIMUM_DEPLOYMENT_TARGET}), ` +
-        `raising deployment target from ${deploymentTarget} to ${EXPO_MODULES_MINIMUM_DEPLOYMENT_TARGET}`
-    );
-    return EXPO_MODULES_MINIMUM_DEPLOYMENT_TARGET;
-  }
-
-  return deploymentTarget;
+  const deploymentTarget = resolveDefaultDeploymentTarget(
+    props,
+    typeMinimum,
+    mainAppTarget
+  );
+  return raiseForExpoModulesIfNeeded(props, deploymentTarget);
 }
 
 function resolveColors(

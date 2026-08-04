@@ -30,37 +30,37 @@ CLIP_FW="\${CLIP_APP}/Frameworks"
 
 # CocoaPods may schedule [CP] Embed Pods Frameworks after this phase — run
 # the host embed script first so Frameworks exist before we copy.
-EMBED_SH=\$(ls "\$PODS_ROOT/Target Support Files"/Pods-*/Pods-*-frameworks.sh 2>/dev/null | grep -v '${safe}' | head -1 || true)
-if [[ -n "\${EMBED_SH:-}" && -f "\$EMBED_SH" ]]; then
+EMBED_SH=$(ls "$PODS_ROOT/Target Support Files"/Pods-*/Pods-*-frameworks.sh 2>/dev/null | grep -v '${safe}' | head -1 || true)
+if [[ -n "\${EMBED_SH:-}" && -f "$EMBED_SH" ]]; then
   export FRAMEWORKS_FOLDER_PATH="\${FULL_PRODUCT_NAME}/Frameworks"
-  /bin/sh "\$EMBED_SH" || true
+  /bin/sh "$EMBED_SH" || true
 fi
 
-if [[ ! -d "\$HOST_FW" ]]; then
-  echo "note: no host Frameworks at \$HOST_FW — skip App Clip framework copy"
+if [[ ! -d "$HOST_FW" ]]; then
+  echo "note: no host Frameworks at $HOST_FW — skip App Clip framework copy"
   exit 0
 fi
-if [[ ! -d "\$CLIP_APP" ]]; then
-  echo "warning: App Clip missing at \$CLIP_APP — skip framework copy"
+if [[ ! -d "$CLIP_APP" ]]; then
+  echo "warning: App Clip missing at $CLIP_APP — skip framework copy"
   exit 0
 fi
-mkdir -p "\$CLIP_FW"
-rsync -a "\$HOST_FW/" "\$CLIP_FW/"
-echo "Copied host Frameworks into \$CLIP_FW"
+mkdir -p "$CLIP_FW"
+rsync -a "$HOST_FW/" "$CLIP_FW/"
+echo "Copied host Frameworks into $CLIP_FW"
 
 # Sibling product (BUILT_PRODUCTS_DIR/${safe}.app) is what Xcode/simctl
 # install when launching the App Clip scheme — keep it in sync too.
 SIBLING_APP="\${BUILT_PRODUCTS_DIR}/${safe}.app"
-if [[ -d "\$SIBLING_APP" && "\$SIBLING_APP" != "\$CLIP_APP" ]]; then
-  mkdir -p "\$SIBLING_APP/Frameworks"
-  rsync -a "\$HOST_FW/" "\$SIBLING_APP/Frameworks/"
-  echo "Copied host Frameworks into \$SIBLING_APP/Frameworks"
+if [[ -d "$SIBLING_APP" && "$SIBLING_APP" != "$CLIP_APP" ]]; then
+  mkdir -p "$SIBLING_APP/Frameworks"
+  rsync -a "$HOST_FW/" "$SIBLING_APP/Frameworks/"
+  echo "Copied host Frameworks into $SIBLING_APP/Frameworks"
 fi
 
 # Re-apply JS bundle after Embed App Clips (Create .app can drop it).
 copy_jsbundle() {
-  local dest="\$1"
-  if [[ -f "\$dest/main.jsbundle" ]]; then
+  local dest="$1"
+  if [[ -f "$dest/main.jsbundle" ]]; then
     return 0
   fi
   for candidate in \\
@@ -68,19 +68,19 @@ copy_jsbundle() {
     "\${BUILT_PRODUCTS_DIR}/${safe}-main.jsbundle" \\
     "\${TARGET_BUILD_DIR}/${safe}.app/main.jsbundle" \\
     "\${BUILT_PRODUCTS_DIR}/${safe}.app/main.jsbundle" \\
-    "\$CLIP_APP/main.jsbundle"
+    "$CLIP_APP/main.jsbundle"
   do
-    if [[ -f "\$candidate" ]]; then
-      cp "\$candidate" "\$dest/main.jsbundle"
-      echo "Copied JS bundle from \$candidate → \$dest"
+    if [[ -f "$candidate" ]]; then
+      cp "$candidate" "$dest/main.jsbundle"
+      echo "Copied JS bundle from $candidate → $dest"
       return 0
     fi
   done
   return 1
 }
-copy_jsbundle "\$CLIP_APP" || echo "warning: no main.jsbundle for nested App Clip"
+copy_jsbundle "$CLIP_APP" || echo "warning: no main.jsbundle for nested App Clip"
 if [[ -d "\${SIBLING_APP:-}" ]]; then
-  copy_jsbundle "\$SIBLING_APP" || true
+  copy_jsbundle "$SIBLING_APP" || true
 fi
 `;
 }

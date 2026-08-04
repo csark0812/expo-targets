@@ -3,8 +3,14 @@ import * as path from 'node:path';
 
 import { findNativeTargetByProductName } from '../../../../test-utils/assertPbx';
 import { loadPbx } from '../../../../test-utils/loadPbx';
-import { configureAppClipEmbed, configureAppExtensionEmbed, configureWatchAppExtensionEmbed, configureWatchContentEmbed, removeAppExtensionFromHostEmbed } from './embed';
 import { applyBuildSettings } from './buildSettings';
+import {
+  configureAppClipEmbed,
+  configureAppExtensionEmbed,
+  configureWatchAppExtensionEmbed,
+  configureWatchContentEmbed,
+  removeAppExtensionFromHostEmbed,
+} from './embed';
 import { findWatchCompanionTargetUuid } from './targetLifecycle';
 
 const fixturePath = path.join(
@@ -194,6 +200,59 @@ describe('configureWatchContentEmbed', () => {
 
 const WATCH_WIDGET_PRODUCT = 'WatchWidgetTarget';
 
+function embedPhasesOnTarget(
+  project: any,
+  targetUuid: string,
+  phaseName: string
+): { phaseKey: string; phase: any }[] {
+  const target = project.hash.project.objects.PBXNativeTarget[targetUuid];
+  const copyPhases = copyFilesPhases(project);
+  return (target.buildPhases || [])
+    .filter(
+      (entry: { value: string }) =>
+        copyPhases[entry.value]?.name === `"${phaseName}"`
+    )
+    .map((entry: { value: string }) => ({
+      phaseKey: entry.value,
+      phase: copyPhases[entry.value],
+    }));
+}
+
+function configureWatchWidgetEmbedTwice({
+  project,
+  watchUuid,
+  widget,
+  mainTargetUuid,
+}: {
+  project: any;
+  watchUuid: string;
+  widget: any;
+  mainTargetUuid: string;
+}): void {
+  configureWatchAppExtensionEmbed({
+    project,
+    watchTargetUuid: watchUuid,
+    target: widget,
+    targetProductName: WATCH_WIDGET_PRODUCT,
+  });
+  removeAppExtensionFromHostEmbed({
+    project,
+    mainTargetUuid,
+    targetProductName: WATCH_WIDGET_PRODUCT,
+  });
+  configureWatchAppExtensionEmbed({
+    project,
+    watchTargetUuid: watchUuid,
+    target: widget,
+    targetProductName: WATCH_WIDGET_PRODUCT,
+  });
+  removeAppExtensionFromHostEmbed({
+    project,
+    mainTargetUuid,
+    targetProductName: WATCH_WIDGET_PRODUCT,
+  });
+}
+
 describe('configureWatchAppExtensionEmbed', () => {
   test('embeds appex on the watch target, not the phone host', () => {
     const { project, mainTargetUuid, watch } = setupWatchProject();
@@ -215,45 +274,26 @@ describe('configureWatchAppExtensionEmbed', () => {
     const watchUuid = findWatchCompanionTargetUuid(project);
     expect(watchUuid).toBe(watch.uuid);
 
-    configureWatchAppExtensionEmbed({
+    configureWatchWidgetEmbedTwice({
       project,
-      watchTargetUuid: watchUuid!,
-      target: widget,
-      targetProductName: WATCH_WIDGET_PRODUCT,
-    });
-    removeAppExtensionFromHostEmbed({
-      project,
+      watchUuid: watchUuid!,
+      widget,
       mainTargetUuid,
-      targetProductName: WATCH_WIDGET_PRODUCT,
-    });
-    configureWatchAppExtensionEmbed({
-      project,
-      watchTargetUuid: watchUuid!,
-      target: widget,
-      targetProductName: WATCH_WIDGET_PRODUCT,
-    });
-    removeAppExtensionFromHostEmbed({
-      project,
-      mainTargetUuid,
-      targetProductName: WATCH_WIDGET_PRODUCT,
     });
 
-    const watchTarget =
-      project.hash.project.objects.PBXNativeTarget[watchUuid!];
-    const copyPhases = copyFilesPhases(project);
-    const watchEmbedPhases = (watchTarget.buildPhases || []).filter(
-      (entry: { value: string }) =>
-        copyPhases[entry.value]?.name === '"Embed App Extensions"'
+    const watchEmbed = embedPhasesOnTarget(
+      project,
+      watchUuid!,
+      'Embed App Extensions'
     );
-    expect(watchEmbedPhases).toHaveLength(1);
-    expect(copyPhases[watchEmbedPhases[0].value].files).toHaveLength(1);
-    expect(copyPhases[watchEmbedPhases[0].value].dstSubfolderSpec).toBe(13);
+    expect(watchEmbed).toHaveLength(1);
+    expect(watchEmbed[0].phase.files).toHaveLength(1);
+    expect(watchEmbed[0].phase.dstSubfolderSpec).toBe(13);
 
-    // Phone host must not keep the auto-embedded appex.
-    const host = project.hash.project.objects.PBXNativeTarget[mainTargetUuid];
-    const hostEmbed = (host.buildPhases || []).filter(
-      (entry: { value: string }) =>
-        copyPhases[entry.value]?.name === '"Embed App Extensions"'
+    const hostEmbed = embedPhasesOnTarget(
+      project,
+      mainTargetUuid,
+      'Embed App Extensions'
     );
     expect(hostEmbed).toHaveLength(0);
   });

@@ -1,4 +1,4 @@
-import { requireNativeModule } from "expo-modules-core";
+import { requireNativeModule } from 'expo-modules-core';
 
 type Native = {
   reload(identifier: string): Promise<string>;
@@ -9,11 +9,11 @@ type Native = {
 export const BLOCKER_RULE_COUNT = 4;
 
 export const BLOCKER_IDENTIFIER =
-  "com.expotargets.example.content-blocker.content-blocker";
+  'com.expotargets.example.content-blocker.content-blocker';
 
 function getNative(): Native | null {
   try {
-    return requireNativeModule<Native>("BlockerReload");
+    return requireNativeModule<Native>('BlockerReload');
   } catch {
     return null;
   }
@@ -28,11 +28,11 @@ export function getRuleCount(): number {
 }
 
 export async function reloadContentBlocker(
-  identifier = BLOCKER_IDENTIFIER,
+  identifier = BLOCKER_IDENTIFIER
 ): Promise<string> {
   const native = getNative();
   if (!native) {
-    return "reloaded-stub";
+    return 'reloaded-stub';
   }
   return native.reload(identifier);
 }

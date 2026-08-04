@@ -1,4 +1,4 @@
-import { requireNativeModule } from "expo-modules-core";
+import { requireNativeModule } from 'expo-modules-core';
 
 type FileProviderDomainNative = {
   register(): Promise<string>;
@@ -6,7 +6,7 @@ type FileProviderDomainNative = {
 };
 
 const native =
-  requireNativeModule<FileProviderDomainNative>("FileProviderDomain");
+  requireNativeModule<FileProviderDomainNative>('FileProviderDomain');
 
 export async function registerFileDomain(): Promise<string> {
   return native.register();

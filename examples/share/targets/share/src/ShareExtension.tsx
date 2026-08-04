@@ -60,11 +60,11 @@ export default function ShareExtension({ target, text, url, images }: Props) {
     <View style={styles.container}>
       <Text style={styles.title}>Share</Text>
       <Text>
-        {imageCount > 0
-          ? `Images: ${imageCount}`
-          : text || url || 'No content'}
+        {imageCount > 0 ? `Images: ${imageCount}` : text || url || 'No content'}
       </Text>
-      <Text testID="share-kind-label">kind:{resolveKind(text, url, images)}</Text>
+      <Text testID="share-kind-label">
+        kind:{resolveKind(text, url, images)}
+      </Text>
       <TouchableOpacity style={styles.button} onPress={save}>
         <Text style={styles.buttonText}>Save</Text>
       </TouchableOpacity>
