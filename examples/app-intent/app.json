@@ -28,6 +28,7 @@
           "resizeMode": "contain"
         }
       ],
+      "./plugins/withHostAppShortcuts.js",
       [
         "expo-targets",
         {

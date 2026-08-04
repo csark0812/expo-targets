@@ -38,12 +38,14 @@ Each open leftover:
 | spotlight | CSImportExtension indexer → App Group / Spotlight hit | CLAIMS | [spikes/message-filter-ql-spotlight-2026-08-04.md](../examples/.devicewright/artifacts/spikes/message-filter-ql-spotlight-2026-08-04.md) | eng |
 | call-directory | Phone → Call Blocking & Identification lists ET CallDir Target | CLAIMS | [spikes/unwanted-communication-call-directory-2026-08-04.md](../examples/.devicewright/artifacts/spikes/unwanted-communication-call-directory-2026-08-04.md) | eng |
 | unwanted-communication | Phone → SMS/Call Reporting lists ET Unwanted Target | CLAIMS | [spikes/unwanted-communication-call-directory-2026-08-04.md](../examples/.devicewright/artifacts/spikes/unwanted-communication-call-directory-2026-08-04.md) | eng |
+| file-provider | Files domain open → seed *file* visible in AX | CLAIMS | [spikes/file-provider-app-intent-2026-08-04.md](../examples/.devicewright/artifacts/spikes/file-provider-app-intent-2026-08-04.md) | eng |
+| app-intent | Shortcuts tap ET Greet → run + App Group `ai:*` | CLAIMS | [spikes/file-provider-app-intent-2026-08-04.md](../examples/.devicewright/artifacts/spikes/file-provider-app-intent-2026-08-04.md) | eng |
 
 Entitlement/Settings items use `home: wont-do` or the hard-stop table below; **revisit** when DW/Sim coverage improves (plan edit + spike re-run).
 
 ### Currently-green expansion backlog
 
-Deepen already-green ids before adding shallow types: share/action(+native); safari(+native)/content-blocker; widgets/keyboard/photo-editing/clip(+native)/stickers; **file-provider** (Files Browse domain); **app-intent** (Shortcuts action). Exit per id = required **P** surfaces green; S3a rows only for proven non-P features.
+Deepen already-green ids before adding shallow types: share/action(+native); safari(+native)/content-blocker; widgets/keyboard/photo-editing/clip(+native)/stickers. **file-provider** deepens via open→App Group `fp:*` (seed *UI* still empty on Air). **app-intent** keeps Shortcuts list floor (Unable to run App Shortcut on Air — see spike). Exit per id = required **P** surfaces green; S3a rows only for proven non-P features.
 
 ## Config-only vs stubs
 
@@ -60,7 +62,7 @@ Deepen already-green ids before adding shallow types: share/action(+native); saf
 | Share / action / messages / clip / stickers / safari / content-blocker / keyboard | Deep Devicewright greens on Simulator                              | —                                                  |
 | Notification service / content                                                    | Real principals; category push; expand → custom UI marker          | Simulator often skips NSE process                  |
 | Photo editing                                                                     | Real `PHContentEditingController`; Photos Edit + pluginkit         | Sim rarely lists third-party editors               |
-| File Provider                                                                     | Real `NSFileProviderExtension` + host `NSFileProviderManager.add`  | Full sync / File Provider UI depth                 |
+| File Provider                                                                     | Real `NSFileProviderReplicatedExtension` + host domain add; Files list + open→App Group | Seed *file* AX / full sync depth                   |
 | Widgets + Live Activities                                                         | Native WidgetKit + ActivityKit (owned here); LA start+update+end   | Dual-engine with `expo-widgets` unsupported; DI/push/StandBy CLAIMS |
 | Wallet                                                                            | Real PassKit issuer handler                                        | `payment-pass-provisioning` Apple allow-list       |
 | Network Extensions                                                                | Real `NE*Provider` subclasses that fail closed without entitlement | Network Extension entitlement / VPN Personal / MDM |

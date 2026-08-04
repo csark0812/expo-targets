@@ -222,7 +222,7 @@ export async function dismissSystemAlerts(
 /** Poll host labels for a marker (payload text often has no AXUniqueId). */
 export async function assertPayloadContains(
   device: DeviceSession,
-  _payloadId: string,
+  payloadId: string,
   marker: string,
   timeoutMs = 12_000,
 ): Promise<void> {
@@ -230,13 +230,35 @@ export async function assertPayloadContains(
   let last = "";
   while (Date.now() - start < timeoutMs) {
     const tree = await device.accessibilityTree();
-    const labels = flattenLabels(tree);
-    last = labels.join(" | ");
-    if (labels.some((l) => l.includes(marker))) return;
+    const hit = tree.find((n) => {
+      const id = String(
+        (n as { identifier?: string; id?: string }).identifier ??
+          (n as { id?: string }).id ??
+          "",
+      );
+      return id === payloadId;
+    });
+    const text = String(
+      hit?.label ??
+        (hit as { value?: string } | undefined)?.value ??
+        hit?.title ??
+        "",
+    );
+    last = text || flattenLabels(tree).join(" | ");
+    if (text.includes(marker)) return;
+    // JSON payload often surfaces as AXValue / AXLabel without matching id — require
+    // curly braces so host titles cannot false-green.
+    if (
+      flattenLabels(tree).some(
+        (l) => l.includes("{") && l.includes(marker),
+      )
+    ) {
+      return;
+    }
     await sleep(300);
   }
   throw new Error(
-    `host missing marker ${JSON.stringify(marker)}; labels=${last.slice(0, 400)}`,
+    `host payload ${JSON.stringify(payloadId)} missing marker ${JSON.stringify(marker)}; last=${last.slice(0, 400)}`,
   );
 }
 

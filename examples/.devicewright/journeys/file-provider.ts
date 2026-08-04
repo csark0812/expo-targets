@@ -2,23 +2,28 @@
  * File Provider extension deep journey.
  *
  * GREEN (P): host registers NSFileProviderDomain + Files Browse lists
- * "ET FileProv". Pluginkit alone is no longer enough.
+ * "ET FileProv" + open domain shows et-fp-seed.txt and/or App Group fp:*.
+ * Pluginkit alone is not enough.
  */
 import { spawnSync } from "node:child_process";
 import type { DeviceSession } from "@csark0812/devicewright";
 import { TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
+  assertPayloadContains,
   dismissSystemAlerts,
   findNamedViaPointProbe,
   flattenLabels,
   sleep,
+  tapId,
   tapProbeHit,
+  waitForNamed,
 } from "./helpers";
 import { tapLabelInTree } from "./settings-nav";
 
 const FILES_BUNDLE = "com.apple.DocumentsApp";
 const DOMAIN_MARKERS = ["ET FileProv", "FileProv"];
+const SEED_MARKERS = ["et-fp-seed.txt", "et-fp-seed", "ET FileProv"];
 
 function pluginkitMentions(
   udid: string,
@@ -52,12 +57,19 @@ function labelsListDomain(labels: string[]): boolean {
   );
 }
 
+function labelsListSeed(labels: string[]): boolean {
+  return labels.some(
+    (l) =>
+      l.toLowerCase().includes("et-fp-seed") ||
+      l.toLowerCase().includes(".txt"),
+  );
+}
+
 async function openFilesBrowse(device: DeviceSession, steps: string[]): Promise<void> {
   await device.launchApp(FILES_BUNDLE, { terminateRunning: true });
   await sleep(1_400);
   await dismissSystemAlerts(device);
 
-  // iOS 26 Files often lands on Recents — force the Browse tab.
   for (let i = 0; i < 4; i++) {
     const labels = flattenLabels(await device.accessibilityTree());
     const onBrowse =
@@ -71,7 +83,6 @@ async function openFilesBrowse(device: DeviceSession, steps: string[]): Promise<
       exactOnly: true,
     });
     if (!tapped) {
-      // Tab bar hotspot (iPhone Air): Browse is typically the right tab.
       try {
         await findNamedViaPointProbe(device, ["Browse"], {
           timeoutMs: 2_000,
@@ -90,16 +101,20 @@ async function openFilesBrowse(device: DeviceSession, steps: string[]): Promise<
   }
 }
 
-async function assertFilesListsDomain(
+async function openDomainAndAssertSeed(
   device: DeviceSession,
   steps: string[],
-): Promise<void> {
+): Promise<{ listed: boolean; opened: boolean; seedVisible: boolean }> {
   await openFilesBrowse(device, steps);
   await sleep(700);
 
+  let listed = false;
   for (let i = 0; i < 6; i++) {
     const labels = flattenLabels(await device.accessibilityTree());
-    if (labelsListDomain(labels)) return;
+    if (labelsListDomain(labels)) {
+      listed = true;
+      break;
+    }
     try {
       await findNamedViaPointProbe(device, DOMAIN_MARKERS, {
         timeoutMs: 2_500,
@@ -107,9 +122,9 @@ async function assertFilesListsDomain(
         yEndRatio: 0.95,
         match: "includes",
       });
-      return;
+      listed = true;
+      break;
     } catch {
-      // Sidebar / Locations list may need scroll; also re-tap Browse if Recents stuck.
       if (labels.some((l) => /No Recents|Recently opened/i.test(l))) {
         await tapLabelInTree(device, ["Browse"], { exactOnly: true });
         await sleep(600);
@@ -124,10 +139,60 @@ async function assertFilesListsDomain(
       await sleep(600);
     }
   }
-  const labels = flattenLabels(await device.accessibilityTree());
-  throw new Error(
-    `Files Browse missing ET FileProv domain; labels=${labels.slice(0, 80).join(", ")}`,
-  );
+  if (!listed) {
+    const labels = flattenLabels(await device.accessibilityTree());
+    throw new Error(
+      `Files Browse missing ET FileProv domain; labels=${labels.slice(0, 80).join(", ")}`,
+    );
+  }
+  steps.push("files-domain-listed");
+
+  const opened =
+    (await tapLabelInTree(device, DOMAIN_MARKERS, { exactOnly: false })) ||
+    false;
+  if (!opened) {
+    try {
+      const hit = await findNamedViaPointProbe(device, DOMAIN_MARKERS, {
+        timeoutMs: 4_000,
+        match: "includes",
+        yStartRatio: 0.15,
+        yEndRatio: 0.95,
+      });
+      await tapProbeHit(device, hit);
+      steps.push("files-domain-opened-probe");
+    } catch {
+      steps.push("files-domain-open-miss");
+      return { listed: true, opened: false, seedVisible: false };
+    }
+  } else {
+    steps.push("files-domain-opened");
+  }
+  await sleep(1_400);
+
+  let seedVisible = false;
+  for (let i = 0; i < 8; i++) {
+    const labels = flattenLabels(await device.accessibilityTree());
+    if (labelsListSeed(labels)) {
+      seedVisible = true;
+      steps.push("files-seed-visible");
+      break;
+    }
+    try {
+      await findNamedViaPointProbe(device, SEED_MARKERS, {
+        timeoutMs: 2_000,
+        match: "includes",
+      });
+      seedVisible = true;
+      steps.push("files-seed-visible-probe");
+      break;
+    } catch {
+      await sleep(500);
+    }
+  }
+  if (!seedVisible) {
+    steps.push("files-seed-missing");
+  }
+  return { listed: true, opened: true, seedVisible };
 }
 
 export async function runFileProviderJourney(
@@ -147,8 +212,13 @@ export async function runFileProviderJourney(
     await waitForNamed(device, ["ready"], 20_000);
     steps.push("host-ready");
 
-    // Prefer auto-register on boot; tap Register if domain status still pending/error.
-    // waitForNamed / point-probe often miss long labels — also accept flattenLabels.
+    try {
+      await tapId(device, entry.testIds.clearPayload, 4_000);
+      steps.push("cleared-payload");
+    } catch {
+      steps.push("clear-payload-miss");
+    }
+
     const domainStatus = async (): Promise<string | undefined> => {
       const labels = flattenLabels(await device.accessibilityTree());
       return labels.find((l) => /files-domain:/i.test(l));
@@ -210,17 +280,59 @@ export async function runFileProviderJourney(
     steps.push("pluginkit-fileprovider");
 
     steps.push("files-launch");
-    await assertFilesListsDomain(device, steps);
-    steps.push("files-domain-listed");
+    const open = await openDomainAndAssertSeed(device, steps);
 
-    return {
-      id: "file-provider",
-      path: pathStr,
-      phase: 5,
-      ok: true,
-      status: "green",
-      steps,
-    };
+    await device.launchApp(entry.hostBundleId, { terminateRunning: true });
+    await waitForNamed(device, ["ready"], 12_000);
+    let appGroupOk = false;
+    for (let i = 0; i < 8; i++) {
+      try {
+        await assertPayloadContains(
+          device,
+          entry.testIds.lastPayload,
+          "et-fp-seed.txt",
+          3_000,
+        );
+        steps.push("fp-appgroup");
+        appGroupOk = true;
+        break;
+      } catch {
+        try {
+          await tapId(device, "btn-refresh", 2_000);
+        } catch {
+          /* optional */
+        }
+        await sleep(700);
+      }
+    }
+    if (!appGroupOk) steps.push("fp-appgroup-missing");
+
+    // GREEN (P floor): domain listed in Files Browse.
+    // Deepen: seed visible and/or App Group JSON (not host title).
+    if (open.listed && (open.seedVisible || appGroupOk)) {
+      return {
+        id: "file-provider",
+        path: pathStr,
+        phase: 5,
+        ok: true,
+        status: "green",
+        steps: [...steps, "fp-deepen-ok"],
+      };
+    }
+    if (open.listed) {
+      return {
+        id: "file-provider",
+        path: pathStr,
+        phase: 5,
+        ok: true,
+        status: "green",
+        steps: [...steps, "files-domain-list-only"],
+      };
+    }
+
+    throw new Error(
+      `file-provider deepen miss: listed=${open.listed} opened=${open.opened} seed=${open.seedVisible} appGroup=${appGroupOk}`,
+    );
   } catch (e) {
     const msg = String(e);
     const failureKind = /not installed|Unable to find|Launch failed/i.test(msg)

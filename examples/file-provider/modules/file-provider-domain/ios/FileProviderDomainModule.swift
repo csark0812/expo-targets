@@ -20,11 +20,18 @@ public class FileProviderDomainModule: Module {
         )
       }
       let identifier = NSFileProviderDomainIdentifier(rawValue: self.domainId)
+      // ReplicatedExtension requires the 2-arg initializer. Using
+      // pathRelativeToDocumentStorage forces legacy NSFileProviderExtension
+      // bring-up and aborts (__FILEPROVIDER_V2_EXTENSION_WITHOUT_IMPL).
       let domain = NSFileProviderDomain(
         identifier: identifier,
         displayName: self.displayName
       )
       try await NSFileProviderManager.add(domain)
+      if let manager = NSFileProviderManager(for: domain) {
+        try? await manager.signalEnumerator(for: .workingSet)
+        try? await manager.signalEnumerator(for: .rootContainer)
+      }
       return self.displayName
     }
 

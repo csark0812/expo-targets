@@ -1,4 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
+import { AppGroupStorage } from 'expo-targets';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
@@ -6,24 +7,110 @@ import {
   unregisterFileDomain,
 } from './modules/file-provider-domain';
 
+const storage = new AppGroupStorage(
+  'group.com.expotargets.example.file-provider'
+);
+
+function readPayload(): string {
+  const marker = storage.get<string>('fp:marker');
+  const file = storage.get<string>('fp:lastFile');
+  return marker || file ? JSON.stringify({ marker, file }) : 'none';
+}
+
+function ActionButton({
+  testID,
+  label,
+  secondary,
+  onPress,
+}: {
+  testID: string;
+  label: string;
+  secondary?: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityLabel={label}
+      style={secondary ? styles.buttonSecondary : styles.button}
+      onPress={onPress}
+    >
+      <Text style={styles.buttonText}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function DomainControls({
+  setDomain,
+  refreshPayload,
+  setPayload,
+}: {
+  setDomain: (v: string) => void;
+  refreshPayload: () => void;
+  setPayload: (v: string) => void;
+}) {
+  return (
+    <>
+      <ActionButton
+        testID="btn-register-domain"
+        label="Register domain"
+        onPress={() => {
+          void registerFileDomain()
+            .then((name) => setDomain(`registered:${name}`))
+            .catch((e) => setDomain(`error:${String(e)}`));
+        }}
+      />
+      <ActionButton
+        testID="btn-unregister-domain"
+        label="Unregister domain"
+        secondary
+        onPress={() => {
+          void unregisterFileDomain()
+            .then(() => setDomain('not-registered'))
+            .catch((e) => setDomain(`error:${String(e)}`));
+        }}
+      />
+      <ActionButton
+        testID="btn-refresh"
+        label="Refresh"
+        onPress={refreshPayload}
+      />
+      <ActionButton
+        testID="btn-clear-payload"
+        label="Clear payload"
+        secondary
+        onPress={() => {
+          storage.remove('fp:marker');
+          storage.remove('fp:lastFile');
+          storage.remove('fp:lastAt');
+          setPayload('none');
+        }}
+      />
+    </>
+  );
+}
+
 export default function App() {
   const [ready, setReady] = useState(false);
   const [domain, setDomain] = useState('not-registered');
-
-  const boot = useCallback(async () => {
-    try {
-      const name = await registerFileDomain();
-      setDomain(`registered:${name}`);
-    } catch (e) {
-      setDomain(`error:${String(e)}`);
-    } finally {
-      setReady(true);
-    }
-  }, []);
+  const [payload, setPayload] = useState('none');
+  const refreshPayload = useCallback(() => setPayload(readPayload()), []);
 
   useEffect(() => {
-    void boot();
-  }, [boot]);
+    // Drop any legacy domain registered with pathRelativeToDocumentStorage
+    // (incompatible with NSFileProviderReplicatedExtension) then re-add.
+    void unregisterFileDomain()
+      .catch(() => undefined)
+      .then(() => registerFileDomain())
+      .then((name) => setDomain(`registered:${name}`))
+      .catch((e) => setDomain(`error:${String(e)}`))
+      .finally(() => {
+        refreshPayload();
+        setReady(true);
+      });
+    const interval = setInterval(refreshPayload, 2000);
+    return () => clearInterval(interval);
+  }, [refreshPayload]);
 
   return (
     <View style={styles.container} testID="screen-root">
@@ -37,32 +124,14 @@ export default function App() {
       >
         files-domain:{domain}
       </Text>
-      <Pressable
-        testID="btn-register-domain"
-        accessibilityLabel="Register domain"
-        style={styles.button}
-        onPress={() => {
-          void registerFileDomain()
-            .then((name) => setDomain(`registered:${name}`))
-            .catch((e) => setDomain(`error:${String(e)}`));
-        }}
-      >
-        <Text style={styles.buttonText}>Register domain</Text>
-      </Pressable>
-      <Pressable
-        testID="btn-unregister-domain"
-        accessibilityLabel="Unregister domain"
-        style={styles.buttonSecondary}
-        onPress={() => {
-          void unregisterFileDomain()
-            .then(() => setDomain('not-registered'))
-            .catch((e) => setDomain(`error:${String(e)}`));
-        }}
-      >
-        <Text style={styles.buttonText}>Unregister domain</Text>
-      </Pressable>
-      <Text testID="btn-clear-payload">clear</Text>
-      <Text testID="text-last-payload">none</Text>
+      <DomainControls
+        setDomain={setDomain}
+        refreshPayload={refreshPayload}
+        setPayload={setPayload}
+      />
+      <Text testID="text-last-payload" style={styles.payload}>
+        {payload}
+      </Text>
     </View>
   );
 }
@@ -89,4 +158,5 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   buttonText: { color: '#fff', fontWeight: '600' },
+  payload: { marginTop: 8, textAlign: 'center' },
 });

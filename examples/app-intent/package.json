@@ -9,7 +9,9 @@
     "android": "expo run:android"
   },
   "dependencies": {
+    "app-intent-host": "file:./modules/app-intent-host",
     "expo": "~57.0.9",
+    "expo-modules-core": "~57.0.8",
     "expo-status-bar": "~57.0.1",
     "expo-targets": "workspace:*",
     "react": "19.2.3",

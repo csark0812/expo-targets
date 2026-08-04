@@ -168,7 +168,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     id: "app-intent",
     tranche: "T4",
     touchpoint:
-      "pluginkit appintents-extension + Shortcuts lists ET Greet",
+      "pluginkit appintents-extension + host AppShortcuts list ET Greet (Unable to run → App Group leftover on Air)",
     status: "concrete",
   },
   {
@@ -216,7 +216,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     id: "file-provider",
     tranche: "T6",
     touchpoint:
-      "Host registers NSFileProviderDomain + Files Browse lists ET FileProv (pluginkit alone insufficient)",
+      "Replicated File Provider + Files Browse ET FileProv; open→App Group fp:* (seed file AX leftover)",
     status: "concrete",
   },
   {

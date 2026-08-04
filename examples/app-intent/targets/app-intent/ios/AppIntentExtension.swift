@@ -1,33 +1,8 @@
 import AppIntents
 
-/// ExtensionKit App Intents entry — matches docs/configuration.md shape.
+/// ExtensionKit App Intents entry — pluginkit appintents-extension proof.
+/// Runnable App Shortcuts live in the main app (`ETAppShortcuts.swift`).
+/// Do not declare a second ET Greet here — Shortcuts may bind the tile to the
+/// appex intent and fail with "Unable to run App Shortcut".
 @main
 struct ETAppIntentsExtension: AppIntentsExtension {}
-
-struct ETAppIntentShortcuts: AppShortcutsProvider {
-  static var appShortcuts: [AppShortcut] {
-    AppShortcut(
-      intent: ETGreetIntent(),
-      phrases: [
-        "Say hello in \(.applicationName)",
-        "Greet me in \(.applicationName)",
-        "Hello in \(.applicationName)",
-      ],
-      shortTitle: "ET Greet",
-      systemImageName: "hand.wave"
-    )
-  }
-}
-
-/// Stable AX title for Shortcuts Gallery / search.
-struct ETGreetIntent: AppIntent {
-  static var title: LocalizedStringResource = "ET Greet"
-  static var description = IntentDescription(
-    "Returns a greeting from the expo-targets app-intent example."
-  )
-  static var openAppWhenRun: Bool = true
-
-  func perform() async throws -> some IntentResult & ReturnsValue<String> {
-    .result(value: "Hello from ET AppIntent")
-  }
-}
