@@ -2,7 +2,7 @@
 
 **Source of truth for** package overview.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-02 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-04 -->
 
 Add **share extensions**, **action extensions**, **App Clips**, **iMessage apps**, **stickers**, **wallet extensions**, and other Apple targets Expo does not ship — including React Native UIs where supported.
 
@@ -11,6 +11,8 @@ Add **share extensions**, **action extensions**, **App Clips**, **iMessage apps*
 > **Important:** Requires development builds (`npx expo run:ios`). Does not work with Expo Go.
 >
 > **Prerequisites:** macOS, Xcode 14+, Expo SDK 50+, iOS 14+. [Full requirements →](./docs/getting-started.md#prerequisites)
+
+> **mcp-dev:** The MCP stdio supervisor moved to [device-plane](https://github.com/csark0812/device-plane/tree/main/packages/mcp-dev) — install with `npx -y @csark0812/mcp-dev`.
 
 ## Quick Start
 
