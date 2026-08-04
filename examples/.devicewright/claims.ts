@@ -65,7 +65,7 @@ export const OS_LIMIT_CLAIMS: readonly ClaimsEntry[] = [
   {
     id: "message-filter",
     reason:
-      "Messages Settings detail is AX-blank on Simulator (Apps→Messages often Settings|Apps|BackButton only); Unknown Senders / Text Message Filter / Manage Filtering / SMS Filtering Settings search returns no results; App-prefs:MESSAGES is a no-op under iOS 26 Apps Settings — cannot list or enable ET MsgFilter Target or prove inbound filter invoke",
+      "Messages Settings detail is AX-blank on Simulator (Apps→Messages often Settings|Apps|BackButton only); Unknown Senders / Text Message Filter / Manage Filtering / SMS Filtering Settings search returns no results; App-prefs:com.apple.MobileSMS / App-prefs:MESSAGES are no-ops on this Sim — cannot list or enable ET MsgFilter Target or prove inbound filter invoke",
   },
   {
     id: "spotlight",

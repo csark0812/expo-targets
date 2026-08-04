@@ -150,8 +150,13 @@ async function tryOpenSmsFiltering(
     }
   }
 
-  // Path A2: App-prefs deep link (often a no-op on iOS 26 Apps Settings, but cheap)
-  for (const url of ["App-prefs:MESSAGES", "App-prefs:root=MESSAGES"]) {
+  // Path A2: App-prefs deep links. `MESSAGES` broke in iOS 18+; try bundle-id form
+  // (Apple Forums: App-prefs:com.apple.MobileSMS) before CLAIMS.
+  for (const url of [
+    "App-prefs:com.apple.MobileSMS",
+    "App-prefs:MESSAGES",
+    "App-prefs:root=MESSAGES",
+  ]) {
     try {
       await device.openUrl(url);
       await sleep(1_200);

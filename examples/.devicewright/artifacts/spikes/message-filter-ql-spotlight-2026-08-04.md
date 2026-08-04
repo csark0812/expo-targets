@@ -22,7 +22,7 @@
 2. Settings → Apps → search **Messages** opens a pane whose AX is only **Settings | Apps | BackButton** (blank detail).
 3. Confirm wait on Messages chrome (`iMessage`, `Send & Receive`, …) times out (point-probe) — same blank surface.
 4. Global Settings search: no results for Unknown Senders / Text Message Filter / Manage Filtering / SMS Filtering.
-5. `App-prefs:MESSAGES` / `App-prefs:root=MESSAGES` leave Apps list (ET\* hosts); do not open Messages prefs.
+5. `App-prefs:com.apple.MobileSMS` (iOS 18+ replacement), `App-prefs:MESSAGES`, and `App-prefs:root=MESSAGES` all miss on this Sim (`messages-deeplink-miss:*` in `targets-1785866378796`).
 6. `defaults read com.apple.MobileSMS` shows first-party spam migration (`sForceSMSSpamFilteringCompleted`, `sForceUnknownFilteringCompleted`) — **no third-party IL filter enablement keys**.
 7. GREEN would need filter list UI **or** inbound SMS invoke writing App Group `msgFilter:*` after enablement — neither available on this Sim.
 
