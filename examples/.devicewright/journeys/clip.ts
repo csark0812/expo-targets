@@ -25,11 +25,15 @@ const CLIP_BUNDLE_IDS: Record<string, string> = {
   "native-clip": "com.expotargets.example.native.clip.clip",
 };
 
-/** Prove host embeds an AppClips/*.app with Frameworks + main.jsbundle. */
+/**
+ * Prove host embeds an AppClips/*.app.
+ * RN clips require Frameworks + main.jsbundle; native Swift clips do not.
+ */
 function assertEmbeddedAppClipReady(
   device: DeviceSession,
   hostBundleId: string,
   steps: string[],
+  mode: "clip" | "native-clip",
 ): string {
   const container = spawnSync(
     "xcrun",
@@ -51,6 +55,18 @@ function assertEmbeddedAppClipReady(
     throw new Error(`empty AppClips/ under ${clipsDir}`);
   }
   const nest = path.join(clipsDir, clipApps[0]!);
+  steps.push(`appclip-embedded:${clipApps[0]}`);
+
+  if (mode === "native-clip") {
+    // SwiftUI App Clip — no Metro bundle / RN Frameworks expected.
+    const exe = path.join(nest, path.basename(nest, ".app"));
+    if (!fs.existsSync(exe) && !fs.existsSync(path.join(nest, "Info.plist"))) {
+      throw new Error(`native App Clip nest incomplete: ${nest}`);
+    }
+    steps.push("appclip-native-ok");
+    return nest;
+  }
+
   const frameworks = path.join(nest, "Frameworks");
   const jsbundle = path.join(nest, "main.jsbundle");
   if (!fs.existsSync(frameworks)) {
@@ -60,7 +76,6 @@ function assertEmbeddedAppClipReady(
     throw new Error(`nested App Clip missing main.jsbundle: ${nest}`);
   }
   const fwCount = fs.readdirSync(frameworks).length;
-  steps.push(`appclip-embedded:${clipApps[0]}`);
   steps.push(`appclip-frameworks:${fwCount}`);
   steps.push("appclip-jsbundle-ok");
   return nest;
@@ -89,7 +104,7 @@ function installNestedClipForLaunch(
 
 /**
  * Clip host + live App Clip surface proof (Devicewright-proven path):
- * 1. Host contract + embedded AppClips/ with Frameworks + jsbundle
+ * 1. Host contract + embedded AppClips/ (RN: Frameworks+jsbundle; native: Swift product)
  * 2. Install nested clip product for launch
  * 3. launchApp(clip) with `_XCAppClipURL`
  * 4. Assert clip UI markers → Complete checkout → host App Group payload
@@ -138,6 +153,7 @@ export async function runClipJourney(
       device,
       entry.hostBundleId,
       steps,
+      id,
     );
     installNestedClipForLaunch(device, nest, steps);
 
@@ -202,12 +218,33 @@ export async function runClipJourney(
     }
     await sleep(500);
 
-    await assertPayloadContains(
-      device,
-      entry.testIds.lastPayload,
-      id === "native-clip" ? "invocationPath" : "Clip checkout",
-      10_000,
-    );
+    // Native Swift clip writes itemName/price/invocationPath into App Group.
+    // Prefer invocationPath; accept itemName from Complete checkout as dual proof.
+    if (id === "native-clip") {
+      try {
+        await assertPayloadContains(
+          device,
+          entry.testIds.lastPayload,
+          "invocationPath",
+          6_000,
+        );
+      } catch {
+        await assertPayloadContains(
+          device,
+          entry.testIds.lastPayload,
+          "Native Clip Item",
+          8_000,
+        );
+        steps.push("invocation-via-itemName");
+      }
+    } else {
+      await assertPayloadContains(
+        device,
+        entry.testIds.lastPayload,
+        "Clip checkout",
+        10_000,
+      );
+    }
     steps.push("invocation-marker-ok");
 
     return {

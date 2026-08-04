@@ -7,6 +7,7 @@ import { applyBuildSettings } from './buildSettings';
 import {
   configureAppClipEmbed,
   configureAppExtensionEmbed,
+  configureExtensionKitEmbed,
   configureWatchAppExtensionEmbed,
   configureWatchContentEmbed,
   removeAppExtensionFromHostEmbed,
@@ -121,6 +122,41 @@ describe('configureAppClipEmbed', () => {
     const phaseKeysAfter = phasesNamed(project, 'Embed App Clips');
     expect(phaseKeysAfter).toEqual(phaseKeys);
     expect(copyFilesPhases(project)[phaseKeysAfter[0]].files).toHaveLength(1);
+  });
+});
+
+describe('configureExtensionKitEmbed', () => {
+  test('embeds into Extensions/ and is idempotent', () => {
+    const project = loadPbx(fixturePath);
+    const mainTarget = findNativeTargetByProductName(project, 'App')!;
+    const extension = addNativeTarget(project, {
+      productName: 'AppIntentMinimalTarget',
+      type: 'app_extension',
+    });
+
+    configureExtensionKitEmbed({
+      project,
+      mainTargetUuid: mainTarget.uuid,
+      target: extension,
+      targetProductName: 'AppIntentMinimalTarget',
+    });
+    const phaseKeys = phasesNamed(project, 'Embed ExtensionKit Extensions');
+    expect(phaseKeys).toHaveLength(1);
+    const phase = copyFilesPhases(project)[phaseKeys[0]!];
+    expect(phase.dstPath).toBe('"$(EXTENSIONS_FOLDER_PATH)"');
+    expect(phase.dstSubfolderSpec).toBe(16);
+    expect(phase.files).toHaveLength(1);
+
+    configureExtensionKitEmbed({
+      project,
+      mainTargetUuid: mainTarget.uuid,
+      target: extension,
+      targetProductName: 'AppIntentMinimalTarget',
+    });
+    expect(phasesNamed(project, 'Embed ExtensionKit Extensions')).toEqual(
+      phaseKeys,
+    );
+    expect(copyFilesPhases(project)[phaseKeys[0]!].files).toHaveLength(1);
   });
 });
 

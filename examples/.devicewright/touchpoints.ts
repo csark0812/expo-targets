@@ -133,7 +133,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     type: "clip",
     tranche: "T2",
     touchpoint:
-      "Native clip Frameworks+jsbundle + launchApp(_XCAppClipURL) + checkout",
+      "Native Swift AppClips/*.app + launchApp(_XCAppClipURL) + Complete checkout → invocationPath",
     status: "concrete",
   },
 

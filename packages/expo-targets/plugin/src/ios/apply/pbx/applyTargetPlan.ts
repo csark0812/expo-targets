@@ -16,6 +16,7 @@ import { ensureCopyFrameworksIntoAppClipPhase } from './copyFrameworksIntoAppCli
 import {
   configureAppClipEmbed,
   configureAppExtensionEmbed,
+  configureExtensionKitEmbed,
   configureWatchAppExtensionEmbed,
   configureWatchContentEmbed,
   removeAppExtensionFromHostEmbed,
@@ -239,6 +240,16 @@ function applyEmbed(
 
   if (plan.embed.kind === 'foundation-extension') {
     configureAppExtensionEmbed({ project, targetProductName });
+    return;
+  }
+
+  if (plan.embed.kind === 'extensionkit-extension') {
+    configureExtensionKitEmbed({
+      project,
+      mainTargetUuid,
+      target,
+      targetProductName,
+    });
     return;
   }
 
