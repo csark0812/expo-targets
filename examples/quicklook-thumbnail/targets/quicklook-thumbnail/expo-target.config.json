@@ -9,7 +9,11 @@
     "displayName": "ET QLThumb Target",
     "infoPlist": {
       "NSExtension": {
-        "NSExtensionPrincipalClass": "ThumbnailProvider"
+        "NSExtensionPrincipalClass": "ThumbnailProvider",
+        "NSExtensionAttributes": {
+          "QLSupportedContentTypes": ["com.expotargets.etqlt"],
+          "QLThumbnailMinimumDimension": 0
+        }
       }
     }
   }
