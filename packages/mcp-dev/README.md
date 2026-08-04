@@ -7,10 +7,12 @@ Logs go to **stderr** only. MCP protocol bytes stay on **stdout**.
 ## Install
 
 ```bash
-npm install -g mcp-dev
+npm install -g @csark0812/mcp-dev
 # or
-npx -y mcp-dev --help
+npx -y @csark0812/mcp-dev --help
 ```
+
+Package name is scoped (`@csark0812/mcp-dev`). The CLI bin remains `mcp-dev`.
 
 ## Cursor mcp.json
 
@@ -23,7 +25,7 @@ After publish:
       "command": "npx",
       "args": [
         "-y",
-        "mcp-dev",
+        "@csark0812/mcp-dev",
         "--watch",
         "src/**/*.ts",
         "--rebuild",
