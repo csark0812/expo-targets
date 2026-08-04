@@ -104,7 +104,7 @@ jobs:
               throw new Error('bad bin: ' + JSON.stringify(pkg.bin));
             }
           "
-          npm pack --dry-run | grep -F 'build/bin/mcp-dev.js'
+          npm pack --dry-run 2>&1 | grep -F 'build/bin/mcp-dev.js'
 
       - name: Push release commit and tag
         run: git push origin HEAD --follow-tags
