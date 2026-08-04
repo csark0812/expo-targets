@@ -20,8 +20,10 @@ Options:
   --cwd <dir>                 Working directory for child and rebuild (default: process.cwd()).
   --debounce <ms>             Watch debounce (default: 250).
   --max-failures <n>          Consecutive crash/rebuild-fail cap before giving up (default: 5).
-  --cursor-config <path>      After a successful reload, bump MCP_DEV_REFRESH in this mcp.json
-                              so Cursor refetches tools (Cursor ignores tools/list_changed).
+  --cursor-config <path>      Accepted for back-compat; mcp-dev no longer auto-bumps
+                              MCP_DEV_REFRESH (that respawned Cursor MCP and leaked
+                              watchers). Bump the env manually when the tool catalog
+                              shape changes.
   -h, --help                  Show help.
 
 Examples:

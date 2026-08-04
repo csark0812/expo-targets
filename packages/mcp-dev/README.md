@@ -65,7 +65,9 @@ Pre-publish (monorepo checkout of any MCP package):
 }
 ```
 
-`--cursor-config` bumps `MCP_DEV_REFRESH` in that file after each successful watch reload so Cursor re-reads mcp.json and refetches the tool catalog. (Cursor currently ignores MCP `notifications/tools/list_changed`.)
+`--cursor-config` is accepted for back-compat and logged; mcp-dev does **not** auto-bump `MCP_DEV_REFRESH` (that respawned Cursor MCP workers and leaked watchers). Bump the env in mcp.json **manually** when the tool catalog shape changes. (Cursor currently ignores MCP `notifications/tools/list_changed`.)
+
+mcp-dev also acquires a **system-wide singleton** per cwd + child argv: a second spawn steals by killing the prior mcp-dev tree so Cursor multi-window reloads do not orphan dozens of watchers.
 
 ## Flags
 
@@ -76,16 +78,18 @@ Pre-publish (monorepo checkout of any MCP package):
 | `--cwd <dir>`            | cwd for child + rebuild (default: `process.cwd()`).                                  |
 | `--debounce <ms>`        | Coalesce window (default: `250`).                                                    |
 | `--max-failures <n>`     | Consecutive crash/rebuild-fail cap (default: `5`).                                   |
-| `--cursor-config <path>` | After successful reload, bump `MCP_DEV_REFRESH` on mcp-dev entries in this mcp.json. |
+| `--cursor-config <path>` | Accepted for back-compat; no longer auto-bumps `MCP_DEV_REFRESH`. Bump manually to refresh Cursor’s tool catalog. |
 | `--`                     | Everything after is the child MCP command.                                           |
 
 ## Behavior
 
+- **Singleton:** one live mcp-dev per cwd+child; steals/kills prior tree on acquire.
 - **Rebuild fail:** last-good child keeps running; no restart onto a failed build.
-- **Crash:** restart with exponential backoff until `--max-failures`, then give up (does **not** bump cursor-config).
+- **Crash:** restart with exponential backoff until `--max-failures`, then give up.
 - **Stable window:** 10s without failure resets the counter.
 - **Watch:** Watchman when the `watchman` CLI is on `PATH`; otherwise chokidar. Same reload pipeline either way.
 - Default ignores: `node_modules`, `.git`, `build`, `dist`.
+- **No auto `MCP_DEV_REFRESH` bump** on start or reload (prevents Cursor respawn storms).
 
 ## Watchman
 

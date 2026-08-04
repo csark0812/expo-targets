@@ -2,6 +2,7 @@
 import process from "node:process";
 import { parseArgs, usage } from "../cli";
 import { fatal, log } from "../log";
+import { acquireMcpDevSingleton } from "../singleton";
 import { createSupervisor } from "../supervisor";
 
 async function main(): Promise<void> {
@@ -18,6 +19,8 @@ async function main(): Promise<void> {
   }
 
   const cwd = parsed.cwd ?? process.cwd();
+  const singleton = acquireMcpDevSingleton(cwd, parsed.childArgv);
+
   const supervisor = createSupervisor({
     childArgv: parsed.childArgv,
     cwd,
@@ -33,6 +36,7 @@ async function main(): Promise<void> {
     try {
       await supervisor.stop();
     } finally {
+      singleton.release();
       process.exit(0);
     }
   };

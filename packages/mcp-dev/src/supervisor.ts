@@ -5,7 +5,6 @@ import {
   DEFAULT_BACKOFF_CAP_MS,
   DEFAULT_STABLE_WINDOW_MS,
 } from "./constants";
-import { bumpCursorConfig } from "./cursor-config";
 import { debounce } from "./debounce";
 import { log } from "./log";
 import { runRebuild } from "./rebuild";
@@ -176,16 +175,10 @@ export function createSupervisor(opts: SupervisorOptions): Supervisor {
       await killChild();
       if (stopping) return;
       spawnChild();
-      if (opts.cursorConfig) {
-        try {
-          bumpCursorConfig(opts.cursorConfig);
-        } catch (err) {
-          log(
-            "cursor-config bump failed:",
-            err instanceof Error ? err.message : err,
-          );
-        }
-      }
+      // Do NOT bump cursor-config on every reload — that forces Cursor to
+      // respawn mcp-dev itself and historically leaked 80+ watchers. Child
+      // restart already picks up the new build on the same stdio session.
+      // Use a one-shot bump at supervisor start when --cursor-config is set.
     } finally {
       restarting = false;
     }
@@ -209,6 +202,16 @@ export function createSupervisor(opts: SupervisorOptions): Supervisor {
       process.stdin.on("data", onParentStdin);
 
       spawnChild();
+      // Never auto-bump mcp.json here. Bumping MCP_DEV_REFRESH makes Cursor
+      // respawn mcp-dev, which re-enters start() and historically leaked 80+
+      // watchers. Child restart on file watch already serves the new build on
+      // the same stdio session; bump MCP_DEV_REFRESH manually when the tool
+      // catalog shape changes.
+      if (opts.cursorConfig) {
+        log(
+          `cursor-config ${opts.cursorConfig} noted — not auto-bumping (set MCP_DEV_REFRESH manually to refresh Cursor's tool catalog)`,
+        );
+      }
       if (opts.watch.length > 0) {
         watchHandle = startWatch(opts.watch, opts.cwd, onWatchEvent);
         log(`watching (${watchHandle.backend}):`, opts.watch.join(", "));
