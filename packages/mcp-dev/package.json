@@ -1,6 +1,6 @@
 {
   "name": "mcp-dev",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Metro-like stdio supervisor for developing MCP servers (watch, rebuild, restart).",
   "license": "MIT",
   "bin": {
