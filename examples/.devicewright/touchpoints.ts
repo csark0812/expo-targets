@@ -229,7 +229,8 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
   {
     id: "quicklook-thumbnail",
     tranche: "T6",
-    touchpoint: "Settings Apps host registration",
+    touchpoint:
+      "pluginkit quicklook.thumbnail + Files browses et-thumb.etqlt → App Group ET QL Thumb",
     status: "concrete",
   },
   {

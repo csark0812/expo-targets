@@ -360,7 +360,7 @@ const BASE_TYPE_CHARACTERISTICS: Record<
     requiresCode: true,
     targetType: 'app_extension',
     embedType: 'foundation-extension',
-    frameworks: [],
+    frameworks: ['QuickLookThumbnailing'],
     productType: 'com.apple.product-type.app-extension',
     extensionPointIdentifier: 'com.apple.quicklook.thumbnail',
     defaultUsesAppGroups: false,

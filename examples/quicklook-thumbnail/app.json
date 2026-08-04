@@ -16,7 +16,27 @@
         ]
       },
       "infoPlist": {
-        "CFBundleDisplayName": "ET QLThumb"
+        "CFBundleDisplayName": "ET QLThumb",
+        "UIFileSharingEnabled": true,
+        "LSSupportsOpeningDocumentsInPlace": true,
+        "UTExportedTypeDeclarations": [
+          {
+            "UTTypeIdentifier": "com.expotargets.etqlt",
+            "UTTypeDescription": "ET Quick Look thumbnail fixture",
+            "UTTypeConformsTo": ["public.data", "public.content"],
+            "UTTypeTagSpecification": {
+              "public.filename-extension": ["etqlt"]
+            }
+          }
+        ],
+        "CFBundleDocumentTypes": [
+          {
+            "CFBundleTypeName": "ET Quick Look thumbnail fixture",
+            "CFBundleTypeRole": "Viewer",
+            "LSItemContentTypes": ["com.expotargets.etqlt"],
+            "CFBundleTypeExtensions": ["etqlt"]
+          }
+        ]
       }
     },
     "plugins": [
