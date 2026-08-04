@@ -61,11 +61,20 @@ export const OS_LIMIT_CLAIMS: readonly ClaimsEntry[] = [
     reason: "Account auth modification requires system Settings",
   },
   { id: "authentication-services", reason: "SSO / AppSSO entitlement gated" },
-  { id: "call-directory", reason: "Call Directory Settings enablement" },
+  {
+    id: "call-directory",
+    reason:
+      "Phone → Call Blocking & Identification is unavailable on non-telephony Sims (Air): Settings Apps→Phone confirm on Call Blocking / Announce Calls times out; Settings search “Call Blocking” finds no usable surface — cannot list or enable ET CallDir Target (pluginkit alone is not green)",
+  },
   {
     id: "message-filter",
     reason:
       "Messages Settings detail is AX-blank on Simulator (Apps→Messages often Settings|Apps|BackButton only); Unknown Senders / Text Message Filter / Manage Filtering / SMS Filtering Settings search returns no results; App-prefs:com.apple.MobileSMS / App-prefs:MESSAGES are no-ops on this Sim — cannot list or enable ET MsgFilter Target or prove inbound filter invoke",
+  },
+  {
+    id: "unwanted-communication",
+    reason:
+      "Phone → SMS/Call Reporting (and Settings search for SMS/Call Reporting / Call Reporting) is unavailable on Air / non-telephony Sims; Apps→Phone confirm times out like Call Blocking — cannot list ET Unwanted Target despite classification-ui pluginkit registration",
   },
   {
     id: "spotlight",

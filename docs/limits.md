@@ -36,6 +36,8 @@ Each open leftover:
 | live-activity | Watch chrome when pair boots without AX | CLAIMS after S3a | TBD on operator miss | eng |
 | message-filter | Messages Unknown Senders / Text Message Filter list / inbound SMS invoke | CLAIMS | [spikes/message-filter-ql-spotlight-2026-08-04.md](../examples/.devicewright/artifacts/spikes/message-filter-ql-spotlight-2026-08-04.md) | eng |
 | spotlight | CSImportExtension indexer → App Group / Spotlight hit | CLAIMS | [spikes/message-filter-ql-spotlight-2026-08-04.md](../examples/.devicewright/artifacts/spikes/message-filter-ql-spotlight-2026-08-04.md) | eng |
+| call-directory | Phone → Call Blocking & Identification lists ET CallDir Target | CLAIMS | [spikes/unwanted-communication-call-directory-2026-08-04.md](../examples/.devicewright/artifacts/spikes/unwanted-communication-call-directory-2026-08-04.md) | eng |
+| unwanted-communication | Phone → SMS/Call Reporting lists ET Unwanted Target | CLAIMS | [spikes/unwanted-communication-call-directory-2026-08-04.md](../examples/.devicewright/artifacts/spikes/unwanted-communication-call-directory-2026-08-04.md) | eng |
 
 Entitlement/Settings items use `home: wont-do` or the hard-stop table below; **revisit** when DW/Sim coverage improves (plan edit + spike re-run).
 

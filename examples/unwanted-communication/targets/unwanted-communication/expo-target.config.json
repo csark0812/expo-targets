@@ -9,7 +9,7 @@
     "displayName": "ET Unwanted Target",
     "infoPlist": {
       "NSExtension": {
-        "NSExtensionPrincipalClass": "UnwantedCommunicationReportingExtension"
+        "NSExtensionPrincipalClass": "ClassificationViewController"
       }
     }
   }

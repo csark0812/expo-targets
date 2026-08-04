@@ -20,7 +20,6 @@ import {
   waitForNamed,
 } from "./helpers";
 import {
-  navigatePath,
   openSettingsApps,
   scrollUntilVisible,
   searchAppsAndOpen,
@@ -68,15 +67,19 @@ async function tryOpenCallBlockingSettings(
       ) {
         steps.push("phone-settings-ok");
         try {
-          await navigatePath(
+          const openedBlocking = await tapLabelInTree(
             device,
             [
               "Call Blocking & Identification",
               "Call Blocking and Identification",
             ],
-            steps,
+            { exactOnly: false },
           );
-          return true;
+          if (openedBlocking) {
+            steps.push("call-blocking-nav");
+            return true;
+          }
+          steps.push("call-blocking-nav-failed");
         } catch {
           steps.push("call-blocking-nav-failed");
         }
@@ -99,15 +102,27 @@ async function tryOpenCallBlockingSettings(
     });
     steps.push("apps-phone-settings");
     try {
-      await navigatePath(
+      const openedBlocking = await tapLabelInTree(
         device,
         [
           "Call Blocking & Identification",
           "Call Blocking and Identification",
         ],
-        steps,
+        { exactOnly: false },
       );
-      return true;
+      if (openedBlocking) {
+        steps.push("apps-phone-call-blocking-nav");
+        return true;
+      }
+      const phoneLabels = flattenLabels(await device.accessibilityTree());
+      if (
+        phoneLabels.some((l) =>
+          /call blocking|call directory|identification/i.test(l),
+        )
+      ) {
+        steps.push("apps-phone-call-blocking-surface");
+        return true;
+      }
     } catch {
       const phoneLabels = flattenLabels(await device.accessibilityTree());
       if (
