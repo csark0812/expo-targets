@@ -1,10 +1,17 @@
 name: publish-mcp-dev
 
+# Trusted publisher on npmjs.com must match this filename exactly:
+#   publish-mcp-dev.yml
+# Package: @csark0812/mcp-dev
+# Repo: csark0812/expo-targets
+# No NPM_TOKEN required for publish (OIDC). bun install still needs NODE_AUTH_TOKEN
+# to resolve private @csark0812/devicewright if the lockfile pulls it transitively.
+
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version to publish (e.g. 0.1.1). Leave empty to bump.
+        description: Version to publish (e.g. 0.1.2). Leave empty to bump.
         required: false
       bump_type:
         description: Bump type when version is empty
@@ -37,6 +44,7 @@ jobs:
         with:
           node-version: "22"
           registry-url: https://registry.npmjs.org
+          scope: "@csark0812"
 
       - name: Install npm (OIDC provenance)
         run: npm install -g npm@latest
@@ -44,7 +52,8 @@ jobs:
       - run: bun install --frozen-lockfile
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
-      - run: bun run --filter mcp-dev build
+
+      - run: bun run --filter @csark0812/mcp-dev build
       - run: bun test --cwd packages/mcp-dev src
       - name: Typecheck mcp-dev
         working-directory: packages/mcp-dev
@@ -81,27 +90,41 @@ jobs:
             git tag "$TAG"
           fi
 
-      - run: bun run --filter mcp-dev build
+      - run: bun run --filter @csark0812/mcp-dev build
+
+      - name: Assert publishable bin
+        working-directory: packages/mcp-dev
+        run: |
+          test -f build/bin/mcp-dev.js
+          head -1 build/bin/mcp-dev.js | grep -q '^#!'
+          node -e "
+            const pkg = require('./package.json');
+            if (pkg.name !== '@csark0812/mcp-dev') throw new Error('bad name: ' + pkg.name);
+            if (pkg.bin?.['mcp-dev'] !== './build/bin/mcp-dev.js') {
+              throw new Error('bad bin: ' + JSON.stringify(pkg.bin));
+            }
+          "
+          npm pack --dry-run | grep -F 'build/bin/mcp-dev.js'
 
       - name: Push release commit and tag
         run: git push origin HEAD --follow-tags
 
-      - name: Publish mcp-dev
+      - name: Publish @csark0812/mcp-dev
         working-directory: packages/mcp-dev
         run: npm publish --access public --provenance
 
       - uses: softprops/action-gh-release@v3
         with:
           tag_name: mcp-dev-v${{ steps.version.outputs.NEW_VERSION }}
-          name: mcp-dev@${{ steps.version.outputs.NEW_VERSION }}
+          name: "@csark0812/mcp-dev@${{ steps.version.outputs.NEW_VERSION }}"
           body: |
-            ## mcp-dev@${{ steps.version.outputs.NEW_VERSION }}
+            ## @csark0812/mcp-dev@${{ steps.version.outputs.NEW_VERSION }}
 
-            Published via workflow_dispatch.
+            Published via workflow_dispatch (OIDC trusted publisher).
 
             ### npm
             ```bash
-            npx -y mcp-dev@${{ steps.version.outputs.NEW_VERSION }} --help
+            npx -y @csark0812/mcp-dev@${{ steps.version.outputs.NEW_VERSION }} --help
             ```
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -976,8 +976,8 @@
       },
     },
     "packages/mcp-dev": {
-      "name": "mcp-dev",
-      "version": "0.1.0",
+      "name": "@csark0812/mcp-dev",
+      "version": "0.1.1",
       "bin": {
         "mcp-dev": "./build/bin/mcp-dev.js",
       },
@@ -1142,6 +1142,8 @@
     "@biomejs/cli-win32-x64": ["@biomejs/cli-win32-x64@2.5.6", "", { "os": "win32", "cpu": "x64" }, "sha512-WN05KwXnTO/2J45RQPvzZMXf7tZUIofHoR35xIPfCo7pQ2RFidxI8sfb5mGsaTxdMmEOzHzOPRCdA5/fCpc7xQ=="],
 
     "@csark0812/devicewright": ["@csark0812/devicewright@0.1.12", "", { "dependencies": { "@modelcontextprotocol/sdk": "^1.12.0", "zod": "^3.24.0" }, "bin": { "devicewright": "build/bin/cli.js", "devicewright-mcp": "build/bin/mcp.js", "devicewright-doctor": "build/bin/doctor.js" } }, "sha512-lw3xLF0OKFCKmdFyqkdkuP+5j2M1KU23Xqb4ylPAErxs+hwi2PjBJMJH/KJhSMBsSj3SBtqSv+zoSQPmyj68sQ=="],
+
+    "@csark0812/mcp-dev": ["@csark0812/mcp-dev@workspace:packages/mcp-dev"],
 
     "@csark0812/skeleton": ["@csark0812/skeleton@1.5.7", "", { "dependencies": { "ajv": "^8.17.1", "github-slugger": "^2.0.0", "remark": "^15.0.1", "remark-gfm": "^4.0.1", "tinyglobby": "^0.2.14", "unist-util-visit": "^5.0.0", "yaml": "^2.8.0" }, "bin": { "skeleton": "dist/cli.js" } }, "sha512-+ymzlfDxlwx2J8bSk2UrKF05XQFMuJsnoGtnJYmu2tOHNZxCFcvyE6Gzevc8XBICKGfyovOI/ET1fBih+IjSrg=="],
 
@@ -1924,8 +1926,6 @@
     "marky": ["marky@1.3.0", "", {}, "sha512-ocnPZQLNpvbedwTy9kNrQEsknEfgvcLMvOtz3sFeWApDq1MXH1TqkCIx58xlpESsfwQOnuBO9beyQuNGzVvuhQ=="],
 
     "math-intrinsics": ["math-intrinsics@1.1.0", "", {}, "sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g=="],
-
-    "mcp-dev": ["mcp-dev@workspace:packages/mcp-dev"],
 
     "mdast-util-find-and-replace": ["mdast-util-find-and-replace@3.0.2", "", { "dependencies": { "@types/mdast": "^4.0.0", "escape-string-regexp": "^5.0.0", "unist-util-is": "^6.0.0", "unist-util-visit-parents": "^6.0.0" } }, "sha512-Tmd1Vg/m3Xz43afeNxDIhWRtFZgM2VLyaf4vSTYwudTyeuTneoL3qtWMA5jeLyz/O1vDJmmV4QuScFCA2tBPwg=="],
 
