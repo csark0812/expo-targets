@@ -16,7 +16,27 @@
         ]
       },
       "infoPlist": {
-        "CFBundleDisplayName": "ET Spotlight"
+        "CFBundleDisplayName": "ET Spotlight",
+        "UIFileSharingEnabled": true,
+        "LSSupportsOpeningDocumentsInPlace": true,
+        "UTExportedTypeDeclarations": [
+          {
+            "UTTypeIdentifier": "com.expotargets.etspot",
+            "UTTypeDescription": "ET Spotlight fixture",
+            "UTTypeConformsTo": ["public.data", "public.content"],
+            "UTTypeTagSpecification": {
+              "public.filename-extension": ["etspot"]
+            }
+          }
+        ],
+        "CFBundleDocumentTypes": [
+          {
+            "CFBundleTypeName": "ET Spotlight fixture",
+            "CFBundleTypeRole": "Viewer",
+            "LSItemContentTypes": ["com.expotargets.etspot"],
+            "CFBundleTypeExtensions": ["etspot"]
+          }
+        ]
       }
     },
     "plugins": [

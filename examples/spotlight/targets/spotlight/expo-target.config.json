@@ -8,8 +8,12 @@
     "bundleIdentifier": "com.expotargets.example.spotlight.spotlight",
     "displayName": "ET Spotlight Target",
     "infoPlist": {
+      "CSExtensionLabel": "etSpotlightImporter",
       "NSExtension": {
-        "NSExtensionPrincipalClass": "IndexRequestHandler"
+        "NSExtensionPrincipalClass": "ImportExtension",
+        "NSExtensionAttributes": {
+          "CSSupportedContentTypes": ["com.expotargets.etspot"]
+        }
       }
     }
   }

@@ -9,7 +9,10 @@
     "displayName": "ET QLPreview Target",
     "infoPlist": {
       "NSExtension": {
-        "NSExtensionPrincipalClass": "PreviewViewController"
+        "NSExtensionPrincipalClass": "PreviewViewController",
+        "NSExtensionAttributes": {
+          "QLSupportedContentTypes": ["com.expotargets.etql"]
+        }
       }
     }
   }

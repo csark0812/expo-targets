@@ -1,4 +1,5 @@
 devicewright-artifacts/
-artifacts/
+# Ignore matrix run dirs under artifacts/, keep committed spikes.
+artifacts/*
 !artifacts/spikes/
 !artifacts/spikes/**

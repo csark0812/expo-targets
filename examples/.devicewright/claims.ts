@@ -63,6 +63,16 @@ export const OS_LIMIT_CLAIMS: readonly ClaimsEntry[] = [
   { id: "authentication-services", reason: "SSO / AppSSO entitlement gated" },
   { id: "call-directory", reason: "Call Directory Settings enablement" },
   {
+    id: "message-filter",
+    reason:
+      "Messages SMS Filtering / Unknown Senders / Text Message Filter Settings listing or inbound SMS filter invoke is not reliable on Simulator after pluginkit registration (Messages settings pane may render blank; filter surfaces may be absent)",
+  },
+  {
+    id: "spotlight",
+    reason:
+      "Spotlight import (CSImportExtension) registered but system indexer/search does not reliably surface imported attributes on Simulator",
+  },
+  {
     id: "device-activity-monitor",
     reason: "Family Controls / DeviceActivity entitlement",
   },
