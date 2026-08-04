@@ -13,7 +13,6 @@
       "!**/*.d.ts",
       "!!**/node_modules",
       "!**/examples/.devicewright",
-      "!**/packages/mcp-dev",
       "!**/scripts"
     ]
   },
