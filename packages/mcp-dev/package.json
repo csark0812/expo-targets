@@ -1,6 +1,6 @@
 {
   "name": "@csark0812/mcp-dev",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Metro-like stdio supervisor for developing MCP servers (watch, rebuild, restart).",
   "license": "MIT",
   "bin": {
