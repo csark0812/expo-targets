@@ -42,6 +42,8 @@ jobs:
         run: npm install -g npm@latest
 
       - run: bun install --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
       - run: bun run --filter mcp-dev build
       - run: bun test --cwd packages/mcp-dev src
       - run: tsc -p packages/mcp-dev --noEmit
