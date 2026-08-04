@@ -297,11 +297,12 @@ function findExtensionKitEmbedPhase({
   mainTargetUuid: string;
 }): { uuid: string; phase: any } | undefined {
   const xcodeProject = project as any;
-  const copyFilesPhases = xcodeProject.hash.project.objects.PBXCopyFilesBuildPhase;
+  const copyFilesPhases =
+    xcodeProject.hash.project.objects.PBXCopyFilesBuildPhase;
   const mainTarget =
     xcodeProject.hash.project.objects.PBXNativeTarget?.[mainTargetUuid];
-  if (!mainTarget?.buildPhases || !copyFilesPhases) {
-    return undefined;
+  if (!(mainTarget?.buildPhases && copyFilesPhases)) {
+    return;
   }
 
   for (const entry of mainTarget.buildPhases) {
@@ -319,7 +320,6 @@ function findExtensionKitEmbedPhase({
       return { uuid: entry.value, phase };
     }
   }
-  return undefined;
 }
 
 function ensureExtensionKitEmbedPhase({

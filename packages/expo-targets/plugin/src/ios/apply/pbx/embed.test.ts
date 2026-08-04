@@ -154,7 +154,7 @@ describe('configureExtensionKitEmbed', () => {
       targetProductName: 'AppIntentMinimalTarget',
     });
     expect(phasesNamed(project, 'Embed ExtensionKit Extensions')).toEqual(
-      phaseKeys,
+      phaseKeys
     );
     expect(copyFilesPhases(project)[phaseKeys[0]!].files).toHaveLength(1);
   });

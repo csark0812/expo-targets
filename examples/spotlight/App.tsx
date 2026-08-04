@@ -3,9 +3,7 @@ import { AppGroupStorage } from 'expo-targets';
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-const storage = new AppGroupStorage(
-  'group.com.expotargets.example.spotlight'
-);
+const storage = new AppGroupStorage('group.com.expotargets.example.spotlight');
 
 export default function App() {
   const [ready, setReady] = useState(false);
