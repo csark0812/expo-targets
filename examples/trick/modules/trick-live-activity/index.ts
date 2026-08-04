@@ -2,6 +2,7 @@ import { requireNativeModule } from 'expo-modules-core';
 
 type Native = {
   start(title: string, status: string): Promise<string>;
+  update(activityId: string, status: string): Promise<boolean>;
   endAll(): Promise<void>;
 };
 
@@ -12,6 +13,13 @@ export async function startLiveActivity(
   status = 'live'
 ): Promise<string> {
   return native.start(title, status);
+}
+
+export async function updateLiveActivity(
+  activityId: string,
+  status: string
+): Promise<boolean> {
+  return native.update(activityId, status);
 }
 
 export async function endAllLiveActivities(): Promise<void> {

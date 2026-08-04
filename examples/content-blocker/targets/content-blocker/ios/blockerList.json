@@ -1,10 +1,18 @@
 [
   {
-    "action": {
-      "type": "block"
-    },
-    "trigger": {
-      "url-filter": ".*ads\\.example\\.com.*"
-    }
+    "action": { "type": "block" },
+    "trigger": { "url-filter": ".*ads\\.example\\.com.*" }
+  },
+  {
+    "action": { "type": "block" },
+    "trigger": { "url-filter": ".*doubleclick\\.net.*" }
+  },
+  {
+    "action": { "type": "block" },
+    "trigger": { "url-filter": ".*googlesyndication\\.com.*" }
+  },
+  {
+    "action": { "type": "css-display-none", "selector": ".et-blocked-ad" },
+    "trigger": { "url-filter": ".*" }
   }
 ]

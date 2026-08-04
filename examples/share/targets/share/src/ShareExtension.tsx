@@ -4,31 +4,67 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 export type SharedItem = {
   id: string;
   sharedAt: string;
-  content: { text?: string; url?: string };
+  /** Distinguishes text vs image vs url for host payload asserts. */
+  kind: 'text' | 'image' | 'url' | 'mixed';
+  content: {
+    text?: string;
+    url?: string;
+    images?: string[];
+    imageCount?: number;
+  };
 };
 
 type Props = {
   target: ExtensionTarget;
   text?: string;
   url?: string;
+  images?: string[];
 };
 
-export default function ShareExtension({ target, text, url }: Props) {
+function resolveKind(
+  text?: string,
+  url?: string,
+  images?: string[]
+): SharedItem['kind'] {
+  const hasImage = (images?.length ?? 0) > 0;
+  const hasText = Boolean(text);
+  const hasUrl = Boolean(url);
+  if (hasImage && (hasText || hasUrl)) return 'mixed';
+  if (hasImage) return 'image';
+  if (hasUrl && !hasText) return 'url';
+  return 'text';
+}
+
+export default function ShareExtension({ target, text, url, images }: Props) {
   const save = () => {
     const existing = target.getData<{ items: SharedItem[] }>() || { items: [] };
+    const kind = resolveKind(text, url, images);
     const item: SharedItem = {
       id: Date.now().toString(),
       sharedAt: new Date().toISOString(),
-      content: { text, url },
+      kind,
+      content: {
+        text,
+        url,
+        images,
+        imageCount: images?.length ?? 0,
+      },
     };
     target.setData({ items: [...(existing.items || []), item] });
     target.close();
   };
 
+  const imageCount = images?.length ?? 0;
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Share</Text>
-      <Text>{text || url || 'No content'}</Text>
+      <Text>
+        {imageCount > 0 ? `Images: ${imageCount}` : text || url || 'No content'}
+      </Text>
+      <Text testID="share-kind-label">
+        kind:{resolveKind(text, url, images)}
+      </Text>
       <TouchableOpacity style={styles.button} onPress={save}>
         <Text style={styles.buttonText}>Save</Text>
       </TouchableOpacity>

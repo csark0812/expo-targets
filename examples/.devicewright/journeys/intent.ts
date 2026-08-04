@@ -1,15 +1,11 @@
 /**
  * Siri Intent host-registration journey.
  *
- * GREEN proof level: host ready + Settings Apps lists the host and its
- * settings surface opens. `IntentsSupported` in Info.plist is a build-time
- * contract already asserted elsewhere (Info.plist inspection) — this
- * journey does NOT attempt an actual Siri invoke (no reliable simulator
- * automation path for that exists today) and does NOT claim it succeeded.
- * `intent` has no CLAIMS row: we are not claiming an os-limit for Siri
- * invoke, we are simply not attempting it.
+ * GREEN is not claimed for Siri invoke (no reliable Simulator path). After
+ * host ready + Settings Apps lists the host, return os-limit (CLAIMS).
  */
 import type { DeviceSession } from "@csark0812/devicewright";
+import { assertOsLimitAllowed, claimForId } from "../claims";
 import { TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import { dismissSystemAlerts, waitForNamed } from "./helpers";
@@ -26,6 +22,7 @@ export async function runIntentJourney(
   );
 
   try {
+    assertOsLimitAllowed("intent");
     await dismissSystemAlerts(device);
     await device.launchApp(entry.hostBundleId, { terminateRunning: true });
     steps.push("launch-host");
@@ -38,13 +35,16 @@ export async function runIntentJourney(
     steps.push("host-settings-ok");
     steps.push("siri-invoke-not-attempted");
 
+    const claim = claimForId("intent");
     return {
       id: "intent",
       path,
       phase: 5,
       ok: true,
-      status: "green",
+      status: "os-limit",
       steps,
+      failureKind: "os-limit",
+      error: claim?.reason ?? "Siri Intent invoke not Sim-drivable",
     };
   } catch (e) {
     const msg = String(e);

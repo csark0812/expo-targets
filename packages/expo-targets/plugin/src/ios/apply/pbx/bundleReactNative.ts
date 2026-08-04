@@ -51,6 +51,25 @@ if [[ -f "$PODS_ROOT/../.xcode.env.local" ]]; then
 fi
 
 \`"$NODE_BINARY" --print "require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'"\`
+
+# App Clip / appex: export:embed often leaves main.jsbundle in
+# CONFIGURATION_BUILD_DIR; Xcode's later "Create .app" can also drop an
+# in-wrapper copy. Persist a stable sidecar for the host embed phase.
+for candidate in \\
+  "$CONFIGURATION_BUILD_DIR/main.jsbundle" \\
+  "$TARGET_BUILD_DIR/main.jsbundle" \\
+  "$TARGET_BUILD_DIR/$WRAPPER_NAME/main.jsbundle"
+do
+  if [[ -f "$candidate" ]]; then
+    WRAPPER="\${TARGET_BUILD_DIR}/\${WRAPPER_NAME}"
+    mkdir -p "$WRAPPER"
+    cp "$candidate" "$WRAPPER/main.jsbundle" || true
+    # Sidecar next to the .app so host post-embed can re-copy after Create.
+    cp "$candidate" "\${CONFIGURATION_BUILD_DIR}/\${PRODUCT_NAME}-main.jsbundle"
+    echo "expo-targets: placed main.jsbundle ($candidate → wrapper + sidecar)"
+    break
+  fi
+done
 `;
 }
 

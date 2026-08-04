@@ -1,6 +1,5 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import process from 'node:process';
 import {
   AndroidConfig,
   type ConfigPlugin,
@@ -11,6 +10,7 @@ import {
   withStringsXml,
 } from '@expo/config-plugins';
 import type { AndroidTargetConfig, Color } from '../config';
+import { addWidgetSourceSets } from './widgetSourceSets';
 
 /**
  * Sanitize widget name for Android resource names.
@@ -18,6 +18,13 @@ import type { AndroidTargetConfig, Color } from '../config';
  */
 function sanitizeResourceName(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+}
+
+function toWidgetNamePascal(name: string): string {
+  return (
+    name.charAt(0).toUpperCase() +
+    name.slice(1).replace(/[-_]([a-z])/g, (_, letter) => letter.toUpperCase())
+  );
 }
 
 interface WidgetProps {
@@ -29,37 +36,41 @@ interface WidgetProps {
   directory: string;
 }
 
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
-export const withAndroidWidget: ConfigPlugin<WidgetProps> = (config, props) => {
-  const androidConfig = props.android || {};
-  const widgetType = androidConfig.widgetType || 'glance';
+interface WidgetReceiverContext {
+  mainApplication: any;
+  packageName: string;
+  props: WidgetProps;
+  widgetNameLower: string;
+  widgetNamePascal: string;
+}
 
-  if (widgetType === 'glance') {
-    // 1. Add Compose Compiler Plugin to root build.gradle (required for Kotlin 2.0+)
-    config = withProjectBuildGradle(config, (buildGradleConfig) => {
-      addComposeCompilerPlugin(buildGradleConfig);
-      return buildGradleConfig;
-    });
+function configureGlanceBuild(config: any, props: WidgetProps) {
+  let next = withProjectBuildGradle(config, (buildGradleConfig) => {
+    addComposeCompilerPlugin(buildGradleConfig);
+    return buildGradleConfig;
+  });
 
-    // 2. Apply Compose plugin and configure in app build.gradle
-    config = withAppBuildGradle(config, (buildGradleConfig) => {
-      applyComposePlugin(buildGradleConfig);
-      enableComposeFeatures(buildGradleConfig);
-      addGlanceDependencies(buildGradleConfig);
-      addWidgetSourceSets(buildGradleConfig, config, props);
-      return buildGradleConfig;
-    });
-  } else {
-    // RemoteViews: Skip Compose, add minimal deps
-    config = withAppBuildGradle(config, (buildGradleConfig) => {
-      addRemoteViewsDependencies(buildGradleConfig);
-      addWidgetSourceSets(buildGradleConfig, config, props);
-      return buildGradleConfig;
-    });
-  }
+  next = withAppBuildGradle(next, (buildGradleConfig) => {
+    applyComposePlugin(buildGradleConfig);
+    enableComposeFeatures(buildGradleConfig);
+    addGlanceDependencies(buildGradleConfig);
+    addWidgetSourceSets(buildGradleConfig, next, props);
+    return buildGradleConfig;
+  });
 
-  // 3. Register ExpoTargetsReceiver in manifest (for refresh functionality)
-  config = withAndroidManifest(config, (manifestConfig) => {
+  return next;
+}
+
+function configureRemoteViewsBuild(config: any, props: WidgetProps) {
+  return withAppBuildGradle(config, (buildGradleConfig) => {
+    addRemoteViewsDependencies(buildGradleConfig);
+    addWidgetSourceSets(buildGradleConfig, config, props);
+    return buildGradleConfig;
+  });
+}
+
+function configureWidgetManifest(config: any, props: WidgetProps) {
+  return withAndroidManifest(config, (manifestConfig) => {
     const mainApplication = AndroidConfig.Manifest.getMainApplicationOrThrow(
       manifestConfig.modResults
     );
@@ -67,33 +78,40 @@ export const withAndroidWidget: ConfigPlugin<WidgetProps> = (config, props) => {
     addWidgetReceiver(mainApplication, config, props);
     return manifestConfig;
   });
+}
 
-  // 4. Add description string if provided
-  if (androidConfig?.description) {
-    const description = androidConfig.description;
-    config = withStringsXml(config, (stringsConfig) => {
-      stringsConfig.modResults = AndroidConfig.Strings.setStringItem(
-        [
-          {
-            $: {
-              name: `widget_${sanitizeResourceName(props.name)}_description`,
-              translatable: 'false',
-            },
-            _: description.replace(/'/g, "\\'"),
+function configureWidgetDescription(
+  config: any,
+  props: WidgetProps,
+  description: string
+) {
+  return withStringsXml(config, (stringsConfig) => {
+    stringsConfig.modResults = AndroidConfig.Strings.setStringItem(
+      [
+        {
+          $: {
+            name: `widget_${sanitizeResourceName(props.name)}_description`,
+            translatable: 'false',
           },
-        ],
-        stringsConfig.modResults
-      );
-      return stringsConfig;
-    });
-  }
+          _: description.replace(/'/g, "\\'"),
+        },
+      ],
+      stringsConfig.modResults
+    );
+    return stringsConfig;
+  });
+}
 
-  // 5. Generate widget resources (XML, colors, default layout if needed)
-  config = withDangerousMod(config, [
+function configureWidgetResources(
+  config: any,
+  props: WidgetProps,
+  androidConfig: AndroidTargetConfig
+) {
+  return withDangerousMod(config, [
     'android',
     (dangerousConfig) => {
       const platformRoot = dangerousConfig.modRequest.platformProjectRoot;
-      generateWidgetResources(platformRoot, config, props);
+      generateWidgetResources(platformRoot, props);
       generateDefaultLayoutIfNeeded(platformRoot, props, androidConfig);
       if (androidConfig.colors) {
         generateColorResources(platformRoot, props, androidConfig.colors);
@@ -101,6 +119,29 @@ export const withAndroidWidget: ConfigPlugin<WidgetProps> = (config, props) => {
       return dangerousConfig;
     },
   ]);
+}
+
+export const withAndroidWidget: ConfigPlugin<WidgetProps> = (config, props) => {
+  const androidConfig = props.android || {};
+  const widgetType = androidConfig.widgetType || 'glance';
+
+  if (widgetType === 'glance') {
+    config = configureGlanceBuild(config, props);
+  } else {
+    config = configureRemoteViewsBuild(config, props);
+  }
+
+  config = configureWidgetManifest(config, props);
+
+  if (androidConfig?.description) {
+    config = configureWidgetDescription(
+      config,
+      props,
+      androidConfig.description
+    );
+  }
+
+  config = configureWidgetResources(config, props, androidConfig);
 
   return config;
 };
@@ -109,12 +150,10 @@ function addComposeCompilerPlugin(buildGradleConfig: any) {
   const { modResults } = buildGradleConfig;
   let contents = modResults.contents;
 
-  // Check if Compose Compiler Plugin already added
   if (contents.includes('compose-compiler-gradle-plugin')) {
     return;
   }
 
-  // Find buildscript dependencies block and add Compose Compiler Plugin
   const dependenciesMatch = contents.match(
     /(dependencies\s*\{[^}]*classpath\([^)]*kotlin-gradle-plugin[^)]*\))/
   );
@@ -132,12 +171,10 @@ function applyComposePlugin(buildGradleConfig: any) {
   const { modResults } = buildGradleConfig;
   let contents = modResults.contents;
 
-  // Check if Compose plugin already applied
   if (contents.includes('org.jetbrains.kotlin.plugin.compose')) {
     return;
   }
 
-  // Find the kotlin.android plugin line and add compose plugin after it
   const kotlinPluginMatch = contents.match(
     /(apply plugin:\s*["']org\.jetbrains\.kotlin\.android["'])/
   );
@@ -186,13 +223,10 @@ function enableComposeFeatures(buildGradleConfig: any) {
   const { modResults } = buildGradleConfig;
   let contents = modResults.contents;
 
-  // Check if Compose already enabled
   if (contents.includes('buildFeatures') && contents.includes('compose')) {
     return;
   }
 
-  // Find android block and add buildFeatures
-  // With Kotlin 2.0+, we use the Compose Compiler Plugin, so no composeOptions needed
   const androidBlockMatch = contents.match(/(android\s*\{[\s\S]*?)(^\})/m);
   if (androidBlockMatch) {
     const buildFeaturesBlock = `
@@ -204,7 +238,6 @@ function enableComposeFeatures(buildGradleConfig: any) {
         jvmToolchain(17)
     }
 `;
-    // Insert before the closing brace of android block
     contents = contents.replace(
       androidBlockMatch[0],
       `${androidBlockMatch[1] + buildFeaturesBlock}\n}`
@@ -217,12 +250,10 @@ function addGlanceDependencies(buildGradleConfig: any) {
   const { modResults } = buildGradleConfig;
   let contents = modResults.contents;
 
-  // Check if Glance dependencies already added
   if (contents.includes('androidx.glance:glance-appwidget')) {
     return;
   }
 
-  // Find dependencies block and add Compose BOM + Glance dependencies
   const dependenciesMatch = contents.match(/dependencies\s*\{/);
   if (dependenciesMatch) {
     const glanceDeps = `
@@ -256,12 +287,10 @@ function addRemoteViewsDependencies(buildGradleConfig: any) {
   const { modResults } = buildGradleConfig;
   let contents = modResults.contents;
 
-  // Check if RemoteViews dependencies already added
   if (contents.includes('expo-targets-remoteviews')) {
     return;
   }
 
-  // Find dependencies block and add minimal dependencies for RemoteViews widgets
   const dependenciesMatch = contents.match(/dependencies\s*\{/);
   if (dependenciesMatch) {
     const remoteViewsDeps = `
@@ -288,48 +317,35 @@ function addWidgetReceiver(
 
   const widgetType = props.android?.widgetType || 'glance';
   const widgetNameLower = sanitizeResourceName(props.name);
-  const widgetNamePascal =
-    props.name.charAt(0).toUpperCase() +
-    props.name
-      .slice(1)
-      .replace(/[-_]([a-z])/g, (_, letter) => letter.toUpperCase());
+  const widgetNamePascal = toWidgetNamePascal(props.name);
+  const receiverContext: WidgetReceiverContext = {
+    mainApplication,
+    packageName,
+    props,
+    widgetNameLower,
+    widgetNamePascal,
+  };
 
   if (widgetType === 'remoteviews') {
-    // Register AppWidgetProvider (user's class)
     const providerClassName = `${packageName}.widget.${widgetNameLower}.${widgetNamePascal}Provider`;
     registerAppWidgetProvider(mainApplication, providerClassName, props);
-  } else {
-    // Existing Glance registration
-    registerGlanceReceiver(
-      mainApplication,
-      packageName,
-      props,
-      widgetNameLower,
-      widgetNamePascal
-    );
-    registerUpdateReceiver(
-      mainApplication,
-      packageName,
-      props,
-      widgetNameLower,
-      widgetNamePascal
-    );
+    return;
   }
+
+  registerGlanceReceiver(receiverContext);
+  registerUpdateReceiver(receiverContext);
 }
 
-// biome-ignore lint/complexity/useMaxParams: pre-existing complexity; tracked for refactor
-function registerGlanceReceiver(
-  mainApplication: any,
-  packageName: string,
-  props: WidgetProps,
-  widgetNameLower: string,
-  widgetNamePascal: string
-) {
+function registerGlanceReceiver(context: WidgetReceiverContext) {
+  const {
+    mainApplication,
+    packageName,
+    props,
+    widgetNameLower,
+    widgetNamePascal,
+  } = context;
   mainApplication.receiver = mainApplication.receiver || [];
 
-  // Widget receiver class name pattern: {package}.widget.{widgetname}.{WidgetName}WidgetReceiver
-  // Users should follow the convention: package {package}.widget.{widgetname}
-  // with class {WidgetName}WidgetReceiver extending GlanceAppWidgetReceiver
   const widgetClassName = `${packageName}.widget.${widgetNameLower}.${widgetNamePascal}WidgetReceiver`;
 
   const alreadyAdded = mainApplication.receiver.some(
@@ -366,18 +382,11 @@ function registerGlanceReceiver(
   });
 }
 
-// biome-ignore lint/complexity/useMaxParams: pre-existing complexity; tracked for refactor
-function registerUpdateReceiver(
-  mainApplication: any,
-  packageName: string,
-  _props: WidgetProps,
-  widgetNameLower: string,
-  widgetNamePascal: string
-) {
+function registerUpdateReceiver(context: WidgetReceiverContext) {
+  const { mainApplication, packageName, widgetNameLower, widgetNamePascal } =
+    context;
   mainApplication.receiver = mainApplication.receiver || [];
 
-  // Also register the UpdateReceiver for direct Glance updates
-  // Pattern: {package}.widget.{widgetname}.{WidgetName}UpdateReceiver
   const updateReceiverClassName = `${packageName}.widget.${widgetNameLower}.${widgetNamePascal}UpdateReceiver`;
 
   const updateReceiverAdded = mainApplication.receiver.some(
@@ -431,7 +440,6 @@ function registerAppWidgetProvider(
           {
             $: { 'android:name': 'android.appwidget.action.APPWIDGET_UPDATE' },
           },
-          // Add expo-targets refresh action so provider can receive update broadcasts
           {
             $: { 'android:name': 'expo.modules.targets.WIDGET_EVENT' },
           },
@@ -449,176 +457,56 @@ function registerAppWidgetProvider(
   });
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
-function addWidgetSourceSets(
-  buildGradleConfig: any,
-  config: any,
+function getPreviewImageAttribute(
+  androidConfig: AndroidTargetConfig,
   props: WidgetProps
-) {
-  const projectRoot = config._internal?.projectRoot || process.cwd();
-  const widgetAndroidDir = path.join(projectRoot, props.directory, 'android');
-
-  // Only add sourceSets if widget android directory exists
-  if (!fs.existsSync(widgetAndroidDir)) {
-    return;
+): string {
+  if (!androidConfig.previewImage) {
+    return '';
   }
-
-  const { modResults } = buildGradleConfig;
-  let contents = modResults.contents;
-
-  // Calculate relative path from app/build.gradle to widget directory
-  // app/build.gradle is at android/app/build.gradle
-  // widget is at targets/{name}/android
-  // Relative path: ../../targets/{name}/android
-  // platformProjectRoot is typically {projectRoot}/android
-  const platformProjectRoot = path.join(projectRoot, 'android');
-  const relativePath = path
-    .relative(path.join(platformProjectRoot, 'app'), widgetAndroidDir)
-    .replace(/\\/g, '/');
-
-  // Check if sourceSets already exists
-  const sourceSetsRegex = /android\s*\{[^}]*sourceSets\s*\{/s;
-  const hasSourceSets = sourceSetsRegex.test(contents);
-
-  // Check if this widget's sourceSet is already added
-  const widgetSourceSetPattern = new RegExp(
-    `java\\.srcDirs\\s*\\+=\\s*\\['${relativePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}'\\]`,
-    's'
-  );
-
-  if (widgetSourceSetPattern.test(contents)) {
-    return; // Already added
-  }
-
-  if (hasSourceSets) {
-    // Add to existing sourceSets block
-    const sourceSetsMatch = contents.match(
-      /sourceSets\s*\{[^}]*main\s*\{[^}]*\}/s
-    );
-    if (sourceSetsMatch) {
-      // Find the main block and add our sourceSets
-      const mainBlockMatch = contents.match(
-        /sourceSets\s*\{[^}]*main\s*\{([^}]*)\}/s
-      );
-      if (mainBlockMatch) {
-        const mainBlockContent = mainBlockMatch[1];
-        // Check if java.srcDirs already exists
-        if (mainBlockContent.includes('java.srcDirs')) {
-          // Append to existing java.srcDirs
-          contents = contents.replace(
-            /(sourceSets\s*\{[^}]*main\s*\{[^}]*java\.srcDirs\s*\+=\s*\[)([^\]]*)(\])/s,
-            // biome-ignore lint/complexity/useMaxParams: pre-existing complexity; tracked for refactor
-            (
-              match: string,
-              prefix: string,
-              existingDirs: string,
-              suffix: string
-            ) => {
-              // Check if our path is already in the array
-              if (existingDirs.includes(`'${relativePath}'`)) {
-                return match;
-              }
-              return `${prefix}${existingDirs}, '${relativePath}'${suffix}`;
-            }
-          );
-        } else {
-          // Add java.srcDirs block
-          contents = contents.replace(
-            /(sourceSets\s*\{[^}]*main\s*\{)([^}]*)(\})/s,
-            `$1$2            java.srcDirs += ['${relativePath}']\n            res.srcDirs += ['${relativePath}/res']\n$3`
-          );
-        }
-
-        // Handle res.srcDirs similarly
-        // Add both res/ (for generated resources) and layouts/ (for user-provided layouts)
-        const layoutsPath = `${relativePath}/layouts`;
-        const resPath = `${relativePath}/res`;
-        const layoutsDir = path.join(
-          projectRoot,
-          props.directory,
-          'android/layouts'
-        );
-        const hasUserLayouts = fs.existsSync(layoutsDir);
-
-        if (mainBlockContent.includes('res.srcDirs')) {
-          contents = contents.replace(
-            /(sourceSets\s*\{[^}]*main\s*\{[^}]*res\.srcDirs\s*\+=\s*\[)([^\]]*)(\])/s,
-            // biome-ignore lint/complexity/useMaxParams: pre-existing complexity; tracked for refactor
-            (
-              match: string,
-              prefix: string,
-              existingDirs: string,
-              suffix: string
-              // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
-            ) => {
-              let updated = existingDirs;
-              // Add res/ if not present
-              if (!existingDirs.includes(`'${resPath}'`)) {
-                updated = updated ? `${updated}, '${resPath}'` : `'${resPath}'`;
-              }
-              // Add layouts/ if it exists and not already present
-              if (
-                hasUserLayouts &&
-                !existingDirs.includes(`'${layoutsPath}'`)
-              ) {
-                updated = updated
-                  ? `${updated}, '${layoutsPath}'`
-                  : `'${layoutsPath}'`;
-              }
-              if (updated === existingDirs) {
-                return match;
-              }
-              return `${prefix}${updated}${suffix}`;
-            }
-          );
-        } else if (!mainBlockContent.includes('res.srcDirs')) {
-          // Add res.srcDirs if java.srcDirs was just added
-          const resDirs = hasUserLayouts
-            ? `['${resPath}', '${layoutsPath}']`
-            : `['${resPath}']`;
-          contents = contents.replace(
-            /(java\.srcDirs\s*\+=\s*\[[^\]]*\])/,
-            `$1\n            res.srcDirs += ${resDirs}`
-          );
-        }
-      }
-    }
-  } else {
-    // Create new sourceSets block
-    const androidBlockMatch = contents.match(/(android\s*\{)/);
-    if (androidBlockMatch) {
-      const layoutsDir = path.join(
-        projectRoot,
-        props.directory,
-        'android/layouts'
-      );
-      const resDirs = fs.existsSync(layoutsDir)
-        ? `['${relativePath}/res', '${relativePath}/layouts']`
-        : `['${relativePath}/res']`;
-      contents = contents.replace(
-        /(android\s*\{)/,
-        `$1\n    sourceSets {\n        main {\n            java.srcDirs += ['${relativePath}']\n            res.srcDirs += ${resDirs}\n        }\n    }`
-      );
-    }
-  }
-
-  modResults.contents = contents;
+  const previewImageName =
+    typeof androidConfig.previewImage === 'string'
+      ? androidConfig.previewImage
+      : `${sanitizeResourceName(props.name)}_preview`;
+  return `\n    android:previewImage="@drawable/${previewImageName}"`;
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
-function generateWidgetResources(
-  platformRoot: string,
-  _config: any,
+function getDescriptionAttribute(
+  androidConfig: AndroidTargetConfig,
   props: WidgetProps
-) {
-  const androidConfig = props.android || {};
-  // Generate in target's android/res directory (referenced via sourceSets)
-  const projectRoot = platformRoot.replace(/\/android$/, '');
-  const xmlDir = path.join(projectRoot, props.directory, 'android/res/xml');
-  fs.mkdirSync(xmlDir, { recursive: true });
+): string {
+  if (!androidConfig.description) {
+    return '';
+  }
+  return `\n    android:description="@string/widget_${sanitizeResourceName(props.name)}_description"`;
+}
 
-  // Extract configuration with defaults
+function getResizeAttribute(
+  androidConfig: AndroidTargetConfig,
+  attribute: 'maxResizeWidth' | 'maxResizeHeight'
+): string {
+  const value = androidConfig[attribute];
+  if (!value) {
+    return '';
+  }
+  return `\n    android:${attribute}="${value}"`;
+}
+
+function getCellAttribute(
+  androidConfig: AndroidTargetConfig,
+  attribute: 'targetCellWidth' | 'targetCellHeight'
+): string {
+  const value = androidConfig[attribute];
+  if (!value) {
+    return '';
+  }
+  return `\n    android:${attribute}="${value}"`;
+}
+
+function buildWidgetInfoXml(
+  androidConfig: AndroidTargetConfig,
+  props: WidgetProps
+): string {
   const minWidth = androidConfig.minWidth || '180dp';
   const minHeight = androidConfig.minHeight || '110dp';
   const resizeMode = androidConfig.resizeMode || 'horizontal|vertical';
@@ -627,8 +515,7 @@ function generateWidgetResources(
   const layoutName =
     androidConfig.initialLayout || `widget_${sanitizeResourceName(props.name)}`;
 
-  // Build XML with required attributes
-  let widgetInfo = `<?xml version="1.0" encoding="utf-8"?>
+  const header = `<?xml version="1.0" encoding="utf-8"?>
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="${minWidth}"
     android:minHeight="${minHeight}"
@@ -637,37 +524,25 @@ function generateWidgetResources(
     android:widgetCategory="${widgetCategory}"
     android:initialLayout="@layout/${layoutName}"`;
 
-  // Add preview image if configured
-  // Note: Glance widgets need static preview images since previewLayout doesn't work with Compose
-  if (androidConfig.previewImage) {
-    const previewImageName =
-      typeof androidConfig.previewImage === 'string'
-        ? androidConfig.previewImage
-        : `${sanitizeResourceName(props.name)}_preview`;
-    widgetInfo += `\n    android:previewImage="@drawable/${previewImageName}"`;
-  }
+  const optionalAttributes = [
+    getPreviewImageAttribute(androidConfig, props),
+    getDescriptionAttribute(androidConfig, props),
+    getResizeAttribute(androidConfig, 'maxResizeWidth'),
+    getResizeAttribute(androidConfig, 'maxResizeHeight'),
+    getCellAttribute(androidConfig, 'targetCellWidth'),
+    getCellAttribute(androidConfig, 'targetCellHeight'),
+  ].join('');
 
-  if (androidConfig.description) {
-    widgetInfo += `\n    android:description="@string/widget_${sanitizeResourceName(props.name)}_description"`;
-  }
+  return `${header}${optionalAttributes}>\n</appwidget-provider>`;
+}
 
-  if (androidConfig.maxResizeWidth) {
-    widgetInfo += `\n    android:maxResizeWidth="${androidConfig.maxResizeWidth}"`;
-  }
+function generateWidgetResources(platformRoot: string, props: WidgetProps) {
+  const androidConfig = props.android || {};
+  const projectRoot = platformRoot.replace(/\/android$/, '');
+  const xmlDir = path.join(projectRoot, props.directory, 'android/res/xml');
+  fs.mkdirSync(xmlDir, { recursive: true });
 
-  if (androidConfig.maxResizeHeight) {
-    widgetInfo += `\n    android:maxResizeHeight="${androidConfig.maxResizeHeight}"`;
-  }
-
-  if (androidConfig.targetCellWidth) {
-    widgetInfo += `\n    android:targetCellWidth="${androidConfig.targetCellWidth}"`;
-  }
-
-  if (androidConfig.targetCellHeight) {
-    widgetInfo += `\n    android:targetCellHeight="${androidConfig.targetCellHeight}"`;
-  }
-
-  widgetInfo += '>\n</appwidget-provider>';
+  const widgetInfo = buildWidgetInfoXml(androidConfig, props);
 
   fs.writeFileSync(
     path.join(xmlDir, `widgetprovider_${sanitizeResourceName(props.name)}.xml`),
@@ -675,47 +550,27 @@ function generateWidgetResources(
   );
 }
 
-function generateDefaultLayoutIfNeeded(
-  platformRoot: string,
+function removeConflictingLayout(
+  projectRoot: string,
   props: WidgetProps,
-  androidConfig: AndroidTargetConfig
-) {
-  // Only generate default layout if initialLayout is not specified
-  // (meaning user hasn't provided their own layout)
-  if (androidConfig.initialLayout) {
-    return; // User provided their own layout
-  }
-
-  const projectRoot = platformRoot.replace(/\/android$/, '');
-  const layoutName = `widget_${sanitizeResourceName(props.name)}`;
-
-  // Check if user has provided layout in layouts/ directory
-  const userLayoutsDir = path.join(
+  layoutName: string
+): void {
+  const targetLayoutDir = path.join(
     projectRoot,
     props.directory,
-    'android/layouts/layout'
+    'android/res/layout'
   );
-  const userLayoutPath = path.join(userLayoutsDir, `${layoutName}.xml`);
-
-  // If user has layout in layouts/, don't generate one in res/ and remove any existing one
-  if (fs.existsSync(userLayoutPath)) {
-    // User has layout in layouts/, remove any conflicting file in res/ to avoid duplicates
-    const targetLayoutDir = path.join(
-      projectRoot,
-      props.directory,
-      'android/res/layout'
-    );
-    const conflictingLayoutPath = path.join(
-      targetLayoutDir,
-      `${layoutName}.xml`
-    );
-    if (fs.existsSync(conflictingLayoutPath)) {
-      fs.unlinkSync(conflictingLayoutPath);
-    }
-    return; // User has layout in layouts/, skip generating in res/
+  const conflictingLayoutPath = path.join(targetLayoutDir, `${layoutName}.xml`);
+  if (fs.existsSync(conflictingLayoutPath)) {
+    fs.unlinkSync(conflictingLayoutPath);
   }
+}
 
-  // Generate in target's android/res directory (referenced via sourceSets)
+function writeDefaultLayout(
+  projectRoot: string,
+  props: WidgetProps,
+  layoutName: string
+): void {
   const targetLayoutDir = path.join(
     projectRoot,
     props.directory,
@@ -724,20 +579,66 @@ function generateDefaultLayoutIfNeeded(
   fs.mkdirSync(targetLayoutDir, { recursive: true });
 
   const layoutPath = path.join(targetLayoutDir, `${layoutName}.xml`);
+  if (fs.existsSync(layoutPath)) {
+    return;
+  }
 
-  // Only create if it doesn't exist (user might have their own)
-  if (!fs.existsSync(layoutPath)) {
-    // Minimal layout required by Android for widget initialization
-    // This is just a placeholder - Glance widgets will replace it with Compose UI
-    const layoutContent = `<?xml version="1.0" encoding="utf-8"?>
+  const layoutContent = `<?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/transparent">
 </FrameLayout>`;
 
-    fs.writeFileSync(layoutPath, layoutContent);
+  fs.writeFileSync(layoutPath, layoutContent);
+}
+
+function generateDefaultLayoutIfNeeded(
+  platformRoot: string,
+  props: WidgetProps,
+  androidConfig: AndroidTargetConfig
+) {
+  if (androidConfig.initialLayout) {
+    return;
   }
+
+  const projectRoot = platformRoot.replace(/\/android$/, '');
+  const layoutName = `widget_${sanitizeResourceName(props.name)}`;
+  const userLayoutPath = path.join(
+    projectRoot,
+    props.directory,
+    'android/layouts/layout',
+    `${layoutName}.xml`
+  );
+
+  if (fs.existsSync(userLayoutPath)) {
+    removeConflictingLayout(projectRoot, props, layoutName);
+    return;
+  }
+
+  writeDefaultLayout(projectRoot, props, layoutName);
+}
+
+interface ColorEntryResult {
+  light: string;
+  dark: string;
+}
+
+function buildColorEntry(
+  prefixedName: string,
+  value: string | Color
+): ColorEntryResult | null {
+  if (typeof value === 'string') {
+    const entry = `    <color name="${prefixedName}">${value}</color>`;
+    return { light: entry, dark: entry };
+  }
+  if (value.light || value.dark) {
+    return {
+      light: `    <color name="${prefixedName}">${value.light || '#000000'}</color>`,
+      dark: `    <color name="${prefixedName}">${value.dark || value.light || '#FFFFFF'}</color>`,
+    };
+  }
+  return null;
 }
 
 function generateColorResources(
@@ -745,7 +646,6 @@ function generateColorResources(
   props: WidgetProps,
   colors: Record<string, string | Color>
 ) {
-  // Generate in target's android/res directory (referenced via sourceSets)
   const projectRoot = platformRoot.replace(/\/android$/, '');
   const targetResDir = path.join(projectRoot, props.directory, 'android/res');
   const valuesDir = path.join(targetResDir, 'values');
@@ -758,22 +658,14 @@ function generateColorResources(
   const darkColors: string[] = [];
   const widgetPrefix = `${sanitizeResourceName(props.name)}_`;
 
-  // Prefix color names with widget name to avoid conflicts between widgets
-  // biome-ignore lint/complexity/noForEach: pre-existing; prefer for-of tracked
-  Object.entries(colors).forEach(([name, value]) => {
+  for (const [name, value] of Object.entries(colors)) {
     const prefixedName = `${widgetPrefix}${name}`;
-    if (typeof value === 'string') {
-      lightColors.push(`    <color name="${prefixedName}">${value}</color>`);
-      darkColors.push(`    <color name="${prefixedName}">${value}</color>`);
-    } else if (value.light || value.dark) {
-      lightColors.push(
-        `    <color name="${prefixedName}">${value.light || '#000000'}</color>`
-      );
-      darkColors.push(
-        `    <color name="${prefixedName}">${value.dark || value.light || '#FFFFFF'}</color>`
-      );
+    const entry = buildColorEntry(prefixedName, value);
+    if (entry) {
+      lightColors.push(entry.light);
+      darkColors.push(entry.dark);
     }
-  });
+  }
 
   const lightXml = `<?xml version="1.0" encoding="utf-8"?>
 <resources>

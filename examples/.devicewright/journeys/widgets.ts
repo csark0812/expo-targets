@@ -34,7 +34,6 @@ async function findSpringBoardHost(
     try {
       return await waitForNamed(device, names, { timeoutMs: 2_500 });
     } catch {
-      // Next home page.
       await device.swipe({
         xStart: 360,
         yStart: 400,
@@ -52,8 +51,8 @@ async function findSpringBoardHost(
 }
 
 /**
- * Widgets A: host App-Group seed + SpringBoard Small-widget add.
- * WidgetKit text is often AX-opaque; claim is seeded host + widget tile present.
+ * Widgets A: host App-Group seed (message + family) + SpringBoard Small widget.
+ * Soft constant markers alone are not green — seed-derived asserts required.
  */
 export async function runWidgetsJourney(
   device: DeviceSession,
@@ -67,7 +66,11 @@ export async function runWidgetsJourney(
     steps.push("launch-host");
     await device.launchApp(entry.hostBundleId, { terminateRunning: true });
     await dismissSystemAlerts(device);
-    await waitForId(device, hostReadyTestId(entry.testIds), 20_000);
+    try {
+      await waitForId(device, hostReadyTestId(entry.testIds), 6_000);
+    } catch {
+      await waitForNamed(device, ["ready"], 15_000);
+    }
     steps.push("host-ready");
 
     steps.push("seed-payload");
@@ -87,13 +90,56 @@ export async function runWidgetsJourney(
       await tapProbeHit(device, seed);
     }
     await sleep(500);
+
+    // Require seeded message (App Group → host UI).
     await assertPayloadContains(
       device,
       entry.testIds.lastPayload,
-      entry.payloadMarker,
-      10_000,
+      "Hello from host",
+      8_000,
     );
     steps.push("host-contract-ok");
+
+    // Family must appear in the seeded payload (not only constant intent-note).
+    const familyOk = async () => {
+      try {
+        await assertPayloadContains(
+          device,
+          "text-seed-family",
+          "seed:family:systemSmall",
+          2_000,
+        );
+        return "seed-family";
+      } catch {
+        /* fall through */
+      }
+      try {
+        await assertPayloadContains(
+          device,
+          entry.testIds.lastPayload,
+          "family:systemSmall",
+          2_000,
+        );
+        return "payload";
+      } catch {
+        return null;
+      }
+    };
+    const familyHow = await familyOk();
+    if (!familyHow) {
+      throw new Error(
+        "widgets seed missing family:systemSmall (rebuild host if App.tsx seed changed)",
+      );
+    }
+    steps.push(`marker-ok:family:systemSmall:${familyHow}`);
+
+    await assertPayloadContains(
+      device,
+      "text-widget-families",
+      "systemMedium",
+      4_000,
+    );
+    steps.push("families-medium-ok");
 
     steps.push("springboard-home");
     await device.pressButton({ button: "HOME" });
@@ -103,7 +149,6 @@ export async function runWidgetsJourney(
     let hostNode = await findSpringBoardHost(device, hostNames);
     steps.push("host-icon-ok");
 
-    // Already-placed widget tile: AXValue is usually "Widget".
     const alreadyWidget =
       String(hostNode.value ?? "").toLowerCase() === "widget";
     if (!alreadyWidget) {
@@ -150,7 +195,11 @@ export async function runWidgetsJourney(
         String(n.value ?? "").toLowerCase() === "widget",
     );
     const labels = flattenLabels(await device.accessibilityTree());
-    if (!widgetTile && !labels.some((l) => l.includes(entry.payloadMarker))) {
+    // Prefer tile AX; also accept seeded message if WidgetKit exposes it.
+    if (
+      !widgetTile &&
+      !labels.some((l) => l.includes("Hello from host"))
+    ) {
       throw new Error(
         `Hello Widget tile missing after add; labels=${labels.slice(0, 60).join(", ")}`,
       );

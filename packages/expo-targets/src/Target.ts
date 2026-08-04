@@ -50,6 +50,10 @@ export interface MessagesExtensionTarget
   sendMessage: (layout: MessageLayout) => void;
   sendUpdate: (layout: MessageLayout, sessionId: string) => void;
   createSession: () => string | null;
+  insertAttachment: (payload?: {
+    filename?: string;
+    contents?: string;
+  }) => Promise<boolean>;
   getConversationInfo: () => ConversationInfo | null;
   addEventListener: (
     eventName: 'onPresentationStyleChange',
@@ -75,6 +79,13 @@ export type Target =
   | MessagesExtensionTarget
   | NonExtensionTarget
   | SafariExtensionTarget;
+
+function getProcessEnv(): Record<string, string | undefined> {
+  const proc = (
+    globalThis as { process?: { env?: Record<string, string | undefined> } }
+  ).process;
+  return proc?.env ?? {};
+}
 
 function getTargetConfig(targetName: string): TargetConfig | null {
   const expoConfig = Constants.expoConfig;
@@ -133,6 +144,150 @@ function isWebExtensionType(type: ExtensionType): boolean {
   return WEB_EXTENSION_TYPES.has(type);
 }
 
+function createBaseTarget(
+  targetName: string,
+  config: TargetConfig,
+  appGroup: string
+): BaseTarget {
+  const storage = new AppGroupStorage(appGroup, targetName);
+  return {
+    name: targetName,
+    type: config.type,
+    appGroup,
+    storage,
+    config,
+    setData(data: Record<string, any>) {
+      storage.setData(data);
+    },
+    getData<T extends Record<string, any>>(): T {
+      return storage.getData<T>();
+    },
+    refresh() {
+      storage.refresh(targetName);
+    },
+  };
+}
+
+function createMessagesTarget(
+  baseTarget: BaseTarget,
+  extension: Extension,
+  messages: Messages
+): MessagesExtensionTarget {
+  return {
+    ...baseTarget,
+    type: 'messages',
+    openHostApp: (path?: string) => extension.openHostApp(path),
+    getSharedData: () => extension.getSharedData(),
+    getPresentationStyle: () => messages.getPresentationStyle(),
+    requestPresentationStyle: (style: PresentationStyle) =>
+      messages.requestPresentationStyle(style),
+    sendMessage: (layout: MessageLayout) => messages.sendMessage(layout),
+    sendUpdate: (layout: MessageLayout, sessionId: string) =>
+      messages.sendUpdate(layout, sessionId),
+    createSession: () => messages.createSession(),
+    insertAttachment: (payload) => messages.insertAttachment(payload),
+    getConversationInfo: () => messages.getConversationInfo(),
+    addEventListener: (
+      eventName: 'onPresentationStyleChange',
+      listener: (style: PresentationStyle) => void
+    ) => messages.addEventListener(eventName, listener),
+  };
+}
+
+function createExtensionTarget(
+  baseTarget: BaseTarget,
+  type: ReactNativeCompatibleType,
+  extension: Extension
+): ExtensionTarget {
+  return {
+    ...baseTarget,
+    type,
+    close: () => extension.close(),
+    openHostApp: (path?: string) => extension.openHostApp(path),
+    getSharedData: () => extension.getSharedData(),
+  };
+}
+
+function buildTargetFromConfig(
+  baseTarget: BaseTarget,
+  config: TargetConfig
+): Target {
+  if (!isExtensionType(config.type)) {
+    const nonExtensionTarget: NonExtensionTarget = {
+      ...baseTarget,
+      close: undefined,
+      openHostApp: undefined,
+      getSharedData: undefined,
+    };
+    return nonExtensionTarget;
+  }
+
+  const extension = new Extension();
+  if (config.type === 'messages') {
+    return createMessagesTarget(baseTarget, extension, new Messages());
+  }
+
+  return createExtensionTarget(baseTarget, config.type, extension);
+}
+
+function wrapWithDevToolsIfNeeded(
+  component: React.ComponentType<any>
+): React.ComponentType<any> {
+  if (getProcessEnv().NODE_ENV === 'production') {
+    return component;
+  }
+
+  try {
+    const { withDevTools } = require('expo/src/launch/withDevTools');
+    return withDevTools(component);
+  } catch {
+    return component;
+  }
+}
+
+function registerTargetComponent(
+  targetName: string,
+  componentFunc: React.ComponentType<any>,
+  target: Target
+): void {
+  const config = target.config;
+  if (!('entry' in config && config.entry)) {
+    throw new Error(
+      `[expo-targets] createTarget("${targetName}", Component) requires an "entry" field in ` +
+        'expo-target.config pointing at the RN entry file (relative to project root). ' +
+        'See docs/react-native-extensions.md'
+    );
+  }
+
+  const WrappedComponent = (props: any) => {
+    const React = require('react');
+    return React.createElement(componentFunc, { ...props, target });
+  };
+
+  const qualifiedComponent = wrapWithDevToolsIfNeeded(WrappedComponent);
+  AppRegistry.registerComponent(targetName, () => qualifiedComponent);
+}
+
+function tryCreateSafariTargetFromConfig(
+  targetName: string,
+  config: TargetConfig,
+  componentFunc?: React.ComponentType<any>
+): SafariExtensionTarget | null {
+  if (
+    !(
+      isWebExtensionType(config.type) &&
+      componentFunc &&
+      'entry' in config &&
+      config.entry
+    )
+  ) {
+    return null;
+  }
+
+  bootstrapSafariExtension(targetName, componentFunc);
+  return createSafariTargetFromConfig(targetName, config);
+}
+
 // Function overloads for better type inference
 export function createTarget<_T extends 'messages'>(
   targetName: string,
@@ -158,13 +313,10 @@ export function createTarget(
   targetName: string,
   componentFunc?: React.ComponentType<any>
 ): Target;
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
 export function createTarget<_T extends ExtensionType = ExtensionType>(
   targetName: string,
   componentFunc?: React.ComponentType<any>
 ): Target {
-  // Safari web extension: runs in browser context, use web rendering
   if (isSafariExtension() && componentFunc) {
     return createSafariTarget(targetName, componentFunc);
   }
@@ -176,17 +328,13 @@ export function createTarget<_T extends ExtensionType = ExtensionType>(
     );
   }
 
-  // Safari extension with entry but running in native context (config lookup)
-  // This shouldn't normally happen but handle gracefully
-  if (
-    isWebExtensionType(config.type) &&
-    componentFunc &&
-    'entry' in config &&
-    config.entry
-  ) {
-    // Safari extensions with entry should bootstrap for web
-    bootstrapSafariExtension(targetName, componentFunc);
-    return createSafariTargetFromConfig(targetName, config);
+  const safariTarget = tryCreateSafariTargetFromConfig(
+    targetName,
+    config,
+    componentFunc
+  );
+  if (safariTarget) {
+    return safariTarget;
   }
 
   const appGroup = getTargetAppGroup(targetName, config);
@@ -196,159 +344,18 @@ export function createTarget<_T extends ExtensionType = ExtensionType>(
     );
   }
 
-  // Build target object first so we can pass it to the component
-  const storage = new AppGroupStorage(appGroup, targetName);
-  const baseTarget: BaseTarget = {
-    name: targetName,
-    type: config.type,
-    appGroup,
-    storage,
-    config,
-    setData(data: Record<string, any>) {
-      storage.setData(data);
-    },
-    getData<T extends Record<string, any>>(): T {
-      return storage.getData<T>();
-    },
-    refresh() {
-      storage.refresh(targetName);
-    },
-  };
+  const baseTarget = createBaseTarget(targetName, config, appGroup);
+  const target = buildTargetFromConfig(baseTarget, config);
 
-  let target: Target;
-
-  if (isExtensionType(config.type)) {
-    const extension = new Extension();
-
-    if (config.type === 'messages') {
-      const messages = new Messages();
-      const messagesTarget: MessagesExtensionTarget = {
-        ...baseTarget,
-        type: 'messages',
-        openHostApp: (path?: string) => extension.openHostApp(path),
-        getSharedData: () => extension.getSharedData(),
-        getPresentationStyle: () => messages.getPresentationStyle(),
-        requestPresentationStyle: (style: PresentationStyle) =>
-          messages.requestPresentationStyle(style),
-        sendMessage: (layout: MessageLayout) => messages.sendMessage(layout),
-        sendUpdate: (layout: MessageLayout, sessionId: string) =>
-          messages.sendUpdate(layout, sessionId),
-        createSession: () => messages.createSession(),
-        getConversationInfo: () => messages.getConversationInfo(),
-        addEventListener: (
-          eventName: 'onPresentationStyleChange',
-          listener: (style: PresentationStyle) => void
-        ) => messages.addEventListener(eventName, listener),
-      };
-      target = messagesTarget as any;
-    } else {
-      const extensionTarget: ExtensionTarget = {
-        ...baseTarget,
-        type: config.type as ReactNativeCompatibleType,
-        close: () => extension.close(),
-        openHostApp: (path?: string) => extension.openHostApp(path),
-        getSharedData: () => extension.getSharedData(),
-      };
-      target = extensionTarget as any;
-    }
-  } else {
-    const nonExtensionTarget: NonExtensionTarget = {
-      ...baseTarget,
-      close: undefined,
-      openHostApp: undefined,
-      getSharedData: undefined,
-    };
-    target = nonExtensionTarget as any;
-  }
-
-  // Register component with target injected as prop
   if (componentFunc) {
-    if (!('entry' in config && config.entry)) {
-      throw new Error(
-        `[expo-targets] createTarget("${targetName}", Component) requires an "entry" field in ` +
-          'expo-target.config pointing at the RN entry file (relative to project root). ' +
-          'See docs/react-native-extensions.md'
-      );
-    }
-
-    const WrappedComponent = (props: any) => {
-      const React = require('react');
-      return React.createElement(componentFunc, { ...props, target });
-    };
-
-    let qualifiedComponent = WrappedComponent;
-
-    // Avoid `node:process` so Metro/Release host bundles resolve in RN.
-    // biome-ignore lint/correctness/noProcessGlobal: RN host env; node:process breaks Metro
-    if (globalThis.process?.env?.NODE_ENV !== 'production') {
-      try {
-        const { withDevTools } = require('expo/src/launch/withDevTools');
-        qualifiedComponent = withDevTools(WrappedComponent);
-      } catch {}
-    }
-
-    AppRegistry.registerComponent(targetName, () => qualifiedComponent);
+    registerTargetComponent(targetName, componentFunc, target);
   }
 
   return target;
 }
 
-/**
- * Create a Safari extension target when running in web context
- * This is called when isSafariExtension() returns true
- */
-function createSafariTarget(
-  targetName: string,
-  componentFunc: React.ComponentType<any>
-): SafariExtensionTarget {
-  // Bootstrap the React component for web rendering
-  bootstrapSafariExtension(targetName, componentFunc);
-
-  // Create a web-based storage adapter using browser.storage
-  const webStorage = {
-    setData: async (data: Record<string, any>) => {
-      try {
-        const api = (window as any).browser || (window as any).chrome;
-        if (api?.storage?.local?.set) {
-          await api.storage.local.set({ [targetName]: data });
-        }
-      } catch {}
-    },
-    getData: <T extends Record<string, any>>(): T => {
-      // Sync get isn't possible with browser.storage, return empty
-      // Use useBrowserStorage hook for async access
-      return {} as T;
-    },
-    refresh: () => {
-      // No-op for web storage
-    },
-  };
-
-  const safariTarget: SafariExtensionTarget = {
-    name: targetName,
-    type: 'safari',
-    appGroup: '', // Not applicable for Safari extensions
-    storage: webStorage as any, // Web storage adapter
-    config: { type: 'safari', name: targetName, platforms: ['ios'] },
-    setData: webStorage.setData as any,
-    getData: webStorage.getData,
-    refresh: webStorage.refresh,
-    closePopup,
-    openTab,
-    copyToClipboard,
-  };
-
-  return safariTarget;
-}
-
-/**
- * Create a Safari target from config (fallback when config is available)
- */
-function createSafariTargetFromConfig(
-  targetName: string,
-  config: TargetConfig
-): SafariExtensionTarget {
-  const webStorage = {
+function createWebStorage(targetName: string) {
+  return {
     setData: async (data: Record<string, any>) => {
       try {
         const api = (window as any).browser || (window as any).chrome;
@@ -360,6 +367,43 @@ function createSafariTargetFromConfig(
     getData: <T extends Record<string, any>>(): T => ({}) as T,
     refresh: () => {},
   };
+}
+
+/**
+ * Create a Safari extension target when running in web context
+ * This is called when isSafariExtension() returns true
+ */
+function createSafariTarget(
+  targetName: string,
+  componentFunc: React.ComponentType<any>
+): SafariExtensionTarget {
+  bootstrapSafariExtension(targetName, componentFunc);
+
+  const webStorage = createWebStorage(targetName);
+
+  return {
+    name: targetName,
+    type: 'safari',
+    appGroup: '',
+    storage: webStorage as any,
+    config: { type: 'safari', name: targetName, platforms: ['ios'] },
+    setData: webStorage.setData as any,
+    getData: webStorage.getData,
+    refresh: webStorage.refresh,
+    closePopup,
+    openTab,
+    copyToClipboard,
+  };
+}
+
+/**
+ * Create a Safari target from config (fallback when config is available)
+ */
+function createSafariTargetFromConfig(
+  targetName: string,
+  config: TargetConfig
+): SafariExtensionTarget {
+  const webStorage = createWebStorage(targetName);
 
   return {
     name: targetName,

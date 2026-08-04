@@ -15,14 +15,34 @@ export type ClaimsEntry = {
 
 export const OS_LIMIT_CLAIMS: readonly ClaimsEntry[] = [
   {
-    id: "notification-content",
-    reason:
-      "Simulator NCE RN rich UI expand — pluginkit + category delivered; marker required for green",
-  },
-  {
     id: "live-activity",
     reason:
-      "Lock Screen / Dynamic Island Live Activity chrome varies by Simulator model; host ActivityKit start + WidgetKit family is the floor",
+      "Lock Screen chrome may be idb-opaque after Always Allow; Watch Smart Stack only when pair is connected (not merely booted). DI / ActivityKit push / StandBy remain non-Sim-faithful. Host start+update+end alone is not green.",
+  },
+  {
+    id: "intent",
+    reason:
+      "Siri Intent invoke has no reliable Simulator AX path; Settings Apps host registration + pluginkit are the floor",
+  },
+  {
+    id: "intent-ui",
+    reason:
+      "Intent UI (Siri presentation) is not Sim-drivable via AX; pluginkit intents-ui-service is the floor",
+  },
+  {
+    id: "file-provider-ui",
+    reason:
+      "File Provider Actions UI has no reliable Simulator entry surface beyond pluginkit fileprovider-actionsui",
+  },
+  {
+    id: "broadcast-upload",
+    reason:
+      "ReplayKit broadcast upload picker is not Sim-drivable for third-party upload extensions beyond pluginkit",
+  },
+  {
+    id: "broadcast-setup-ui",
+    reason:
+      "ReplayKit broadcast setup UI is not Sim-drivable beyond pluginkit broadcast-services-setupui",
   },
   {
     id: "wallet",
@@ -64,9 +84,14 @@ export const OS_LIMIT_CLAIMS: readonly ClaimsEntry[] = [
   { id: "location-push", reason: "Location push special entitlement" },
   {
     id: "watch",
-    reason: "Requires paired watchOS simulator or device for full DoD",
+    reason:
+      "watchOS companion missing from Watch after honest pair+install attempt (iOS Simulator cannot embed watch binaries; Release-watchsimulator product must be simctl-installed onto the watch UDID)",
   },
-  { id: "watch-widget", reason: "Requires paired watchOS simulator or device" },
+  {
+    id: "watch-widget",
+    reason:
+      "Paired watchOS Sim boots/connects, but watch-widget nest (companion PlugIns + ET Watch Widget displayName) or companion AX missing after honest pair+install",
+  },
 ] as const;
 
 const BY_ID = new Map(OS_LIMIT_CLAIMS.map((c) => [c.id, c]));

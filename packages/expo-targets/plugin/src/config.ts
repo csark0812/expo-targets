@@ -137,7 +137,7 @@ export const TYPE_MINIMUM_DEPLOYMENT_TARGETS: Record<ExtensionType, string> = {
   'app-intent': '16.0',
   'device-activity-monitor': '15.0',
   matter: '16.1',
-  watch: '2.0',
+  /** watchOS deployment floor (not iOS). */ watch: '10.0',
   'content-blocker': '11.0',
   keyboard: '8.0',
   'photo-editing': '8.0',
@@ -161,7 +161,7 @@ export const TYPE_MINIMUM_DEPLOYMENT_TARGETS: Record<ExtensionType, string> = {
   'print-service': '14.0',
   'smart-card': '10.0',
   'virtual-conference': '15.0',
-  'watch-widget': '9.0',
+  'watch-widget': '10.0',
 };
 
 export const TYPE_BUNDLE_IDENTIFIER_SUFFIXES: Record<ExtensionType, string> = {

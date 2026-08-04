@@ -4,14 +4,17 @@
  * Apple capability: `com.apple.usernotifications.service` appex with a real
  * `UNNotificationServiceExtension` that mutates titles (` [expo-targets]`).
  *
- * GREEN = pluginkit lists our service appex. Mutable-content → App Group /
- * lock-screen mutation is best-effort (Simulator often skips the NSE process
- * even when the appex is installed).
+ * GREEN = lock-screen AX + App Group (both), each matching this run’s title
+ * nonce + `[expo-targets]`. Phase 1 full-demo bar — dual-AND; App Group alone
+ * is not green. Lock-screen AX miss → red even if App Group hits.
+ *
+ * `device.pushNotification` / simctl push never launches NSE (Apple 55822721).
+ * Remote Sandbox push via Devicewright `pushRemoteNotification` (needs APNS_*).
  */
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import type { DeviceSession } from "@csark0812/devicewright";
+import { ios, type DeviceSession } from "@csark0812/devicewright";
 import { TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
@@ -88,6 +91,44 @@ function readNseMutationFile(udid: string, bundleId: string): string | null {
   }
 }
 
+function extractDevicePushToken(labels: string[]): string | null {
+  for (const label of labels) {
+    const hex = label.replace(/\s+/g, "");
+    if (/^[0-9a-fA-F]{64,}$/.test(hex)) return hex;
+  }
+  return null;
+}
+
+async function waitForDevicePushToken(
+  device: DeviceSession,
+  timeoutMs = 30_000,
+): Promise<string> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const labels = flattenLabels(await device.accessibilityTree());
+    const err = labels.find((l) => /^error:/i.test(l));
+    if (err) {
+      throw new Error(`host device push token failed: ${err}`);
+    }
+    const token = extractDevicePushToken(labels);
+    if (token) return token;
+    await sleep(500);
+  }
+  throw new Error(
+    "host never exposed an APNs device token (aps-environment / Push capability?)",
+  );
+}
+
+function titleNonce(): string {
+  return Math.floor(Math.random() * 0xffff)
+    .toString(16)
+    .padStart(4, "0");
+}
+
+function matchesNonceAndMarker(text: string, nonce: string): boolean {
+  return text.includes(nonce) && text.includes(MUTATED_MARKER);
+}
+
 export async function runNotificationServiceJourney(
   device: DeviceSession,
   id: "notification-service" = "notification-service",
@@ -98,6 +139,39 @@ export async function runNotificationServiceJourney(
 
   try {
     if (!entry) throw new Error(`notification journey: unknown id ${id}`);
+
+    let creds: ReturnType<typeof ios.readApnsCredentialsFromEnv>;
+    try {
+      creds = ios.readApnsCredentialsFromEnv();
+    } catch (e) {
+      return {
+        id,
+        path: pathStr,
+        phase: 4,
+        ok: false,
+        status: "operator",
+        steps: ["apns-credentials-unreadable"],
+        failureKind: "operator",
+        error:
+          e instanceof Error
+            ? e.message
+            : "APNS AuthKey unreadable — set APNS_AUTH_KEY_PATH",
+      };
+    }
+    if (!creds) {
+      return {
+        id,
+        path: pathStr,
+        phase: 4,
+        ok: false,
+        status: "operator",
+        steps: ["apns-credentials-missing"],
+        failureKind: "operator",
+        error:
+          "NSE green requires APNs Sandbox remote push. Set APNS_AUTH_KEY_PATH, APNS_KEY_ID, APNS_TEAM_ID (simctl/local push never launches NSE).",
+      };
+    }
+    steps.push("apns-credentials-present");
 
     await dismissSystemAlerts(device);
     await device.launchApp(entry.hostBundleId, { terminateRunning: true });
@@ -121,12 +195,50 @@ export async function runNotificationServiceJourney(
     }
     steps.push("pluginkit-notification-service");
 
-    await device.pushNotification({
+    const deviceToken = await waitForDevicePushToken(device);
+    steps.push(`device-push-token:${deviceToken.slice(0, 8)}…`);
+
+    // Clear prior mutation marker if present.
+    const group = spawnSync(
+      "xcrun",
+      [
+        "simctl",
+        "get_app_container",
+        device.deviceId,
+        entry.hostBundleId,
+        APP_GROUP,
+      ],
+      { encoding: "utf8", env: process.env },
+    );
+    if (group.status === 0) {
+      const marker = path.join(
+        (group.stdout ?? "").trim(),
+        "nse-last-title.txt",
+      );
+      try {
+        fs.unlinkSync(marker);
+      } catch {
+        /* ignore */
+      }
+    }
+    steps.push("appgroup-marker-cleared");
+
+    const nonce = titleNonce();
+    const title = `ET NSE ${nonce}`;
+    steps.push(`title-nonce:${nonce}`);
+
+    await device.pressButton({ button: "LOCK" });
+    await sleep(1_800);
+    steps.push("lock-before-push");
+
+    const send = await device.pushRemoteNotification({
+      deviceToken,
       bundleId: entry.hostBundleId,
+      credentials: creds,
       payload: {
         aps: {
           alert: {
-            title: "ET NSE",
+            title,
             body: "pre-mutation body",
           },
           "mutable-content": 1,
@@ -134,42 +246,86 @@ export async function runNotificationServiceJourney(
         },
       },
     });
-    steps.push("push-mutable-content");
-    await sleep(2_500);
-
-    // Retry mutation read — Simulator NSE launch is flaky.
-    let title: string | null = null;
-    for (let i = 0; i < 10; i++) {
-      title = readNseMutationFile(device.deviceId, entry.hostBundleId);
-      if (title?.includes(MUTATED_MARKER)) break;
-      await sleep(600);
+    steps.push(`apns-remote-send:${send.status}`);
+    if (send.status !== 200) {
+      // Credentials were present — HTTP reject is product/red, not operator.
+      return {
+        id,
+        path: pathStr,
+        phase: 4,
+        ok: false,
+        status: "red",
+        steps,
+        failureKind: "product",
+        error: `APNs rejected push status=${send.status} body=${send.body}`,
+      };
     }
-    if (title?.includes(MUTATED_MARKER)) {
-      steps.push("nse-mutated-title-appgroup");
-    } else {
-      await device.pressButton({ button: "LOCK" });
-      await sleep(600);
-      await tapLabelInTree(device, ["Show Notifications"], { exactOnly: true });
-      await sleep(600);
+
+    await tapLabelInTree(device, ["Show Notifications"], { exactOnly: true });
+    await sleep(800);
+    steps.push("show-notifications");
+
+    let lockHit = false;
+    for (let i = 0; i < 16; i++) {
       const labels = flattenLabels(await device.accessibilityTree());
-      if (
-        labels.some(
-          (l) => l.includes(MUTATED_MARKER) || /ET NSE.*expo-targets/i.test(l),
-        )
-      ) {
-        steps.push("nse-mutated-title-lockscreen");
-      } else {
-        // Simulator frequently skips launching the NSE process; appex presence
-        // + real UNNotificationServiceExtension principal is the floor.
-        steps.push("nse-mutation-os-skipped");
+      if (labels.some((l) => matchesNonceAndMarker(l, nonce))) {
+        lockHit = true;
+        break;
       }
+      await sleep(500);
     }
+    if (!lockHit) {
+      try {
+        await device.pressButton({ button: "HOME" });
+      } catch {
+        /* ignore */
+      }
+      return {
+        id,
+        path: pathStr,
+        phase: 4,
+        ok: false,
+        status: "red",
+        steps: [...steps, "nse-mutated-title-lockscreen-miss"],
+        failureKind: "product",
+        error: `Lock-screen AX missing mutated title nonce=${nonce} + ${MUTATED_MARKER} (App Group alone is not green)`,
+      };
+    }
+    steps.push("nse-mutated-title-lockscreen");
 
+    let appGroupTitle: string | null = null;
+    for (let i = 0; i < 20; i++) {
+      appGroupTitle = readNseMutationFile(device.deviceId, entry.hostBundleId);
+      if (appGroupTitle && matchesNonceAndMarker(appGroupTitle, nonce)) break;
+      await sleep(500);
+    }
+    if (!appGroupTitle || !matchesNonceAndMarker(appGroupTitle, nonce)) {
+      try {
+        await device.pressButton({ button: "HOME" });
+      } catch {
+        /* ignore */
+      }
+      return {
+        id,
+        path: pathStr,
+        phase: 4,
+        ok: false,
+        status: "red",
+        steps: [...steps, "nse-mutated-title-appgroup-miss"],
+        failureKind: "product",
+        error: `App Group nse-last-title missing nonce=${nonce} + ${MUTATED_MARKER} (lock AX alone is not green)`,
+      };
+    }
+    steps.push("nse-mutated-title-appgroup");
+
+    // Optional glance hold so operators can see the mutated lock title.
+    await sleep(1_500);
     try {
       await device.pressButton({ button: "HOME" });
     } catch {
       /* ignore */
     }
+    steps.push("home-after-demo");
 
     return {
       id,
@@ -186,9 +342,12 @@ export async function runNotificationServiceJourney(
       /* ignore */
     }
     const msg = String(e);
-    const failureKind = /not installed|Unable to find|Launch failed/i.test(msg)
-      ? "operator"
-      : "product";
+    const failureKind =
+      /not installed|Unable to find|Launch failed|APNS_|credentials|AuthKey|unreadable/i.test(
+        msg,
+      )
+        ? "operator"
+        : "product";
     return {
       id,
       path: pathStr,

@@ -70,6 +70,45 @@ function validateMessagePayloadProviders(targets: EvaluatedTarget[]): void {
 }
 
 /**
+ * Watch WidgetKit must nest under a watchOS companion in the same app.
+ */
+function validateWatchWidgetCompanion(targets: EvaluatedTarget[]): void {
+  const iosTargets = targets.filter(
+    ({ config }) => config.platforms?.includes('ios') && config.type
+  );
+  const hasWatchWidget = iosTargets.some(
+    ({ config }) => config.type === 'watch-widget'
+  );
+  const hasWatch = iosTargets.some(({ config }) => config.type === 'watch');
+  if (hasWatchWidget && !hasWatch) {
+    throw new Error(
+      'watch-widget requires a type: watch companion in the same app ' +
+        '(watchOS WidgetKit must nest under a Watch .app, not the iOS host). ' +
+        'Add targets/watch/ next to targets/watch-widget/.'
+    );
+  }
+}
+
+/** Ensure watch companions are applied before nested watch-widget extensions.
+ * Expo `withXcodeProject` mods are LIFO (last registered runs first), so we
+ * register watch-widget before watch.
+ */
+function sortTargetsForApply(targets: EvaluatedTarget[]): EvaluatedTarget[] {
+  const registerOrder: Record<string, number> = {
+    'watch-widget': 0,
+    watch: 1,
+  };
+  return [...targets].sort((a, b) => {
+    const ao = registerOrder[a.config.type] ?? 50;
+    const bo = registerOrder[b.config.type] ?? 50;
+    if (ao !== bo) {
+      return ao - bo;
+    }
+    return a.targetDirName.localeCompare(b.targetDirName);
+  });
+}
+
+/**
  * App Groups are inherited from the main app when a target does not name one.
  */
 function resolveAppGroup(
@@ -277,8 +316,11 @@ export const withTargetsDir: ConfigPlugin<{
     logger.logSparse(true, `Found ${targetConfigFiles.length} target(s)`);
   }
 
-  const targets = evaluateTargetConfigs(targetConfigFiles, config);
+  const targets = sortTargetsForApply(
+    evaluateTargetConfigs(targetConfigFiles, config)
+  );
   validateMessagePayloadProviders(targets);
+  validateWatchWidgetCompanion(targets);
 
   // Collect target configs for runtime access
   const runtimeConfigs: any[] = [];

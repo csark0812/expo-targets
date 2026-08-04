@@ -11,12 +11,14 @@
       "bundleIdentifier": "com.expotargets.example.notification-service",
       "deploymentTarget": "16.4",
       "entitlements": {
+        "aps-environment": "development",
         "com.apple.security.application-groups": [
           "group.com.expotargets.example.notification-service"
         ]
       },
       "infoPlist": {
-        "CFBundleDisplayName": "ET NSE"
+        "CFBundleDisplayName": "ET NSE",
+        "UIBackgroundModes": ["remote-notification"]
       }
     },
     "plugins": [

@@ -1,6 +1,11 @@
 /**
  * Live-touchpoint catalog for REQUIRED matrix rows.
  * Touchpoints must exercise load/invoke, not mere PlugIns file presence.
+ *
+ * notification-service Phase 1 full-demo bar: green = lock-screen AX + App
+ * Group (both), matching this run’s title nonce + `[expo-targets]`. Host /
+ * pluginkit / App Group alone never exits green. Phase 2: keyboard / LA /
+ * stickers / watch also require visible OS demos (CLAIMS when Sim ceiling).
  */
 
 export type TouchpointDef = {
@@ -19,56 +24,64 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
   {
     id: "share",
     tranche: "V1",
-    touchpoint: "Share sheet → Save → host payload marker",
+    touchpoint:
+      "Share sheet text Save → host marker; image share → kind:image marker",
     status: "concrete",
   },
   {
     id: "action",
     tranche: "V1",
-    touchpoint: "Share sheet → Process → host payload marker",
+    touchpoint:
+      "Share sheet image Process → grayscale + kind:image host marker",
     status: "concrete",
   },
   {
     id: "native-share",
     tranche: "V1",
-    touchpoint: "Share sheet → Save to App → host payload marker",
+    touchpoint:
+      "Share sheet text Save to App → host marker; image → type:image",
     status: "concrete",
   },
   {
     id: "native-action",
     tranche: "V1",
-    touchpoint: "Share sheet → Process Image → host payload marker",
+    touchpoint:
+      "Share sheet Process Image → Original + kind:image + returnedItems",
     status: "concrete",
   },
   {
     id: "messages",
     tranche: "V1",
-    touchpoint: "Messages extension open + host sync marker",
+    touchpoint:
+      "Messages drawer → Expand/Compact + session + attachment + Send template → host payload (session+attachment required)",
     status: "concrete",
   },
   {
     id: "stickers",
     tranche: "V1",
-    touchpoint: "Sticker pack catalog visible on host",
+    touchpoint:
+      "Pack catalog + Stickers browser + Fun Stickers + Sticker:*.png draft (attached to outgoing message) + Send",
     status: "concrete",
   },
   {
     id: "clip",
     tranche: "V1",
-    touchpoint: "App Clip host contract + clip launch path",
+    touchpoint:
+      "App Clip Frameworks+jsbundle + launchApp(_XCAppClipURL) + checkout App Group",
     status: "concrete",
   },
   {
     id: "widgets",
     tranche: "V1/T13",
-    touchpoint: "WidgetKit spine host + widget tile present",
+    touchpoint:
+      "Seed Hello from host + family:systemSmall (seed-derived) + SpringBoard Small widget tile",
     status: "concrete",
   },
   {
     id: "live-activity",
     tranche: "V1/T13",
     touchpoint:
-      "Trick host starts ActivityKit Live Activity; Lock Screen / DI when Sim allows, else WidgetKit family pluginkit",
+      "Trick host start+update+end + Lock chrome (ET Trick Live / Always Allow); Watch Smart Stack (CarouselLiveActivitiesAlertUI / ET Trick Live) when pair connected; else CLAIMS",
     status: "concrete",
   },
 
@@ -78,7 +91,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     type: "notification-service",
     tranche: "T1",
     touchpoint:
-      "pluginkit lists usernotifications.service appex (real UNNotificationServiceExtension; Simulator often skips mutation process)",
+      "DW pushRemoteNotification (nonce title) → lock-screen AX + App Group both show nonce+[expo-targets] (simctl never launches NSE; needs APNS_* AuthKey)",
     status: "concrete",
   },
   {
@@ -86,7 +99,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     type: "notification-content",
     tranche: "T1",
     touchpoint:
-      "category push + expanded RN content UI marker (ET NCE Content); native keeps pluginkit fallback",
+      "category push + expand → ET NCE Content custom UI marker (required green)",
     status: "concrete",
   },
   {
@@ -94,7 +107,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     type: "notification-content",
     tranche: "T1",
     touchpoint:
-      "category push delivered + content-extension appex in pluginkit (native; rich UI best-effort)",
+      "category push + expand → ET NCE Content custom UI marker (required green)",
     status: "concrete",
   },
 
@@ -120,7 +133,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     type: "clip",
     tranche: "T2",
     touchpoint:
-      "Native clip host contract + clip launch path (REQUIRED promote)",
+      "Native clip Frameworks+jsbundle + launchApp(_XCAppClipURL) + checkout",
     status: "concrete",
   },
 
@@ -130,7 +143,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     type: "safari",
     tranche: "T3",
     touchpoint:
-      "Settings Apps → Safari → Extensions lists ET Safari Target → Allow Extension → Safari example.com",
+      "Allow On + example.com + Safari Page Menu opens ET Safari Target popup + native App Group",
     status: "concrete",
   },
   {
@@ -138,7 +151,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     type: "safari",
     tranche: "T3",
     touchpoint:
-      "Settings Apps → Safari → Extensions lists native appex → Allow Extension → Safari surface",
+      "Allow On + example.com + Safari Page Menu opens extension popup + native App Group",
     status: "concrete",
   },
   {
@@ -146,7 +159,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     type: "content-blocker",
     tranche: "T3",
     touchpoint:
-      "Settings Safari Content Blockers enable + Safari ads.example.com block attempt",
+      "Host rules:4 + reload + Allow Extension On + Safari local fixture css-display-none (.et-blocked-ad)",
     status: "concrete",
   },
 
@@ -155,21 +168,21 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     id: "app-intent",
     tranche: "T4",
     touchpoint:
-      "pluginkit lists appintents-extension appex (+ Shortcuts best-effort)",
+      "pluginkit appintents-extension + Shortcuts lists ET Greet",
     status: "concrete",
   },
   {
     id: "intent",
     tranche: "T4",
     touchpoint:
-      "Settings Apps host registration (IntentsSupported is build-time; Siri invoke not attempted)",
+      "Settings Apps host registration; Siri invoke os-limit (CLAIMS)",
     status: "concrete",
   },
   {
     id: "intent-ui",
     tranche: "T4",
     touchpoint:
-      "pluginkit lists intents-ui-service appex (IntentViewController principal)",
+      "pluginkit intents-ui-service + os-limit (Siri presentation CLAIMS)",
     status: "concrete",
   },
   {
@@ -196,20 +209,21 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     id: "photo-editing",
     tranche: "T6",
     touchpoint:
-      "Photos Edit lists ET PhotoEdit, or pluginkit lists photo-editing appex (real PHContentEditingController)",
+      "Photos Edit → More → Extensions → ET PhotoEdit → Done → App Group photo-edit done",
     status: "concrete",
   },
   {
     id: "file-provider",
     tranche: "T6",
     touchpoint:
-      "pluginkit lists fileprovider-nonui appex (Files Browse domain best-effort)",
+      "Host registers NSFileProviderDomain + Files Browse lists ET FileProv (pluginkit alone insufficient)",
     status: "concrete",
   },
   {
     id: "file-provider-ui",
     tranche: "T6",
-    touchpoint: "pluginkit lists fileprovider-actionsui appex",
+    touchpoint:
+      "pluginkit fileprovider-actionsui + os-limit (CLAIMS)",
     status: "concrete",
   },
   {
@@ -247,19 +261,21 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     id: "keyboard",
     tranche: "T7",
     touchpoint:
-      "Settings Keyboard lists ET Keyboard Target + enable attempt (ET key principal)",
+      "Settings General→Keyboard + Full Access + software keyboard + Next keyboard → ET key → typed:ET (not device.type)",
     status: "concrete",
   },
   {
     id: "broadcast-upload",
     tranche: "T8",
-    touchpoint: "pluginkit lists broadcast-services-upload appex",
+    touchpoint:
+      "pluginkit broadcast-services-upload + os-limit (CLAIMS)",
     status: "concrete",
   },
   {
     id: "broadcast-setup-ui",
     tranche: "T8",
-    touchpoint: "pluginkit lists broadcast-services-setupui appex",
+    touchpoint:
+      "pluginkit broadcast-services-setupui + os-limit (CLAIMS)",
     status: "concrete",
   },
   {
@@ -363,13 +379,15 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
   {
     id: "watch",
     tranche: "T12",
-    touchpoint: "Host install + paired watchOS sim/device os-limit",
+    touchpoint:
+      "Pair connected + watchOS companion on watch UDID + ET Watch Target AX; else CLAIMS after honest attempt",
     status: "concrete",
   },
   {
     id: "watch-widget",
     tranche: "T12",
-    touchpoint: "pluginkit lists watch widget appex; paired watch os-limit",
+    touchpoint:
+      "Pair connected + watch companion with nested PlugIns ET Watch Widget; else CLAIMS after honest attempt",
     status: "concrete",
   },
 ] as const;

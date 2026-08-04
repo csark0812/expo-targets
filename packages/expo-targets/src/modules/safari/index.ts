@@ -6,6 +6,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import { mountSafariExtensionRoot } from './bootstrapWeb';
 
 // Browser API type definitions
 declare global {
@@ -349,48 +350,12 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 // ============================================================================
 
 /**
- * Bootstrap a React component for Safari extension popup
- * This is called internally by createTarget when in Safari web context
+ * Bootstrap a React component for Safari extension popup.
+ * ReactDOM lives in `bootstrapWeb.web.ts` so native Metro never sees it.
  */
 export function bootstrapSafariExtension(
   _targetName: string,
   Component: React.ComponentType<any>
 ): void {
-  if (typeof document === 'undefined') {
-    return;
-  }
-
-  const container = document.getElementById('root');
-  if (!container) {
-    return;
-  }
-
-  // Dynamic import using Function constructor to avoid bundling react-dom in native builds
-  // This is intentional - we need to defer module resolution to runtime for web-only code
-  const loadReactDom = async () => {
-    try {
-      // Try React 18+ createRoot API
-      // biome-ignore lint/nursery/noImpliedEval: dynamic import via Function to avoid bundling react-dom
-      const dynamicImport = Function('m', 'return import(m)');
-      const ReactDomClient = await (dynamicImport(
-        'react-dom/client'
-      ) as Promise<any>);
-      const React = await (dynamicImport('react') as Promise<any>);
-
-      const root = ReactDomClient.createRoot(container);
-      root.render(React.createElement(Component));
-    } catch {
-      // Fallback to React 17 render API
-      try {
-        // biome-ignore lint/nursery/noImpliedEval: dynamic import via Function to avoid bundling react-dom
-        const dynamicImport = Function('m', 'return import(m)');
-        const ReactDom = await (dynamicImport('react-dom') as Promise<any>);
-        const React = await (dynamicImport('react') as Promise<any>);
-
-        ReactDom.render(React.createElement(Component), container);
-      } catch {}
-    }
-  };
-
-  loadReactDom();
+  mountSafariExtensionRoot(Component);
 }

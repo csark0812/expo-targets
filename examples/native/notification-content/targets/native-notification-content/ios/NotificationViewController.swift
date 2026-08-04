@@ -21,7 +21,18 @@ class NotificationViewController: UIViewController, UNNotificationContentExtensi
     label.font = .systemFont(ofSize: 15, weight: .regular)
     label.translatesAutoresizingMaskIntoConstraints = false
     label.accessibilityIdentifier = "nce-marker"
+    label.accessibilityLabel = "ET NCE Content"
+    label.isAccessibilityElement = true
     return label
+  }()
+
+  private let actionButton: UIButton = {
+    let button = UIButton(type: .system)
+    button.setTitle("Acknowledge", for: .normal)
+    button.accessibilityLabel = "NCE Acknowledge"
+    button.accessibilityIdentifier = "nce-action-ack"
+    button.translatesAutoresizingMaskIntoConstraints = false
+    return button
   }()
 
   override func viewDidLoad() {
@@ -29,6 +40,7 @@ class NotificationViewController: UIViewController, UNNotificationContentExtensi
     view.backgroundColor = .systemBackground
     view.addSubview(titleLabel)
     view.addSubview(markerLabel)
+    view.addSubview(actionButton)
     NSLayoutConstraint.activate([
       titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
       titleLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
@@ -36,6 +48,8 @@ class NotificationViewController: UIViewController, UNNotificationContentExtensi
       markerLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
       markerLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
       markerLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 8),
+      actionButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+      actionButton.topAnchor.constraint(equalTo: markerLabel.bottomAnchor, constant: 12),
     ])
   }
 

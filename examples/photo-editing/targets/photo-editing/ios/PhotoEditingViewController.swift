@@ -7,6 +7,7 @@ import CoreImage
 @objc(PhotoEditingViewController)
 class PhotoEditingViewController: UIViewController, PHContentEditingController {
   private var input: PHContentEditingInput?
+  private let appGroup = "group.com.expotargets.example.photo-editing"
   private let imageView = UIImageView()
   private let markerLabel: UILabel = {
     let label = UILabel()
@@ -67,6 +68,14 @@ class PhotoEditingViewController: UIViewController, PHContentEditingController {
       formatVersion: formatVersion,
       data: Data("grayscale".utf8)
     )
+
+    // Done-persistence marker for host Devicewright asserts.
+    if let defaults = UserDefaults(suiteName: appGroup) {
+      defaults.set("expo-targets uitest photo-edit done", forKey: "photoEdit:lastDone")
+      defaults.set(Date().timeIntervalSince1970, forKey: "photoEdit:lastDoneAt")
+      defaults.set("grayscale", forKey: "photoEdit:lastFilter")
+      defaults.synchronize()
+    }
 
     DispatchQueue.global(qos: .userInitiated).async {
       defer { completionHandler(output) }

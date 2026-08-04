@@ -30,6 +30,13 @@ export interface SelectedMessage {
   trailingSubcaption?: string;
 }
 
+export interface AttachmentPayload {
+  /** Alternate filename shown in Messages. */
+  filename?: string;
+  /** UTF-8 text written to a temp file and inserted. */
+  contents?: string;
+}
+
 export class Messages {
   getPresentationStyle(): PresentationStyle | null {
     if (Platform.OS !== 'ios') {
@@ -64,6 +71,15 @@ export class Messages {
       return null;
     }
     return ExpoTargetsMessagesModule.createSession();
+  }
+
+  insertAttachment(payload: AttachmentPayload = {}): Promise<boolean> {
+    if (Platform.OS !== 'ios') {
+      return Promise.resolve(false);
+    }
+    return Promise.resolve(
+      ExpoTargetsMessagesModule.insertAttachment(payload)
+    ).then(Boolean);
   }
 
   getConversationInfo(): ConversationInfo | null {
@@ -123,6 +139,17 @@ export const createSession = (): string | null => {
     return null;
   }
   return ExpoTargetsMessagesModule.createSession();
+};
+
+export const insertAttachment = (
+  payload: AttachmentPayload = {}
+): Promise<boolean> => {
+  if (Platform.OS !== 'ios') {
+    return Promise.resolve(false);
+  }
+  return Promise.resolve(
+    ExpoTargetsMessagesModule.insertAttachment(payload)
+  ).then(Boolean);
 };
 
 export const getConversationInfo = (): ConversationInfo | null => {

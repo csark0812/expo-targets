@@ -39,6 +39,18 @@ public class TrickLiveActivityModule: Module {
       return activity.id
     }
 
+    AsyncFunction("update") { (activityId: String, status: String) -> Bool in
+      guard #available(iOS 16.2, *) else { return false }
+      guard let activity = Activity<TrickActivityAttributes>.activities.first(where: {
+        $0.id == activityId
+      }) else {
+        return false
+      }
+      let state = TrickActivityAttributes.ContentState(status: status)
+      await activity.update(.init(state: state, staleDate: nil))
+      return true
+    }
+
     AsyncFunction("endAll") { () in
       guard #available(iOS 16.2, *) else { return }
       for activity in Activity<TrickActivityAttributes>.activities {

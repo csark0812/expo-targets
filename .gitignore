@@ -60,6 +60,10 @@ coverage/
 .env
 .env.local
 
+# Apple APNs Auth Keys — never commit
+*.p8
+AuthKey_*.p8
+
 # Ephemeral agent workspace (handoffs, etc.)
 _agent/
 

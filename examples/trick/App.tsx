@@ -12,6 +12,7 @@ import {
 import {
   endAllLiveActivities,
   startLiveActivity,
+  updateLiveActivity,
 } from './modules/trick-live-activity';
 
 Notifications.setNotificationHandler({
@@ -166,10 +167,12 @@ function HostMeta(props: {
 
 function HostActions(props: {
   lastLocal: string;
+  liveStatus: string;
   onScheduleNce: () => void;
   onRegisterFiles: () => void;
   onUnregisterFiles: () => void;
   onStartLive: () => void;
+  onUpdateLive: () => void;
   onEndLive: () => void;
 }) {
   return (
@@ -206,6 +209,16 @@ function HostActions(props: {
         <Text style={styles.ctaText}>Start Live Activity</Text>
       </Pressable>
       <Pressable
+        testID="btn-update-live"
+        style={styles.ctaSecondary}
+        onPress={props.onUpdateLive}
+      >
+        <Text style={styles.ctaText}>Update Live Activity</Text>
+      </Pressable>
+      <Text testID="text-live-status" style={styles.meta}>
+        live status: {props.liveStatus}
+      </Text>
+      <Pressable
         testID="btn-end-live"
         style={styles.ctaGhost}
         onPress={props.onEndLive}
@@ -216,31 +229,130 @@ function HostActions(props: {
   );
 }
 
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: host state + demo action surface
+async function requestNotificationPermission(): Promise<string> {
+  const current = await Notifications.getPermissionsAsync();
+  if (current.status === 'granted') {
+    return current.status;
+  }
+  const asked = await Notifications.requestPermissionsAsync();
+  return asked.status;
+}
+
+async function bootTrickHost(): Promise<{
+  perm: string;
+  filesDomain: string;
+}> {
+  await Notifications.setNotificationCategoryAsync(NCE_CATEGORY, []);
+  const perm = await requestNotificationPermission();
+  try {
+    const name = await registerFileDomain();
+    return { perm, filesDomain: `registered:${name}` };
+  } catch (e) {
+    return { perm, filesDomain: `error:${String(e)}` };
+  }
+}
+
+function scheduleNceNotification(setLastLocal: (id: string) => void) {
+  void Notifications.scheduleNotificationAsync({
+    content: {
+      title: 'ET Trick',
+      body: 'Expand me for rich NCE content',
+      categoryIdentifier: NCE_CATEGORY,
+    },
+    trigger: null,
+  }).then((id) => setLastLocal(id));
+}
+
+function registerFilesDomain(
+  setFilesDomain: (value: string) => void,
+  setStatusLine: (value: string) => void
+) {
+  void registerFileDomain()
+    .then((name) => {
+      setFilesDomain(`registered:${name}`);
+      setStatusLine('Files domain registered');
+    })
+    .catch((e) => {
+      setFilesDomain(`error:${String(e)}`);
+      setStatusLine(String(e));
+    });
+}
+
+function unregisterFilesDomain(
+  setFilesDomain: (value: string) => void,
+  setStatusLine: (value: string) => void
+) {
+  void unregisterFileDomain()
+    .then(() => {
+      setFilesDomain('not-registered');
+      setStatusLine('Files domain removed');
+    })
+    .catch((e) => setStatusLine(String(e)));
+}
+
+function startTrickLiveActivity(
+  setLiveId: (value: string) => void,
+  setLiveStatus: (value: string) => void,
+  setStatusLine: (value: string) => void
+) {
+  void startLiveActivity('ET Trick Live', 'active')
+    .then((id) => {
+      setLiveId(id);
+      setLiveStatus('active');
+      setStatusLine(`Live Activity ${id}`);
+    })
+    .catch((e) => setStatusLine(String(e)));
+}
+
+function updateTrickLiveActivity(
+  liveId: string,
+  setLiveStatus: (value: string) => void,
+  setStatusLine: (value: string) => void
+) {
+  if (liveId === 'none') {
+    setStatusLine('No Live Activity to update');
+    return;
+  }
+  void updateLiveActivity(liveId, 'updated')
+    .then((ok) => {
+      if (ok) {
+        setLiveStatus('updated');
+        setStatusLine(`Live Activity updated ${liveId}`);
+      } else {
+        setStatusLine('Live Activity update failed');
+      }
+    })
+    .catch((e) => setStatusLine(String(e)));
+}
+
+function endTrickLiveActivities(
+  setLiveId: (value: string) => void,
+  setLiveStatus: (value: string) => void,
+  setStatusLine: (value: string) => void
+) {
+  void endAllLiveActivities()
+    .then(() => {
+      setLiveId('none');
+      setLiveStatus('none');
+      setStatusLine('Live Activities ended');
+    })
+    .catch((e) => setStatusLine(String(e)));
+}
+
 function useTrickHost() {
   const [ready, setReady] = useState(false);
   const [perm, setPerm] = useState('pending');
   const [lastLocal, setLastLocal] = useState('none');
   const [filesDomain, setFilesDomain] = useState('not-registered');
   const [liveId, setLiveId] = useState('none');
+  const [liveStatus, setLiveStatus] = useState('none');
   const [statusLine, setStatusLine] = useState('');
 
   const boot = useCallback(async () => {
     try {
-      await Notifications.setNotificationCategoryAsync(NCE_CATEGORY, []);
-      const current = await Notifications.getPermissionsAsync();
-      let status = current.status;
-      if (status !== 'granted') {
-        const asked = await Notifications.requestPermissionsAsync();
-        status = asked.status;
-      }
-      setPerm(status);
-      try {
-        const name = await registerFileDomain();
-        setFilesDomain(`registered:${name}`);
-      } catch (e) {
-        setFilesDomain(`error:${String(e)}`);
-      }
+      const result = await bootTrickHost();
+      setPerm(result.perm);
+      setFilesDomain(result.filesDomain);
     } catch (e) {
       setPerm(`error:${String(e)}`);
     } finally {
@@ -258,52 +370,18 @@ function useTrickHost() {
     lastLocal,
     filesDomain,
     liveId,
+    liveStatus,
     statusLine,
-    onScheduleNce: () => {
-      void Notifications.scheduleNotificationAsync({
-        content: {
-          title: 'ET Trick',
-          body: 'Expand me for rich NCE content',
-          categoryIdentifier: NCE_CATEGORY,
-        },
-        trigger: null,
-      }).then((id) => setLastLocal(id));
-    },
-    onRegisterFiles: () => {
-      void registerFileDomain()
-        .then((name) => {
-          setFilesDomain(`registered:${name}`);
-          setStatusLine('Files domain registered');
-        })
-        .catch((e) => {
-          setFilesDomain(`error:${String(e)}`);
-          setStatusLine(String(e));
-        });
-    },
-    onUnregisterFiles: () => {
-      void unregisterFileDomain()
-        .then(() => {
-          setFilesDomain('not-registered');
-          setStatusLine('Files domain removed');
-        })
-        .catch((e) => setStatusLine(String(e)));
-    },
-    onStartLive: () => {
-      void startLiveActivity('ET Trick Live', 'active')
-        .then((id) => {
-          setLiveId(id);
-          setStatusLine(`Live Activity ${id}`);
-        })
-        .catch((e) => setStatusLine(String(e)));
-    },
-    onEndLive: () => {
-      void endAllLiveActivities()
-        .then(() => {
-          setLiveId('none');
-          setStatusLine('Live Activities ended');
-        })
-        .catch((e) => setStatusLine(String(e)));
-    },
+    onScheduleNce: () => scheduleNceNotification(setLastLocal),
+    onRegisterFiles: () => registerFilesDomain(setFilesDomain, setStatusLine),
+    onUnregisterFiles: () =>
+      unregisterFilesDomain(setFilesDomain, setStatusLine),
+    onStartLive: () =>
+      startTrickLiveActivity(setLiveId, setLiveStatus, setStatusLine),
+    onUpdateLive: () =>
+      updateTrickLiveActivity(liveId, setLiveStatus, setStatusLine),
+    onEndLive: () =>
+      endTrickLiveActivities(setLiveId, setLiveStatus, setStatusLine),
   };
 }
 
@@ -322,10 +400,12 @@ export default function App() {
         />
         <HostActions
           lastLocal={host.lastLocal}
+          liveStatus={host.liveStatus}
           onScheduleNce={host.onScheduleNce}
           onRegisterFiles={host.onRegisterFiles}
           onUnregisterFiles={host.onUnregisterFiles}
           onStartLive={host.onStartLive}
+          onUpdateLive={host.onUpdateLive}
           onEndLive={host.onEndLive}
         />
         {CAPS.map((cap) => (

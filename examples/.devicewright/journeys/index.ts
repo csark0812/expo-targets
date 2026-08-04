@@ -25,6 +25,7 @@ import { runShareActionJourney } from "./share";
 import { runStickersJourney } from "./stickers";
 import { stubClusterJourneyFor } from "./stub-cluster";
 import { runWalletUiJourney } from "./wallet-ui";
+import { runWatchJourney, runWatchWidgetJourney } from "./watch";
 import { runWidgetsJourney } from "./widgets";
 
 export { runAppIntentJourney } from "./app-intent";
@@ -57,7 +58,9 @@ export { runSafariJourney } from "./safari";
 export { runShareActionJourney } from "./share";
 export {
   navigatePath,
+  allowAppexOnWebsite,
   openAppexAndAllowExtension,
+  openSafariExtensionPopup,
   openSafariExtensionsOrBlockers,
   openSettingsApps,
   openSystemSafariSettings,
@@ -68,6 +71,7 @@ export {
 } from "./settings-nav";
 export { runStickersJourney } from "./stickers";
 export { runWalletUiJourney } from "./wallet-ui";
+export { runWatchJourney, runWatchWidgetJourney } from "./watch";
 export { runWidgetsJourney } from "./widgets";
 
 export type JourneyRunner = (
@@ -121,6 +125,8 @@ const LIVE: Record<string, JourneyRunner> = {
   "broadcast-setup-ui": (d) => runBroadcastSetupUiJourney(d),
   "call-directory": (d) => runCallDirectoryJourney(d),
   "location-push": (d) => runLocationPushJourney(d),
+  watch: (d) => runWatchJourney(d, "watch"),
+  "watch-widget": (d) => runWatchWidgetJourney(d),
 };
 
 const STUB_CLUSTER_IDS = [
@@ -134,8 +140,6 @@ const STUB_CLUSTER_IDS = [
   "network-app-proxy",
   "network-dns-proxy",
   "network-filter-data",
-  "watch",
-  "watch-widget",
 ] as const;
 
 for (const id of STUB_CLUSTER_IDS) {

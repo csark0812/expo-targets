@@ -3,7 +3,15 @@ import * as path from 'node:path';
 
 import { findNativeTargetByProductName } from '../../../../test-utils/assertPbx';
 import { loadPbx } from '../../../../test-utils/loadPbx';
-import { configureAppClipEmbed, configureAppExtensionEmbed } from './embed';
+import { applyBuildSettings } from './buildSettings';
+import {
+  configureAppClipEmbed,
+  configureAppExtensionEmbed,
+  configureWatchAppExtensionEmbed,
+  configureWatchContentEmbed,
+  removeAppExtensionFromHostEmbed,
+} from './embed';
+import { findWatchCompanionTargetUuid } from './targetLifecycle';
 
 const fixturePath = path.join(
   __dirname,
@@ -135,5 +143,158 @@ describe('configureAppClipEmbed phase shape', () => {
     embedClip(project, mainTarget.uuid, { uuid: 'missing' });
 
     expect(phasesNamed(project, 'Embed App Clips')).toHaveLength(0);
+  });
+});
+
+const WATCH_PRODUCT = 'WatchMinimalTarget';
+
+function setupWatchProject(): {
+  project: any;
+  mainTargetUuid: string;
+  watch: any;
+} {
+  const project = loadPbx(fixturePath);
+  const mainTarget = findNativeTargetByProductName(project, 'App')!;
+  const watch = addNativeTarget(project, {
+    productName: WATCH_PRODUCT,
+    type: 'application',
+  });
+  return { project, mainTargetUuid: mainTarget.uuid, watch };
+}
+
+function embedWatch(project: any, mainTargetUuid: string, target: any): void {
+  configureWatchContentEmbed({
+    project,
+    mainTargetUuid,
+    target,
+    targetProductName: WATCH_PRODUCT,
+  });
+}
+
+describe('configureWatchContentEmbed', () => {
+  test('reuses the existing Embed Watch Content phase when applied twice', () => {
+    const { project, mainTargetUuid, watch } = setupWatchProject();
+
+    embedWatch(project, mainTargetUuid, watch);
+    const phaseKeys = phasesNamed(project, 'Embed Watch Content');
+    expect(phaseKeys).toHaveLength(1);
+    expect(copyFilesPhases(project)[phaseKeys[0]].files).toHaveLength(1);
+
+    embedWatch(project, mainTargetUuid, watch);
+    const phaseKeysAfter = phasesNamed(project, 'Embed Watch Content');
+    expect(phaseKeysAfter).toEqual(phaseKeys);
+    expect(copyFilesPhases(project)[phaseKeysAfter[0]].files).toHaveLength(1);
+  });
+
+  test('configures the phase for the Watch destination', () => {
+    const { project, mainTargetUuid, watch } = setupWatchProject();
+
+    embedWatch(project, mainTargetUuid, watch);
+
+    const [phaseKey] = phasesNamed(project, 'Embed Watch Content');
+    const phase = copyFilesPhases(project)[phaseKey];
+    expect(phase.dstPath).toBe('"$(CONTENTS_FOLDER_PATH)/Watch"');
+    expect(phase.dstSubfolderSpec).toBe(16);
+  });
+});
+
+const WATCH_WIDGET_PRODUCT = 'WatchWidgetTarget';
+
+function embedPhasesOnTarget(
+  project: any,
+  targetUuid: string,
+  phaseName: string
+): { phaseKey: string; phase: any }[] {
+  const target = project.hash.project.objects.PBXNativeTarget[targetUuid];
+  const copyPhases = copyFilesPhases(project);
+  return (target.buildPhases || [])
+    .filter(
+      (entry: { value: string }) =>
+        copyPhases[entry.value]?.name === `"${phaseName}"`
+    )
+    .map((entry: { value: string }) => ({
+      phaseKey: entry.value,
+      phase: copyPhases[entry.value],
+    }));
+}
+
+function configureWatchWidgetEmbedTwice({
+  project,
+  watchUuid,
+  widget,
+  mainTargetUuid,
+}: {
+  project: any;
+  watchUuid: string;
+  widget: any;
+  mainTargetUuid: string;
+}): void {
+  configureWatchAppExtensionEmbed({
+    project,
+    watchTargetUuid: watchUuid,
+    target: widget,
+    targetProductName: WATCH_WIDGET_PRODUCT,
+  });
+  removeAppExtensionFromHostEmbed({
+    project,
+    mainTargetUuid,
+    targetProductName: WATCH_WIDGET_PRODUCT,
+  });
+  configureWatchAppExtensionEmbed({
+    project,
+    watchTargetUuid: watchUuid,
+    target: widget,
+    targetProductName: WATCH_WIDGET_PRODUCT,
+  });
+  removeAppExtensionFromHostEmbed({
+    project,
+    mainTargetUuid,
+    targetProductName: WATCH_WIDGET_PRODUCT,
+  });
+}
+
+describe('configureWatchAppExtensionEmbed', () => {
+  test('embeds appex on the watch target, not the phone host', () => {
+    const { project, mainTargetUuid, watch } = setupWatchProject();
+    applyBuildSettings({
+      project,
+      target: watch,
+      buildSettings: {
+        SDKROOT: 'watchos',
+        WATCHOS_DEPLOYMENT_TARGET: '10.0',
+        TARGETED_DEVICE_FAMILY: '"4"',
+      },
+    });
+
+    const widget = addNativeTarget(project, {
+      productName: WATCH_WIDGET_PRODUCT,
+      type: 'app_extension',
+    });
+
+    const watchUuid = findWatchCompanionTargetUuid(project);
+    expect(watchUuid).toBe(watch.uuid);
+
+    configureWatchWidgetEmbedTwice({
+      project,
+      watchUuid: watchUuid!,
+      widget,
+      mainTargetUuid,
+    });
+
+    const watchEmbed = embedPhasesOnTarget(
+      project,
+      watchUuid!,
+      'Embed App Extensions'
+    );
+    expect(watchEmbed).toHaveLength(1);
+    expect(watchEmbed[0].phase.files).toHaveLength(1);
+    expect(watchEmbed[0].phase.dstSubfolderSpec).toBe(13);
+
+    const hostEmbed = embedPhasesOnTarget(
+      project,
+      mainTargetUuid,
+      'Embed App Extensions'
+    );
+    expect(hostEmbed).toHaveLength(0);
   });
 });

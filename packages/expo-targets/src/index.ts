@@ -19,6 +19,7 @@ export {
   openHostApp,
 } from './modules/extension/index';
 export type {
+  AttachmentPayload,
   ConversationInfo,
   MessageLayout,
   PresentationStyle,
@@ -30,6 +31,7 @@ export {
   createSession,
   getConversationInfo,
   getPresentationStyle,
+  insertAttachment,
   requestPresentationStyle,
   sendMessage,
   sendUpdate,

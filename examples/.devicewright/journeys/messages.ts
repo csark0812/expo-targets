@@ -6,14 +6,20 @@ import {
   dismissSystemAlerts,
   findNamedViaPointProbe,
   flattenLabels,
-  hostReadyTestId,
   sleep,
   tapCenter,
   tapId,
   tapProbeHit,
-  waitForId,
   waitForNamed,
 } from "./helpers";
+import {
+  assertMessagesPresentationStyle,
+  dismissMessagesComposerAlerts,
+  probeMessagesSheetControl,
+  tapMessagesSheetControl,
+  waitForMessagesHostReady,
+  waitForMessagesSheetReady,
+} from "./messages-sheet";
 
 const MESSAGES_BUNDLE = "com.apple.MobileSMS";
 const CONVERSATION_NAMES = [
@@ -32,7 +38,6 @@ async function openConversation(device: DeviceSession): Promise<void> {
       // try next / point-probe
     }
   }
-  // iOS 26: ConversationList often empty in describe-all — probe rows.
   try {
     const hit = await findNamedViaPointProbe(device, CONVERSATION_NAMES, {
       timeoutMs: 5_000,
@@ -57,10 +62,26 @@ async function openConversation(device: DeviceSession): Promise<void> {
   );
 }
 
+async function findExtensionInTree(
+  device: DeviceSession,
+  preferred: string[],
+): Promise<boolean> {
+  // Drawer rows ARE in the host Messages AX tree (unlike open RN sheet chrome).
+  const labels = flattenLabels(await device.accessibilityTree()).map((l) =>
+    l.toLowerCase(),
+  );
+  return preferred.some((name) =>
+    labels.some((l) => l.includes(name.toLowerCase())),
+  );
+}
+
 async function openAppDrawer(
   device: DeviceSession,
   names: string[],
 ): Promise<void> {
+  if (await findExtensionInTree(device, names)) {
+    return;
+  }
   try {
     await findNamedViaPointProbe(device, names, {
       timeoutMs: 2_000,
@@ -90,13 +111,22 @@ async function openAppDrawer(
       yStartRatio: 0.7,
       yEndRatio: 0.98,
       match: "exact",
+      hotspots: [
+        { x: 48, y: 864 },
+        { x: 40, y: 860 },
+        { x: 55, y: 880 },
+      ],
     });
     addHit = { probeX: hit.probeX, probeY: hit.probeY };
   }
   await tapProbeHit(device, addHit);
   await sleep(800);
+  await dismissMessagesComposerAlerts(device);
 
   for (let i = 0; i < 5; i++) {
+    if (await findExtensionInTree(device, names)) {
+      return;
+    }
     try {
       await findNamedViaPointProbe(device, names, {
         timeoutMs: 2_500,
@@ -125,9 +155,29 @@ async function openAppDrawer(
   );
 }
 
+async function ensureExpanded(
+  device: DeviceSession,
+  steps: string[],
+): Promise<void> {
+  try {
+    await assertMessagesPresentationStyle(device, "expanded");
+    steps.push("assert-expanded");
+    steps.push("expand");
+    return;
+  } catch {
+    // need Expand
+  }
+  await tapMessagesSheetControl(device, ["Expand", "btn-expand"]);
+  steps.push("expand");
+  await assertMessagesPresentationStyle(device, "expanded");
+  steps.push("assert-expanded");
+}
+
 /**
  * Messages B: Apps drawer / extension visible.
- * Messages A: send template → host text-last-payload marker.
+ * Messages A (M3): expand/compact + session + attachment + Send template → host payload.
+ *
+ * M3 sheet interactions are describePoint-only — see messages-sheet.ts.
  */
 export async function runMessagesJourney(
   device: DeviceSession,
@@ -135,10 +185,11 @@ export async function runMessagesJourney(
 ): Promise<TargetJourneyResult> {
   const entry = TARGET_CATALOG.messages;
   const steps: string[] = [];
+  // Prefer Example Messages over Trick aliases when both appear.
   const names = [
     entry.extensionName,
+    ...entry.extensionAliases.filter((a) => !/trick/i.test(a)),
     entry.hostDisplayName,
-    ...entry.extensionAliases,
   ];
 
   try {
@@ -146,11 +197,26 @@ export async function runMessagesJourney(
       steps.push("clear-host");
       await device.launchApp(entry.hostBundleId, { terminateRunning: true });
       await dismissSystemAlerts(device);
-      await waitForId(device, hostReadyTestId(entry.testIds), 20_000);
+      await sleep(600);
+      await dismissSystemAlerts(device);
+      await waitForMessagesHostReady(device);
       try {
         await tapId(device, entry.testIds.clearPayload, 5_000);
       } catch {
-        // optional
+        try {
+          const clear = await findNamedViaPointProbe(
+            device,
+            ["Clear payload"],
+            {
+              timeoutMs: 4_000,
+              yStartRatio: 0.3,
+              yEndRatio: 0.8,
+            },
+          );
+          await tapProbeHit(device, clear);
+        } catch {
+          // optional
+        }
       }
     }
 
@@ -163,9 +229,11 @@ export async function runMessagesJourney(
     } catch {
       // dismiss optional
     }
+    await dismissMessagesComposerAlerts(device);
 
     steps.push("open-conversation");
     await openConversation(device);
+    await dismissMessagesComposerAlerts(device);
 
     steps.push("open-app-drawer");
     await openAppDrawer(device, names);
@@ -190,40 +258,106 @@ export async function runMessagesJourney(
     steps.push("open-extension");
     await tapProbeHit(device, row);
     await sleep(2_000);
+    // Sheet is up — no dismissMessagesComposerAlerts (ghost AX must not be chased).
+    await waitForMessagesSheetReady(device);
+    steps.push("extension-rn-ready");
 
-    // Grabber expand is optional and slow when missing — skip.
+    // --- M3: describePoint ladder (messages-sheet) — no accessibilityTree ---
+    await ensureExpanded(device, steps);
 
+    await tapMessagesSheetControl(device, ["Compact", "btn-compact"]);
+    steps.push("compact");
+    await assertMessagesPresentationStyle(device, "compact");
+    steps.push("assert-compact");
+
+    await tapMessagesSheetControl(device, ["Expand", "btn-expand"]);
+    steps.push("re-expand");
+    await assertMessagesPresentationStyle(device, "expanded");
+    steps.push("assert-re-expanded");
+
+    await tapMessagesSheetControl(device, ["Send session", "btn-send-session"]);
+    steps.push("send-session");
+
+    await tapMessagesSheetControl(device, [
+      "Insert attachment",
+      "btn-insert-attachment",
+    ]);
+    steps.push("insert-attachment");
+    // Confirm the control fired (layout may shift after session row).
+    await probeMessagesSheetControl(device, ["attachment:saved"], {
+      timeoutMs: 8_000,
+      match: "includes",
+    });
+    steps.push("assert-attachment-saved");
+    await sleep(500);
+
+    // Session id / attachment:saved rows may shift layout; ladder absorbs it.
+    await tapMessagesSheetControl(device, [
+      "Send template",
+      "btn-send-template",
+    ]);
     steps.push("send-template");
-    const send = await findNamedViaPointProbe(
-      device,
-      [entry.completeButton, "btn-send-template", "Send template"],
-      {
-        timeoutMs: 10_000,
-        yStartRatio: 0.25,
-        yEndRatio: 0.9,
-        stepX: 50,
-        stepY: 40,
-      },
-    );
-    await tapProbeHit(device, send);
-    await sleep(800);
+    await sleep(1_200);
 
     steps.push("assert-host-payload");
     await device.launchApp(entry.hostBundleId);
-    await waitForId(device, hostReadyTestId(entry.testIds), 15_000);
-    if (entry.testIds.refresh) {
+    await waitForMessagesHostReady(device);
+    const refreshHost = async () => {
+      if (!entry.testIds.refresh) return;
       try {
         await tapId(device, entry.testIds.refresh, 5_000);
       } catch {
-        // optional
+        try {
+          const refresh = await findNamedViaPointProbe(device, ["Refresh"], {
+            timeoutMs: 4_000,
+            yStartRatio: 0.2,
+            yEndRatio: 0.8,
+          });
+          await tapProbeHit(device, refresh);
+        } catch {
+          // optional
+        }
       }
-    }
+    };
+    await refreshHost();
     await assertPayloadContains(
       device,
       entry.testIds.lastPayload,
       entry.payloadMarker,
       25_000,
     );
+    steps.push("a-bar-payload");
+
+    // Session + attachment markers must land in App Group (not best-effort).
+    await refreshHost();
+    await assertPayloadContains(
+      device,
+      entry.testIds.lastPayload,
+      "Session bubble from expo-targets",
+      10_000,
+    );
+    steps.push("assert-session-payload");
+    await refreshHost();
+    await assertPayloadContains(
+      device,
+      entry.testIds.lastPayload,
+      "expo-targets messages attachment",
+      10_000,
+    );
+    steps.push("assert-attachment-payload");
+
+    const missingExtras =
+      !steps.includes("expand") ||
+      !steps.includes("compact") ||
+      !steps.includes("send-session") ||
+      !steps.includes("insert-attachment") ||
+      !steps.includes("assert-attachment-saved") ||
+      !steps.includes("send-template");
+    if (missingExtras) {
+      throw new Error(
+        `messages M3 extras incomplete; steps=${steps.join(">")}`,
+      );
+    }
 
     return {
       id: entry.id,

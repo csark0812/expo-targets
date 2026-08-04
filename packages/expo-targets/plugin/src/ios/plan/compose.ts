@@ -2,6 +2,7 @@ import { TYPE_CHARACTERISTICS } from '../../domain';
 import { planAssets } from './assets';
 import { planBuildSettings } from './buildSettings';
 import { planBundleReactNative } from './bundleReactNative';
+import { planBundleResources } from './bundleResources';
 import { planEmbed } from './embed';
 import { resolveIdentity } from './identity';
 import { planInfoPlist } from './infoPlist';
@@ -49,6 +50,7 @@ export function composeXcodeTargetPlan({
     }),
     assets: planAssets({ workspace, props, identity, paths }),
     safari: planSafariResources({ workspace, props, paths }),
+    bundleResources: planBundleResources({ workspace, paths }),
     embed: planEmbed(props.type),
     bundleReactNative: planBundleReactNative(props),
   };

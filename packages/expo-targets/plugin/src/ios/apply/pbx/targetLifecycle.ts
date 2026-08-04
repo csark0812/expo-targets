@@ -22,6 +22,56 @@ function unquoteName(name: unknown): string | undefined {
   return name.replace(/^"|"$/g, '');
 }
 
+const unquoteSetting = unquoteName;
+
+function isWatchOsApplicationTarget(
+  configs: Record<string, { buildSettings?: Record<string, unknown> }>,
+  buildConfigs: { value: string }[]
+): boolean {
+  return buildConfigs.some((entry) => {
+    const settings = configs[entry.value]?.buildSettings || {};
+    const sdk = unquoteSetting(settings.SDKROOT);
+    return (
+      sdk === 'watchos' ||
+      typeof settings.WATCHOS_DEPLOYMENT_TARGET === 'string'
+    );
+  });
+}
+
+function isWatchApplicationProduct(target: { productType?: unknown }): boolean {
+  return (
+    unquoteSetting(target?.productType) === 'com.apple.product-type.application'
+  );
+}
+
+/**
+ * Find the watchOS companion application target UUID (not the iOS host).
+ * Identified by application product type + watchos SDK / WATCHOS_DEPLOYMENT_TARGET.
+ */
+export function findWatchCompanionTargetUuid(
+  project: XcodeProject
+): string | undefined {
+  const xcodeProject = project as any;
+  const nativeTargets = xcodeProject.hash.project.objects.PBXNativeTarget || {};
+  const configLists = xcodeProject.pbxXCConfigurationList?.() || {};
+  const configs = xcodeProject.pbxXCBuildConfigurationSection?.() || {};
+
+  for (const key in nativeTargets) {
+    if (
+      key.endsWith('_comment') ||
+      !isWatchApplicationProduct(nativeTargets[key])
+    ) {
+      continue;
+    }
+
+    const list = configLists[nativeTargets[key]?.buildConfigurationList];
+    const buildConfigs = list?.buildConfigurations || [];
+    if (isWatchOsApplicationTarget(configs, buildConfigs)) {
+      return key;
+    }
+  }
+}
+
 /**
  * Find a target UUID by its product name.
  */

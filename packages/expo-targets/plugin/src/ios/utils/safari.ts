@@ -353,6 +353,84 @@ export function generatePlaceholderIcons(resourcesPath: string): void {
   }
 }
 
+function defaultContentScripts(): NonNullable<
+  SafariManifestConfig['content_scripts']
+> {
+  return [
+    {
+      matches: ['*://example.com/*', '*://*.example.com/*'],
+      js: ['content.js'],
+    },
+  ];
+}
+
+function resolveContentScripts(
+  manifest: Partial<SafariManifestConfig> | undefined
+): NonNullable<SafariManifestConfig['content_scripts']> {
+  if (manifest?.content_scripts && manifest.content_scripts.length > 0) {
+    return manifest.content_scripts;
+  }
+  return defaultContentScripts();
+}
+
+function rewriteManifestWithDefaultContentScripts({
+  resourcesPath,
+  displayName,
+  manifest,
+  contentScripts,
+}: {
+  resourcesPath: string;
+  displayName: string;
+  manifest: Partial<SafariManifestConfig> | undefined;
+  contentScripts: NonNullable<SafariManifestConfig['content_scripts']>;
+}): void {
+  if (manifest?.content_scripts && manifest.content_scripts.length > 0) {
+    return;
+  }
+  generateManifest(path.join(resourcesPath, 'manifest.json'), {
+    name: displayName,
+    ...manifest,
+    content_scripts: contentScripts,
+    permissions: [
+      ...(manifest?.permissions ?? ['storage']),
+      'nativeMessaging',
+    ].filter((p, i, a) => a.indexOf(p) === i),
+  });
+}
+
+function writeContentScriptStubs(
+  resourcesPath: string,
+  contentScripts: NonNullable<SafariManifestConfig['content_scripts']>,
+  displayName: string
+): void {
+  const contentStub = `// ${displayName} content script — Devicewright runtime proof
+(function () {
+  var MARKER = 'expo-targets uitest safari content';
+  try {
+    document.documentElement.setAttribute('data-et-safari', MARKER);
+    if (document.body) document.body.setAttribute('data-et-safari', MARKER);
+  } catch (_) {}
+  try {
+    if (typeof browser !== 'undefined' && browser.runtime && browser.runtime.sendMessage) {
+      browser.runtime.sendMessage({
+        type: 'native',
+        payload: { type: 'content-ping', url: String(location.href || ''), marker: MARKER }
+      }).catch(function () {});
+    }
+  } catch (_) {}
+})();
+`;
+
+  for (const script of contentScripts) {
+    for (const js of script.js ?? ['content.js']) {
+      const contentPath = path.join(resourcesPath, js);
+      if (!fs.existsSync(contentPath)) {
+        File.writeFileSafe(contentPath, contentStub);
+      }
+    }
+  }
+}
+
 /**
  * Generate all Safari web extension resources
  */
@@ -367,26 +445,26 @@ export function generateSafariResources(
   File.ensureDirectoryExists(resourcesPath);
 
   const targetDisplayName = config.displayName || config.name;
+  const contentScripts = resolveContentScripts(config.manifest);
 
-  // Generate popup.html
   generatePopupHtml(path.join(resourcesPath, 'popup.html'), targetDisplayName);
-
-  // Generate manifest.json with optional overrides
   generateManifest(path.join(resourcesPath, 'manifest.json'), {
     name: targetDisplayName,
     ...config.manifest,
   });
-
-  // Generate background.js
   generateBackgroundScript(path.join(resourcesPath, 'background.js'));
-
-  // Generate placeholder popup.js (will be replaced by bundle)
   generatePlaceholderPopupScript(
     path.join(resourcesPath, 'popup.js'),
     targetDisplayName
   );
 
-  // Generate placeholder icons
+  rewriteManifestWithDefaultContentScripts({
+    resourcesPath,
+    displayName: targetDisplayName,
+    manifest: config.manifest,
+    contentScripts,
+  });
+  writeContentScriptStubs(resourcesPath, contentScripts, targetDisplayName);
   generatePlaceholderIcons(resourcesPath);
 }
 

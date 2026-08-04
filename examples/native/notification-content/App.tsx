@@ -15,51 +15,76 @@ Notifications.setNotificationHandler({
 
 const NCE_CATEGORY = 'myNotificationCategory';
 
-export default function App() {
+async function requestNotificationPermission(): Promise<string> {
+  const current = await Notifications.getPermissionsAsync();
+  if (current.status === 'granted') {
+    return current.status;
+  }
+  const asked = await Notifications.requestPermissionsAsync();
+  return asked.status;
+}
+
+async function bootstrapNceHost(): Promise<string> {
+  await Notifications.setNotificationCategoryAsync(NCE_CATEGORY, []);
+  return requestNotificationPermission();
+}
+
+function useNceBootstrap() {
   const [ready, setReady] = useState(false);
   const [perm, setPerm] = useState('pending');
 
   useEffect(() => {
     let cancelled = false;
-    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: host bootstrap IIFE
-    (async () => {
-      try {
-        await Notifications.setNotificationCategoryAsync(NCE_CATEGORY, []);
-        const current = await Notifications.getPermissionsAsync();
-        let status = current.status;
-        if (status !== 'granted') {
-          const asked = await Notifications.requestPermissionsAsync();
-          status = asked.status;
-        }
+    void bootstrapNceHost()
+      .then((status) => {
         if (!cancelled) {
           setPerm(status);
           setReady(true);
         }
-      } catch (e) {
+      })
+      .catch((e) => {
         if (!cancelled) {
           setPerm(`error:${String(e)}`);
           setReady(true);
         }
-      }
-    })();
+      });
     return () => {
       cancelled = true;
     };
   }, []);
 
+  return { ready, perm };
+}
+
+type NceHostViewProps = {
+  ready: boolean;
+  perm: string;
+  bundleSuffix: string;
+};
+
+function NceHostView({ ready, perm, bundleSuffix }: NceHostViewProps) {
   return (
     <View style={styles.container} testID="screen-root">
       <StatusBar style="auto" />
       <Text style={styles.title}>ET NCE</Text>
       <Text testID="status-target-ready">{ready ? 'ready' : 'booting'}</Text>
       <Text testID="text-extension-type">notification-content</Text>
-      <Text testID="text-bundle-suffix">
-        com.expotargets.example.native.notification-content
-      </Text>
+      <Text testID="text-bundle-suffix">{bundleSuffix}</Text>
       <Text testID="text-notif-perm">{perm}</Text>
       <Text testID="btn-clear-payload">clear</Text>
       <Text testID="text-last-payload">none</Text>
     </View>
+  );
+}
+
+export default function App() {
+  const { ready, perm } = useNceBootstrap();
+  return (
+    <NceHostView
+      ready={ready}
+      perm={perm}
+      bundleSuffix="com.expotargets.example.native.notification-content"
+    />
   );
 }
 

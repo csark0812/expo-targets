@@ -41,7 +41,22 @@ function isTestFile(file: string): boolean {
  * never the React Native view controller. Native React Native extensions get
  * generated view controllers when the user provided no Swift of their own.
  */
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: type dispatch table for Swift file resolution
+function ensureNamed(files: string[], name: string): void {
+  if (!files.some((file) => isNamed(file, name))) {
+    files.push(name);
+  }
+}
+
+function resolveEntryOnlySwiftFiles(props: IOSTargetProps): string[] {
+  if (props.type === 'messages') {
+    return [MESSAGES_VIEW_CONTROLLER, REACT_NATIVE_VIEW_CONTROLLER];
+  }
+  if (props.type === 'clip') {
+    return [REACT_NATIVE_CLIP_APP, REACT_NATIVE_VIEW_CONTROLLER];
+  }
+  return [REACT_NATIVE_VIEW_CONTROLLER];
+}
+
 function resolveSwiftFileNames(
   workspace: TargetWorkspace,
   props: IOSTargetProps
@@ -49,30 +64,17 @@ function resolveSwiftFileNames(
   const files = [...workspace.swiftFiles];
 
   if (props.type === 'safari') {
-    if (!files.some((file) => isNamed(file, SAFARI_HANDLER))) {
-      files.push(SAFARI_HANDLER);
-    }
+    ensureNamed(files, SAFARI_HANDLER);
     return files;
   }
 
   if (props.entry && files.length === 0) {
-    // Messages extensions need both MessagesViewController (which must extend
-    // MSMessagesAppViewController) and the ReactNativeViewController child.
-    if (props.type === 'messages') {
-      return [MESSAGES_VIEW_CONTROLLER, REACT_NATIVE_VIEW_CONTROLLER];
-    }
-    // App Clips are applications: they need `@main` plus the RN host VC.
-    if (props.type === 'clip') {
-      return [REACT_NATIVE_CLIP_APP, REACT_NATIVE_VIEW_CONTROLLER];
-    }
-    return [REACT_NATIVE_VIEW_CONTROLLER];
+    return resolveEntryOnlySwiftFiles(props);
   }
 
   // Notification content: user principal hosts RN child when entry is set.
   if (props.entry && props.type === 'notification-content') {
-    if (!files.some((file) => isNamed(file, REACT_NATIVE_VIEW_CONTROLLER))) {
-      files.push(REACT_NATIVE_VIEW_CONTROLLER);
-    }
+    ensureNamed(files, REACT_NATIVE_VIEW_CONTROLLER);
   }
 
   return files;

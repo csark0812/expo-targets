@@ -3,7 +3,7 @@ import { runMatrix, type SuiteMatrixRow } from "@csark0812/devicewright/suite";
 import { ensureHostReleaseInstall } from "./ensure-install";
 import { journeyFor, stubResult } from "./journeys";
 import { dismissSystemAlerts } from "./journeys/helpers";
-import { assertOsLimitAllowed, claimForId } from "./claims";
+import { assertOsLimitAllowed } from "./claims";
 import {
   REQUIRED_V2,
   type RequiredTargetRow,
@@ -87,19 +87,8 @@ export async function runTargetMatrix(options: RunTargetMatrixOptions = {}) {
             // expo run:ios opens via simctl openurl → “Open in …?”; clear before journey.
             await dismissSystemAlerts(device, 3_000, 4);
           } catch (e) {
-            const claim = claimForId(row.id);
-            if (claim) {
-              return {
-                id: row.id,
-                path: row.path,
-                phase: row.phase,
-                ok: true,
-                status: "os-limit" as const,
-                steps: ["ensure-install"],
-                error: `${claim.reason} (ensure-install: ${String(e)})`,
-                failureKind: "os-limit" as const,
-              };
-            }
+            // Install/build failures are always operator — do not fold into
+            // CLAIMS os-limit (that masks missing hosts as Apple ceilings).
             return {
               id: row.id,
               path: row.path,

@@ -1,12 +1,8 @@
 /**
  * File Provider extension deep journey.
  *
- * Apple capability: non-UI File Provider appex registered with the OS
- * (pluginkit lists `com.apple.fileprovider-nonui` for our appex). Optionally
- * Files Browse surfaces the domain after host registration.
- *
- * GREEN = pluginkit lists the File Provider appex for this host.
- * Files Browse domain is best-effort (needs NSFileProviderManager.add).
+ * GREEN (P): host registers NSFileProviderDomain + Files Browse lists
+ * "ET FileProv". Pluginkit alone is no longer enough.
  */
 import { spawnSync } from "node:child_process";
 import type { DeviceSession } from "@csark0812/devicewright";
@@ -14,13 +10,16 @@ import { TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
   dismissSystemAlerts,
+  findNamedViaPointProbe,
   flattenLabels,
   sleep,
+  tapProbeHit,
   waitForNamed,
 } from "./helpers";
 import { tapLabelInTree } from "./settings-nav";
 
 const FILES_BUNDLE = "com.apple.DocumentsApp";
+const DOMAIN_MARKERS = ["ET FileProv", "FileProv"];
 
 function pluginkitMentions(
   udid: string,
@@ -48,6 +47,46 @@ function pluginkitMentions(
   return { ok, sample: sample || out.slice(0, 400) };
 }
 
+function labelsListDomain(labels: string[]): boolean {
+  return labels.some((l) =>
+    DOMAIN_MARKERS.some((m) => l.toLowerCase().includes(m.toLowerCase())),
+  );
+}
+
+async function assertFilesListsDomain(device: DeviceSession): Promise<void> {
+  await device.launchApp(FILES_BUNDLE, { terminateRunning: true });
+  await sleep(1_400);
+  await tapLabelInTree(device, ["Browse", "Locations"]);
+  await sleep(900);
+
+  for (let i = 0; i < 4; i++) {
+    const labels = flattenLabels(await device.accessibilityTree());
+    if (labelsListDomain(labels)) return;
+    try {
+      await findNamedViaPointProbe(device, DOMAIN_MARKERS, {
+        timeoutMs: 2_500,
+        yStartRatio: 0.2,
+        yEndRatio: 0.95,
+        match: "includes",
+      });
+      return;
+    } catch {
+      await device.swipe({
+        xStart: 210,
+        yStart: 700,
+        xEnd: 210,
+        yEnd: 250,
+        duration: 0.35,
+      });
+      await sleep(600);
+    }
+  }
+  const labels = flattenLabels(await device.accessibilityTree());
+  throw new Error(
+    `Files Browse missing ET FileProv domain; labels=${labels.slice(0, 80).join(", ")}`,
+  );
+}
+
 export async function runFileProviderJourney(
   device: DeviceSession,
 ): Promise<TargetJourneyResult> {
@@ -62,24 +101,40 @@ export async function runFileProviderJourney(
     await device.launchApp(entry.hostBundleId, { terminateRunning: true });
     steps.push("launch-host");
     await dismissSystemAlerts(device);
-    await waitForNamed(device, ["ready"], 15_000);
+    await waitForNamed(device, ["ready"], 20_000);
     steps.push("host-ready");
 
-    const needles = [
-      entry.hostBundleId,
-      "file-provider",
-      "fileprovider",
-      "ET FileProv",
-      "com.apple.fileprovider-nonui",
-    ];
+    // Prefer auto-register on boot; tap Register if domain status still error.
+    try {
+      await waitForNamed(device, ["files-domain:registered:"], 4_000);
+      steps.push("domain-registered");
+    } catch {
+      try {
+        const reg = await findNamedViaPointProbe(
+          device,
+          ["Register domain", "btn-register-domain"],
+          {
+            timeoutMs: 6_000,
+            yStartRatio: 0.3,
+            yEndRatio: 0.9,
+          },
+        );
+        await tapProbeHit(device, reg);
+        await sleep(1_200);
+        await waitForNamed(device, ["files-domain:registered:"], 8_000);
+        steps.push("domain-registered");
+      } catch (e) {
+        throw new Error(`file-provider domain register failed: ${String(e)}`);
+      }
+    }
+
+    const appexId = `${entry.hostBundleId}.file-provider`;
+    const pkAppex = pluginkitMentions(device.deviceId, [appexId]);
     const pk = pluginkitMentions(device.deviceId, [
-      `${entry.hostBundleId}.file-provider`,
+      appexId,
       "fileprovider-nonui",
       "ET FileProv",
     ]);
-    // Require our appex bundle id specifically when possible.
-    const appexId = `${entry.hostBundleId}.file-provider`;
-    const pkAppex = pluginkitMentions(device.deviceId, [appexId]);
     if (!pkAppex.ok && !pk.ok) {
       throw new Error(
         `file-provider appex not in pluginkit; sample=${pk.sample.slice(0, 300)}`,
@@ -87,40 +142,9 @@ export async function runFileProviderJourney(
     }
     steps.push("pluginkit-fileprovider");
 
-    // Best-effort Files Browse — domain may be absent without host add().
-    try {
-      await device.launchApp(FILES_BUNDLE, { terminateRunning: true });
-      steps.push("files-launch");
-      await sleep(1_200);
-      await tapLabelInTree(device, ["Browse", "Locations"]);
-      await sleep(800);
-      const labels = flattenLabels(await device.accessibilityTree());
-      if (
-        labels.some(
-          (l) =>
-            /ET FileProv|FileProv|ET Trick Files/i.test(l) ||
-            needles.some((n) => l.toLowerCase().includes(n.toLowerCase())),
-        )
-      ) {
-        steps.push("files-domain-listed");
-      } else {
-        // Scroll Browse locations once more.
-        await device.swipe({
-          xStart: 210,
-          yStart: 700,
-          xEnd: 210,
-          yEnd: 250,
-          duration: 0.35,
-        });
-        await sleep(500);
-        const again = flattenLabels(await device.accessibilityTree());
-        if (/ET FileProv|ET Trick Files/i.test(again.join("|"))) {
-          steps.push("files-domain-listed");
-        }
-      }
-    } catch {
-      /* optional */
-    }
+    steps.push("files-launch");
+    await assertFilesListsDomain(device);
+    steps.push("files-domain-listed");
 
     return {
       id: "file-provider",

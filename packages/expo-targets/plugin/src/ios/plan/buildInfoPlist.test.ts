@@ -55,7 +55,7 @@ describe('getFrameworksForType', () => {
   });
 });
 
-describe('getTargetInfoPlistForType (characterization)', () => {
+describe('getTargetInfoPlistForType golden output', () => {
   test('share extension Info.plist matches golden output', () => {
     const parsed = plist.parse(getTargetInfoPlistForType('share'));
     expect(normalizePlist(parsed)).toBe(
@@ -76,12 +76,30 @@ describe('getTargetInfoPlistForType (characterization)', () => {
       normalizePlist(readGolden('stickers-info-plist.json'))
     );
   });
+});
 
+describe('getTargetInfoPlistForType options', () => {
   test('displayName becomes CFBundleDisplayName (not PRODUCT_NAME)', () => {
     const parsed = plist.parse(
       getTargetInfoPlistForType('stickers', { displayName: 'Fun Stickers' })
     ) as { CFBundleDisplayName?: string };
     expect(parsed.CFBundleDisplayName).toBe('Fun Stickers');
+  });
+
+  test('watch companion sets WKCompanionAppBundleIdentifier', () => {
+    const parsed = plist.parse(
+      getTargetInfoPlistForType('watch', {
+        displayName: 'ET Watch Target',
+        companionAppBundleIdentifier: 'com.expotargets.example.watch',
+      })
+    ) as {
+      WKCompanionAppBundleIdentifier?: string;
+      CFBundleDisplayName?: string;
+    };
+    expect(parsed.WKCompanionAppBundleIdentifier).toBe(
+      'com.expotargets.example.watch'
+    );
+    expect(parsed.CFBundleDisplayName).toBe('ET Watch Target');
   });
 
   test('share extension with React Native entry uses ReactNativeViewController', () => {
@@ -101,6 +119,17 @@ describe('getTargetInfoPlistForType (characterization)', () => {
 
     expect(parsed.NSExtension).toBeUndefined();
     expect(parsed.NSAppClip).toBeDefined();
+  });
+
+  test('app-intent uses ExtensionKit EXAppExtensionAttributes (not NSExtension)', () => {
+    const parsed = plist.parse(getTargetInfoPlistForType('app-intent')) as {
+      NSExtension?: unknown;
+      EXAppExtensionAttributes?: { EXExtensionPointIdentifier?: string };
+    };
+    expect(parsed.NSExtension).toBeUndefined();
+    expect(parsed.EXAppExtensionAttributes?.EXExtensionPointIdentifier).toBe(
+      'com.apple.appintents-extension'
+    );
   });
 });
 

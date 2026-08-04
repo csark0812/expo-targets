@@ -28,8 +28,8 @@ function typesWithFlag(
   return EXTENSION_TYPES.filter((type) => TYPE_CHARACTERISTICS[type][flag]);
 }
 
-describe('TYPE_CHARACTERISTICS coverage', () => {
-  test('declares an entry for every ExtensionType in the config maps', () => {
+describe('TYPE_CHARACTERISTICS config maps', () => {
+  test('declares an entry for every ExtensionType', () => {
     expect(sorted(EXTENSION_TYPES)).toEqual(
       sorted(Object.keys(TYPE_MINIMUM_DEPLOYMENT_TARGETS))
     );
@@ -37,7 +37,9 @@ describe('TYPE_CHARACTERISTICS coverage', () => {
       sorted(Object.keys(TYPE_BUNDLE_IDENTIFIER_SUFFIXES))
     );
   });
+});
 
+describe('TYPE_CHARACTERISTICS entry shape', () => {
   test('every entry declares all characteristics and flags', () => {
     for (const type of EXTENSION_TYPES) {
       const characteristics = TYPE_CHARACTERISTICS[type];
@@ -51,9 +53,13 @@ describe('TYPE_CHARACTERISTICS coverage', () => {
       expect(['application', 'app_extension']).toContain(
         characteristics.targetType
       );
-      expect(['foundation-extension', 'app-clip', 'none']).toContain(
-        characteristics.embedType
-      );
+      expect([
+        'foundation-extension',
+        'app-clip',
+        'watch-content',
+        'watch-extension',
+        'none',
+      ]).toContain(characteristics.embedType);
       expect(['direct', 'attributes', 'none']).toContain(
         characteristics.activationRulesLocation
       );
@@ -65,7 +71,9 @@ describe('TYPE_CHARACTERISTICS coverage', () => {
       );
     }
   });
+});
 
+describe('TYPE_CHARACTERISTICS lookup maps', () => {
   test('derived lookup maps mirror the characteristics map', () => {
     for (const type of EXTENSION_TYPES) {
       expect(EXTENSION_POINT_IDENTIFIERS[type]).toBe(
@@ -111,8 +119,12 @@ describe('flag matrix', () => {
     expect(typesWithFlag('isReactNativeWeb')).toEqual(['safari']);
   });
 
-  test('needsIsolatedSearchPaths covers clip only', () => {
-    expect(typesWithFlag('needsIsolatedSearchPaths')).toEqual(['clip']);
+  test('needsIsolatedSearchPaths covers clip, watch, and watch-widget', () => {
+    expect(sorted(typesWithFlag('needsIsolatedSearchPaths'))).toEqual([
+      'clip',
+      'watch',
+      'watch-widget',
+    ]);
   });
 
   test('no type is both React Native native and React Native web', () => {

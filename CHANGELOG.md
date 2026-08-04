@@ -9,9 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Devicewright expansions (Sim-greenable): share/action(+native) image UTTypes + typed host markers; safari popup/content-script/native-msg host surfaces; content-blocker richer rules + host reload/rule-count; widgets family markers; keyboard type-into-field; photo-edit Done persistence; clip(+native) launchApp invocation; touchpoints updated.
+- `docs/limits.md`: max Sim-greenable (**P**) policy, S3a spike gate, leftover register, currently-green expansion backlog.
+- Live Activity CLAIMS narrowed to DI / push / StandBy (+ Watch after S3a); NCE expand→custom UI required (removed `notification-content` os-limit row).
 - **Product posture:** expo-targets owns Expo’s negative space (share/action/clip/messages/stickers/wallet and related Apple targets). Native WidgetKit + Live Activities are **first-class** here; official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) remains an alternate React/Expo-UI path — do not dual-generate. See `docs/widgets.md` and `docs/deprecations.md`.
 - `create-expo-target`: Share/Action/Clip/Messages lead the menu; Widget scaffolds native WidgetKit; React Native defaults to **Yes** for share/action/clip.
-- Docs governed by `@csark0812/skeleton` (registry + `AGENTS.md`).
+- Docs governed by `@csark0812/skeleton` (registry + `AGENTS.md`); bumped to `^1.5.7` (audit hang fix).
 - iOS config-plugin pipeline split into Observe → Plan → Apply; Biome replaces ESLint/Prettier.
 
 ### Removed
@@ -22,6 +25,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `@csark0812/devicewright@^0.1.8`; Trick Live Activity `update` + host controls; `live-activity` in REQUIRED_V2 phase 3.
+- Share/action examples: image activation + `kind`/`type` payload markers; native-action return-items; content-blocker `blocker-reload` host module; Safari content_script generation in plugin when `ios.manifest.content_scripts` is set.
+- Messages `insertAttachment` (temp UTF-8 file → `MSConversation.insertAttachment`) plus example M3 surfaces: expand/compact, session `sendUpdate`, attachment, Send template.
+- Messages Devicewright journey: describePoint-first sheet ladder (`messages-sheet.ts`) — RN MSMessages chrome is AX-tree-opaque on iOS 26.
+- File Provider example: host `NSFileProviderManager.add` domain module; journey requires Files Browse to list **ET FileProv**.
+- App Intent example: real `SayHelloIntent` + `AppShortcutsProvider`; journey requires Shortcuts action visibility.
 - Thin `examples/*` Maestro-ready suite (SDK 54 hosts: share, action, messages, clip, stickers, widgets, kitchen-sink, native/share, native/action, native/clip) plus Bacon-parity stub hosts and Devicewright journeys.
 - Skeleton docs SSOT (`@csark0812/skeleton`), `docs/widgets.md`, `docs/deprecations.md`, `docs/limits.md`.
 - Bacon `ExtensionType` registry parity (`bun run compare:bacon-registry`).

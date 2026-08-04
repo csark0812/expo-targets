@@ -4,6 +4,12 @@ Owns REQUIRED_V2 journeys for public `examples/*`. Devicewright (`@csark0812/dev
 
 See [PR_PROOF.md](./PR_PROOF.md) for operator pre-merge checklist, [claims.ts](./claims.ts) for approved `os-limit` rows, and [touchpoints.ts](./touchpoints.ts) for live-touchpoint definitions.
 
+## Full-demo green (notification-service Phase 1)
+
+`green` for `notification-service` means the **user-visible lock-screen demo** completed and asserted **and** App Group corroboration — dual-AND on this run’s title nonce + `[expo-targets]`. App Group / pluginkit alone is never green. HTTP `200` from Devicewright `pushRemoteNotification` (`@csark0812/devicewright@^0.1.9`) is transport only, not delivery/NSE proof. Missing `APNS_*` AuthKey → `operator` (do not merge on operator — attach a local green matrix artifact).
+
+Phase 2 (same suite): keyboard / live-activity / stickers / watch(+widget) also require visible OS demos; Sim ceilings exit `os-limit` + CLAIMS, not soft host/pluginkit greens.
+
 ## Layout (Maestro parallel)
 
 | Maestro                              | Devicewright                              |
@@ -29,8 +35,17 @@ Debug binaries are an **operator** fail. For each REQUIRED_V2 example:
 cd examples/share   # or action|messages|…
 bun install
 npx expo prebuild --platform ios
-npx expo run:ios --configuration Release
+# --no-bundler is required: without it, run:ios installs then hangs forever on
+# Metro + "Logs for your project will appear below" (Build Succeeded ≠ exit).
+npx expo run:ios --configuration Release --device <UDID> --no-bundler
 ```
+
+Do **not** pipe `expo run:ios` through `tail` (e.g. `| tee log | tail -40`) — `tail`
+waits for EOF, so a Metro hang looks like “no output / stuck” in agent terminals.
+
+`--ensure-install` already passes `--no-bundler`, but it **skips when the host is
+already on the sim**. Stale binaries need an explicit rebuild (uninstall or re-run
+the Release command above) — ensure-install alone will not refresh them.
 
 ### Opt-in ensure-install
 

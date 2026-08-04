@@ -1,17 +1,30 @@
 /**
  * App Intents (ExtensionKit) deep journey.
  *
- * Proves the appintents-extension appex is installed via pluginkit.
- * Shortcuts invoke is best-effort (launch Shortcuts and search host name).
+ * GREEN (P): pluginkit lists appintents-extension + Shortcuts shows
+ * "ET Greet" (not pluginkit-only).
  */
 import { spawnSync } from "node:child_process";
 import type { DeviceSession } from "@csark0812/devicewright";
 import { TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
-import { dismissSystemAlerts, sleep, waitForNamed } from "./helpers";
+import {
+  dismissSystemAlerts,
+  findNamedViaPointProbe,
+  flattenLabels,
+  sleep,
+  tapProbeHit,
+  waitForNamed,
+} from "./helpers";
 import { tapLabelInTree } from "./settings-nav";
 
 const SHORTCUTS_BUNDLE = "com.apple.shortcuts";
+const ACTION_MARKERS = [
+  "ET Greet",
+  "Say Hello",
+  "ET AppIntent",
+  "Hello from ET AppIntent",
+];
 
 function pluginkitHasAppIntent(udid: string, appexId: string): boolean {
   const r = spawnSync(
@@ -23,6 +36,80 @@ function pluginkitHasAppIntent(udid: string, appexId: string): boolean {
   return (
     out.toLowerCase().includes(appexId.toLowerCase()) &&
     /appintents-extension/i.test(out)
+  );
+}
+
+async function assertShortcutsListsAction(
+  device: DeviceSession,
+  hostDisplayName: string,
+): Promise<void> {
+  await device.launchApp(SHORTCUTS_BUNDLE, { terminateRunning: true });
+  await sleep(1_500);
+
+  // Gallery / search surfaces vary by iOS — prefer ET Greet (intent title).
+  const searchTargets = [
+    "ET Greet",
+    "Say Hello",
+    hostDisplayName,
+    "ET AppIntent",
+    "Search",
+  ];
+
+  for (let round = 0; round < 5; round++) {
+    const labels = flattenLabels(await device.accessibilityTree());
+    if (
+      labels.some((l) =>
+        ACTION_MARKERS.some((m) => l.toLowerCase().includes(m.toLowerCase())),
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await findNamedViaPointProbe(device, ACTION_MARKERS, {
+        timeoutMs: 2_500,
+        yStartRatio: 0.15,
+        yEndRatio: 0.95,
+        match: "includes",
+      });
+      return;
+    } catch {
+      // try search / scroll
+    }
+
+    try {
+      const search = await findNamedViaPointProbe(
+        device,
+        ["Search", "search"],
+        {
+          timeoutMs: 2_000,
+          yStartRatio: 0.0,
+          yEndRatio: 0.35,
+          match: "includes",
+        },
+      );
+      await tapProbeHit(device, search);
+      await sleep(400);
+      await device.type("ET Greet");
+      await sleep(1_000);
+    } catch {
+      await tapLabelInTree(device, searchTargets);
+      await sleep(700);
+    }
+
+    await device.swipe({
+      xStart: 210,
+      yStart: 700,
+      xEnd: 210,
+      yEnd: 280,
+      duration: 0.35,
+    });
+    await sleep(500);
+  }
+
+  const labels = flattenLabels(await device.accessibilityTree());
+  throw new Error(
+    `Shortcuts missing ET Greet / ET AppIntent; labels=${labels.slice(0, 80).join(", ")}`,
   );
 }
 
@@ -49,20 +136,9 @@ export async function runAppIntentJourney(
     }
     steps.push("pluginkit-app-intent");
 
-    // Best-effort: Shortcuts lists host-provided actions when installed.
-    try {
-      await device.launchApp(SHORTCUTS_BUNDLE, { terminateRunning: true });
-      steps.push("shortcuts-launch");
-      await sleep(1200);
-      const found = await tapLabelInTree(device, [
-        entry.hostDisplayName,
-        "ET AppIntent",
-      ]);
-      if (found) steps.push("shortcuts-host-visible");
-      else steps.push("shortcuts-host-not-visible");
-    } catch {
-      steps.push("shortcuts-not-attempted");
-    }
+    steps.push("shortcuts-launch");
+    await assertShortcutsListsAction(device, entry.hostDisplayName);
+    steps.push("shortcuts-action-visible");
 
     return {
       id: "app-intent",

@@ -30,13 +30,25 @@ struct WatchWidgetView: View {
   }
 }
 
-@main
-struct WatchWidgetBundle: WidgetBundle {
-  var body: some Widget {
+struct WatchWidget: Widget {
+  var body: some WidgetConfiguration {
     StaticConfiguration(kind: "WatchWidget", provider: WatchWidgetProvider()) { entry in
       WatchWidgetView(entry: entry)
     }
     .configurationDisplayName("ET Watch Widget")
     .description("watch-widget example")
+    .supportedFamilies([
+      .accessoryCircular,
+      .accessoryRectangular,
+      .accessoryInline,
+      .accessoryCorner,
+    ])
+  }
+}
+
+@main
+struct WatchWidgetBundle: WidgetBundle {
+  var body: some Widget {
+    WatchWidget()
   }
 }

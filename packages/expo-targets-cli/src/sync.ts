@@ -17,19 +17,45 @@ export interface SyncOptions {
   targetsRoot?: string; // Custom targets directory (default: ./targets)
 }
 
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: pre-existing complexity; tracked for refactor
 export async function syncTargets(options: SyncOptions = {}) {
   const projectRoot = process.cwd();
   const iosPath = path.join(projectRoot, 'ios');
 
+  validateIosDirectory(iosPath);
+
+  const { projectName, pbxprojPath } = findXcodeProject(iosPath);
+  if (options.verbose) {
+  }
+
+  const mockConfig = createMockConfig(projectRoot, projectName, iosPath);
+  const targetsRoot = options.targetsRoot || './targets';
+  const targetConfigFiles = discoverTargetConfigs(projectRoot, targetsRoot);
+
+  if (targetConfigFiles.length === 0) {
+    return;
+  }
+
+  const modifiedConfig = applyTargetsDir(mockConfig, targetsRoot);
+
+  if (options.dryRun) {
+    logDryRunTargets(targetConfigFiles);
+    return;
+  }
+
+  writeXcodeProject(pbxprojPath);
+  await syncPodfile(iosPath, modifiedConfig, options);
+}
+
+function validateIosDirectory(iosPath: string) {
   if (!fs.existsSync(iosPath)) {
     throw new Error(
       'No ios/ directory found. This command is for bare React Native projects.\n' +
         'For Expo managed projects, use: npx expo prebuild'
     );
   }
+}
 
-  // Find Xcode project
+function findXcodeProject(iosPath: string) {
   const xcodeProjects = fs
     .readdirSync(iosPath)
     .filter((f) => f.endsWith('.xcodeproj'));
@@ -45,100 +71,55 @@ export async function syncTargets(options: SyncOptions = {}) {
 
   const projectName = xcodeProjects[0].replace('.xcodeproj', '');
   const pbxprojPath = path.join(iosPath, xcodeProjects[0], 'project.pbxproj');
-  if (options.verbose) {
-  }
+  return { projectName, pbxprojPath };
+}
 
-  // Load app.json or expo config
-  const mockConfig = createMockConfig(projectRoot, projectName, iosPath);
+function discoverTargetConfigs(projectRoot: string, targetsRoot: string) {
+  return globSync(`${targetsRoot}/*/expo-target.config.@(js|ts|json)`, {
+    cwd: projectRoot,
+    absolute: true,
+  });
+}
 
-  // Discover targets
-  const targetsRoot = options.targetsRoot || './targets';
-  const targetConfigFiles = globSync(
-    `${targetsRoot}/*/expo-target.config.@(js|ts|json)`,
-    {
-      cwd: projectRoot,
-      absolute: true,
-    }
-  );
-
-  if (targetConfigFiles.length === 0) {
-    return;
-  }
-
-  // Apply target configurations
-  let modifiedConfig = mockConfig;
-
-  // Import withTargetsDir dynamically to avoid circular dependencies
+function applyTargetsDir(mockConfig: any, targetsRoot: string) {
   const {
     withTargetsDir,
   } = require('expo-targets/plugin/build/withTargetsDir');
 
-  modifiedConfig = withTargetsDir(modifiedConfig, {
-    targetsRoot,
-  });
-
-  if (options.dryRun) {
-    // biome-ignore lint/complexity/noForEach: pre-existing; prefer for-of tracked
-    targetConfigFiles.forEach((file) => {
-      const _targetName = path.basename(path.dirname(file));
-    });
-    return;
-  }
-
-  // Load and modify Xcode project
-  const project = xcode.project(pbxprojPath);
-  project.parseSync();
-
-  // The withXcodeProject modifications happen through the config plugins
-  // which have already been applied to modifiedConfig above
-
-  // Write modified project
-  fs.writeFileSync(pbxprojPath, project.writeSync());
-
-  // Update Podfile if needed
-  await syncPodfile(iosPath, modifiedConfig, options);
+  return withTargetsDir(mockConfig, { targetsRoot });
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing complexity; tracked for refactor
+function logDryRunTargets(targetConfigFiles: string[]) {
+  for (const file of targetConfigFiles) {
+    const _targetName = path.basename(path.dirname(file));
+  }
+}
+
+function writeXcodeProject(pbxprojPath: string) {
+  const project = xcode.project(pbxprojPath);
+  project.parseSync();
+  fs.writeFileSync(pbxprojPath, project.writeSync());
+}
+
 function createMockConfig(
   projectRoot: string,
   projectName: string,
   iosPath: string
 ): any {
-  // Read app.json or package.json to get bundle ID and other config
   let bundleId = `com.example.${projectName.toLowerCase()}`;
   let config: any = {
     name: projectName,
     slug: projectName.toLowerCase(),
   };
 
-  // Try to read app.json first
-  const appJsonPath = path.join(projectRoot, 'app.json');
-  if (fs.existsSync(appJsonPath)) {
-    try {
-      const appJson = JSON.parse(fs.readFileSync(appJsonPath, 'utf-8'));
-      if (appJson.expo) {
-        config = { ...appJson.expo, ...config };
-        bundleId = appJson.expo.ios?.bundleIdentifier || bundleId;
-      }
-    } catch {}
+  const appJsonResult = readAppJsonConfig(projectRoot);
+  if (appJsonResult) {
+    config = { ...appJsonResult.config, ...config };
+    bundleId = appJsonResult.bundleId || bundleId;
   }
 
-  // Try to read Info.plist for bundle ID if not in app.json
-  const infoPlistPath = path.join(iosPath, projectName, 'Info.plist');
-  if (!config.ios?.bundleIdentifier && fs.existsSync(infoPlistPath)) {
-    try {
-      const plistContent = fs.readFileSync(infoPlistPath, 'utf-8');
-      const bundleIdMatch = plistContent.match(
-        /<key>CFBundleIdentifier<\/key>\s*<string>([^<]+)<\/string>/
-      );
-      if (bundleIdMatch?.[1]) {
-        bundleId = bundleIdMatch[1].replace(
-          '$(PRODUCT_BUNDLE_IDENTIFIER)',
-          bundleId
-        );
-      }
-    } catch {}
+  if (!config.ios?.bundleIdentifier) {
+    bundleId = readBundleIdFromInfoPlist(iosPath, projectName, bundleId);
   }
 
   return {
@@ -155,6 +136,52 @@ function createMockConfig(
       platformProjectRoot: iosPath,
     },
   };
+}
+
+function readAppJsonConfig(projectRoot: string): {
+  config: any;
+  bundleId?: string;
+} | null {
+  const appJsonPath = path.join(projectRoot, 'app.json');
+  if (!fs.existsSync(appJsonPath)) {
+    return null;
+  }
+
+  try {
+    const appJson = JSON.parse(fs.readFileSync(appJsonPath, 'utf-8'));
+    if (!appJson.expo) {
+      return null;
+    }
+    return {
+      config: appJson.expo,
+      bundleId: appJson.expo.ios?.bundleIdentifier,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function readBundleIdFromInfoPlist(
+  iosPath: string,
+  projectName: string,
+  bundleId: string
+): string {
+  const infoPlistPath = path.join(iosPath, projectName, 'Info.plist');
+  if (!fs.existsSync(infoPlistPath)) {
+    return bundleId;
+  }
+
+  try {
+    const plistContent = fs.readFileSync(infoPlistPath, 'utf-8');
+    const bundleIdMatch = plistContent.match(
+      /<key>CFBundleIdentifier<\/key>\s*<string>([^<]+)<\/string>/
+    );
+    if (bundleIdMatch?.[1]) {
+      return bundleIdMatch[1].replace('$(PRODUCT_BUNDLE_IDENTIFIER)', bundleId);
+    }
+  } catch {}
+
+  return bundleId;
 }
 
 async function syncPodfile(

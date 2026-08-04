@@ -11,7 +11,7 @@
     "activationRules": [
       {
         "type": "image",
-        "maxCount": 1
+        "maxCount": 5
       }
     ]
   }

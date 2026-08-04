@@ -16,12 +16,16 @@ struct ClipView: View {
                     .font(.title2)
                     .fontWeight(.bold)
                     .foregroundColor(Color("PrimaryText"))
+                    .accessibilityIdentifier("clip-native-title")
+                Text("expo-targets uitest clip invocation")
+                    .font(.caption)
+                    .accessibilityIdentifier("clip-invocation-marker")
                 Text(itemName)
                 Text(price)
                     .fontWeight(.semibold)
                     .foregroundColor(Color("AccentColor"))
                 Button("Complete checkout") {
-                    storeCheckout()
+                    storeCheckout(path: "clip-checkout")
                 }
                 .buttonStyle(.borderedProminent)
                 Button("Open full app") {
@@ -32,12 +36,18 @@ struct ClipView: View {
             }
             .padding()
         }
+        .onAppear {
+            storeCheckout(path: "clip-launch")
+        }
     }
 
-    private func storeCheckout() {
+    private func storeCheckout(path: String) {
         let defaults = UserDefaults(suiteName: "group.com.expotargets.example.native.clip")
         defaults?.set(itemName, forKey: "native-clip:lastItemName")
         defaults?.set(price, forKey: "native-clip:lastPrice")
         defaults?.set(Date().timeIntervalSince1970, forKey: "native-clip:checkoutTimestamp")
+        defaults?.set(true, forKey: "native-clip:invoked")
+        defaults?.set(path, forKey: "native-clip:invocationPath")
+        defaults?.synchronize()
     }
 }

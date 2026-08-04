@@ -12,12 +12,20 @@ import {
 } from './buildPhases';
 import { applyBuildSettings, removeBuildSetting } from './buildSettings';
 import { ensureBundleReactNativePhase } from './bundleReactNative';
-import { configureAppClipEmbed, configureAppExtensionEmbed } from './embed';
+import { ensureCopyFrameworksIntoAppClipPhase } from './copyFrameworksIntoAppClip';
+import {
+  configureAppClipEmbed,
+  configureAppExtensionEmbed,
+  configureWatchAppExtensionEmbed,
+  configureWatchContentEmbed,
+  removeAppExtensionFromHostEmbed,
+} from './embed';
 import { addExternalFileReference } from './fileRefs';
 import { addTargetToVirtualGroup, ensureExpoTargetsGroup } from './groups';
 import {
   addTargetDependency,
   findTargetByProductName,
+  findWatchCompanionTargetUuid,
   removeDuplicateTargets,
   setProductType,
 } from './targetLifecycle';
@@ -180,6 +188,30 @@ function referenceSafariResources(
   }
 }
 
+function referenceBundleResources(
+  project: XcodeProject,
+  plan: XcodeTargetPlan,
+  { target, groupUuid }: { target: XcodeTarget; groupUuid: string }
+): void {
+  for (const resource of plan.bundleResources) {
+    if (!fs.existsSync(resource.sourcePath)) {
+      continue;
+    }
+    const fileRefUuid = addExternalFileReference({
+      project,
+      groupUuid,
+      filePath: resource.referencePath,
+      fileName: resource.file,
+    });
+    addFileToBuildPhase({
+      project,
+      targetUuid: target.uuid,
+      fileRefUuid,
+      phaseType: 'PBXResourcesBuildPhase',
+    });
+  }
+}
+
 function linkFrameworks(
   project: XcodeProject,
   plan: XcodeTargetPlan,
@@ -217,8 +249,117 @@ function applyEmbed(
       target,
       targetProductName,
     });
+    // RN App Clips need host Frameworks copied into AppClips/*.app (DYLD).
+    if (plan.bundleReactNative) {
+      ensureCopyFrameworksIntoAppClipPhase({
+        project,
+        mainTargetUuid,
+        clipProductName: targetProductName,
+      });
+    }
+    return;
   }
-  // 'none' = standalone product (e.g. watch apps); nothing to embed.
+
+  if (plan.embed.kind === 'watch-content') {
+    configureWatchContentEmbed({
+      project,
+      mainTargetUuid,
+      target,
+      targetProductName,
+    });
+    return;
+  }
+
+  if (plan.embed.kind === 'watch-extension') {
+    const watchTargetUuid = findWatchCompanionTargetUuid(project);
+    if (!watchTargetUuid) {
+      throw new Error(
+        `watch-widget "${targetProductName}" requires a type: watch companion in the same app ` +
+          '(watchOS WidgetKit must nest under a Watch .app, not the iOS host)'
+      );
+    }
+    removeAppExtensionFromHostEmbed({
+      project,
+      mainTargetUuid,
+      targetProductName,
+    });
+    configureWatchAppExtensionEmbed({
+      project,
+      watchTargetUuid,
+      target,
+      targetProductName,
+    });
+  }
+  // 'none' = standalone product; nothing to embed.
+}
+
+function stripBuildPhasesWhenNoCode({
+  project,
+  plan,
+  target,
+  reused,
+}: {
+  project: XcodeProject;
+  plan: XcodeTargetPlan;
+  target: XcodeTarget;
+  reused: boolean;
+}): void {
+  if (plan.requiresCode || reused) {
+    return;
+  }
+  for (const phaseType of ['PBXSourcesBuildPhase', 'PBXFrameworksBuildPhase']) {
+    removeBuildPhases({ project, targetUuid: target.uuid, phaseType });
+  }
+}
+
+function referenceTargetArtifacts({
+  project,
+  plan,
+  target,
+  groupUuid,
+}: {
+  project: XcodeProject;
+  plan: XcodeTargetPlan;
+  target: XcodeTarget;
+  groupUuid: string;
+}): void {
+  referenceSwiftFiles(project, plan, { target, groupUuid });
+  referenceAssets(project, plan, { target, groupUuid });
+  if (plan.safari) {
+    referenceSafariResources(project, plan, { target, groupUuid });
+  }
+  referenceBundleResources(project, plan, { target, groupUuid });
+  linkFrameworks(project, plan, target);
+}
+
+function applyMainAndWatchDependencies({
+  project,
+  plan,
+  target,
+  mainTargetUuid,
+}: {
+  project: XcodeProject;
+  plan: XcodeTargetPlan;
+  target: XcodeTarget;
+  mainTargetUuid: string;
+}): void {
+  addTargetDependency({
+    project,
+    mainTargetUuid,
+    dependentTargetUuid: target.uuid,
+  });
+
+  if (plan.embed.kind !== 'watch-extension') {
+    return;
+  }
+  const watchTargetUuid = findWatchCompanionTargetUuid(project);
+  if (watchTargetUuid) {
+    addTargetDependency({
+      project,
+      mainTargetUuid: watchTargetUuid,
+      dependentTargetUuid: target.uuid,
+    });
+  }
 }
 
 /**
@@ -233,15 +374,7 @@ export function applyXcodeTargetPlan(
   const { target, reused } = createOrReuseTarget(project, plan, logger);
 
   setProductType({ target, productType: plan.identity.productType });
-
-  if (!(plan.requiresCode || reused)) {
-    for (const phaseType of [
-      'PBXSourcesBuildPhase',
-      'PBXFrameworksBuildPhase',
-    ]) {
-      removeBuildPhases({ project, targetUuid: target.uuid, phaseType });
-    }
-  }
+  stripBuildPhasesWhenNoCode({ project, plan, target, reused });
 
   applyBuildSettings({
     project,
@@ -249,7 +382,6 @@ export function applyXcodeTargetPlan(
     buildSettings: plan.buildSettings,
     logger,
   });
-  // Standalone apps and extensions should not inherit SKIP_INSTALL
   removeBuildSetting({ project, target, settingKey: 'SKIP_INSTALL' });
 
   ensureBuildPhases(project, plan, target);
@@ -260,19 +392,13 @@ export function applyXcodeTargetPlan(
     virtualGroupUuid: ensureExpoTargetsGroup({ project }),
   });
 
-  referenceSwiftFiles(project, plan, { target, groupUuid });
-  referenceAssets(project, plan, { target, groupUuid });
-  if (plan.safari) {
-    referenceSafariResources(project, plan, { target, groupUuid });
-  }
-  linkFrameworks(project, plan, target);
-
-  addTargetDependency({
+  referenceTargetArtifacts({ project, plan, target, groupUuid });
+  applyMainAndWatchDependencies({
     project,
+    plan,
+    target,
     mainTargetUuid: mainTarget.uuid,
-    dependentTargetUuid: target.uuid,
   });
-
   applyEmbed(project, plan, { target, mainTargetUuid: mainTarget.uuid });
 
   if (plan.bundleReactNative) {

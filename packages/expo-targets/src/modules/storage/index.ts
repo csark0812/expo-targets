@@ -83,10 +83,9 @@ export class AppGroupStorage {
   }
 
   setData(data: Record<string, any>) {
-    // biome-ignore lint/complexity/noForEach: pre-existing; prefer for-of tracked
-    Object.entries(data).forEach(([key, value]) => {
+    for (const [key, value] of Object.entries(data)) {
       this.set(key, value);
-    });
+    }
   }
 
   getData<T extends Record<string, any>>(): T {
@@ -101,8 +100,7 @@ export class AppGroupStorage {
 
       const parsedData: Record<string, any> = {};
 
-      // biome-ignore lint/complexity/noForEach: pre-existing; prefer for-of tracked
-      Object.entries(rawData).forEach(([key, value]) => {
+      for (const [key, value] of Object.entries(rawData)) {
         if (typeof value === 'string') {
           try {
             parsedData[key] = JSON.parse(value);
@@ -112,7 +110,7 @@ export class AppGroupStorage {
         } else {
           parsedData[key] = value;
         }
-      });
+      }
 
       return parsedData as T;
     } catch {

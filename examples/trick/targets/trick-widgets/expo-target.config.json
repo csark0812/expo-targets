@@ -7,7 +7,7 @@
   "ios": {
     "bundleIdentifier": "com.expotargets.example.trick.widgets",
     "displayName": "ET Trick Widget",
-    "deploymentTarget": "16.2",
+    "deploymentTarget": "18.0",
     "colors": {
       "AccentColor": { "light": "#2F6BFF", "dark": "#5B8CFF" },
       "BackgroundColor": { "light": "#0B1220", "dark": "#0B1220" },
