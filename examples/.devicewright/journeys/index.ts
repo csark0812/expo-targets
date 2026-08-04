@@ -22,6 +22,7 @@ import { runNotificationContentJourney } from "./notification-content";
 import { runNotificationServiceJourney } from "./notification-service";
 import { runPhotoEditingJourney } from "./photo-editing";
 import { runQuicklookPreviewJourney } from "./quicklook-preview";
+import { runQuicklookThumbnailJourney } from "./quicklook-thumbnail";
 import { runSafariJourney } from "./safari";
 import { runShareActionJourney } from "./share";
 import { runSpotlightJourney } from "./spotlight";
@@ -59,6 +60,7 @@ export { runNotificationContentJourney } from "./notification-content";
 export { runNotificationServiceJourney } from "./notification-service";
 export { runPhotoEditingJourney } from "./photo-editing";
 export { runQuicklookPreviewJourney } from "./quicklook-preview";
+export { runQuicklookThumbnailJourney } from "./quicklook-thumbnail";
 export { runSafariJourney } from "./safari";
 export { runShareActionJourney } from "./share";
 export { runSpotlightJourney } from "./spotlight";
@@ -86,7 +88,6 @@ export type JourneyRunner = (
 
 /** ids proven via generic Settings→Apps→search host→host settings page. */
 const APPS_SETTINGS_IDS = [
-  "quicklook-thumbnail",
   "unwanted-communication",
   "spotlight-delegate",
   "bg-download",
@@ -129,6 +130,7 @@ const LIVE: Record<string, JourneyRunner> = {
   "call-directory": (d) => runCallDirectoryJourney(d),
   "message-filter": (d) => runMessageFilterJourney(d),
   "quicklook-preview": (d) => runQuicklookPreviewJourney(d),
+  "quicklook-thumbnail": (d) => runQuicklookThumbnailJourney(d),
   spotlight: (d) => runSpotlightJourney(d),
   "location-push": (d) => runLocationPushJourney(d),
   watch: (d) => runWatchJourney(d, "watch"),
