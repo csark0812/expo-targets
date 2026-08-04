@@ -46,7 +46,9 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
       - run: bun run --filter mcp-dev build
       - run: bun test --cwd packages/mcp-dev src
-      - run: tsc -p packages/mcp-dev --noEmit
+      - name: Typecheck mcp-dev
+        working-directory: packages/mcp-dev
+        run: bunx tsc --noEmit
 
       - name: Configure git
         run: |

@@ -6,7 +6,7 @@ import { acquireMcpDevSingleton } from "../singleton";
 import { createSupervisor } from "../supervisor";
 
 async function main(): Promise<void> {
-  let parsed;
+  let parsed: ReturnType<typeof parseArgs>;
   try {
     parsed = parseArgs(process.argv.slice(2));
   } catch (err) {
