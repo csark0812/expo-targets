@@ -65,12 +65,12 @@ export const OS_LIMIT_CLAIMS: readonly ClaimsEntry[] = [
   {
     id: "message-filter",
     reason:
-      "Messages SMS Filtering / Unknown Senders / Text Message Filter Settings listing or inbound SMS filter invoke is not reliable on Simulator after pluginkit registration (Messages settings pane may render blank; filter surfaces may be absent)",
+      "Messages Settings detail is AX-blank on Simulator (Apps→Messages often Settings|Apps|BackButton only); Unknown Senders / Text Message Filter / Manage Filtering / SMS Filtering Settings search returns no results; App-prefs:MESSAGES is a no-op under iOS 26 Apps Settings — cannot list or enable ET MsgFilter Target or prove inbound filter invoke",
   },
   {
     id: "spotlight",
     reason:
-      "Spotlight import (CSImportExtension) registered but system indexer/search does not reliably surface imported attributes on Simulator",
+      "CSImportExtension + UTI register and Files can open et-import.etspot on Simulator, but importer never writes App Group markers (mdimport unavailable in simctl; Spotlight search alone is untrusted)",
   },
   {
     id: "device-activity-monitor",

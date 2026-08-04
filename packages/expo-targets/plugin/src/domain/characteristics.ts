@@ -336,7 +336,8 @@ const BASE_TYPE_CHARACTERISTICS: Record<
     frameworks: [],
     productType: 'com.apple.product-type.app-extension',
     extensionPointIdentifier: 'com.apple.spotlight.import',
-    defaultUsesAppGroups: false,
+    // Journey proof uses App Group importer markers; sync groups by default.
+    defaultUsesAppGroups: true,
     requiresEntitlements: true,
     basePlist: {},
     supportsActivationRules: false,

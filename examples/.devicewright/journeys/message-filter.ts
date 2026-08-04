@@ -64,47 +64,64 @@ async function tryOpenSmsFiltering(
   steps: string[],
 ): Promise<boolean> {
   // Path A: Settings → Apps → Messages → Unknown Senders / Text Message Filter
+  // Confirm on Messages chrome only (not filter rows) — filter rows are often
+  // absent on Sim; waiting on them false-fails before we can dump labels.
   try {
     await openSettingsApps(device, steps);
     await searchAppsAndOpen(device, "Messages", ["Messages"], steps, {
       exactRow: true,
       confirmLabels: [
-        ...FILTER_SURFACE_LABELS,
         "iMessage",
         "Share Name and Photo",
         "Send & Receive",
         "Keep Messages",
+        "Messages in iCloud",
+        "Text Message Forwarding",
+        "Blocked Contacts",
+        "Unknown Senders",
       ],
     });
     steps.push("apps-messages-settings");
     await sleep(900);
 
     // Blank Messages settings panes happen on some Sims — re-probe AX a few times.
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 8; i++) {
       const labels = flattenLabels(await device.accessibilityTree());
-      if (labels.length > 3) break;
+      if (labels.length > 5) break;
       await sleep(500);
     }
 
-    const openedSpam = await tapLabelInTree(device, FILTER_SURFACE_LABELS, {
-      exactOnly: false,
-    });
-    if (openedSpam) {
-      steps.push("messages-spam-filtering-surface");
-      await sleep(700);
-      // Nested filter / Manage Filtering page if present.
-      await tapLabelInTree(
-        device,
-        [
-          "Text Message Filter",
-          "Manage Filtering",
-          "SMS Filtering",
-          "SMS / MMS Filtering",
-        ],
-        { exactOnly: false },
-      );
+    // Scroll the Messages settings page — filter rows are often below the fold.
+    for (let i = 0; i < 5; i++) {
+      const openedSpam = await tapLabelInTree(device, FILTER_SURFACE_LABELS, {
+        exactOnly: false,
+      });
+      if (openedSpam) {
+        steps.push("messages-spam-filtering-surface");
+        await sleep(700);
+        await tapLabelInTree(
+          device,
+          [
+            "Text Message Filter",
+            "Manage Filtering",
+            "SMS Filtering",
+            "SMS / MMS Filtering",
+          ],
+          { exactOnly: false },
+        );
+        await sleep(500);
+        return true;
+      }
+      await device
+        .swipe({
+          xStart: 210,
+          yStart: 720,
+          xEnd: 210,
+          yEnd: 220,
+          duration: 0.35,
+        })
+        .catch(() => undefined);
       await sleep(500);
-      return true;
     }
 
     const labels = flattenLabels(await device.accessibilityTree());
@@ -119,10 +136,50 @@ async function tryOpenSmsFiltering(
       return true;
     }
     steps.push(
-      `messages-settings-labels:${labels.slice(0, 40).join("|") || "(empty)"}`,
+      `messages-settings-labels:${labels.slice(0, 50).join("|") || "(empty)"}`,
     );
   } catch (e) {
-    steps.push(`apps-messages-path-failed:${String(e).slice(0, 160)}`);
+    steps.push(`apps-messages-path-failed:${String(e).slice(0, 200)}`);
+    try {
+      const labels = flattenLabels(await device.accessibilityTree());
+      steps.push(
+        `messages-settings-labels-on-fail:${labels.slice(0, 50).join("|") || "(empty)"}`,
+      );
+    } catch {
+      /* ignore */
+    }
+  }
+
+  // Path A2: App-prefs deep link (often a no-op on iOS 26 Apps Settings, but cheap)
+  for (const url of ["App-prefs:MESSAGES", "App-prefs:root=MESSAGES"]) {
+    try {
+      await device.openUrl(url);
+      await sleep(1_200);
+      const labels = flattenLabels(await device.accessibilityTree());
+      if (
+        labels.some((l) =>
+          /iMessage|Send & Receive|Unknown Senders|Text Message Filter|SMS Filtering/i.test(
+            l,
+          ),
+        )
+      ) {
+        steps.push(`messages-deeplink-ok:${url}`);
+        const openedSpam = await tapLabelInTree(device, FILTER_SURFACE_LABELS, {
+          exactOnly: false,
+        });
+        if (openedSpam) {
+          steps.push("messages-spam-filtering-surface");
+          return true;
+        }
+        steps.push(
+          `messages-deeplink-labels:${labels.slice(0, 40).join("|")}`,
+        );
+      } else {
+        steps.push(`messages-deeplink-miss:${url}`);
+      }
+    } catch (e) {
+      steps.push(`messages-deeplink-fail:${url}:${String(e).slice(0, 80)}`);
+    }
   }
 
   // Path B: Settings / Apps search for iOS 26 filter labels

@@ -18,6 +18,7 @@ import {
   assertPayloadContains,
   dismissSystemAlerts,
   findNamedViaPointProbe,
+  flattenLabels,
   sleep,
   tapProbeHit,
   waitForNamed,
@@ -26,6 +27,7 @@ import { tapLabelInTree } from "./settings-nav";
 
 const FILES_BUNDLE = "com.apple.DocumentsApp";
 const FIXTURE_NAME = "et-import.etspot";
+const HOST_FOLDER_LABELS = ["ET Spotlight", "ET Spotlight Target", "spotlight"];
 
 function pluginkitHasSpotlightImport(udid: string, appexId: string): boolean {
   const r = spawnSync(
@@ -65,27 +67,104 @@ function writeFixtureToDocuments(
   steps.push(`fixture-written:${FIXTURE_NAME}`);
 }
 
-async function touchFileInFiles(device: DeviceSession, steps: string[]): Promise<void> {
-  // Opening the file in Files can nudge Spotlight / Quick Look pipelines.
+async function openFilesBrowse(device: DeviceSession, steps: string[]): Promise<void> {
   await device.launchApp(FILES_BUNDLE, { terminateRunning: true });
-  await sleep(1_200);
+  await sleep(1_400);
   await dismissSystemAlerts(device);
-  await tapLabelInTree(device, ["Browse"], { exactOnly: true });
-  await sleep(600);
-  await tapLabelInTree(device, ["On My iPhone", "On My iPad"], {
+  for (let i = 0; i < 4; i++) {
+    const labs = flattenLabels(await device.accessibilityTree());
+    if (
+      labs.some((l) => /^Locations$/i.test(l.trim())) ||
+      labs.some((l) => /On My iPhone|iCloud Drive/i.test(l))
+    ) {
+      steps.push("files-browse-surface");
+      return;
+    }
+    const tapped = await tapLabelInTree(device, ["Browse"], { exactOnly: true });
+    if (!tapped) {
+      await device.tap({ x: 315, y: 880 });
+      steps.push("files-browse-tab-hotspot");
+    } else {
+      steps.push("files-browse-tab");
+    }
+    await sleep(700);
+  }
+}
+
+/** Open Documents fixture in Files — same drill-in as quicklook-preview (hotspots). */
+async function openFixtureInFiles(
+  device: DeviceSession,
+  steps: string[],
+): Promise<boolean> {
+  await openFilesBrowse(device, steps);
+  await sleep(500);
+
+  const openedOnMy = await tapLabelInTree(device, ["On My iPhone", "On My iPad"], {
     exactOnly: false,
   });
-  await sleep(700);
-  await tapLabelInTree(device, ["ET Spotlight", "ET Spotlight Target"], {
+  if (!openedOnMy) {
+    try {
+      const hit = await findNamedViaPointProbe(
+        device,
+        ["On My iPhone", "On My iPad"],
+        { timeoutMs: 4_000, match: "includes" },
+      );
+      await tapProbeHit(device, hit);
+    } catch {
+      steps.push("files-on-my-iphone-miss");
+      return false;
+    }
+  }
+  steps.push("files-on-my-iphone");
+  await sleep(900);
+
+  const hostOpened = await tapLabelInTree(device, HOST_FOLDER_LABELS, {
     exactOnly: false,
   });
-  await sleep(700);
-  const opened = await tapLabelInTree(device, [FIXTURE_NAME, "et-import"], {
+  if (!hostOpened) {
+    try {
+      const hit = await findNamedViaPointProbe(device, HOST_FOLDER_LABELS, {
+        timeoutMs: 5_000,
+        match: "includes",
+        yStartRatio: 0.15,
+        yEndRatio: 0.95,
+      });
+      await tapProbeHit(device, hit);
+    } catch (e) {
+      const labs = flattenLabels(await device.accessibilityTree());
+      steps.push(
+        `files-host-folder-miss:${labs.slice(0, 40).join("|") || "(empty)"}`,
+      );
+      steps.push(`files-host-folder-err:${String(e).slice(0, 120)}`);
+      return false;
+    }
+  }
+  steps.push("files-host-folder");
+  await sleep(900);
+
+  const fileOpened = await tapLabelInTree(device, [FIXTURE_NAME, "et-import"], {
     exactOnly: false,
   });
-  if (opened) steps.push("files-fixture-touched");
-  else steps.push("files-fixture-touch-skip");
-  await sleep(800);
+  if (!fileOpened) {
+    try {
+      const hit = await findNamedViaPointProbe(
+        device,
+        [FIXTURE_NAME, "et-import", ".etspot"],
+        { timeoutMs: 5_000, match: "includes" },
+      );
+      await tapProbeHit(device, hit);
+    } catch (e) {
+      const labs = flattenLabels(await device.accessibilityTree());
+      steps.push(
+        `files-fixture-miss:${labs.slice(0, 40).join("|") || "(empty)"}`,
+      );
+      steps.push(`files-fixture-err:${String(e).slice(0, 120)}`);
+      return false;
+    }
+  }
+  steps.push("files-fixture-opened");
+  await sleep(2_000);
+  return true;
 }
 
 async function trySpotlightSearch(
@@ -177,11 +256,12 @@ export async function runSpotlightJourney(
     steps.push("pluginkit-spotlight-import");
 
     writeFixtureToDocuments(device.deviceId, entry.hostBundleId, steps);
-    await touchFileInFiles(device, steps);
+    const filesOk = await openFixtureInFiles(device, steps);
+    if (!filesOk) steps.push("files-fixture-touch-skip");
 
     // Poll App Group for importer side-effect (may take a while / never on Sim).
     let imported = false;
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < (filesOk ? 16 : 8); i++) {
       await device.launchApp(entry.hostBundleId, { terminateRunning: true });
       await sleep(600);
       try {
