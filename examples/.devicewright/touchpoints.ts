@@ -244,7 +244,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     id: "call-directory",
     tranche: "T7",
     touchpoint:
-      "Settings Phone → Call Blocking & Identification lists ET CallDir Target",
+      "pluginkit callkit.call-directory + Settings Phone → Call Blocking & Identification lists ET CallDir Target (CLAIMS — Phone/Call Blocking opaque on Air)",
     status: "concrete",
   },
   {
@@ -257,7 +257,8 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
   {
     id: "unwanted-communication",
     tranche: "T7",
-    touchpoint: "Settings Apps host registration",
+    touchpoint:
+      "pluginkit classification-ui + Settings Phone → SMS/Call Reporting lists ET Unwanted Target (CLAIMS — reporting picker opaque on non-telephony Sim)",
     status: "concrete",
   },
   {

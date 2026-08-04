@@ -469,9 +469,9 @@ export const TARGET_CATALOG: Record<string, TargetCatalogEntry> = {
     id: "call-directory",
     path: "examples/call-directory",
     hostBundleId: "com.expotargets.example.call-directory",
-    hostDisplayName: "ET call-directory",
-    extensionName: "ET call-directory",
-    extensionAliases: ["call-directory"],
+    hostDisplayName: "ET CallDir",
+    extensionName: "ET CallDir Target",
+    extensionAliases: ["ET CallDir Target", "ET CallDir", "call-directory"],
     payloadMarker: "ready",
     completeButton: "",
     testIds: {
