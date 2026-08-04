@@ -55,7 +55,9 @@
       "name": "@expo-targets/example-app-intent",
       "version": "1.0.0",
       "dependencies": {
+        "app-intent-host": "file:./modules/app-intent-host",
         "expo": "~57.0.9",
+        "expo-modules-core": "~57.0.8",
         "expo-splash-screen": "~57.0.5",
         "expo-status-bar": "~57.0.1",
         "expo-targets": "workspace:*",
@@ -2462,6 +2464,8 @@
     "@expo-targets/example-account-auth/typescript": ["typescript@6.0.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="],
 
     "@expo-targets/example-action/typescript": ["typescript@6.0.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="],
+
+    "@expo-targets/example-app-intent/app-intent-host": ["app-intent-host@file:examples/app-intent/modules/app-intent-host", { "peerDependencies": { "expo": "*", "react": "*", "react-native": "*" } }],
 
     "@expo-targets/example-app-intent/typescript": ["typescript@6.0.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="],
 

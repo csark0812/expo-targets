@@ -9,7 +9,6 @@
     "displayName": "ET FileProv Target",
     "infoPlist": {
       "NSExtension": {
-        "NSExtensionPrincipalClass": "FileProviderExtension",
         "NSExtensionFileProviderSupportsEnumeration": true,
         "NSExtensionFileProviderDocumentGroup": "group.com.expotargets.example.file-provider"
       }
