@@ -615,23 +615,29 @@ const FRAMEWORK_PATHS_RULE = `      if target.name.include?('{{TARGET_NAME}}')
                     xcconfig_content.gsub!(/^HEADER_SEARCH_PATHS = .*$/, '')
                     xcconfig_content += "\\nHEADER_SEARCH_PATHS = #{header_paths_match[1]}\\n"
                   end
-                  # Copy OTHER_SWIFT_FLAGS (module maps for ExpoModulesCore) but drop
-                  # host-only EXUpdates / expo-dev-client maps — nested targets inherit
-                  # search paths from the host and would otherwise link Updates into the appex.
+                  # Copy OTHER_SWIFT_FLAGS (module maps) but drop host-only Updates /
+                  # DevLauncher maps. Must strip the paired -Xcc too — otherwise
+                  # swiftc sees -Xcc -Xcc -fmodule-map-file=... and rejects the flag.
                   swift_flags_match = main_xcconfig_content.match(/^OTHER_SWIFT_FLAGS = (.+)$/m)
                   if swift_flags_match
                     swift_flags = swift_flags_match[1]
+                      .gsub(/\\s*-Xcc\\s+-fmodule-map-file="[^"]*EXUpdates[^"]*"/, '')
+                      .gsub(/\\s*-Xcc\\s+-fmodule-map-file="[^"]*EXDevLauncher[^"]*"/, '')
+                      .gsub(/\\s*-Xcc\\s+-fmodule-map-file="[^"]*expo-dev-client[^"]*"/, '')
                       .gsub(/\\s*-fmodule-map-file="[^"]*EXUpdates[^"]*"/, '')
                       .gsub(/\\s*-fmodule-map-file="[^"]*EXDevLauncher[^"]*"/, '')
                       .gsub(/\\s*-fmodule-map-file="[^"]*expo-dev-client[^"]*"/, '')
                     xcconfig_content.gsub!(/^OTHER_SWIFT_FLAGS = .*$/, '')
                     xcconfig_content += "\\nOTHER_SWIFT_FLAGS = #{swift_flags}\\n"
                   end
-                  # Copy SWIFT_INCLUDE_PATHS (Swift module search paths)
+                  # Copy SWIFT_INCLUDE_PATHS (drop host-only EXUpdates)
                   swift_include_match = main_xcconfig_content.match(/^SWIFT_INCLUDE_PATHS = (.+)$/m)
                   if swift_include_match
+                    swift_includes = swift_include_match[1]
+                      .gsub(/\\s*"\\$\\{PODS_CONFIGURATION_BUILD_DIR\\}\\/EXUpdates"/, '')
+                      .gsub(/\\s*"\\$\\{PODS_CONFIGURATION_BUILD_DIR\\}\\/EXDevLauncher"/, '')
                     xcconfig_content.gsub!(/^SWIFT_INCLUDE_PATHS = .*$/, '')
-                    xcconfig_content += "\\nSWIFT_INCLUDE_PATHS = #{swift_include_match[1]}\\n"
+                    xcconfig_content += "\\nSWIFT_INCLUDE_PATHS = #{swift_includes}\\n"
                   end
                 end
               end

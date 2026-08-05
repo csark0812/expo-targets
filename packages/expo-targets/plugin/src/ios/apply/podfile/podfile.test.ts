@@ -5,6 +5,7 @@ import { normalizePodfile } from '../../../../test-utils/normalizePodfile';
 import {
   ensureExcludedPackagesPostIntegrate,
   ensureMainTargetUsesFrameworks,
+  ensureReactNativeExtensionFrameworkPaths,
   generateReactNativeTargetBlock,
   generateStandaloneTargetBlock,
   hasTargetBlock,
@@ -171,6 +172,23 @@ describe('ensureMainTargetUsesFrameworks', () => {
     const result = ensureMainTargetUsesFrameworks(withFrameworksPodfile, 'App');
     expect(normalizePodfile(result)).toBe(
       normalizePodfile(withFrameworksPodfile)
+    );
+  });
+});
+
+describe('ensureReactNativeExtensionFrameworkPaths', () => {
+  test('strips paired -Xcc when dropping host-only module maps', () => {
+    const result = ensureReactNativeExtensionFrameworkPaths(
+      withFrameworksPodfile,
+      [{ targetName: 'Share', deploymentTarget: '15.1' }],
+      'App'
+    );
+    // Orphaned -Xcc left a -Xcc -Xcc -fmodule-map-file=... that swiftc rejects.
+    expect(result).toContain(
+      String.raw`.gsub(/\s*-Xcc\s+-fmodule-map-file="[^"]*EXUpdates[^"]*"/, '')`
+    );
+    expect(result).toContain(
+      String.raw`.gsub(/\s*"\$\{PODS_CONFIGURATION_BUILD_DIR\}\/EXUpdates"/, '')`
     );
   });
 });
