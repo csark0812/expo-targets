@@ -65,6 +65,50 @@ Opting into Live Activity writes `liveActivity` into `expo-target.config.json`, 
 
 See [`examples/trick`](../examples/trick) for a full host + widget pairing.
 
+## Configurable widgets (Edit Widget)
+
+iOS "Edit Widget" (long-press → Edit) uses WidgetKit **App Intent / Intent**
+configuration — native Swift only. expo-targets does not generate
+`AppIntentConfiguration` for you yet; deepen under `targets/<name>/ios/`.
+
+1. Swap `StaticConfiguration` for `AppIntentConfiguration` (iOS 17+) or
+   `IntentConfiguration` + an Intents definition (older).
+2. Persist the user's selection in the App Group `UserDefaults` suite (same
+   `appGroup` as the target).
+3. From the host app, read/write that suite with `createTarget('…').get/set` /
+   `AppGroupStorage`, then `refresh()`.
+
+Sketch:
+
+```swift
+// targets/hello-widget/ios/Widget.swift (deepen — not CNG)
+struct SelectListIntent: WidgetConfigurationIntent {
+  static var title: LocalizedStringResource = "List"
+  @Parameter(title: "List") var listId: String?
+}
+
+struct HelloWidget: Widget {
+  var body: some WidgetConfiguration {
+    AppIntentConfiguration(kind: kind, intent: SelectListIntent.self, provider: Provider()) { entry in
+      HelloWidgetView(entry: entry)
+    }
+    .configurationDisplayName("Hello Widget")
+  }
+}
+
+// In Provider timeline: read intent.listId, fall back to App Group defaults.
+```
+
+```ts
+// Host RN — after the user picks a default list in-app
+const widget = createTarget("HelloWidget");
+widget.set("listId", selectedId);
+widget.refresh();
+```
+
+React/Expo-UI-first configurable widgets: see official
+[`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) (do not dual-generate).
+
 ## Android widgets
 
 Android home-screen widgets (Glance / RemoteViews) stay **bridge-grade** and intentional while Expo’s official widgets stack is iOS-led. Other Apple extension types have no Android equivalent — see [limits.md](./limits.md).

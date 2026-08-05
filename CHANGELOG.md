@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.8] - 2026-08-05
+
+### Fixed
+
+- **`excludedPackages` for nested RN extensions (#42):** Config was plumbed but ignored. Nested targets now record exclusions in the Podfile and a `post_integrate` hook strips those packages from `expo-configure-project.sh` then regenerates `ExpoModulesProvider.swift` (nested `use_expo_modules!(exclude:)` is a no-op). Fixes blank Messages/share sheets when the host links `expo-updates` / `expo-dev-client`.
+- **Messages `displayName` (#22):** `CFBundleDisplayName` and `CFBundleName` both receive the literal `displayName` (not `$(PRODUCT_NAME)` / `*Target`).
+
 ### Changed
 
 - **Breaking (iOS sealed build):** Plugin-generated target artifacts move from `targets/*/ios/build/` to `ios/<App>/ExpoTargetsGenerated/<SanitizedProductName>/` (Info.plist, entitlements, Assets, RN/Messages stubs, Safari Resources). Host Live Activity / App Shortcuts Swift stays flat under `ExpoTargetsGenerated/*.swift`. Re-run `expo prebuild` (or `expo-targets sync`). Update any scripts that `cp` into the old path — on apply the plugin deletes that target’s legacy `targets/<name>/ios/build` when present. Do not hand-edit sealed or legacy build dirs. See `docs/widgets.md` and Safari Resources in `docs/configuration.md`.
@@ -15,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `docs/limits.md`: max Sim-greenable (**P**) policy, S3a spike gate, leftover register, currently-green expansion backlog.
 - Live Activity CLAIMS narrowed to DI / push / StandBy (+ Watch after S3a); NCE expand→custom UI required (removed `notification-content` os-limit row).
 - **Product posture:** expo-targets owns Expo’s negative space (share/action/clip/messages/stickers/wallet and related Apple targets). Native WidgetKit + Live Activities are **first-class** here; official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) remains an alternate React/Expo-UI path — do not dual-generate. See `docs/widgets.md` and `docs/deprecations.md`.
+- `docs/widgets.md`: configurable widgets (Edit Widget) via native `AppIntentConfiguration` + App Group / `createTarget` (issue #15).
 - `create-expo-target`: Share/Action/Clip/Messages lead the menu; Widget scaffolds native WidgetKit; React Native defaults to **Yes** for share/action/clip.
 - Docs governed by `@csark0812/skeleton` (registry + `AGENTS.md`); bumped to `^1.5.7` (audit hang fix).
 - iOS config-plugin pipeline split into Observe → Plan → Apply; Biome replaces ESLint/Prettier.

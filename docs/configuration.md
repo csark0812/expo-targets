@@ -62,11 +62,11 @@ targets/my-widget/
 
 | Field              | Default     | Description                                                                                                                                                      |
 | ------------------ | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `displayName`      | `name`      | Human-readable name shown in widget picker                                                                                                                       |
+| `displayName`      | `name`      | Human-readable name (`CFBundleDisplayName` / `CFBundleName` on iOS; widget picker label)                                                                          |
 | `appGroup`         | _inherited_ | App Group ID. If not specified, automatically inherited from your main app's `app.json` entitlements (see [App Group Inheritance](#app-group-inheritance) below) |
 | `liveActivity`     | —           | Widget-only ActivityKit schema (`attributesName`, `static`, `contentState`) — CNG into `ExpoTargetsGenerated/` (see [widgets.md](./widgets.md))                  |
 | `entry`            | —           | React Native entry point for share/action/clip/messages (see [Entry Field](#entry-field) below)                                                                  |
-| `excludedPackages` | `[]`        | Packages to exclude from RN bundle                                                                                                                               |
+| `excludedPackages` | `[]`        | Expo packages to omit from the nested extension's `ExpoModulesProvider` (via Podfile `post_integrate`; needs `entry`) — e.g. `expo-updates`, `expo-dev-client`  |
 
 ### Entry Field
 

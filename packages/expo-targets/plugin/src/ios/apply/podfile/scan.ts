@@ -11,10 +11,18 @@ export interface PodfileTargetRef {
   deploymentTarget: string;
 }
 
+export interface ExcludedPackagesTargetRef {
+  targetName: string;
+  packages: string[];
+}
+
 const NESTED_TARGET_START = /^\s+target\s+'([^']+)'\s+do/;
 const PLATFORM_LINE = /platform\s+:ios,\s+'([^']+)'/;
 const STANDALONE_TARGET =
   /target\s+'([^']+)'\s+do\s+platform\s+:ios,\s+'([^']+)'/g;
+/** Keep in sync with EXCLUDED_PACKAGES_MARKER in podfile.ts */
+const EXCLUDED_PACKAGES_LINE =
+  /# \[expo-targets-excluded-packages\]\s*(.+)/;
 
 /**
  * The main target's block, up to the `post_install` hook when there is one.
@@ -95,6 +103,32 @@ export function findReactNativeExtensionTargets(
       deploymentTarget:
         block.match(PLATFORM_LINE)?.[1] || fallbackDeploymentTarget,
     }));
+}
+
+/**
+ * Nested RN targets that declare `excludedPackages` via the marker comment.
+ * Used to rebuild the `post_integrate` strip hook after each target apply.
+ */
+export function findExcludedPackagesTargets(
+  podfile: string,
+  mainTargetName: string
+): ExcludedPackagesTargetRef[] {
+  const body = mainTargetBody(podfile, mainTargetName);
+  if (!body) {
+    return [];
+  }
+
+  return nestedTargetBlocks(body, mainTargetName)
+    .filter(({ block }) => block.includes('inherit! :search_paths'))
+    .map(({ name, block }) => {
+      const match = block.match(EXCLUDED_PACKAGES_LINE);
+      const packages = (match?.[1] ?? '')
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean);
+      return { targetName: name, packages };
+    })
+    .filter((t) => t.packages.length > 0);
 }
 
 /**

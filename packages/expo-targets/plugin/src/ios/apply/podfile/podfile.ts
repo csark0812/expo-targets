@@ -154,13 +154,17 @@ function indentCustomPods(podsRbContent?: string): string {
   return `\n${indented}\n`;
 }
 
+/** Parseable marker: packages to strip from this nested target's ExpoModulesProvider. */
+export const EXCLUDED_PACKAGES_MARKER = '# [expo-targets-excluded-packages]';
+
 /**
  * Generate a Podfile target block for a React Native extension.
  * Extension targets only inherit search paths, with no explicit pod dependencies.
  * This avoids linking incompatible modules like Expo that contain UIApplication APIs.
  *
- * Note: ExpoTargetsMessages is accessed via the main app's autolinking through shared
- * registry defined in generated code, so no direct pod dependency is needed.
+ * `excludedPackages` is recorded as a comment marker so a `post_integrate` hook can
+ * strip those names from `expo-configure-project.sh` and regenerate the provider.
+ * Nested `use_expo_modules!(exclude:)` is a no-op (parent AutolinkingManager).
  *
  * @param podsRbContent - Optional content from a pods.rb file in the target directory.
  *                        Allows custom CocoaPods configuration (e.g., Firebase, third-party SDKs).
@@ -171,13 +175,22 @@ export function generateReactNativeTargetBlock({
   deploymentTarget,
   extensionType: _extensionType,
   podsRbContent,
+  excludedPackages,
 }: {
   targetName: string;
   deploymentTarget: string;
   extensionType: string;
   podsRbContent?: string;
+  excludedPackages?: string[];
 }): string {
   const customPods = indentCustomPods(podsRbContent);
+  const packages = (excludedPackages ?? [])
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const excludeLine =
+    packages.length > 0
+      ? `\n    ${EXCLUDED_PACKAGES_MARKER} ${packages.join(',')}`
+      : '';
 
   // App Clips still use search_paths here; framework embedding for the clip
   // product is handled by a dedicated PBX shell phase (inherit! :complete
@@ -185,7 +198,7 @@ export function generateReactNativeTargetBlock({
   return `
   target '${targetName}' do
     platform :ios, '${deploymentTarget}'
-    inherit! :search_paths${customPods}
+    inherit! :search_paths${excludeLine}${customPods}
   end
 `;
 }
@@ -686,4 +699,87 @@ export function ensureReactNativeExtensionFrameworkPaths(
     '\n' +
     afterInsert
   );
+}
+
+const EXCLUDED_PACKAGES_POST_INTEGRATE_START =
+  '# [expo-targets-excluded-packages-start]';
+const EXCLUDED_PACKAGES_POST_INTEGRATE_END =
+  '# [expo-targets-excluded-packages-end]';
+
+function rubySingleQuoted(value: string): string {
+  return `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
+}
+
+function buildExcludedPackagesPostIntegrate(
+  exclusions: { targetName: string; packages: string[] }[]
+): string {
+  const hashEntries = exclusions
+    .map(({ targetName, packages }) => {
+      const pkgs = packages.map(rubySingleQuoted).join(', ');
+      return `    ${rubySingleQuoted(targetName)} => [${pkgs}]`;
+    })
+    .join(',\n');
+
+  // Ruby `#{...}` interpolations must not go through a TS template literal.
+  const ruby = [
+    EXCLUDED_PACKAGES_POST_INTEGRATE_START,
+    '# Strip host-only Expo packages from nested RN extension ExpoModulesProviders.',
+    '# Nested use_expo_modules!(exclude:) is a no-op (parent AutolinkingManager);',
+    '# Expo regenerates the provider during integrate_user_targets after post_install.',
+    'post_integrate do |installer|',
+    '  exclusions = {',
+    hashEntries,
+    '  }',
+    '  exclusions.each do |target_name, packages|',
+    '    next if packages.nil? || packages.empty?',
+    '    support_dir = File.join(installer.sandbox.root, \'Target Support Files\', "Pods-#{target_name}")',
+    "    script_path = File.join(support_dir, 'expo-configure-project.sh')",
+    "    provider_path = File.join(support_dir, 'ExpoModulesProvider.swift')",
+    '    unless File.exist?(script_path)',
+    '      Pod::UI.warn "[expo-targets] Missing #{script_path}; skip excludedPackages for #{target_name}"',
+    '      next',
+    '    end',
+    '    content = File.read(script_path)',
+    '    packages.each do |pkg|',
+    '      content.gsub!(/\\s*"#{Regexp.escape(pkg)}"/, \'\')',
+    '    end',
+    '    File.write(script_path, content)',
+    "    ok = system({ 'PODS_ROOT' => installer.sandbox.root.to_s }, 'bash', script_path)",
+    '    unless ok',
+    '      raise "[expo-targets] Failed to regenerate ExpoModulesProvider for #{target_name} after excludedPackages strip"',
+    '    end',
+    '    unless File.exist?(provider_path)',
+    '      raise "[expo-targets] ExpoModulesProvider missing after regenerate for #{target_name}"',
+    '    end',
+    '    Pod::UI.puts "[expo-targets] Applied excludedPackages to #{target_name}: #{packages.join(\', \')}"',
+    '  end',
+    'end',
+    EXCLUDED_PACKAGES_POST_INTEGRATE_END,
+    '',
+  ].join('\n');
+
+  return ruby;
+}
+
+/**
+ * Ensure a top-level `post_integrate` hook strips `excludedPackages` from each
+ * nested RN target's `expo-configure-project.sh` and regenerates its provider.
+ * Idempotent via START/END markers. No exclusions → remove any prior hook.
+ */
+export function ensureExcludedPackagesPostIntegrate(
+  podfileContent: string,
+  exclusions: { targetName: string; packages: string[] }[]
+): string {
+  const without = removeMarkedBlock(
+    podfileContent,
+    EXCLUDED_PACKAGES_POST_INTEGRATE_START,
+    EXCLUDED_PACKAGES_POST_INTEGRATE_END
+  );
+
+  if (exclusions.length === 0) {
+    return without.trimEnd() + '\n';
+  }
+
+  const block = buildExcludedPackagesPostIntegrate(exclusions);
+  return `${without.trimEnd()}\n\n${block}`;
 }
