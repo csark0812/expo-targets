@@ -94,6 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `widget` - Home screen widgets (Glance API or RemoteViews)
 
-[Unreleased]: https://github.com/csark0812/expo-targets/compare/v0.2.7...HEAD
+[Unreleased]: https://github.com/csark0812/expo-targets/compare/v0.2.8...HEAD
+[0.2.8]: https://github.com/csark0812/expo-targets/compare/v0.2.7...v0.2.8
 [0.2.0]: https://github.com/csark0812/expo-targets/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/csark0812/expo-targets/releases/tag/v0.1.0
