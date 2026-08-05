@@ -189,9 +189,7 @@ describe('planBuildSettings', () => {
     expect(settings.PRODUCT_NAME).toBe('"MyShareTarget"');
     expect(settings.IPHONEOS_DEPLOYMENT_TARGET).toBe('15.1');
     expect(settings.INFOPLIST_FILE).toBe(`"${INFO_PLIST_REFERENCE}"`);
-    expect(settings.CODE_SIGN_ENTITLEMENTS).toBe(
-      `"${ENTITLEMENTS_REFERENCE}"`
-    );
+    expect(settings.CODE_SIGN_ENTITLEMENTS).toBe(`"${ENTITLEMENTS_REFERENCE}"`);
   });
 
   test('falls back to Swift 5.0 and version 1.0.0 (1)', () => {

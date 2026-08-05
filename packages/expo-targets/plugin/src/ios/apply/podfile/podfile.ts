@@ -710,6 +710,46 @@ function rubySingleQuoted(value: string): string {
   return `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
 }
 
+/** Ruby body lines for the excludedPackages post_integrate hook (minus hash). */
+const EXCLUDED_PACKAGES_RUBY_PREFIX = [
+  EXCLUDED_PACKAGES_POST_INTEGRATE_START,
+  '# Strip host-only Expo packages from nested RN extension ExpoModulesProviders.',
+  '# Nested use_expo_modules!(exclude:) is a no-op (parent AutolinkingManager);',
+  '# Expo regenerates the provider during integrate_user_targets after post_install.',
+  'post_integrate do |installer|',
+  '  exclusions = {',
+] as const;
+
+const EXCLUDED_PACKAGES_RUBY_SUFFIX = [
+  '  }',
+  '  exclusions.each do |target_name, packages|',
+  '    next if packages.nil? || packages.empty?',
+  '    support_dir = File.join(installer.sandbox.root, \'Target Support Files\', "Pods-#{target_name}")',
+  "    script_path = File.join(support_dir, 'expo-configure-project.sh')",
+  "    provider_path = File.join(support_dir, 'ExpoModulesProvider.swift')",
+  '    unless File.exist?(script_path)',
+  '      Pod::UI.warn "[expo-targets] Missing #{script_path}; skip excludedPackages for #{target_name}"',
+  '      next',
+  '    end',
+  '    content = File.read(script_path)',
+  '    packages.each do |pkg|',
+  '      content.gsub!(/\\s*"#{Regexp.escape(pkg)}"/, \'\')',
+  '    end',
+  '    File.write(script_path, content)',
+  "    ok = system({ 'PODS_ROOT' => installer.sandbox.root.to_s }, 'bash', script_path)",
+  '    unless ok',
+  '      raise "[expo-targets] Failed to regenerate ExpoModulesProvider for #{target_name} after excludedPackages strip"',
+  '    end',
+  '    unless File.exist?(provider_path)',
+  '      raise "[expo-targets] ExpoModulesProvider missing after regenerate for #{target_name}"',
+  '    end',
+  '    Pod::UI.puts "[expo-targets] Applied excludedPackages to #{target_name}: #{packages.join(\', \')}"',
+  '  end',
+  'end',
+  EXCLUDED_PACKAGES_POST_INTEGRATE_END,
+  '',
+] as const;
+
 function buildExcludedPackagesPostIntegrate(
   exclusions: { targetName: string; packages: string[] }[]
 ): string {
@@ -720,45 +760,11 @@ function buildExcludedPackagesPostIntegrate(
     })
     .join(',\n');
 
-  // Ruby `#{...}` interpolations must not go through a TS template literal.
-  const ruby = [
-    EXCLUDED_PACKAGES_POST_INTEGRATE_START,
-    '# Strip host-only Expo packages from nested RN extension ExpoModulesProviders.',
-    '# Nested use_expo_modules!(exclude:) is a no-op (parent AutolinkingManager);',
-    '# Expo regenerates the provider during integrate_user_targets after post_install.',
-    'post_integrate do |installer|',
-    '  exclusions = {',
+  return [
+    ...EXCLUDED_PACKAGES_RUBY_PREFIX,
     hashEntries,
-    '  }',
-    '  exclusions.each do |target_name, packages|',
-    '    next if packages.nil? || packages.empty?',
-    '    support_dir = File.join(installer.sandbox.root, \'Target Support Files\', "Pods-#{target_name}")',
-    "    script_path = File.join(support_dir, 'expo-configure-project.sh')",
-    "    provider_path = File.join(support_dir, 'ExpoModulesProvider.swift')",
-    '    unless File.exist?(script_path)',
-    '      Pod::UI.warn "[expo-targets] Missing #{script_path}; skip excludedPackages for #{target_name}"',
-    '      next',
-    '    end',
-    '    content = File.read(script_path)',
-    '    packages.each do |pkg|',
-    '      content.gsub!(/\\s*"#{Regexp.escape(pkg)}"/, \'\')',
-    '    end',
-    '    File.write(script_path, content)',
-    "    ok = system({ 'PODS_ROOT' => installer.sandbox.root.to_s }, 'bash', script_path)",
-    '    unless ok',
-    '      raise "[expo-targets] Failed to regenerate ExpoModulesProvider for #{target_name} after excludedPackages strip"',
-    '    end',
-    '    unless File.exist?(provider_path)',
-    '      raise "[expo-targets] ExpoModulesProvider missing after regenerate for #{target_name}"',
-    '    end',
-    '    Pod::UI.puts "[expo-targets] Applied excludedPackages to #{target_name}: #{packages.join(\', \')}"',
-    '  end',
-    'end',
-    EXCLUDED_PACKAGES_POST_INTEGRATE_END,
-    '',
+    ...EXCLUDED_PACKAGES_RUBY_SUFFIX,
   ].join('\n');
-
-  return ruby;
 }
 
 /**
