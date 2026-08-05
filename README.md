@@ -12,8 +12,6 @@ Add **share extensions**, **action extensions**, **App Clips**, **iMessage apps*
 >
 > **Prerequisites:** macOS, Xcode 14+, iOS 14+. **Tested on Expo SDK 57.** [Full requirements →](./docs/getting-started.md#prerequisites)
 
-> **mcp-dev:** The MCP stdio supervisor moved to [device-plane](https://github.com/csark0812/device-plane/tree/main/packages/mcp-dev) — install with `npx -y @csark0812/mcp-dev`.
-
 ## Quick Start
 
 ### 1. Install

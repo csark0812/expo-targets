@@ -29,8 +29,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- `packages/mcp-dev` — `@csark0812/mcp-dev` now lives in [device-plane](https://github.com/csark0812/device-plane) (`npx -y @csark0812/mcp-dev@0.1.3`).
-
 - Automated Bun e2e / build-test harness under `tests/e2e` (and CI/publish `bun run test` gates).
 - iOS XCTest suite under `packages/expo-targets/ios/Tests`.
 - Legacy `apps/*` example suite (replaced by `examples/*`).
