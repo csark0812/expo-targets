@@ -10,6 +10,7 @@ import {
 import { buildTargetWorkspace } from '../observe';
 import { composeXcodeTargetPlan } from '../plan';
 import type { IOSTargetProps } from '../plan/types';
+import * as Paths from '../utils/paths';
 
 export type { IOSTargetProps };
 
@@ -23,6 +24,11 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (config, props) =>
   withXcodeProject(config, async (config) => {
     const { projectRoot, platformProjectRoot } = config.modRequest;
     const project = config.modResults;
+    const projectName =
+      config.modRequest.projectName || getProjectName(platformProjectRoot);
+    const productName = Paths.sanitizeTargetName(
+      props.displayName || props.name
+    );
 
     props.logger.log(
       `Adding Xcode target: ${props.displayName || props.name} (${props.type})`
@@ -30,21 +36,23 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (config, props) =>
 
     const workspace = buildTargetWorkspace({
       projectRoot,
+      platformProjectRoot,
+      projectName,
+      productName,
       directory: props.directory,
       type: props.type,
-      buildSubdirectory: props.buildSubdirectory,
     });
 
     const mainTarget = getApplicationNativeTarget({
       project,
-      projectName: getProjectName(projectRoot),
+      projectName,
     });
 
     const plan = composeXcodeTargetPlan({
       props,
       expoConfig: config,
       workspace,
-      paths: { projectRoot, platformProjectRoot },
+      paths: { projectRoot, platformProjectRoot, projectName },
       mainBuildSettings: getMainAppBuildSettings({ project, mainTarget }),
     });
 

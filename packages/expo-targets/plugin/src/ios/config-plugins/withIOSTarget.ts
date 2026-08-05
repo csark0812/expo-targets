@@ -410,7 +410,7 @@ export const withIOSTarget: ConfigPlugin<IosTargetProps> = (config, props) => {
   });
 
   // Note: Color generation is handled in withXcodeChanges where colors are created
-  // in targets/[name]/ios/build/Assets.xcassets/ (not in ios/[TargetName]/)
+  // in ios/<App>/ExpoTargetsGenerated/<Product>/Assets.xcassets/
   // Note: Assets.xcassets is added in withXcodeChanges where we have direct access to target.uuid
   // Note: Sticker packs are also created in withXcodeChanges for proper execution order
 

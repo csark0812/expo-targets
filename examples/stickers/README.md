@@ -1,6 +1,6 @@
 # Stickers example
 
-Asset-only iMessage sticker pack (no `withTargetsMetro`). Host shows pack status for Maestro smoke.
+Asset-only iMessage sticker pack (no `withTargetsMetro`). Host shows pack status for Devicewright smoke.
 
 Pack character: **Bip** (sage body, cream vest, minimal **dot-eye** face — locked in `stickers/bip.png`). Pack is cute **poses** regen’d from that base: bip, wave, hug, peek, jump, sit, heart. Grid size is **regular** (plugin default): provide sticker PNGs at **408×408 @3x**.
 

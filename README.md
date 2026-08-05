@@ -154,7 +154,7 @@ npm install && npx expo run:ios
 | [native/action](./examples/native/action) | Swift action + RN host                                            |
 | [native/clip](./examples/native/clip)     | SwiftUI App Clip + RN host                                        |
 
-See [examples/README.md](./examples/README.md) for Maestro vs manual coverage and Bacon-parity stubs.
+See [examples/README.md](./examples/README.md) for Devicewright coverage and Bacon-parity stubs.
 
 ---
 

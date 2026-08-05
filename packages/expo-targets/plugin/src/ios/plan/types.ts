@@ -31,6 +31,8 @@ export interface IOSTargetProps extends IOSTargetConfigWithReactNative {
 export interface ProjectPaths {
   projectRoot: string;
   platformProjectRoot: string;
+  /** Xcode app folder name under `ios/` (same as host CNG). */
+  projectName: string;
 }
 
 /** Names and identifiers a target is known by. */

@@ -130,7 +130,13 @@ describe('withXcodeChanges integration', () => {
 
     await runPipeline(projectRoot, project);
 
-    const buildDir = path.join(projectRoot, TARGET_DIRECTORY, 'ios', 'build');
+    const buildDir = path.join(
+      projectRoot,
+      'ios',
+      PROJECT_NAME,
+      'ExpoTargetsGenerated',
+      PRODUCT_NAME
+    );
     const infoPlist = path.join(buildDir, 'Info.plist');
 
     expect(fs.existsSync(infoPlist)).toBe(true);
@@ -160,7 +166,7 @@ describe('withXcodeChanges integration target contents', () => {
         'com.example.app.share'
       );
       expect(unquote(settings.INFOPLIST_FILE)).toBe(
-        `../${TARGET_DIRECTORY}/ios/build/Info.plist`
+        `${PROJECT_NAME}/ExpoTargetsGenerated/${PRODUCT_NAME}/Info.plist`
       );
       expect(unquote(settings.MARKETING_VERSION)).toBe('1.2.3');
       expect(unquote(settings.IPHONEOS_DEPLOYMENT_TARGET)).toBe('18.0');

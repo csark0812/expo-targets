@@ -1,6 +1,6 @@
 # Messages example
 
-React Native iMessage app extension with App Group storage and Maestro host smoke.
+React Native iMessage app extension with App Group storage and Devicewright journey.
 
 ## OS path
 

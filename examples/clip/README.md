@@ -1,6 +1,6 @@
 # Clip example
 
-React Native App Clip with `withTargetsMetro`, URL scheme `expotargets-clip`, and Maestro host smoke.
+React Native App Clip with `withTargetsMetro`, URL scheme `expotargets-clip`, and Devicewright journey.
 
 ## OS path
 
