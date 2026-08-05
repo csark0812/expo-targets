@@ -150,10 +150,10 @@ See [examples/README.md](./examples/README.md) for the full suite (~48 hosts), D
 ## Documentation
 
 - **[Getting Started](./docs/getting-started.md)** — Build a React Native share extension
-- **[React Native Extensions](./docs/react-native-extensions.md)** — RN runtime contract + Metro
+- **[React Native Extensions](./docs/react-native-extensions.md)** — RN runtime contract + Metro; [App Group OTA / eas update](./docs/react-native-extensions.md#extension-bundle-sideload-with-expo-updates)
 - **[Widgets](./docs/widgets.md)** — WidgetKit / Live Activities ownership vs `expo-widgets`
 - **[Configuration](./docs/configuration.md)** — All config options
-- **[API Reference](./docs/api.md)** — JavaScript/TypeScript API
+- **[API Reference](./docs/api.md)** — JavaScript/TypeScript API ([`ExtensionUpdates`](./docs/api.md#extensionupdates))
 - **[Deprecations](./docs/deprecations.md)** — Roadmap freeze (no orphan stubs)
 
 ---
