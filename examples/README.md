@@ -32,6 +32,7 @@ Do not commit generated `ios/` or `android/` folders from example prebuilds. Nev
 | Package | Target story |
 | --- | --- |
 | [`share`](./share) | React Native share extension |
+| [`extension-updates`](./extension-updates) | Share + `eas update` App Group OTA dogfood |
 | [`action`](./action) | React Native action extension |
 | [`messages`](./messages) | React Native messages extension |
 | [`clip`](./clip) | React Native App Clip |
