@@ -3,6 +3,7 @@ import process from 'node:process';
 import { checkAppGroups } from './checks/appGroups';
 import { warnDualWidgets } from './checks/dualWidgets';
 import { checkEntries } from './checks/entries';
+import { warnHeavyExclusions } from './checks/heavyExclusions';
 import { checkMetro } from './checks/metro';
 import { checkNameSync } from './checks/nameSync';
 import { checkPlugin } from './checks/plugin';
@@ -33,7 +34,11 @@ function collectFailures(ctx: ReturnType<typeof loadProject>): CheckResult[] {
 }
 
 function collectWarnings(ctx: ReturnType<typeof loadProject>): CheckResult[] {
-  return [...warnSealedZone(ctx), ...warnDualWidgets(ctx)];
+  return [
+    ...warnSealedZone(ctx),
+    ...warnDualWidgets(ctx),
+    ...warnHeavyExclusions(ctx),
+  ];
 }
 
 function passedChecks(ctx: ReturnType<typeof loadProject>): string[] {

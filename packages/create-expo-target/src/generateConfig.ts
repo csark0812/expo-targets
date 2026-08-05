@@ -23,7 +23,6 @@ function applyReactNativeConfig(
 ): void {
   if (options.platforms.includes('ios') && options.useReactNative) {
     config.entry = `./targets/${options.kebabName}/index.tsx`;
-    config.excludedPackages = ['expo-updates', 'expo-dev-client'];
   }
 }
 

@@ -8,13 +8,13 @@ import {
   type TargetCodegenConfig,
   writeTargetsTypesFile,
 } from './codegen/typedTargets';
-import { isReactNativeNative } from './domain';
 import {
   ensureHostAppGroups,
   warnMissingMetroWrapper,
 } from './ensureHostAppGroups';
 import { withIOSTarget } from './ios/config-plugins/withIOSTarget';
 import { Logger } from './logger';
+import { resolveExcludedPackages } from './resolveExcludedPackages';
 
 interface EvaluatedTarget {
   config: any;
@@ -218,11 +218,11 @@ const withTargetIos: ConfigPlugin<{
         }
       : undefined;
 
-  const excludedPackages =
-    evaluatedConfig.excludedPackages ??
-    (evaluatedConfig.entry && isReactNativeNative(evaluatedConfig.type)
-      ? ['expo-updates', 'expo-dev-client']
-      : undefined);
+  const excludedPackages = resolveExcludedPackages({
+    type: evaluatedConfig.type,
+    entry: evaluatedConfig.entry,
+    excludedPackages: evaluatedConfig.excludedPackages,
+  });
 
   let next = withIOSTarget(config, {
     ...(evaluatedConfig.ios || {}),

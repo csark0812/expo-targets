@@ -15,6 +15,7 @@ export interface TargetConfig {
   platforms?: string[];
   entry?: string;
   appGroup?: string;
+  excludedPackages?: string[];
   liveActivity?: { attributesName?: string };
   ios?: {
     intents?: { ui?: boolean | { name?: string } };

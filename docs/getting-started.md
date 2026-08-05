@@ -98,7 +98,6 @@ Add the plugin and App Groups to your `app.json`:
   "platforms": ["ios"],
   "appGroup": "group.com.yourcompany.myapp",
   "entry": "./targets/my-share/index.tsx",
-  "excludedPackages": ["expo-updates", "expo-dev-client"],
   "ios": {
     "deploymentTarget": "14.0"
   }
@@ -107,7 +106,7 @@ Add the plugin and App Groups to your `app.json`:
 
 Update the placeholder `appGroup` to match your `app.json`.
 
-`excludedPackages` must include `expo-updates` and `expo-dev-client` so the extension host does not link packages that assume a full app process (they break extension builds).
+For RN `entry` targets, the plugin **always** strips `expo-updates` and `expo-dev-client` from the nested `ExpoModulesProvider` (they crash appex processes). Add `excludedPackages` only for **extra** packages (e.g. reanimated). `npx expo-targets doctor` warns when heavy host deps look unused by the entry.
 
 ### Naming Conventions
 

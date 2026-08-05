@@ -79,15 +79,14 @@ Or manually configure `expo-target.config.json`:
   "name": "ShareExt",
   "platforms": ["ios"],
   "appGroup": "group.com.yourcompany.yourapp",
-  "entry": "./targets/share-ext/index.tsx",
-  "excludedPackages": ["expo-updates", "expo-dev-client"]
+  "entry": "./targets/share-ext/index.tsx"
 }
 ```
 
 Key fields:
 
 - `entry`: Path to your React Native entry file **(relative to project root)**
-- `excludedPackages`: Expo packages to omit from the extension's `ExpoModulesProvider` (via CocoaPods `post_integrate`). Always exclude `expo-updates` and `expo-dev-client` for Messages/share/action/clip — they crash appex processes and leave a blank sheet. Nested `use_expo_modules!(exclude:)` alone does **not** work.
+- `excludedPackages`: Optional **additional** packages to omit from the extension's `ExpoModulesProvider` (via CocoaPods `post_integrate`). `expo-updates` and `expo-dev-client` are **auto-merged** for RN-native `entry` targets — do not list them. Nested `use_expo_modules!(exclude:)` alone does **not** work.
 
 ### 2. Create the Entry Point
 
@@ -337,33 +336,41 @@ Omit host-only Expo modules from the nested extension's `ExpoModulesProvider`. N
 strips the listed packages from `expo-configure-project.sh` in a `post_integrate`
 hook and regenerates the provider.
 
-Always exclude `expo-updates` and `expo-dev-client` for Messages / share / action /
-clip — Updates asserts before the RN factory is ready and blanks the sheet:
+For RN-native targets with `entry`, **`expo-updates` and `expo-dev-client` are always
+union-merged** (no escape hatch) — Updates asserts before the RN factory is ready and
+blanks the sheet. List only **additional** packages:
 
 ```json
 {
   "excludedPackages": [
-    "expo-updates",
-    "expo-dev-client",
     "@react-native-community/netinfo",
     "react-native-reanimated"
   ]
 }
 ```
 
-**Common exclusions:**
+`npx expo-targets doctor` **warns** when heavy host dependencies (reanimated, Sentry,
+screens, netinfo, …) are present but not imported from the extension entry and not yet
+excluded — advisory only; it never auto-strips.
+
+**Auto-excluded (always):**
+
+| Package           | Reason                 | Savings |
+| ----------------- | ---------------------- | ------- |
+| `expo-updates`    | Crashes appex process  | ~500KB  |
+| `expo-dev-client` | Host-only dev tooling  | ~800KB  |
+
+**Common extra exclusions:**
 
 | Package                   | Reason                     | Savings |
 | ------------------------- | -------------------------- | ------- |
-| `expo-updates`            | OTA updates not needed     | ~500KB  |
-| `expo-dev-client`         | Dev tools not needed       | ~800KB  |
 | `react-native-reanimated` | Heavy animation library    | ~1.5MB  |
 | `@sentry/react-native`    | Error reporting not needed | ~1MB    |
 | `react-native-screens`    | Native nav not needed      | ~300KB  |
 
 ### Tips for Smaller Bundles
 
-1. **Exclude aggressively** — Start minimal, add packages only when needed
+1. **Exclude aggressively** — Start minimal, add packages only when needed; run `npx expo-targets doctor`
 2. **Avoid heavy UI libraries** — Use basic React Native components
 3. **Keep extension logic minimal** — Do heavy processing in your main app
 4. **Test on physical devices** — Simulators are more forgiving with memory

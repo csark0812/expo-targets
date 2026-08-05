@@ -66,7 +66,7 @@ targets/my-widget/
 | `appGroup`         | _inherited_ | App Group ID. If not specified, automatically inherited from your main app's `app.json` entitlements (see [App Group Inheritance](#app-group-inheritance) below) |
 | `liveActivity`     | —           | Widget-only ActivityKit schema (`attributesName`, `static`, `contentState`) — CNG into `ExpoTargetsGenerated/` (see [widgets.md](./widgets.md))                  |
 | `entry`            | —           | React Native entry point for share/action/clip/messages (see [Entry Field](#entry-field) below)                                                                  |
-| `excludedPackages` | `[]`        | Expo packages to omit from the nested extension's `ExpoModulesProvider` (via Podfile `post_integrate`; needs `entry`) — e.g. `expo-updates`, `expo-dev-client`  |
+| `excludedPackages` | auto for RN `entry` | Extra packages to omit from the nested `ExpoModulesProvider` (`post_integrate`). `expo-updates` + `expo-dev-client` are always merged for RN-native `entry` targets; list only extras (e.g. reanimated) |
 
 ### Entry Field
 
@@ -649,7 +649,6 @@ The `targetIcon` for action extensions can be an SF Symbol name (e.g., `"photo.f
   "platforms": ["ios"],
   "appGroup": "group.com.yourapp",
   "entry": "./targets/share-to-app/index.tsx",
-  "excludedPackages": ["expo-updates", "expo-dev-client"],
   "ios": {
     "activationRules": [{ "type": "url" }]
   }
