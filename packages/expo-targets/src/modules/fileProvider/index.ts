@@ -1,10 +1,7 @@
 import { requireNativeModule } from 'expo-modules-core';
 import { Platform } from 'react-native';
 import type { TargetConfig } from '../../../plugin/src/config';
-import {
-  assertMatchesConfig,
-  resolveUniqueTarget,
-} from '../targetsConfig';
+import { assertMatchesConfig, resolveUniqueTarget } from '../targetsConfig';
 
 type Native = {
   register: (identifier: string, displayName: string) => Promise<string>;

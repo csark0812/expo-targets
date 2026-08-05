@@ -1,6 +1,9 @@
 import { requireNativeModule } from 'expo-modules-core';
 import { Platform } from 'react-native';
-import type { LiveActivityConfig, TargetConfig } from '../../../plugin/src/config';
+import type {
+  LiveActivityConfig,
+  TargetConfig,
+} from '../../../plugin/src/config';
 import { listTargets } from '../targetsConfig';
 
 type NativeLiveActivity = {

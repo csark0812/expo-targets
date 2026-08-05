@@ -43,7 +43,9 @@ function readAppGroupFromExpoConfig(projectRoot: string): string | null {
     const root = expoRoot(readJsonIfExists(path.join(projectRoot, name)));
     if (!root) continue;
     const ios = root.ios as Record<string, unknown> | undefined;
-    const entitlements = ios?.entitlements as Record<string, unknown> | undefined;
+    const entitlements = ios?.entitlements as
+      | Record<string, unknown>
+      | undefined;
     const groups = entitlements?.['com.apple.security.application-groups'];
     if (Array.isArray(groups) && typeof groups[0] === 'string') {
       return groups[0];

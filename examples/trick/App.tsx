@@ -3,10 +3,7 @@
  */
 import * as Notifications from 'expo-notifications';
 import { StatusBar } from 'expo-status-bar';
-import {
-  FileProviderDomain,
-  LiveActivity,
-} from 'expo-targets';
+import { FileProviderDomain, LiveActivity } from 'expo-targets';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 

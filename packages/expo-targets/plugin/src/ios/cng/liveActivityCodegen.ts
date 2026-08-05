@@ -9,9 +9,7 @@ function fieldsBlock(
     return `${indent}// no fields`;
   }
   return Object.entries(fields)
-    .map(
-      ([name, type]) => `${indent}var ${name}: ${swiftTypeForField(type)}`
-    )
+    .map(([name, type]) => `${indent}var ${name}: ${swiftTypeForField(type)}`)
     .join('\n');
 }
 

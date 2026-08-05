@@ -136,7 +136,10 @@ function writeGeneratedSwiftFiles(options: {
   }
 }
 
-function ensureGeneratedGroup(project: any, projectName: string): string | null {
+function ensureGeneratedGroup(
+  project: any,
+  projectName: string
+): string | null {
   const appGroupKey =
     project.findPBXGroupKey({ name: projectName }) ||
     project.findPBXGroupKey({ path: projectName });
@@ -221,10 +224,7 @@ function wireGeneratedFilesToXcode(options: {
   }
 }
 
-function findPerformHookPaths(
-  targetsRoot: string,
-  hookFile: string
-): string[] {
+function findPerformHookPaths(targetsRoot: string, hookFile: string): string[] {
   const hits: string[] = [];
   for (const dir of fs.readdirSync(targetsRoot)) {
     const absolute = path.join(targetsRoot, dir, 'ios', hookFile);

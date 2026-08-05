@@ -3,9 +3,7 @@ import { AppGroupStorage } from 'expo-targets';
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-const storage = new AppGroupStorage(
-  'group.com.expotargets.example.app-intent'
-);
+const storage = new AppGroupStorage('group.com.expotargets.example.app-intent');
 
 export default function App() {
   const [ready, setReady] = useState(false);
