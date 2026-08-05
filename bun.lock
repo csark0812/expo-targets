@@ -55,7 +55,6 @@
       "name": "@expo-targets/example-app-intent",
       "version": "1.0.0",
       "dependencies": {
-        "app-intent-host": "file:./modules/app-intent-host",
         "expo": "~57.0.9",
         "expo-modules-core": "~57.0.8",
         "expo-splash-screen": "~57.0.5",
@@ -193,7 +192,6 @@
       "name": "@expo-targets/example-content-blocker",
       "version": "1.0.0",
       "dependencies": {
-        "blocker-reload": "file:./modules/blocker-reload",
         "expo": "~57.0.9",
         "expo-modules-core": "~57.0.8",
         "expo-splash-screen": "~57.0.5",
@@ -251,7 +249,6 @@
         "expo-splash-screen": "~57.0.5",
         "expo-status-bar": "~57.0.1",
         "expo-targets": "workspace:*",
-        "file-provider-domain": "file:./modules/file-provider-domain",
         "react": "19.2.3",
         "react-native": "0.86.2",
       },
@@ -806,8 +803,6 @@
         "expo-targets": "workspace:*",
         "react": "19.2.3",
         "react-native": "0.86.2",
-        "trick-file-domain": "file:./modules/trick-file-domain",
-        "trick-live-activity": "file:./modules/trick-live-activity",
       },
       "devDependencies": {
         "@babel/core": "^7.29.0",
@@ -2465,8 +2460,6 @@
 
     "@expo-targets/example-action/typescript": ["typescript@6.0.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="],
 
-    "@expo-targets/example-app-intent/app-intent-host": ["app-intent-host@file:examples/app-intent/modules/app-intent-host", { "peerDependencies": { "expo": "*", "react": "*", "react-native": "*" } }],
-
     "@expo-targets/example-app-intent/typescript": ["typescript@6.0.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="],
 
     "@expo-targets/example-authentication-services/typescript": ["typescript@6.0.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="],
@@ -2483,15 +2476,11 @@
 
     "@expo-targets/example-clip/typescript": ["typescript@6.0.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="],
 
-    "@expo-targets/example-content-blocker/blocker-reload": ["blocker-reload@file:examples/content-blocker/modules/blocker-reload", { "peerDependencies": { "expo": "*", "react": "*", "react-native": "*" } }],
-
     "@expo-targets/example-content-blocker/typescript": ["typescript@6.0.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="],
 
     "@expo-targets/example-credentials-provider/typescript": ["typescript@6.0.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="],
 
     "@expo-targets/example-device-activity-monitor/typescript": ["typescript@6.0.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="],
-
-    "@expo-targets/example-file-provider/file-provider-domain": ["file-provider-domain@file:examples/file-provider/modules/file-provider-domain", { "peerDependencies": { "expo": "*", "react": "*", "react-native": "*" } }],
 
     "@expo-targets/example-file-provider/typescript": ["typescript@6.0.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="],
 
@@ -2556,10 +2545,6 @@
     "@expo-targets/example-spotlight-delegate/typescript": ["typescript@6.0.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="],
 
     "@expo-targets/example-stickers/typescript": ["typescript@6.0.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="],
-
-    "@expo-targets/example-trick/trick-file-domain": ["trick-file-domain@file:examples/trick/modules/trick-file-domain", { "peerDependencies": { "expo": "*", "react": "*", "react-native": "*" } }],
-
-    "@expo-targets/example-trick/trick-live-activity": ["trick-live-activity@file:examples/trick/modules/trick-live-activity", { "peerDependencies": { "expo": "*", "react": "*", "react-native": "*" } }],
 
     "@expo-targets/example-trick/typescript": ["typescript@6.0.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="],
 
