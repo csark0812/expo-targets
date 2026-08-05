@@ -12,25 +12,23 @@ Expo config plugin and runtime for Apple app extensions Expo does not ship — s
 >
 > **Widgets:** Native WidgetKit + Live Activities are first-class. See [widgets](https://github.com/csark0812/expo-targets/blob/main/docs/widgets.md). Android widgets are bridge-grade.
 >
-> **Bare RN:** `expo-targets sync` is unimplemented — use `npx expo prebuild`. Tracking: [#67](https://github.com/csark0812/expo-targets/issues/67).
+> **Bare RN:** use `npx expo-targets sync` against an existing `ios/` tree, then `pod install`. Prefer managed Expo + `npx expo prebuild` for new projects.
 
 ## Quick Start
 
 ```bash
 npm install expo-targets
-# or: bun add expo-targets / yarn add expo-targets
-```
-
-```bash
 npx create-expo-target
 # Share Extension → my-share → Use React Native: Yes
 ```
 
+`create-expo-target` wires the host by default. Install dependencies if wiring added `expo-targets` to `package.json`.
+
 ```js
 // metro.config.js
 const { getDefaultConfig } = require("expo/metro-config");
-const { withTargetsMetro } = require("expo-targets/metro");
-module.exports = withTargetsMetro(getDefaultConfig(__dirname));
+const { withTargets } = require("expo-targets/metro");
+module.exports = withTargets(getDefaultConfig(__dirname));
 ```
 
 ```typescript

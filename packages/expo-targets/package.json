@@ -4,8 +4,13 @@
   "description": "Expo config plugin for Apple targets and Android app extensions",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
+  "bin": {
+    "expo-targets": "./bin/expo-targets.js"
+  },
   "files": [
+    "bin",
     "build",
+    "cli/build",
     "plugin/build",
     "metro/build",
     "app.plugin.js",
@@ -32,13 +37,24 @@
       "import": "./app.plugin.js",
       "require": "./app.plugin.js"
     },
+    "./codegen": {
+      "import": "./plugin/build/codegen/index.js",
+      "require": "./plugin/build/codegen/index.js",
+      "types": "./plugin/build/codegen/index.d.ts"
+    },
+    "./cli/sync": {
+      "import": "./cli/build/sync.js",
+      "require": "./cli/build/sync.js",
+      "types": "./cli/build/sync.d.ts"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "bun run build:main && bun run build:plugin && bun run build:metro",
+    "build": "bun run build:main && bun run build:plugin && bun run build:metro && bun run build:cli",
     "build:main": "tsc",
     "build:plugin": "tsc --project plugin/tsconfig.build.json && bun run copy:templates",
     "build:metro": "tsc --project metro/tsconfig.build.json",
+    "build:cli": "tsc --project cli/tsconfig.build.json",
     "copy:templates": "mkdir -p plugin/build/ios/templates && cp plugin/src/ios/templates/*.swift plugin/build/ios/templates/",
     "clean": "rm -rf build plugin/build metro/build",
     "prepare": "bun run build",
@@ -50,16 +66,19 @@
     "@babel/parser": "^7.25.0",
     "@babel/traverse": "^7.25.0",
     "@babel/types": "^7.25.0",
+    "@expo/config": "~57.0.6",
     "@expo/config-plugins": "~57.0.6",
     "@expo/config-types": "~57.0.2",
     "@expo/plist": "^0.8.1",
     "@react-native/normalize-colors": "^0.79.2",
+    "commander": "^11.1.0",
     "debug": "^4.3.4",
     "glob": "^10.4.2",
     "xcode": "3.0.1"
   },
   "devDependencies": {
     "@react-native-community/cli": "^16.0.0",
+    "@types/babel__traverse": "^7.28.0",
     "@types/bun": "^1.2.21",
     "typescript": "~5.3.3"
   },

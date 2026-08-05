@@ -2,14 +2,15 @@ export type WidgetTemplateOptions = {
   appGroup: string;
   /** When true, omit @main — caller emits a WidgetBundle instead. */
   useBundle?: boolean;
+  /** When true, scaffold AppIntentConfiguration (iOS 17+ Edit Widget). */
+  configurable?: boolean;
 };
 
-export function getWidgetTemplate(
+function getStaticWidgetTemplate(
   name: string,
-  options?: WidgetTemplateOptions
+  appGroup: string,
+  mainAttr: string
 ): string {
-  const appGroup = options?.appGroup ?? 'group.com.example.app';
-  const mainAttr = options?.useBundle ? '' : '@main\n';
   return `import WidgetKit
 import SwiftUI
 
@@ -69,6 +70,119 @@ ${mainAttr}struct ${name}: Widget {
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }`;
+}
+
+function getConfigurableWidgetTemplate(
+  name: string,
+  appGroup: string,
+  mainAttr: string
+): string {
+  const intentName = `${name}ConfigurationIntent`;
+  return `import AppIntents
+import SwiftUI
+import WidgetKit
+
+/// Edit Widget intent — customize parameters in the widget gallery (iOS 17+).
+struct ${intentName}: WidgetConfigurationIntent {
+    static var title: LocalizedStringResource = "Display"
+    static var description = IntentDescription("Choose what the widget shows.")
+
+    @Parameter(title: "List")
+    var listId: String?
+}
+
+struct SimpleEntry: TimelineEntry {
+    let date: Date
+    let listId: String
+    let message: String
+}
+
+struct Provider: AppIntentTimelineProvider {
+    typealias Intent = ${intentName}
+    typealias Entry = SimpleEntry
+
+    let appGroup = "${appGroup}"
+    private let storageKey = "listId"
+
+    func placeholder(in context: Context) -> SimpleEntry {
+        SimpleEntry(date: Date(), listId: "default", message: "Placeholder")
+    }
+
+    func snapshot(for configuration: ${intentName}, in context: Context) async -> SimpleEntry {
+        let listId = resolvedListId(from: configuration)
+        return SimpleEntry(date: Date(), listId: listId, message: displayMessage(for: listId))
+    }
+
+    func timeline(for configuration: ${intentName}, in context: Context) async -> Timeline<SimpleEntry> {
+        let listId = resolvedListId(from: configuration)
+        let entry = SimpleEntry(
+            date: Date(),
+            listId: listId,
+            message: displayMessage(for: listId)
+        )
+        let nextUpdate = Calendar.current.date(byAdding: .minute, value: 15, to: Date())!
+        return Timeline(entries: [entry], policy: .after(nextUpdate))
+    }
+
+    private func resolvedListId(from configuration: ${intentName}) -> String {
+        if let intentListId = configuration.listId, !intentListId.isEmpty {
+            persistSelection(intentListId)
+            return intentListId
+        }
+        return loadPersistedListId()
+    }
+
+    private func persistSelection(_ listId: String) {
+        UserDefaults(suiteName: appGroup)?.set(listId, forKey: storageKey)
+    }
+
+    private func loadPersistedListId() -> String {
+        UserDefaults(suiteName: appGroup)?.string(forKey: storageKey) ?? "default"
+    }
+
+    private func displayMessage(for listId: String) -> String {
+        "List: \\(listId)"
+    }
+}
+
+struct WidgetView: View {
+    var entry: Provider.Entry
+
+    var body: some View {
+        VStack {
+            Text("Widget")
+                .font(.headline)
+            Text(entry.message)
+                .font(.caption)
+        }
+    }
+}
+
+${mainAttr}struct ${name}: Widget {
+    // ⚠️ IMPORTANT: This "kind" must match the "name" field in expo-target.config.json exactly
+    let kind: String = "${name}"
+
+    var body: some WidgetConfiguration {
+        AppIntentConfiguration(kind: kind, intent: ${intentName}.self, provider: Provider()) { entry in
+            WidgetView(entry: entry)
+        }
+        .configurationDisplayName("${name}")
+        .description("A configurable widget")
+        .supportedFamilies([.systemSmall, .systemMedium])
+    }
+}`;
+}
+
+export function getWidgetTemplate(
+  name: string,
+  options?: WidgetTemplateOptions
+): string {
+  const appGroup = options?.appGroup ?? 'group.com.example.app';
+  const mainAttr = options?.useBundle ? '' : '@main\n';
+  if (options?.configurable) {
+    return getConfigurableWidgetTemplate(name, appGroup, mainAttr);
+  }
+  return getStaticWidgetTemplate(name, appGroup, mainAttr);
 }
 
 export const CLIP_TEMPLATE = `import SwiftUI

@@ -115,7 +115,7 @@ The layering is iOS-first but deliberately open in these places:
 | Metro | `packages/expo-targets/metro/src/` — entry resolution for RN extensions |
 | Runtime | `packages/expo-targets/src` — JS API and native modules |
 | Scaffolding | `packages/create-expo-target` — templates for new targets |
-| Bare workflow | `packages/expo-targets-cli` — sync stub ([#67](https://github.com/csark0812/expo-targets/issues/67)); prefer `expo prebuild` |
+| Bare workflow | `npx expo-targets sync` for existing `ios/` trees; prefer `expo prebuild` for new apps |
 
 New extension types start in `src/domain/characteristics.ts`; if a type needs
 behavior instead of data, add a flag there rather than a branch in the plan

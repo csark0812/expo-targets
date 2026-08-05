@@ -5,7 +5,7 @@ import type { TargetJourneyResult } from "../types";
 import { dismissSystemAlerts, waitForNamed } from "./helpers";
 
 /**
- * Generic host-contract journey for Bacon-compat examples.
+ * Generic host-contract journey for thin example hosts.
  * Asserts ready marker; if CLAIMS row exists, returns os-limit after touchpoint.
  *
  * iOS 26: scaffold testIDs often surface as labels only (no AXUniqueId), so

@@ -20,7 +20,20 @@ Add **share extensions**, **action extensions**, **App Clips**, **iMessage apps*
 npm install expo-targets
 ```
 
-### 2. Configure `app.json`
+### 2. Create a Share Extension (React Native)
+
+```bash
+npx create-expo-target
+# Choose: Share Extension → my-share → iOS → Yes (Use React Native)
+```
+
+`create-expo-target` scaffolds the target and wires the host by default (`package.json`, config plugin, App Groups, `metro.config.js`). Install dependencies if wiring added `expo-targets` to `package.json`.
+
+### 3. Manual host config (advanced)
+
+If you use `--no-wire` or `app.config.js`, add the plugin and App Groups yourself:
+
+After `npx expo prebuild`, sealed build artifacts land in `ios/<App>/ExpoTargetsGenerated/<Product>/` (gitignored). Deepen Swift under `targets/*/ios/` — never edit `ExpoTargetsGenerated/`.
 
 ```json
 {
@@ -40,39 +53,22 @@ npm install expo-targets
 
 > **Why App Groups?** App Groups enable data sharing between your main app and extensions. The ID must start with `group.` — convention is `group.{your.bundle.identifier}`.
 
-### 3. Create a Share Extension (React Native)
-
-```bash
-npx create-expo-target
-# Choose: Share Extension → my-share → iOS → Yes (Use React Native)
-```
-
-This creates:
-
-```
-targets/my-share/
-├── expo-target.config.json   # Extension configuration
-├── index.tsx                 # createTarget + RN entry
-└── ios/                      # User deepen (committed); sealed CNG under ios/<App>/ExpoTargetsGenerated/
-```
-
-After `npx expo prebuild`, sealed build artifacts land in `ios/<App>/ExpoTargetsGenerated/<Product>/` (gitignored). Deepen Swift under `targets/*/ios/` — never edit `ExpoTargetsGenerated/`.
-
 ### 4. Configure Metro
 
 ```js
 // metro.config.js
 const { getDefaultConfig } = require("expo/metro-config");
-const { withTargetsMetro } = require("expo-targets/metro");
+const { withTargets } = require("expo-targets/metro");
 
-module.exports = withTargetsMetro(getDefaultConfig(__dirname));
+module.exports = withTargets(getDefaultConfig(__dirname));
 ```
 
-See [React Native Extensions](./docs/react-native-extensions.md).
+See [React Native Extensions](./docs/react-native-extensions.md). (`withTargetsMetro` is a deprecated alias.)
 
 ### 5. Build & Run
 
 ```bash
+npx expo-targets doctor
 npx expo prebuild
 npx expo run:ios
 ```
@@ -173,7 +169,12 @@ npx expo run:ios
 
 ### Bare React Native
 
-> **`npx expo-targets sync` is unimplemented** (unpublished stub). Use managed Expo + `npx expo prebuild` until a real sync ships. Tracking: [#67](https://github.com/csark0812/expo-targets/issues/67).
+```bash
+npx expo-targets sync
+cd ios && pod install
+```
+
+Use `npx expo-targets sync --dry-run` to preview. Managed Expo + `npx expo prebuild` remains the recommended path for new projects.
 
 ---
 
@@ -211,6 +212,4 @@ MIT
 
 ## Credits
 
-Inspired by [expo-share-extension](https://github.com/MaxAst/expo-share-extension) and related community Apple-target work.
-
-Widget-related prior art: official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) (React/Expo-UI alternative).
+Builds on community Apple-target / share-extension patterns and Expo’s official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) (React/Expo-UI alternative for widgets).

@@ -62,54 +62,63 @@ await LiveActivity.endAll();
 
 ```bash
 npx create-expo-target
-# choose Widget — optional Live Activity bootstrap
+# choose Widget / Live Activity
+# optional: Configurable (Edit Widget)? — AppIntentConfiguration (iOS 17+)
+# optional: Live Activity bootstrap
 ```
 
-Opting into Live Activity writes `liveActivity` into `expo-target.config.json`, a one-shot `LiveActivity.swift` UI under `targets/<name>/ios/`, and a `WidgetBundle`. Prebuild then emits attributes + host bridge into `ExpoTargetsGenerated/`.
+- **Static (default)** — `StaticConfiguration` + `TimelineProvider` reading
+  App Group `UserDefaults`.
+- **Configurable (Edit Widget)** — scaffolds `AppIntentConfiguration` +
+  `WidgetConfigurationIntent` under `targets/<name>/ios/Widget.swift` (user
+  deepen, not CNG). The provider persists `listId` in the target's App Group
+  suite and falls back to that value when the intent parameter is unset.
+- **Live Activity** — writes `liveActivity` into `expo-target.config.json`, a
+  one-shot `LiveActivity.swift` under `targets/<name>/ios/`, and a
+  `WidgetBundle`. Prebuild emits attributes + host bridge into
+  `ExpoTargetsGenerated/`.
 
-See [`examples/trick`](../examples/trick) for a full host + widget pairing.
+See [`examples/trick`](../examples/trick) for a full host + widget pairing and
+[`examples/widgets`](../examples/widgets) for a static widget example.
 
 ## Configurable widgets (Edit Widget)
 
-iOS "Edit Widget" (long-press → Edit) uses WidgetKit **App Intent / Intent**
-configuration — native Swift only. expo-targets does not generate
-`AppIntentConfiguration` for you yet; deepen under `targets/<name>/ios/`.
+iOS "Edit Widget" (long-press → Edit) uses WidgetKit **App Intent**
+configuration (`AppIntentConfiguration`, iOS 17+). The scaffolder can emit this
+for you, or you can deepen manually under `targets/<name>/ios/`.
 
-1. Swap `StaticConfiguration` for `AppIntentConfiguration` (iOS 17+) or
-   `IntentConfiguration` + an Intents definition (older).
-2. Persist the user's selection in the App Group `UserDefaults` suite (same
-   `appGroup` as the target).
-3. From the host app, read/write that suite with `createTarget('…').storage`
-   / `setData` / `AppGroupStorage`, then `refresh()`.
-
-Sketch:
+Scaffolded shape (intent name is `<PascalName>ConfigurationIntent`):
 
 ```swift
-// targets/hello-widget/ios/Widget.swift (deepen — not CNG)
-struct SelectListIntent: WidgetConfigurationIntent {
-  static var title: LocalizedStringResource = "List"
+// targets/hello-widget/ios/Widget.swift (user deepen — not CNG)
+struct HelloWidgetConfigurationIntent: WidgetConfigurationIntent {
+  static var title: LocalizedStringResource = "Display"
   @Parameter(title: "List") var listId: String?
 }
 
 struct HelloWidget: Widget {
   var body: some WidgetConfiguration {
-    AppIntentConfiguration(kind: kind, intent: SelectListIntent.self, provider: Provider()) { entry in
+    AppIntentConfiguration(kind: kind, intent: HelloWidgetConfigurationIntent.self, provider: Provider()) { entry in
       HelloWidgetView(entry: entry)
     }
     .configurationDisplayName("Hello Widget")
   }
 }
 
-// In Provider timeline: read intent.listId, fall back to App Group defaults.
+// Provider (AppIntentTimelineProvider): intent.listId → App Group UserDefaults suite, then read back.
 ```
 
+From the host app, keep the widget in sync after in-app picks:
+
 ```ts
-// Host RN — after the user picks a default list in-app
 const widget = createTarget("HelloWidget");
 widget.storage.set("listId", selectedId);
 // or: widget.setData({ listId: selectedId });
 widget.refresh();
 ```
+
+Use the same `appGroup` as `expo-target.config.json` — the scaffold wires it
+into the Swift template's `UserDefaults(suiteName:)`.
 
 React/Expo-UI-first configurable widgets: see official
 [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) (do not dual-generate).

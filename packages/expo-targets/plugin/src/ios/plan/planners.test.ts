@@ -647,8 +647,30 @@ describe('composeXcodeTargetPlan', () => {
   });
 });
 
-describe('composeXcodeTargetPlan safari', () => {
-  test('plans Safari resources for safari targets with an entry', () => {
+const SAFARI_RESOURCES = path.join(
+  'ExpoTargetsGenerated',
+  PRODUCT_NAME,
+  'Resources'
+);
+const MY_SAFARI_POPUP_JS = path.join(
+  PROJECT_ROOT,
+  'ios',
+  PROJECT_NAME,
+  'ExpoTargetsGenerated',
+  'MySafariTarget',
+  'Resources',
+  'popup.js'
+);
+const MY_SAFARI_POPUP_REF = path.join(
+  PROJECT_NAME,
+  'ExpoTargetsGenerated',
+  'MySafariTarget',
+  'Resources',
+  'popup.js'
+);
+
+describe('composeXcodeTargetPlan safari with entry', () => {
+  test('plans Safari resources and web bundle', () => {
     const plan = composeXcodeTargetPlan({
       props: makeProps({
         type: 'safari',
@@ -662,14 +684,19 @@ describe('composeXcodeTargetPlan safari', () => {
     });
 
     expect(plan.safari?.useCustomResources).toBe(false);
-    expect(plan.safari?.resourcesPath).toContain(
-      path.join('ExpoTargetsGenerated', PRODUCT_NAME, 'Resources')
-    );
+    expect(plan.safari?.resourcesPath).toContain(SAFARI_RESOURCES);
     expect(plan.safari?.referencePath).toContain('Resources');
     expect(plan.bundleReactNative).toBeUndefined();
+    expect(plan.safariWebBundle).toEqual({
+      entryFile: 'index.tsx',
+      popupJsPath: MY_SAFARI_POPUP_JS,
+      popupJsReferencePath: MY_SAFARI_POPUP_REF,
+    });
   });
+});
 
-  test('plans Safari resources for native safari without entry', () => {
+describe('composeXcodeTargetPlan safari without entry', () => {
+  test('plans Safari resources for native safari', () => {
     const plan = composeXcodeTargetPlan({
       props: makeProps({
         type: 'safari',
@@ -681,8 +708,6 @@ describe('composeXcodeTargetPlan safari', () => {
       mainBuildSettings: {},
     });
 
-    expect(plan.safari?.resourcesPath).toContain(
-      path.join('ExpoTargetsGenerated', PRODUCT_NAME, 'Resources')
-    );
+    expect(plan.safari?.resourcesPath).toContain(SAFARI_RESOURCES);
   });
 });

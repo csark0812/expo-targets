@@ -35,9 +35,7 @@
     "examples:devicewright:messages": "bun examples/.devicewright/cli.ts matrix --ids=messages",
     "examples:devicewright:stickers": "bun examples/.devicewright/cli.ts matrix --ids=stickers",
     "examples:devicewright:clip": "bun examples/.devicewright/cli.ts matrix --ids=clip",
-    "examples:devicewright:widgets": "bun examples/.devicewright/cli.ts matrix --ids=widgets",
-    "compare:bacon-registry": "bun scripts/compare-bacon-registry.ts",
-    "compare:bacon-registry:harden": "bun scripts/compare-bacon-registry.ts --harden"
+    "examples:devicewright:widgets": "bun examples/.devicewright/cli.ts matrix --ids=widgets"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.6",

@@ -8,6 +8,12 @@ import { getTargetPromptQuestions } from './prompts';
 import { getReactNativeTemplate } from './reactNativeTemplate';
 import { resolveAppGroup } from './resolveAppGroup';
 import { kebabToPascal, pascalToCamel } from './utils';
+import {
+  printWireFailures,
+  printWireSuccess,
+  wireHost,
+  wireHostFailed,
+} from './wireHost';
 
 type TargetPromptResponse = {
   type?: string;
@@ -16,6 +22,7 @@ type TargetPromptResponse = {
   useReactNative?: boolean;
   includeIntentUI?: boolean;
   includeLiveActivity?: boolean;
+  configurableWidget?: boolean;
 };
 
 function writeHostHelper(targetDir: string, pascalName: string): void {
@@ -51,6 +58,7 @@ function writeIosFiles(options: {
     liveActivityAttributesName: attributesName,
     appIntentHookName,
     appIntentTitle: pascalName,
+    configurableWidget: response.configurableWidget,
   });
 
   if (response.useReactNative) {
@@ -62,24 +70,34 @@ function writeIosFiles(options: {
   }
 }
 
+function parseNoWireFlag(): boolean {
+  return process.argv.includes('--no-wire');
+}
+
 export async function scaffoldTarget(): Promise<void> {
-  const response = (await prompts(
-    getTargetPromptQuestions()
-  )) as TargetPromptResponse;
+  const noWire = parseNoWireFlag();
+  const response = (await prompts(getTargetPromptQuestions(), {
+    onCancel: () => process.exit(0),
+  })) as TargetPromptResponse;
 
   if (!(response.type && response.name)) {
-    return;
+    process.exit(0);
   }
 
-  const targetDir = path.join(process.cwd(), 'targets', response.name);
+  const projectRoot = process.cwd();
+  const targetDir = path.join(projectRoot, 'targets', response.name);
   if (fs.existsSync(targetDir)) {
-    return;
+    console.error(
+      `Target directory already exists: targets/${response.name}/\n` +
+        'Choose a different name or remove the existing directory.'
+    );
+    process.exit(1);
   }
 
   fs.mkdirSync(targetDir, { recursive: true });
 
   const pascalName = kebabToPascal(response.name);
-  const appGroup = resolveAppGroup(process.cwd());
+  const appGroup = resolveAppGroup(projectRoot);
   const config = generateConfig({
     type: response.type,
     kebabName: response.name,
@@ -98,4 +116,18 @@ export async function scaffoldTarget(): Promise<void> {
   if (!response.useReactNative) {
     writeHostHelper(targetDir, pascalName);
   }
+
+  if (noWire) {
+    console.log(`\n✓ Created target: targets/${response.name}/`);
+    console.log('\nHost wiring skipped (--no-wire).');
+    return;
+  }
+
+  const wireResult = wireHost(projectRoot);
+  if (wireHostFailed(wireResult)) {
+    printWireFailures(wireResult);
+    process.exit(1);
+  }
+
+  printWireSuccess(response.name, wireResult);
 }

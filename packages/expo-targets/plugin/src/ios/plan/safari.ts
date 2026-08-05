@@ -34,6 +34,7 @@ export function planSafariResources({
     referencePath: path.relative(paths.platformProjectRoot, resourcesPath),
     useCustomResources: workspace.hasCustomSafariResources,
     userResourcesPath: workspace.userSafariResourcesPath,
+    targetDirectory: workspace.directory,
     name: props.name,
     displayName: props.displayName,
     manifest: props.manifest,

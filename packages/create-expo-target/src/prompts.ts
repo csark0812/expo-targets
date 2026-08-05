@@ -65,6 +65,12 @@ export function getTargetPromptQuestions(): PromptObject[] {
     },
     {
       type: (_prev, values) => (values.type === 'widget' ? 'confirm' : null),
+      name: 'configurableWidget',
+      message: 'Configurable (Edit Widget)?',
+      initial: false,
+    },
+    {
+      type: (_prev, values) => (values.type === 'widget' ? 'confirm' : null),
       name: 'includeLiveActivity',
       message: 'Include Live Activity (ActivityKit) bootstrap?',
       initial: false,

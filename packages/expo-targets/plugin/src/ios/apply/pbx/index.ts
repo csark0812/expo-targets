@@ -38,6 +38,10 @@ export {
   ensureGroupRecursively,
 } from './groups';
 export {
+  buildSafariWebBundleShellScript,
+  ensureSafariWebBundlePhase,
+} from './safariWebBundle';
+export {
   addTargetDependency,
   findAllTargetsByProductName,
   findTargetByProductName,

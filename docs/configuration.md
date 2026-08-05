@@ -1027,7 +1027,7 @@ Write your Safari extension popup using React Native components. The same `creat
 | Artifact | Who writes it |
 | --- | --- |
 | `SafariWebExtensionHandler.swift`, `popup.html`, `manifest.json`, Resources shell | Config plugin on `npx expo prebuild` (sealed under `ios/<App>/ExpoTargetsGenerated/<Product>/`) |
-| `popup.js` (your RN Web bundle) | **You** — `npx expo export` then copy into the sealed Resources folder (see below) |
+| `popup.js` (your RN Web bundle) | **Automatic** — Xcode **Export Safari Web Bundle** build phase on targets with `entry`, or `npx expo-targets export-safari` |
 
 **Minimal setup:**
 
@@ -1089,19 +1089,18 @@ Safari hooks (`useBrowserTab`, `useBrowserStorage`, `openTab`, `closePopup`, …
 
 **Building and deploying the popup bundle:**
 
-1. `npx expo prebuild` — creates the sealed Safari Resources shell.
-2. Export the web bundle, then copy it into that shell:
+1. `npx expo prebuild` — creates the sealed Safari Resources shell and wires an **Export Safari Web Bundle** Xcode build phase for targets with `entry`.
+2. Build from Xcode (or `npx expo run:ios`). The build phase exports your RN Web entry into sealed `Resources/popup.js` before the appex is packaged.
+
+**CLI (optional):** export all Safari targets with `entry` without a full native build:
 
 ```bash
-# From your project root
-npx expo export --platform web --output-dir ios/build/safari-resources
-
-# Copy into the sealed Safari Resources folder (product name = sanitized displayName/name)
-# Example: ios/MyApp/ExpoTargetsGenerated/MySafariTarget/Resources/popup.js
-cp ios/build/safari-resources/bundle.js ios/[AppName]/ExpoTargetsGenerated/[ProductName]/Resources/popup.js
+npx expo-targets export-safari
 ```
 
-3. Rebuild the app (`npx expo run:ios`). Re-run the export + copy whenever the popup UI changes. Prebuild alone does **not** compile your RN Web entry into `popup.js`.
+**Skip export:** set `SKIP_SAFARI_EXPORT=1` to leave the placeholder `popup.js` in place (useful for CI that does not need a fresh web bundle).
+
+The export step uses `expo export:embed` for the target `entry`, falling back to `expo export --platform web` when needed. Intermediate output lands under `ios/build/safari-resources/<Product>/`. Re-run export whenever the popup UI changes.
 
 After upgrading from older expo-targets that wrote `targets/*/ios/build/`, re-run prebuild once. Update any scripts that copied into the legacy `targets/*/ios/build/` path — that directory is deleted on apply when the sealed path is written.
 ### Mode 2: Native/Manual

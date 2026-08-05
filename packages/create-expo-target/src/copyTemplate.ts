@@ -24,6 +24,7 @@ export type CopyTemplateOptions = {
   liveActivityAttributesName?: string;
   appIntentHookName?: string;
   appIntentTitle?: string;
+  configurableWidget?: boolean;
 };
 
 function getGenericStub(type: string, pascalName: string): string {
@@ -162,6 +163,7 @@ export function copyTemplate(options: CopyTemplateOptions): void {
         ? {
             appGroup: options.appGroup ?? 'group.com.example.app',
             useBundle: Boolean(options.includeLiveActivity),
+            configurable: Boolean(options.configurableWidget),
           }
         : undefined;
 

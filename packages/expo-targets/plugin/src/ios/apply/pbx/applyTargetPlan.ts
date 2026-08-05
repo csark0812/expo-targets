@@ -23,6 +23,7 @@ import {
 } from './embed';
 import { addExternalFileReference } from './fileRefs';
 import { addTargetToVirtualGroup, ensureExpoTargetsGroup } from './groups';
+import { ensureSafariWebBundlePhase } from './safariWebBundle';
 import {
   addTargetDependency,
   findTargetByProductName,
@@ -445,6 +446,15 @@ export function applyXcodeTargetPlan(
       project,
       targetUuid: target.uuid,
       plan: plan.bundleReactNative,
+      logger,
+    });
+  }
+
+  if (plan.safariWebBundle) {
+    ensureSafariWebBundlePhase({
+      project,
+      targetUuid: target.uuid,
+      plan: plan.safariWebBundle,
       logger,
     });
   }

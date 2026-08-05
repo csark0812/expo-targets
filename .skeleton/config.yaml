@@ -13,7 +13,6 @@ scan:
   exclude:
     - "refs/**"
     - "examples/**"
-    - "docs/migrate-from-bacons-apple-targets.md"
     - "packages/create-expo-target/README.md"
     - "packages/expo-targets/README.md"
     - "packages/expo-targets/plugin/test-utils/README.md"

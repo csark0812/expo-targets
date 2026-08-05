@@ -22,4 +22,4 @@
 | Example suite | [examples/README.md](../examples/README.md) |
 | Devicewright operator | [examples/.devicewright/README.md](../examples/.devicewright/README.md) |
 | Repo scripts | [scripts/README.md](../scripts/README.md) |
-| Bare RN sync CLI (stub) | [expo-targets-cli/README.md](../packages/expo-targets-cli/README.md) |
+| Bare RN sync CLI | [expo-targets-cli/README.md](../packages/expo-targets-cli/README.md) |

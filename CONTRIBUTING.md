@@ -33,7 +33,6 @@ Matches [`.github/workflows/test.yml`](./.github/workflows/test.yml):
 | Types | `bun run typecheck` |
 | Unit (L1/L2) | `bun run test:unit` |
 | Integration (L3) | `bun run test:integration` |
-| ExtensionType snapshot | `bun run compare:bacon-registry` |
 | Build | `bun run build` |
 | Secrets | gitleaks (CI action) |
 
@@ -86,7 +85,7 @@ Publishing is [`.github/workflows/publish.yml`](./.github/workflows/publish.yml)
 - Triggers on **merged PR to `main`** or **`workflow_dispatch`** (optional explicit version / bump type).
 - Uses npm **trusted publishers** + OIDC (`id-token: write`) — no long-lived npm token for publish.
 - **Publishes:** `expo-targets`, `create-expo-target`.
-- **Does not publish:** `expo-targets-cli` (unimplemented stub — [#67](https://github.com/csark0812/expo-targets/issues/67)).
+- **Does not publish separately:** `@expo-targets/cli` workspace package (dev mirror). User-facing CLI ships as the `expo-targets` bin (`npx expo-targets doctor|sync|…`).
 - Semver from PR labels: `major` → major, `minor` → minor, else patch. Manual dispatch can set version or bump type.
 - Bumps package versions, tags `v*`, builds, then `npm publish`.
 

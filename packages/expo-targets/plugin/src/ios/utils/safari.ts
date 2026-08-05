@@ -124,11 +124,8 @@ export interface SafariManifestConfig {
  * Generate popup.html for Safari extension
  * This loads the bundled React Native Web code
  */
-export function generatePopupHtml(
-  outputPath: string,
-  targetName: string
-): void {
-  const html = `<!DOCTYPE html>
+function popupHtmlContent(targetName: string): string {
+  return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -162,18 +159,19 @@ export function generatePopupHtml(
   <script src="popup.js"></script>
 </body>
 </html>`;
-
-  File.writeFileSafe(outputPath, html);
 }
 
-/**
- * Generate manifest.json for Safari extension
- */
-export function generateManifest(
+export function generatePopupHtml(
   outputPath: string,
-  config: SafariManifestConfig
+  targetName: string
 ): void {
-  const manifest = {
+  File.writeFileSafe(outputPath, popupHtmlContent(targetName));
+}
+
+function buildManifestObject(
+  config: SafariManifestConfig
+): Record<string, unknown> {
+  return {
     manifest_version: 3,
     name: config.name,
     version: config.version || '1.0.0',
@@ -212,15 +210,23 @@ export function generateManifest(
       '128': 'images/icon-128.png',
     },
   };
-
-  File.writeFileSafe(outputPath, JSON.stringify(manifest, null, 2));
 }
 
 /**
- * Generate a minimal background.js for Safari extension
+ * Generate manifest.json for Safari extension
  */
-export function generateBackgroundScript(outputPath: string): void {
-  const script = `// Safari Web Extension Background Script
+export function generateManifest(
+  outputPath: string,
+  config: SafariManifestConfig
+): void {
+  File.writeFileSafe(
+    outputPath,
+    JSON.stringify(buildManifestObject(config), null, 2)
+  );
+}
+
+function backgroundScriptContent(): string {
+  return `// Safari Web Extension Background Script
 // Handles communication between popup and native Swift handler
 
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -233,19 +239,17 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 `;
-
-  File.writeFileSafe(outputPath, script);
 }
 
 /**
- * Generate placeholder popup.js
- * This will be replaced by the actual bundle during build
+ * Generate a minimal background.js for Safari extension
  */
-export function generatePlaceholderPopupScript(
-  outputPath: string,
-  targetName: string
-): void {
-  const script = `// Placeholder for ${targetName} Safari Extension
+export function generateBackgroundScript(outputPath: string): void {
+  File.writeFileSafe(outputPath, backgroundScriptContent());
+}
+
+function placeholderPopupScriptContent(targetName: string): string {
+  return `// Placeholder for ${targetName} Safari Extension
 // This file will be replaced by the bundled React Native Web code during build
 
 (function() {
@@ -258,8 +262,17 @@ export function generatePlaceholderPopupScript(
   }
 })();
 `;
+}
 
-  File.writeFileSafe(outputPath, script);
+/**
+ * Generate placeholder popup.js
+ * This will be replaced by the actual bundle during build
+ */
+export function generatePlaceholderPopupScript(
+  outputPath: string,
+  targetName: string
+): void {
+  File.writeFileSafe(outputPath, placeholderPopupScriptContent(targetName));
 }
 
 /**
@@ -429,6 +442,45 @@ function writeContentScriptStubs(
       }
     }
   }
+}
+
+/**
+ * Generate all Safari web extension resources
+ */
+export function plannedSafariOverwriteFiles(
+  resourcesPath: string,
+  config: {
+    name: string;
+    displayName?: string;
+    manifest?: Partial<SafariManifestConfig>;
+  }
+): Array<{ filePath: string; content: string }> {
+  const targetDisplayName = config.displayName || config.name;
+  return [
+    {
+      filePath: path.join(resourcesPath, 'popup.html'),
+      content: popupHtmlContent(targetDisplayName),
+    },
+    {
+      filePath: path.join(resourcesPath, 'manifest.json'),
+      content: JSON.stringify(
+        buildManifestObject({
+          name: targetDisplayName,
+          ...config.manifest,
+        }),
+        null,
+        2
+      ),
+    },
+    {
+      filePath: path.join(resourcesPath, 'background.js'),
+      content: backgroundScriptContent(),
+    },
+    {
+      filePath: path.join(resourcesPath, 'popup.js'),
+      content: placeholderPopupScriptContent(targetDisplayName),
+    },
+  ];
 }
 
 /**

@@ -2,7 +2,12 @@ import { afterEach, describe, expect, test } from 'bun:test';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { scanTargetsDirectory, withTargetsMetro } from './withTargetsMetro';
+import {
+  scanTargetsDirectory,
+  withTargets,
+  // biome-ignore lint/suspicious/noDeprecatedImports: alias coverage
+  withTargetsMetro,
+} from './withTargets';
 
 function makeTempProject(
   entries: {
@@ -94,8 +99,43 @@ describe('scanTargetsDirectory', () => {
   });
 });
 
-describe('withTargetsMetro', () => {
+describe('withTargets', () => {
   test('resolveRequest returns mapped entry files', () => {
+    const root = makeTempProject([
+      {
+        dir: 'share-content',
+        config: {
+          type: 'share',
+          name: 'ShareContent',
+          entry: './targets/share-content/index.tsx',
+        },
+        entryFile: 'targets/share-content/index.tsx',
+      },
+    ]);
+    tempRoots.push(root);
+
+    const config = withTargets({ resolver: {} } as any, {
+      projectRoot: root,
+      silent: true,
+    });
+
+    const result = config.resolver!.resolveRequest!(
+      {
+        resolveRequest: () => ({ type: 'sourceFile', filePath: '/fallback' }),
+      } as any,
+      'targets/share-content/index',
+      'ios'
+    );
+
+    expect(result).toEqual({
+      type: 'sourceFile',
+      filePath: path.join(root, 'targets/share-content/index.tsx'),
+    });
+  });
+});
+
+describe('withTargetsMetro', () => {
+  test('deprecated alias behaves like withTargets', () => {
     const root = makeTempProject([
       {
         dir: 'share-content',
