@@ -1,6 +1,6 @@
 {
   "name": "create-expo-target",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "description": "CLI tool for scaffolding expo-targets extensions",
   "main": "build/index.js",
   "files": [
