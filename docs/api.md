@@ -10,6 +10,15 @@
 
 Creates a target instance for communicating with your extension.
 
+For compile-time target name literals, import from the generated file (see [Getting Started → Typed target names](./getting-started.md#typed-target-names)):
+
+```typescript
+import { Targets } from "../.expo/expo-targets.generated";
+import { createTarget } from "expo-targets";
+
+const share = createTarget(Targets.MyShare);
+```
+
 ```typescript
 import { createTarget } from "expo-targets";
 
@@ -502,7 +511,7 @@ Attributes + host bridge are CNG into `ios/*/ExpoTargetsGenerated/` (gitignored)
 
 ## Safari extension runtime
 
-Safari targets with an `entry` return `SafariExtensionTarget` (`closePopup`, `openTab`, `copyToClipboard`). Packaging (prebuild shell + `expo export` → copy `popup.js`) is in [configuration.md](./configuration.md#example-safari-extension).
+Safari targets with an `entry` return `SafariExtensionTarget` (`closePopup`, `openTab`, `copyToClipboard`). Packaging (prebuild shell + Xcode export phase / `npx expo-targets export-safari` → sealed `popup.js`) is in [configuration.md](./configuration.md#example-safari-extension).
 
 ```typescript
 import {
@@ -594,17 +603,21 @@ $ npx create-expo-target
 Run `npx expo prebuild` to generate Xcode project
 ```
 
-### expo-targets sync (unimplemented)
+### expo-targets sync (bare React Native)
 
-> **Not ready.** `npx expo-targets sync` is an unpublished stub — it does not apply Podfile changes or generate sealed `ExpoTargetsGenerated` artifacts. Tracking: [#67](https://github.com/csark0812/expo-targets/issues/67).
+Applies iOS config-plugin mods to an existing `ios/` tree without a full prebuild wipe.
 
-**Managed Expo / prebuild path (supported):**
+```bash
+npx expo-targets sync
+npx expo-targets sync --dry-run
+npx expo-targets sync --clean   # opt-in orphan cleanup (sealed dirs + Podfile)
+```
+
+**Managed Expo / prebuild path (recommended for new apps):**
 
 ```bash
 npx expo prebuild --platform ios
 ```
-
-Do not rely on `expo-targets sync` for bare RN until that package ships a real implementation.
 
 ---
 

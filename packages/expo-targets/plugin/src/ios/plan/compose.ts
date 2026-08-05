@@ -7,6 +7,7 @@ import { planEmbed } from './embed';
 import { resolveIdentity } from './identity';
 import { planInfoPlist } from './infoPlist';
 import { planSafariResources } from './safari';
+import { planSafariWebBundle } from './safariWebBundle';
 import { planSwiftSources } from './swiftSources';
 import type { TargetPlanInput, XcodeTargetPlan } from './types';
 
@@ -27,6 +28,7 @@ export function composeXcodeTargetPlan({
     mainBundleIdentifier: expoConfig.ios?.bundleIdentifier,
   });
   const infoPlist = planInfoPlist({ props, expoConfig, paths });
+  const safariWebBundle = planSafariWebBundle(props, paths, identity);
 
   return {
     identity,
@@ -53,5 +55,6 @@ export function composeXcodeTargetPlan({
     bundleResources: planBundleResources({ workspace, paths }),
     embed: planEmbed(props.type),
     bundleReactNative: planBundleReactNative(props),
+    safariWebBundle,
   };
 }

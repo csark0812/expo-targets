@@ -10,7 +10,7 @@
 
 export type TouchpointDef = {
   id: string;
-  /** Extension / Bacon type string when different from id. */
+  /** Extension type string when different from id. */
   type?: string;
   tranche: string;
   /** What "alive" means for the min green floor. */

@@ -1,5 +1,7 @@
 import path from 'node:path';
 
+import { warnIfSealedHandEdited } from '../../../codegen/warnIfSealedHandEdited';
+import type { Logger } from '../../../logger';
 import type { SwiftFilePlan, SwiftTemplatePlan } from '../../plan/types';
 import * as File from '../../utils/file';
 import * as ReactNativeSwift from '../../utils/reactNativeSwift';
@@ -24,11 +26,23 @@ function renderSwiftTemplate(plan: SwiftTemplatePlan): string {
  */
 export function applySwiftFilePlans(
   plans: SwiftFilePlan[],
-  { projectRoot }: { projectRoot: string }
+  {
+    projectRoot,
+    logger,
+    targetDirectory,
+  }: { projectRoot: string; logger: Logger; targetDirectory: string }
 ): void {
+  const deepenPath = `${targetDirectory}/ios/`;
   for (const plan of plans) {
     if (plan.generate) {
-      File.writeFileSafe(plan.sourcePath, renderSwiftTemplate(plan.generate));
+      const content = renderSwiftTemplate(plan.generate);
+      warnIfSealedHandEdited({
+        filePath: plan.sourcePath,
+        plannedContent: content,
+        logger,
+        userDeepenPath: deepenPath,
+      });
+      File.writeFileSafe(plan.sourcePath, content);
       continue;
     }
 

@@ -46,4 +46,4 @@ bun run validate:changed
 | ----------------------------- | ---------------------------------------------------- |
 | `packages/expo-targets` | Config plugin, runtime, Metro helper, native modules |
 | `packages/create-expo-target` | Interactive scaffolder |
-| `packages/expo-targets-cli` | Bare RN sync — **unimplemented stub** ([#67](https://github.com/csark0812/expo-targets/issues/67)) |
+| `packages/expo-targets-cli` | Bare RN sync dev mirror (ships with `expo-targets` npm package) |

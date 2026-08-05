@@ -3,6 +3,16 @@ import type { ConfigPlugin } from '@expo/config-plugins';
 import { globSync } from 'glob';
 
 import { withAndroidTarget } from './android/withAndroidTarget';
+import { collectRuntimeConfigs } from './codegen/collectRuntimeConfigs';
+import {
+  type TargetCodegenConfig,
+  writeTargetsTypesFile,
+} from './codegen/typedTargets';
+import {
+  ensureHostAppGroups,
+  warnMissingMetroWrapper,
+} from './ensureHostAppGroups';
+import { isReactNativeNative } from './domain';
 import { withIOSTarget } from './ios/config-plugins/withIOSTarget';
 import { Logger } from './logger';
 
@@ -208,6 +218,12 @@ const withTargetIos: ConfigPlugin<{
         }
       : undefined;
 
+  const excludedPackages =
+    evaluatedConfig.excludedPackages ??
+    (evaluatedConfig.entry && isReactNativeNative(evaluatedConfig.type)
+      ? ['expo-updates', 'expo-dev-client']
+      : undefined);
+
   let next = withIOSTarget(config, {
     ...(evaluatedConfig.ios || {}),
     type: evaluatedConfig.type,
@@ -215,7 +231,7 @@ const withTargetIos: ConfigPlugin<{
     displayName: evaluatedConfig.displayName,
     appGroup: evaluatedConfig.appGroup,
     entry: evaluatedConfig.entry,
-    excludedPackages: evaluatedConfig.excludedPackages,
+    excludedPackages,
     directory: targetDirectory,
     configPath: target.targetPath,
     intents: intentsConfig,
@@ -322,9 +338,11 @@ export const withTargetsDir: ConfigPlugin<{
   validateMessagePayloadProviders(targets);
   validateWatchWidgetCompanion(targets);
 
+  let next = ensureHostAppGroups(config, targets, logger);
+  warnMissingMetroWrapper(projectRoot, targets, logger);
+
   // Collect target configs for runtime access
   const runtimeConfigs: any[] = [];
-  let next = config;
 
   for (const target of targets) {
     next = withTarget(next, {
@@ -340,6 +358,17 @@ export const withTargetsDir: ConfigPlugin<{
     ...next.extra,
     targets: runtimeConfigs,
   };
+
+  if (projectRoot) {
+    const codegenConfigs: TargetCodegenConfig[] = collectRuntimeConfigs(
+      targets,
+      config
+    ).map((cfg) => ({
+      name: cfg.name,
+      liveActivity: cfg.liveActivity,
+    }));
+    writeTargetsTypesFile(projectRoot, codegenConfigs);
+  }
 
   return next;
 };

@@ -242,3 +242,10 @@ export function getTargetSourcePath({
 }): string {
   return path.join(projectRoot, targetDirectory, 'ios', fileName);
 }
+
+/** Sealed `popup.js` for a Safari web extension with a React Native Web entry. */
+export function getSafariPopupJsPath(
+  options: Parameters<typeof getTargetBuildPath>[0]
+): string {
+  return path.join(getTargetBuildPath(options), 'Resources', 'popup.js');
+}

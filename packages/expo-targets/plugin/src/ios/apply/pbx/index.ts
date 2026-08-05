@@ -22,6 +22,10 @@ export {
   ensureBundleReactNativePhase,
 } from './bundleReactNative';
 export {
+  buildSafariWebBundleShellScript,
+  ensureSafariWebBundlePhase,
+} from './safariWebBundle';
+export {
   configureAppClipEmbed,
   configureAppExtensionEmbed,
   configureExtensionKitEmbed,

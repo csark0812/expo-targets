@@ -119,7 +119,7 @@ function logScanSummary(
   );
 }
 
-export function withTargetsMetro(
+export function withTargets(
   metroConfig: MetroConfig,
   options?: { projectRoot?: string; silent?: boolean }
 ): MetroConfig {
@@ -152,4 +152,20 @@ export function withTargetsMetro(
       },
     },
   };
+}
+
+let metroAliasWarned = false;
+
+/** @deprecated Use `withTargets` instead. */
+export function withTargetsMetro(
+  metroConfig: MetroConfig,
+  options?: { projectRoot?: string; silent?: boolean }
+): MetroConfig {
+  if (!metroAliasWarned) {
+    metroAliasWarned = true;
+    console.warn(
+      '[expo-targets/metro] withTargetsMetro is deprecated; use withTargets instead'
+    );
+  }
+  return withTargets(metroConfig, options);
 }

@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { sanitizeTargetName } from './paths';
+import { getSafariPopupJsPath, sanitizeTargetName } from './paths';
+import * as path from 'node:path';
 
 describe('sanitizeTargetName', () => {
   test('appends Target suffix', () => {
@@ -18,5 +19,26 @@ describe('sanitizeTargetName', () => {
 
   test('handles empty string', () => {
     expect(sanitizeTargetName('')).toBe('Target');
+  });
+});
+
+describe('getSafariPopupJsPath', () => {
+  test('resolves sealed Resources/popup.js', () => {
+    expect(
+      getSafariPopupJsPath({
+        platformProjectRoot: '/tmp/ios',
+        projectName: 'App',
+        productName: 'MySafariTarget',
+      })
+    ).toBe(
+      path.join(
+        '/tmp/ios',
+        'App',
+        'ExpoTargetsGenerated',
+        'MySafariTarget',
+        'Resources',
+        'popup.js'
+      )
+    );
   });
 });

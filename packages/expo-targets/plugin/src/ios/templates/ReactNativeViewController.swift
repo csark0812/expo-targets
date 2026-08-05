@@ -18,29 +18,60 @@ private class ExtensionReactDelegate: ExpoReactNativeFactoryDelegate {
         bundleURL()
     }
 
-    override func bundleURL() -> URL? {
-        #if DEBUG
-        let settings = RCTBundleURLProvider.sharedSettings()
+    private func embeddedBundleURL() -> URL? {
+        if let main = Bundle.main.url(forResource: "main", withExtension: "jsbundle") {
+            return main
+        }
+        return Bundle.main.url(forResource: "index", withExtension: "jsbundle")
+    }
+
+    private func appendTargetQuery(to bundleURL: URL) -> URL {
+        guard var components = URLComponents(url: bundleURL, resolvingAgainstBaseURL: false) else {
+            return bundleURL
+        }
+        var items = components.queryItems ?? []
+        if !items.contains(where: { $0.name == "target" }) {
+            items.append(URLQueryItem(name: "target", value: "{{TARGET_NAME}}"))
+            components.queryItems = items
+        }
+        return components.url ?? bundleURL
+    }
+
+    #if DEBUG
+    private func configureDebugPackagerSettings(_ settings: RCTBundleURLProvider) {
         settings.enableDev = true
         settings.enableMinification = false
 
-        // Use target-specific bundle root with query parameter
-        if let bundleURL = settings.jsBundleURL(forBundleRoot: bundleRoot) {
-            if var components = URLComponents(url: bundleURL, resolvingAgainstBaseURL: false) {
-                components.queryItems = (components.queryItems ?? []) + [
-                    URLQueryItem(name: "target", value: "{{TARGET_NAME}}")
-                ]
-                return components.url ?? bundleURL
-            }
-            return bundleURL
+        // Extensions lack the host app's ip.txt; Simulator defaults to localhost.
+        #if targetEnvironment(simulator)
+        if settings.jsLocation == nil || settings.jsLocation?.isEmpty == true {
+            settings.jsLocation = "localhost"
         }
-        return nil
+        #endif
+    }
+
+    private func debugBundleURL() -> URL? {
+        let settings = RCTBundleURLProvider.sharedSettings()
+        configureDebugPackagerSettings(settings)
+
+        // RCTBundleURLProvider checks packager reachability and may fall back to main.jsbundle.
+        guard let url = settings.jsBundleURL(forBundleRoot: bundleRoot) else {
+            return embeddedBundleURL()
+        }
+
+        if url.isFileURL {
+            return embeddedBundleURL() ?? url
+        }
+
+        return appendTargetQuery(to: url)
+    }
+    #endif
+
+    override func bundleURL() -> URL? {
+        #if DEBUG
+        return debugBundleURL()
         #else
-        // In release, load from main bundle
-        guard let bundleURL = Bundle.main.url(forResource: "main", withExtension: "jsbundle") else {
-            return Bundle.main.url(forResource: "index", withExtension: "jsbundle")
-        }
-        return bundleURL
+        return embeddedBundleURL()
         #endif
     }
 }
@@ -106,7 +137,15 @@ class ReactNativeViewController: UIViewController {
 
     private func setupReactNativeView(with sharedData: [String: Any]?) {
         // Create delegate with target-specific bundle root
-        reactNativeFactoryDelegate = ExtensionReactDelegate(bundleRoot: "{{BUNDLE_ROOT}}")
+        let delegate = ExtensionReactDelegate(bundleRoot: "{{BUNDLE_ROOT}}")
+        guard delegate.bundleURL() != nil else {
+            showError(
+                "Could not load the JavaScript bundle. Start Metro with `npx expo start` for live reload, or rebuild with an embedded bundle (Release / no packager)."
+            )
+            return
+        }
+
+        reactNativeFactoryDelegate = delegate
         reactNativeFactoryDelegate!.dependencyProvider = RCTAppDependencyProvider()
 
         // Create factory via Expo (pulls RCTAppDelegate APIs through Expo.h)

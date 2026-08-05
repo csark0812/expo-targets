@@ -914,7 +914,7 @@
     },
     "packages/create-expo-target": {
       "name": "create-expo-target",
-      "version": "0.2.0",
+      "version": "0.2.9",
       "bin": {
         "create-expo-target": "./build/index.js",
       },
@@ -931,15 +931,20 @@
     },
     "packages/expo-targets": {
       "name": "expo-targets",
-      "version": "0.2.7",
+      "version": "0.2.9",
+      "bin": {
+        "expo-targets": "./bin/expo-targets.js",
+      },
       "dependencies": {
         "@babel/parser": "^7.25.0",
         "@babel/traverse": "^7.25.0",
         "@babel/types": "^7.25.0",
+        "@expo/config": "~57.0.6",
         "@expo/config-plugins": "~57.0.6",
         "@expo/config-types": "~57.0.2",
         "@expo/plist": "^0.8.1",
         "@react-native/normalize-colors": "^0.79.2",
+        "commander": "^11.1.0",
         "debug": "^4.3.4",
         "glob": "^10.4.2",
         "xcode": "3.0.1",

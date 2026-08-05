@@ -4,7 +4,8 @@ import * as File from '../utils/file';
 
 /**
  * Read a target's optional `pods.rb`, which lets users add CocoaPods
- * dependencies to a single target. Format-compatible with @bacons/apple-targets.
+ * Podfile fragment helpers for embedding CocoaPods
+ * dependencies to a single target.
  */
 export function readPodsRb({
   projectRoot,

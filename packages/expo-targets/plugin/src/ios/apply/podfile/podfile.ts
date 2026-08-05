@@ -168,7 +168,6 @@ export const EXCLUDED_PACKAGES_MARKER = '# [expo-targets-excluded-packages]';
  *
  * @param podsRbContent - Optional content from a pods.rb file in the target directory.
  *                        Allows custom CocoaPods configuration (e.g., Firebase, third-party SDKs).
- *                        See: https://github.com/nicklockwood/apple-targets#cocoapods
  */
 export function generateReactNativeTargetBlock({
   targetName,
@@ -231,7 +230,6 @@ export function mainTargetUsesFrameworks(
  *
  * @param podsRbContent - Optional content from a pods.rb file in the target directory.
  *                        Allows custom CocoaPods configuration (e.g., Firebase, third-party SDKs).
- *                        See: https://github.com/nicklockwood/apple-targets#cocoapods
  */
 export function generateStandaloneTargetBlock({
   targetName,

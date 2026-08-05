@@ -6,7 +6,7 @@
 
 Build share extensions, action extensions, App Clips, iMessage apps, rich notification UI, and Safari popups using React Native instead of native Swift/Kotlin.
 
-> **Status:** Backbone v1 covers the cross-type [runtime contract](#runtime-contract) and hardened `withTargetsMetro` packaging. Prefer these patterns; type-specific polish continues on top.
+> **Status:** Backbone v1 covers the cross-type [runtime contract](#runtime-contract) and hardened `withTargets` Metro packaging. Prefer these patterns; type-specific polish continues on top. (`withTargetsMetro` is a deprecated alias.)
 
 ## Supported Types
 
@@ -32,9 +32,9 @@ Stable across **share**, **action**, **clip**, and **messages** (messages adds A
 ### Bootstrap
 
 1. Declare `entry` in `expo-target.config` (path relative to project root).
-2. Wrap Metro with `withTargetsMetro` so the extension host can resolve that entry.
+2. Wrap Metro with `withTargets` so the extension host can resolve that entry.
 3. Call `createTarget(name, Component)` in the entry file. The `name` must match config `name` exactly; this registers the component with `AppRegistry`.
-4. Rebuild native (`npx expo prebuild`) so the extension target embeds expo-targets and loads the RN host. (`npx expo-targets sync` is an unimplemented stub — do not rely on it.)
+4. Rebuild native (`npx expo prebuild`, or `npx expo-targets sync` on bare RN) so the extension target embeds expo-targets and loads the RN host.
 
 ### Lifecycle (share / action / clip)
 
@@ -54,7 +54,7 @@ These require the **ExpoTargetsExtension** native module inside the extension pr
 | `App Group not configured`            | Missing `appGroup` on the target                                                        |
 | `requires an "entry" field`           | Passed a Component without `entry` in config                                            |
 | `ExpoTargetsExtension is unavailable` | Not running in the extension, or native module not linked — re-prebuild                 |
-| Metro cannot resolve entry            | Missing `withTargetsMetro`, or `entry` path wrong                                       |
+| Metro cannot resolve entry            | Missing `withTargets`, or `entry` path wrong                                            |
 
 ### Messages
 
@@ -158,9 +158,9 @@ const styles = StyleSheet.create({
 ```javascript
 // metro.config.js
 const { getDefaultConfig } = require("expo/metro-config");
-const { withTargetsMetro } = require("expo-targets/metro");
+const { withTargets } = require("expo-targets/metro");
 
-module.exports = withTargetsMetro(getDefaultConfig(__dirname));
+module.exports = withTargets(getDefaultConfig(__dirname));
 ```
 
 The Metro wrapper:
@@ -175,6 +175,7 @@ The Metro wrapper:
 ### 5. Build and Run
 
 ```bash
+npx expo-targets doctor
 npx expo prebuild
 npx expo run:ios
 ```
@@ -371,7 +372,24 @@ clip — Updates asserts before the RN factory is ready and blanks the sheet:
 
 ## Debugging Extensions
 
-Extensions run in a **separate process** with limited debugging capabilities. They **do not connect to Metro** — no hot reloading, no Chrome DevTools.
+Extensions run in a **separate process** with limited debugging capabilities compared to the main app. In **DEBUG** builds, the native host uses `RCTBundleURLProvider` with your target's `bundleRoot` (from `entry` in config). When Metro is running and `withTargets` is configured, the extension can load from the packager — **Fast Refresh / HMR may work for JS-only edits** while the extension is open.
+
+**Release builds** (or DEBUG with no packager) load the embedded `main.jsbundle` baked into the appex at build time. If Metro is unreachable in DEBUG, the host **falls back to the embedded bundle** instead of showing a blank sheet. If neither Metro nor an embedded bundle is available, you get a clear error alert.
+
+**Limitations (unchanged):**
+
+- No Chrome DevTools or JS breakpoints in the extension process
+- Historically, extensions did not connect to Metro at all; that was true when the packager was down or `withTargets` was missing
+- Native Swift breakpoints in Xcode still work
+
+### Live reload workflow (DEBUG)
+
+1. Configure Metro with `withTargets` (see [Configure Metro](#4-configure-metro)).
+2. Start the packager: `npx expo start`
+3. Build and run the extension in DEBUG (`npx expo run:ios` or Xcode scheme for the appex).
+4. Edit JS/TS in the extension entry or its imports — save to trigger HMR when Metro is reachable.
+
+If you see the embedded bundle instead of live code, confirm Metro is running, `metro.config.js` uses `withTargets`, and you are on a DEBUG build. Simulator builds default the packager host to `localhost` when no `jsLocation` is set.
 
 ### Viewing Console Logs
 
@@ -402,13 +420,14 @@ xcrun simctl spawn booted log stream --predicate 'processImagePath contains "You
 **JavaScript Errors:**
 
 - Errors appear in Xcode console, not Chrome DevTools
-- No hot reloading — changes require full rebuild
+- Without Metro, changes require a native rebuild to pick up a new embedded bundle
+- With Metro running in DEBUG, JS-only changes can hot-reload
 - Use `console.log()` extensively
 
 **Breakpoint Debugging:**
 
 - Swift breakpoints work normally in Xcode
-- JavaScript breakpoints do NOT work (no Metro connection)
+- JavaScript breakpoints do NOT work (no Chrome DevTools / RN debugger in the extension process)
 - Set breakpoints in Swift bridge code if needed
 
 ### Common Issues
@@ -430,15 +449,17 @@ Solutions:
 **Component doesn't render:**
 
 ```
-Symptoms: Extension shows blank/white screen
+Symptoms: Extension shows blank/white screen (or error alert)
 Causes:
   - Entry file path wrong in config
   - Metro config wrapper not applied
   - Component not passed to createTarget
+  - DEBUG with no Metro and no embedded bundle from last build
 Solutions:
   - Verify entry path is relative to project root
-  - Check metro.config.js has withTargetsMetro wrapper
+  - Check metro.config.js has withTargets wrapper
   - Ensure component is passed as second arg: createTarget('Name', Component)
+  - Start Metro (`npx expo start`) for DEBUG live reload, or rebuild so main.jsbundle is embedded
 ```
 
 **Data sharing fails:**

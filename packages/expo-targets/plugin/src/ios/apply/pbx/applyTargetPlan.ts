@@ -12,6 +12,7 @@ import {
 } from './buildPhases';
 import { applyBuildSettings, removeBuildSetting } from './buildSettings';
 import { ensureBundleReactNativePhase } from './bundleReactNative';
+import { ensureSafariWebBundlePhase } from './safariWebBundle';
 import { ensureCopyFrameworksIntoAppClipPhase } from './copyFrameworksIntoAppClip';
 import {
   configureAppClipEmbed,
@@ -445,6 +446,15 @@ export function applyXcodeTargetPlan(
       project,
       targetUuid: target.uuid,
       plan: plan.bundleReactNative,
+      logger,
+    });
+  }
+
+  if (plan.safariWebBundle) {
+    ensureSafariWebBundlePhase({
+      project,
+      targetUuid: target.uuid,
+      plan: plan.safariWebBundle,
       logger,
     });
   }

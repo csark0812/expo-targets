@@ -667,6 +667,25 @@ describe('composeXcodeTargetPlan safari', () => {
     );
     expect(plan.safari?.referencePath).toContain('Resources');
     expect(plan.bundleReactNative).toBeUndefined();
+    expect(plan.safariWebBundle).toEqual({
+      entryFile: 'index.tsx',
+      popupJsPath: path.join(
+        PROJECT_ROOT,
+        'ios',
+        PROJECT_NAME,
+        'ExpoTargetsGenerated',
+        'MySafariTarget',
+        'Resources',
+        'popup.js'
+      ),
+      popupJsReferencePath: path.join(
+        PROJECT_NAME,
+        'ExpoTargetsGenerated',
+        'MySafariTarget',
+        'Resources',
+        'popup.js'
+      ),
+    });
   });
 
   test('plans Safari resources for native safari without entry', () => {

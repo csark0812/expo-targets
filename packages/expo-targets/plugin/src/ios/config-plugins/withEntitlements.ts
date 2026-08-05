@@ -42,7 +42,12 @@ export const withTargetEntitlements: ConfigPlugin<{
         },
       });
 
-      if (!writeEntitlements(plan)) {
+      if (
+        !writeEntitlements(plan, {
+          logger: props.logger,
+          targetDirectory: props.targetDirectory,
+        })
+      ) {
         props.logger.log(
           `Skipping entitlements for asset-only target ${props.targetName}`
         );

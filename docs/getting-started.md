@@ -31,7 +31,36 @@ npm install expo-targets
 # or: yarn add expo-targets / bun add expo-targets
 ```
 
-## Step 2: Configure Your App
+## Step 2: Create a Share Extension
+
+```bash
+npx create-expo-target
+```
+
+Choose:
+
+- **Type:** Share Extension
+- **Name:** my-share
+- **Use React Native:** Yes
+
+`create-expo-target` scaffolds `targets/my-share/` and wires the host by default: adds `expo-targets` to `package.json`, registers the config plugin, ensures App Group entitlements, and patches `metro.config.js` with `withTargets`. Use `--no-wire` to scaffold only.
+
+If you added `expo-targets` to `package.json` during wiring, install dependencies before prebuild.
+
+This creates:
+
+```
+targets/my-share/
+├── expo-target.config.json
+├── index.tsx                 # createTarget + component registration
+└── ios/                      # User deepen (committed)
+```
+
+After `npx expo prebuild`, sealed artifacts land in `ios/<App>/ExpoTargetsGenerated/<Product>/` (gitignored). Never edit that tree — deepen under `targets/*/ios/`.
+
+### Manual host setup (advanced)
+
+If you scaffold with `--no-wire` or use a dynamic `app.config.js`, configure the host yourself:
 
 Add the plugin and App Groups to your `app.json`:
 
@@ -59,30 +88,7 @@ Add the plugin and App Groups to your `app.json`:
 > - Convention: `group.{your.bundle.identifier}`
 > - Must match in `app.json`, target config, and native code
 
-## Step 3: Create a Share Extension
-
-```bash
-npx create-expo-target
-```
-
-Choose:
-
-- **Type:** Share Extension
-- **Name:** my-share
-- **Use React Native:** Yes
-
-This creates:
-
-```
-targets/my-share/
-├── expo-target.config.json
-├── index.tsx                 # createTarget + component registration
-└── ios/                      # User deepen (committed)
-```
-
-After `npx expo prebuild`, sealed artifacts land in `ios/<App>/ExpoTargetsGenerated/<Product>/` (gitignored). Never edit that tree — deepen under `targets/*/ios/`.
-
-Example config:
+## Step 3: Example target config
 
 ```json
 {
@@ -117,16 +123,37 @@ Update the placeholder `appGroup` to match your `app.json`.
 ```js
 // metro.config.js
 const { getDefaultConfig } = require("expo/metro-config");
-const { withTargetsMetro } = require("expo-targets/metro");
+const { withTargets } = require("expo-targets/metro");
 
-module.exports = withTargetsMetro(getDefaultConfig(__dirname));
+module.exports = withTargets(getDefaultConfig(__dirname));
 ```
 
-`withTargetsMetro` maps each target `entry` so the extension host can load the right bundle. Details: [React Native Extensions](./react-native-extensions.md).
+`withTargets` maps each target `entry` so the extension host can load the right bundle. (`withTargetsMetro` is a deprecated alias.) Details: [React Native Extensions](./react-native-extensions.md).
+
+### Typed target names
+
+After prebuild (or `npx expo-targets generate`), a gitignored file is written at `.expo/expo-targets.generated.ts`:
+
+```typescript
+import { Targets, type TargetName } from "../.expo/expo-targets.generated";
+
+const name: TargetName = Targets.MyShare;
+```
+
+Widget targets with `liveActivity.attributesName` also emit `LiveActivityAttributes`. Include `.expo/` in `tsconfig.json` so the editor resolves the file:
+
+```json
+{
+  "include": ["**/*.ts", "**/*.tsx", ".expo/expo-targets.generated.ts"]
+}
+```
+
+Regenerate without a full prebuild: `npx expo-targets generate` (also runs with `npx expo-targets doctor --fix`).
 
 ## Step 5: Build & Run
 
 ```bash
+npx expo-targets doctor   # validate host wiring
 npx expo prebuild
 npx expo run:ios
 ```
@@ -151,6 +178,12 @@ Full contract: [React Native Extensions → Runtime contract](./react-native-ext
 
 ## Troubleshooting
 
+Run the doctor first — it catches most wiring mistakes with fix-forward messages:
+
+```bash
+npx expo-targets doctor
+```
+
 ### Extension does not appear in the share sheet
 
 1. Run `npx expo prebuild` again
@@ -159,15 +192,15 @@ Full contract: [React Native Extensions → Runtime contract](./react-native-ext
 
 ### `Target 'X' not found`
 
-Ensure `createTarget('X')` matches the config `name` field exactly (case-sensitive).
+Ensure `createTarget('X')` matches the config `name` field exactly (case-sensitive). `npx expo-targets doctor` reports name mismatches.
 
 ### Bundle / Metro errors for the extension entry
 
-Ensure `metro.config.js` wraps with `withTargetsMetro` and `entry` points at a real file relative to the project root.
+Ensure `metro.config.js` wraps with `withTargets` (or legacy `withTargetsMetro`) and `entry` points at a real file relative to the project root. `npx expo-targets doctor` validates both.
 
 ### App Group / data issues
 
-Match App Group IDs in `app.json`, `expo-target.config.json`, and any native suite name.
+Match App Group IDs in `app.json`, `expo-target.config.json`, and any native suite name. `npx expo-targets doctor` checks host ↔ target consistency.
 
 ### Upgrading from expo-targets &lt; 0.2.8 (sealed path)
 
@@ -194,4 +227,14 @@ npx expo run:ios
 
 ### Bare React Native
 
-> **`npx expo-targets sync` is unimplemented** (unpublished stub). Prefer managed Expo + `npx expo prebuild` until a real sync ships. Tracking: [#67](https://github.com/csark0812/expo-targets/issues/67).
+For projects that already have a committed `ios/` tree (no full prebuild wipe):
+
+```bash
+npx expo-targets sync
+cd ios && pod install
+npx react-native run-ios
+```
+
+Preview changes with `npx expo-targets sync --dry-run`. Orphaned sealed dirs are reported by default; pass `--clean` to remove sealed products and Podfile targets with no matching `targets/*/config`.
+
+**Recommended for new projects:** managed Expo + `npx expo prebuild`.

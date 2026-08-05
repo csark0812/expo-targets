@@ -1,9 +1,9 @@
 #!/usr/bin/env bun
 /**
- * Scaffold production example hosts + register REQUIRED_V2 / catalog / journeys
- * for Bacon-compat tranches. Idempotent for existing paths.
+ * Scaffold production example hosts + register REQUIRED_V2 / catalog / journeys.
+ * Idempotent for existing paths.
  *
- * Usage: bun scripts/scaffold-bacon-examples.ts
+ * Usage: bun scripts/scaffold-examples.ts
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -686,7 +686,7 @@ function scaffoldHost(
   writeIfMissing(
     path.join(abs, "metro.config.js"),
     `const { getDefaultConfig } = require('expo/metro-config');
-const { withTargetsMetro } = require('expo-targets/metro');
+const { withTargets } = require('expo-targets/metro');
 const path = require('node:path');
 const projectRoot = __dirname;
 const workspaceRoot = path.resolve(projectRoot, '${opts.native ? "../../.." : "../.."}');
@@ -696,7 +696,7 @@ config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, 'node_modules'),
   path.resolve(workspaceRoot, 'node_modules'),
 ];
-module.exports = withTargetsMetro(config, { projectRoot });
+module.exports = withTargets(config, { projectRoot });
 `,
   );
 

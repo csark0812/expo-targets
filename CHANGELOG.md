@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **DX Magic Epic (Phase 1–7):** Host wiring in `create-expo-target` (plugin, App Groups, metro `withTargets`, package.json dep; `--no-wire` escape); plugin ensures host App Groups and defaults `excludedPackages` for RN-native `entry`; `npx expo-targets doctor|generate|export-safari|sync` bin on `expo-targets`; typed `.expo/expo-targets.generated.ts`; sealed overwrite warnings; DEBUG Metro harden + embedded fallback; Safari PBX web-export phase; configurable widget (`AppIntentConfiguration`) scaffold; real bare `sync` via `compileModsAsync` (`--clean` opt-in).
+
+### Changed
+
+- Metro helper renamed: canonical `withTargets`; `withTargetsMetro` kept as deprecated once-per-process alias.
+- Getting-started happy path: install → `create-expo-target` (wires) → prebuild → run.
+- Removed upstream ExtensionType registry compare scripts / CI gate (`compare:extension-types` and snapshot fixture).
+- Removed `docs/migrate-from-bacons-apple-targets.md`.
+
 ## [0.2.8] - 2026-08-05
 
 ### Fixed

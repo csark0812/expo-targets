@@ -127,6 +127,7 @@ export interface SafariResourcesPlan {
   referencePath: string;
   useCustomResources: boolean;
   userResourcesPath: string;
+  targetDirectory: string;
   name: string;
   displayName?: string;
   manifest?: Record<string, any>;
@@ -175,6 +176,16 @@ export interface BundleReactNativePlan {
   entryFile: string;
 }
 
+/** Safari RN Web export into sealed `Resources/popup.js`. */
+export interface SafariWebBundlePlan {
+  /** Project-root relative entry (no leading `./`). */
+  entryFile: string;
+  /** Absolute sealed popup.js path. */
+  popupJsPath: string;
+  /** Path relative to `ios/` for PBX references. */
+  popupJsReferencePath: string;
+}
+
 export interface PodfilePlan {
   targetName: string;
   deploymentTarget: string;
@@ -203,6 +214,8 @@ export interface XcodeTargetPlan {
   embed: EmbedPlan;
   /** Present for React Native targets that ship a JS `entry`. */
   bundleReactNative?: BundleReactNativePlan;
+  /** Present for Safari targets with a React Native Web `entry`. */
+  safariWebBundle?: SafariWebBundlePlan;
 }
 
 /** Inputs every planner shares. */

@@ -164,7 +164,7 @@ for (const id of APPS_SETTINGS_IDS) {
 /** Fallback: host-contract journey for any REQUIRED id not in LIVE. */
 export function journeyFor(id: string): JourneyRunner | undefined {
   if (LIVE[id]) return LIVE[id];
-  // Prefer host-contract for newly scaffolded Bacon-compat rows
+  // Prefer host-contract for newly scaffolded rows
   return (d) => runHostContractJourney(d, id);
 }
 

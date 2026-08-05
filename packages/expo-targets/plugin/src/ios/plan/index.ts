@@ -20,6 +20,7 @@ export { resolveIdentity } from './identity';
 export { planInfoPlist } from './infoPlist';
 export { planPodfile } from './podfile';
 export { planSafariResources } from './safari';
+export { planSafariWebBundle } from './safariWebBundle';
 export { planSwiftSources } from './swiftSources';
 export type {
   AssetPlan,
@@ -32,6 +33,7 @@ export type {
   PodfilePlan,
   ProjectPaths,
   SafariResourcesPlan,
+  SafariWebBundlePlan,
   StickerPackPlan,
   StickersPlan,
   SwiftFilePlan,

@@ -50,7 +50,7 @@ export function applyFsTargetPlan(
   }
 
   if (plan.safari) {
-    applySafariResourcesPlan(plan.safari);
+    applySafariResourcesPlan(plan.safari, { logger });
     logger.log(
       `${plan.safari.useCustomResources ? 'Copied custom' : 'Generated'} Safari Resources at ${path.relative(
         workspace.projectRoot,
@@ -61,6 +61,8 @@ export function applyFsTargetPlan(
 
   applySwiftFilePlans(plan.swiftFiles, {
     projectRoot: workspace.projectRoot,
+    logger,
+    targetDirectory: workspace.directory,
   });
   logger.log(`Prepared ${plan.swiftFiles.length} Swift file(s)`);
 

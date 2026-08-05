@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Add Bacon-gap ExtensionType entries to config.ts + characteristics.ts.
+ * Add gap ExtensionType entries to config.ts + characteristics.ts.
  * Idempotent: skips types already present.
  */
 import fs from "node:fs";
