@@ -375,6 +375,16 @@ excluded — advisory only; it never auto-strips.
 3. **Keep extension logic minimal** — Do heavy processing in your main app
 4. **Test on physical devices** — Simulators are more forgiving with memory
 
+### Extension bundle sideload (with expo-updates)
+
+RN extensions **never** link `expo-updates` (auto-excluded). To refresh extension JS without a store rebuild:
+
+1. Export target bundles into `dist/expo-targets/bundles/{TargetName}/` (`npx expo-targets export-extension-bundles`), then publish with `eas update` so they ride along as update **assets**.
+2. On the **host**, use `createExtensionUpdates` (Updates-shaped: `checkForUpdateAsync` / `fetchUpdateAsync` / `reloadAsync`) to copy those assets into the App Group after a download.
+3. **Release** appex loads the App Group file when size / sha256 / `runtimeVersion` match; otherwise embedded. **DEBUG** still uses Metro only.
+
+Size caps: **5 MiB** (share / action / messages / notification-content), **8 MiB** (clip).
+
 ---
 
 ## Debugging Extensions

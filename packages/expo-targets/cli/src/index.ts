@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import process from 'node:process';
 import { Command } from 'commander';
 
 import { printDoctorReport, runDoctor } from './doctor';
+import { runExportExtensionBundles } from './exportExtensionBundles';
 import { runExportSafari } from './exportSafari';
 import { runGenerate } from './generate';
 import { runSync } from './sync';
@@ -81,6 +82,25 @@ program
       }
     }
   );
+
+program
+  .command('export-extension-bundles')
+  .description(
+    'Export RN extension jsbundles into dist/expo-targets/bundles for eas update'
+  )
+  .option('--dist <path>', 'Output directory', './dist')
+  .option(
+    '--placeholder',
+    'Write placeholder bundles (tests / dry-run only)',
+    false
+  )
+  .action((options: { dist?: string; placeholder?: boolean }) => {
+    const { code } = runExportExtensionBundles({
+      distRoot: resolve(process.cwd(), options.dist ?? './dist'),
+      allowPlaceholder: Boolean(options.placeholder),
+    });
+    process.exit(code);
+  });
 
 program
   .command('export-safari')

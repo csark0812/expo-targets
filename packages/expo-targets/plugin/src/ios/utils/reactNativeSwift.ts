@@ -11,6 +11,9 @@ export interface ReactNativeViewControllerOptions {
   targetName: string;
   preprocessingFile?: string;
   entry?: string;
+  appGroup?: string;
+  runtimeVersion?: string;
+  maxBundleBytes?: number;
 }
 
 function readTemplate(filename: string): string {
@@ -226,6 +229,12 @@ export function generateReactNativeViewController(
     .replace(/{{MODULE_NAME}}/g, options.moduleName)
     .replace(/{{TARGET_NAME}}/g, options.targetName)
     .replace(/{{BUNDLE_ROOT}}/g, bundleRoot)
+    .replace(/{{APP_GROUP}}/g, options.appGroup ?? '')
+    .replace(/{{RUNTIME_VERSION}}/g, options.runtimeVersion ?? '')
+    .replace(
+      /{{MAX_BUNDLE_BYTES}}/g,
+      String(options.maxBundleBytes ?? 5 * 1024 * 1024)
+    )
     .replace('{{EXTENSION_DATA_PROPERTIES}}', extensionData.properties)
     .replace('{{LOAD_EXTENSION_DATA}}', extensionData.loadMethod);
 

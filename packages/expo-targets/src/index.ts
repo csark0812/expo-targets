@@ -81,3 +81,5 @@ export type {
   Target,
 } from './Target';
 export { createTarget } from './Target';
+export type { ExtensionBundleManifest } from './modules/extensionBundle/ExtensionUpdates';
+export { createExtensionUpdates } from './modules/extensionBundle/ExtensionUpdates';

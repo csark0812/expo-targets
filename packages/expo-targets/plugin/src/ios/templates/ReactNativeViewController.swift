@@ -1,4 +1,5 @@
 import UIKit
+import CryptoKit
 internal import Expo
 import React
 import ReactAppDependencyProvider
@@ -23,6 +24,45 @@ private class ExtensionReactDelegate: ExpoReactNativeFactoryDelegate {
             return main
         }
         return Bundle.main.url(forResource: "index", withExtension: "jsbundle")
+    }
+
+    private func sha256Hex(_ data: Data) -> String {
+        SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+    }
+
+    /// Release-only: load a host-installed App Group sideload when valid.
+    private func appGroupBundleURL() -> URL? {
+        let appGroup = "{{APP_GROUP}}"
+        let targetName = "{{TARGET_NAME}}"
+        let bakedRuntimeVersion = "{{RUNTIME_VERSION}}"
+        let maxBytes = {{MAX_BUNDLE_BYTES}}
+        guard !appGroup.isEmpty,
+              !bakedRuntimeVersion.isEmpty,
+              let container = FileManager.default.containerURL(
+                forSecurityApplicationGroupIdentifier: appGroup
+              ) else {
+            return nil
+        }
+        let dir = container
+            .appendingPathComponent("expo-targets", isDirectory: true)
+            .appendingPathComponent("bundles", isDirectory: true)
+            .appendingPathComponent(targetName, isDirectory: true)
+        let bundleURL = dir.appendingPathComponent("main.jsbundle")
+        let manifestURL = dir.appendingPathComponent("manifest.json")
+        guard FileManager.default.fileExists(atPath: bundleURL.path),
+              let manifestData = try? Data(contentsOf: manifestURL),
+              let json = try? JSONSerialization.jsonObject(with: manifestData) as? [String: Any],
+              let runtimeVersion = json["runtimeVersion"] as? String,
+              runtimeVersion == bakedRuntimeVersion,
+              let byteLength = json["byteLength"] as? Int,
+              byteLength <= maxBytes,
+              let expectedSha = json["sha256"] as? String,
+              let fileData = try? Data(contentsOf: bundleURL),
+              sha256Hex(fileData) == expectedSha else {
+            // Leave invalid files on disk for diagnostics (Decision 11).
+            return nil
+        }
+        return bundleURL
     }
 
     private func appendTargetQuery(to bundleURL: URL) -> URL {
@@ -69,9 +109,10 @@ private class ExtensionReactDelegate: ExpoReactNativeFactoryDelegate {
 
     override func bundleURL() -> URL? {
         #if DEBUG
+        // Metro → embedded; App Group not consulted in DEBUG.
         return debugBundleURL()
         #else
-        return embeddedBundleURL()
+        return appGroupBundleURL() ?? embeddedBundleURL()
         #endif
     }
 }

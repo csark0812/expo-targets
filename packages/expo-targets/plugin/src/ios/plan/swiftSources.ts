@@ -84,6 +84,13 @@ function reactNativeTemplate(
   props: IOSTargetProps,
   identity: TargetIdentity
 ): SwiftTemplatePlan {
+  const maxByType: Record<string, number> = {
+    share: 5 * 1024 * 1024,
+    action: 5 * 1024 * 1024,
+    messages: 5 * 1024 * 1024,
+    'notification-content': 5 * 1024 * 1024,
+    clip: 8 * 1024 * 1024,
+  };
   return {
     template: 'reactNativeViewController',
     options: {
@@ -94,6 +101,9 @@ function reactNativeTemplate(
       targetName: props.name,
       preprocessingFile: props.preprocessingFile,
       entry: props.entry,
+      appGroup: props.appGroup,
+      runtimeVersion: props.runtimeVersion,
+      maxBundleBytes: maxByType[props.type] ?? 5 * 1024 * 1024,
     },
   };
 }

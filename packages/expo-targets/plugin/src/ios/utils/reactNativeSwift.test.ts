@@ -43,10 +43,17 @@ describe('generateReactNativeViewController', () => {
     const result = generateReactNativeViewController({
       ...baseOptions,
       entry: './index.tsx',
+      appGroup: 'group.com.example',
+      runtimeVersion: '1.0.0',
+      maxBundleBytes: 5 * 1024 * 1024,
     });
 
     expect(result).toContain('embeddedBundleURL()');
     expect(result).toContain('debugBundleURL()');
+    expect(result).toContain('appGroupBundleURL()');
+    expect(result).not.toContain('{{APP_GROUP}}');
+    expect(result).not.toContain('{{RUNTIME_VERSION}}');
+    expect(result).toContain('group.com.example');
     expect(result).toContain('Could not load the JavaScript bundle');
   });
 });

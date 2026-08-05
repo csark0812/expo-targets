@@ -549,6 +549,35 @@ const mod = getExtensionNativeModule();
 
 ---
 
+## ExtensionUpdates (`createExtensionUpdates`)
+
+Host-only helper that mirrors [expo-updates](https://docs.expo.dev/versions/latest/sdk/updates/) verbs. It does **not** run in the appex. After `fetchUpdateAsync`, it installs published extension assets into the App Group for Release load.
+
+```typescript
+import { createExtensionUpdates } from "expo-targets";
+
+const ExtensionUpdates = createExtensionUpdates({
+  targets: [{ targetName: "ShareExt", type: "share" }],
+  resolveAssetPath: (name) => {
+    // Resolve local path for dist/expo-targets/bundles/{name}/main.jsbundle
+    // after Updates downloaded the update assets.
+    return resolveSideloadPath(name);
+  },
+  install: async ({ targetName, type, runtimeVersion, localPath }) => {
+    // Call native App Group install (or test double in unit tests).
+    return nativeInstall({ targetName, type, runtimeVersion, localPath });
+  },
+});
+
+await ExtensionUpdates.checkForUpdateAsync();
+await ExtensionUpdates.fetchUpdateAsync(); // Updates.fetch + App Group sync
+await ExtensionUpdates.reloadAsync(); // reloads host
+```
+
+**CLI:** `npx expo-targets export-extension-bundles` writes `dist/expo-targets/bundles/…` for `eas update`. Prefer setting `expo.runtimeVersion` (fail closed if missing).
+
+---
+
 ## CLI Commands
 
 ### create-expo-target
