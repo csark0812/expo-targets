@@ -76,6 +76,10 @@ Pure functions, one per concern: `identity`, `infoPlist`, `buildSettings`,
 paths to write, contents to write, build settings to set. Nothing in `plan/`
 is allowed to write, mutate, or read the filesystem.
 
+Missing planners to know about when tracing a plan: `buildInfoPlist`,
+`bundleReactNative`, `bundleResources` (composed via `compose.ts` / related
+plan modules — search under `src/ios/plan`).
+
 ### Apply (`src/ios/apply`)
 
 - `apply/fs` — writes the plan to disk (Info.plist, entitlements, generated
@@ -85,9 +89,37 @@ is allowed to write, mutate, or read the filesystem.
 - `apply/podfile` — scans and edits `Podfile` text.
 
 Appliers must be idempotent: a second prebuild over the same project produces a
-byte-identical pbxproj. Import PBX helpers from `src/ios/apply/pbx` and Podfile
-helpers from `src/ios/apply/podfile` — there are no compatibility shims under
-`utils/`.
+byte-identical pbxproj. Prefer `src/ios/apply/pbx` and `src/ios/apply/podfile`
+directly; avoid inventing shims under `utils/` for PBX/Podfile helpers.
+
+## Adding an ExtensionType
+
+Same PR must ship the full per-type DoD ([deprecations.md](../../../docs/deprecations.md)):
+
+1. **`src/domain/characteristics.ts`** — product type, frameworks, extension point, Info.plist base, RN flags. Prefer a flag over a plan-layer branch.
+2. **`packages/create-expo-target`** — scaffold template for the type.
+3. **`examples/<id>`** — production-thin host with `expo-target.config` + principal.
+4. **Devicewright** — journey under `examples/.devicewright/`, row in `required.ts` / `touchpoints.ts` / `claims.ts` as needed.
+5. Docs: maturity in [configuration.md](../../../docs/configuration.md) only (README showcase stays curated).
+
+Orphan config-only stubs are closed — see [deprecations.md](../../../docs/deprecations.md).
+
+## Expansion slots
+
+The layering is iOS-first but deliberately open in these places:
+
+| Slot | Where it goes |
+| ----------------------- | -------------------------------------------------------------- |
+| Android | `src/android/*` — bridge-grade today; an `android/{observe,plan,apply}` split mirrors iOS when Expo's Android story settles |
+| Target discovery | `src/withTargetsDir.ts` — finds `targets/*` and their configs |
+| Metro | `packages/expo-targets/metro/src/` — entry resolution for RN extensions |
+| Runtime | `packages/expo-targets/src` — JS API and native modules |
+| Scaffolding | `packages/create-expo-target` — templates for new targets |
+| Bare workflow | `packages/expo-targets-cli` — sync stub ([#67](https://github.com/csark0812/expo-targets/issues/67)); prefer `expo prebuild` |
+
+New extension types start in `src/domain/characteristics.ts`; if a type needs
+behavior instead of data, add a flag there rather than a branch in the plan
+layer.
 
 ## Adding a test
 
@@ -109,29 +141,11 @@ Fixtures live in `plugin/__fixtures__`: `pbx/minimal-app` (hand-authored),
 `plugin/test-utils` (`loadPbx`, `assertPbx`, `tempDir`, `normalizePlist`,
 `normalizePodfile`).
 
-Commands:
+Commands (align with CI):
 
 ```bash
-bun run test:unit         # everything under packages/expo-targets
-bun run test:integration  # the L3 pipeline test only
+bun run test:unit
+bun run test:integration
 bun run typecheck
-bunx biome check <paths>
+bunx biome ci . --error-on-warnings
 ```
-
-## Expansion slots
-
-The layering is iOS-first but deliberately open in these places:
-
-| Slot | Where it goes |
-| ----------------------- | -------------------------------------------------------------- |
-| Android | `src/android/*` — bridge-grade today; an `android/{observe,plan,apply}` split mirrors iOS when Expo's Android story settles |
-| Target discovery | `src/withTargetsDir.ts` — finds `targets/*` and their configs |
-| Metro | `packages/expo-targets/metro.js` — entry resolution for RN extensions |
-| Runtime | `packages/expo-targets/src` — JS API and native modules |
-| Scaffolding | `packages/create-expo-target` — templates for new targets |
-| Bare workflow | `packages/expo-targets-cli` — `expo-targets sync` |
-
-New extension types start in `src/domain/characteristics.ts`; if a type needs
-behavior instead of data, add a flag there rather than a branch in the plan
-layer. Orphan config-only stubs are closed to additions — see
-[deprecations.md](../../../docs/deprecations.md).

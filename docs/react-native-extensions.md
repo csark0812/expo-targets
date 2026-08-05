@@ -2,22 +2,26 @@
 
 **Source of truth for** React Native extensions (runtime contract, Metro, type support).
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-02 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-05 -->
 
-Build share extensions, action extensions, App Clips, and iMessage apps using React Native instead of native Swift/Kotlin.
+Build share extensions, action extensions, App Clips, iMessage apps, rich notification UI, and Safari popups using React Native instead of native Swift/Kotlin.
 
 > **Status:** Backbone v1 covers the cross-type [runtime contract](#runtime-contract) and hardened `withTargetsMetro` packaging. Prefer these patterns; type-specific polish continues on top.
 
 ## Supported Types
 
-| Type       | React Native Support | Notes                                          |
-| ---------- | -------------------- | ---------------------------------------------- |
-| `share`    | ✅ Full support      | Custom UI for sharing                          |
-| `action`   | ✅ Full support      | Process content in place                       |
-| `clip`     | ✅ Full support      | Lightweight app preview                        |
-| `messages` | ✅ Full support      | iMessage app with RN UI                        |
-| `widget`   | ❌ SwiftUI only      | First-class native WidgetKit + Live Activities |
-| `stickers` | ❌ Native only       | Static image assets                            |
+| Type                   | React Native Support | Notes                                                              |
+| ---------------------- | -------------------- | ------------------------------------------------------------------ |
+| `share`                | ✅ Full support      | Custom UI for sharing                                              |
+| `action`               | ✅ Full support      | Process content in place                                           |
+| `clip`                 | ✅ Full support      | Lightweight app preview                                            |
+| `messages`             | ✅ Full support      | iMessage app with RN UI                                            |
+| `notification-content` | ✅ Supported         | Rich notification UI (RN host)                                     |
+| `safari`               | ✅ Supported         | Popup via RN Web + `expo export` packaging — [configuration](./configuration.md#example-safari-extension) |
+| `widget`               | ❌ SwiftUI only      | First-class native WidgetKit + Live Activities                     |
+| `stickers`             | ❌ Native only       | Static image assets                                                |
+
+Sealed RN stubs and build artifacts land under `ios/<App>/ExpoTargetsGenerated/<Product>/` (gitignored). Deepen under `targets/*/ios/` — never edit `ExpoTargetsGenerated/`.
 
 ---
 
@@ -30,7 +34,7 @@ Stable across **share**, **action**, **clip**, and **messages** (messages adds A
 1. Declare `entry` in `expo-target.config` (path relative to project root).
 2. Wrap Metro with `withTargetsMetro` so the extension host can resolve that entry.
 3. Call `createTarget(name, Component)` in the entry file. The `name` must match config `name` exactly; this registers the component with `AppRegistry`.
-4. Rebuild native (`prebuild` / `sync`) so the extension target embeds expo-targets and loads the RN host.
+4. Rebuild native (`npx expo prebuild`) so the extension target embeds expo-targets and loads the RN host. (`npx expo-targets sync` is an unimplemented stub — do not rely on it.)
 
 ### Lifecycle (share / action / clip)
 

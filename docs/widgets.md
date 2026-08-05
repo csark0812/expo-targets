@@ -45,6 +45,10 @@ Host CNG deletes only root-level `*.swift` under `ExpoTargetsGenerated/` — it 
 ```ts
 import { LiveActivity } from 'expo-targets';
 
+if (!(await LiveActivity.areActivitiesEnabled())) {
+  // ActivityKit unavailable (Low Power, Focus, unsupported device, …)
+}
+
 const order = LiveActivity.create('OrderAttributes');
 const id = await order.start({
   attributes: { orderId: '12' },
@@ -75,8 +79,8 @@ configuration — native Swift only. expo-targets does not generate
    `IntentConfiguration` + an Intents definition (older).
 2. Persist the user's selection in the App Group `UserDefaults` suite (same
    `appGroup` as the target).
-3. From the host app, read/write that suite with `createTarget('…').get/set` /
-   `AppGroupStorage`, then `refresh()`.
+3. From the host app, read/write that suite with `createTarget('…').storage`
+   / `setData` / `AppGroupStorage`, then `refresh()`.
 
 Sketch:
 
@@ -102,7 +106,8 @@ struct HelloWidget: Widget {
 ```ts
 // Host RN — after the user picks a default list in-app
 const widget = createTarget("HelloWidget");
-widget.set("listId", selectedId);
+widget.storage.set("listId", selectedId);
+// or: widget.setData({ listId: selectedId });
 widget.refresh();
 ```
 

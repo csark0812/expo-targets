@@ -2,7 +2,7 @@
 
 **Source of truth for** the JavaScript/TypeScript runtime API.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-04 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-05 -->
 
 > Widget targets: first-class native WidgetKit + Live Activities — see [widgets.md](./widgets.md).
 
@@ -84,39 +84,18 @@ try {
 
 ## Target Methods
 
-All targets (widgets, extensions, etc.) share these core methods:
+All targets share `name`, `type`, `appGroup`, `storage`, `config`, plus:
 
-### Storage
-
-```typescript
-// Set a single value
-widget.set("message", "Hello");
-widget.set("count", 42);
-widget.set("user", { name: "John", age: 30 });
-
-// Get a value (returns undefined if not set)
-const message = widget.get<string>("message");
-const count = widget.get<number>("count");
-const user = widget.get<{ name: string }>("user");
-
-// Remove a value
-widget.remove("message");
-
-// Clear all data for this target
-widget.clear();
-```
-
-### Batch Operations
+### Batch storage (`setData` / `getData`)
 
 ```typescript
-// Set multiple values at once (more efficient than multiple set() calls)
+// Set multiple values at once (preferred for host ↔ extension / widget data)
 widget.setData({
   message: "Hello",
   count: 42,
   timestamp: Date.now(),
 });
 
-// Get all data as an object
 const data = widget.getData<{
   message: string;
   count: number;
@@ -124,23 +103,32 @@ const data = widget.getData<{
 }>();
 ```
 
+### Keyed storage (`target.storage`)
+
+Per-key helpers live on **`target.storage`** (`AppGroupStorage`), not on the target itself:
+
+```typescript
+widget.storage.set("message", "Hello");
+widget.storage.set("count", 42);
+
+const message = widget.storage.get<string>("message");
+const count = widget.storage.get<number>("count");
+
+widget.storage.remove("message");
+widget.storage.clear();
+```
+
 ### Refresh
 
 ```typescript
-// Tell iOS/Android to reload this widget
-widget.refresh();
+widget.refresh(); // Tell iOS/Android to reload this widget / surface
 ```
 
-**Important:** Always call `refresh()` after updating data to trigger the widget to reload. Without this, the widget may not show new data until the next scheduled refresh.
+**Important:** Call `refresh()` after updating data when you need an immediate widget reload.
 
 ```typescript
-// Correct pattern
 widget.setData({ message: "Updated!" });
-widget.refresh(); // Widget reloads with new data
-
-// Missing refresh - widget won't update immediately
-widget.setData({ message: "Updated!" });
-// Widget still shows old data until iOS decides to refresh
+widget.refresh();
 ```
 
 ---
@@ -330,6 +318,12 @@ if (sessionId) {
     sessionId,
   );
 }
+
+// Insert a small UTF-8 file attachment into the conversation
+await messages.insertAttachment({
+  filename: "note.txt",
+  contents: "Hello from expo-targets",
+});
 ```
 
 ### Conversation Info
@@ -364,6 +358,10 @@ subscription.remove();
 interface MessagesExtensionTarget {
   // Inherited from BaseTarget
   name: string;
+  type: "messages";
+  appGroup: string;
+  storage: AppGroupStorage;
+  config: TargetConfig;
   setData(data: Record<string, any>): void;
   getData<T>(): T;
   refresh(): void;
@@ -378,6 +376,10 @@ interface MessagesExtensionTarget {
   sendMessage(layout: MessageLayout): void;
   sendUpdate(layout: MessageLayout, sessionId: string): void;
   createSession(): string | null;
+  insertAttachment(payload?: {
+    filename?: string;
+    contents?: string;
+  }): Promise<boolean>;
   getConversationInfo(): ConversationInfo | null;
   addEventListener(
     eventName: "onPresentationStyleChange",
@@ -477,22 +479,64 @@ await ContentBlocker.reload({ targetName: "MyBlocker" });
 
 ## LiveActivity
 
-Start / update / end ActivityKit Live Activities. `attributesName` must match `liveActivity.attributesName` on a widget target — unknown names throw with the configured list. Prefer `LiveActivity.create(name)` (widgets-like factory).
+Start / update / end ActivityKit Live Activities. `attributesName` must match `liveActivity.attributesName` on a widget target — unknown names throw with the configured list. Prefer `LiveActivity.create(name)` (widgets-like factory). Also exported as `createLiveActivity(name)`.
 
 ```typescript
 import { LiveActivity } from "expo-targets";
 
-const order = LiveActivity.create("OrderAttributes");
-const id = await order.start({
-  attributes: { orderId: "12" },
-  contentState: { status: "preparing", progress: 0.1 },
-});
-await order.update(id, { status: "ready", progress: 1 });
-await LiveActivity.end(id);
-await LiveActivity.endAll();
+if (await LiveActivity.areActivitiesEnabled()) {
+  const order = LiveActivity.create("OrderAttributes");
+  const id = await order.start({
+    attributes: { orderId: "12" },
+    contentState: { status: "preparing", progress: 0.1 },
+  });
+  await order.update(id, { status: "ready", progress: 1 });
+  await LiveActivity.end(id);
+  await LiveActivity.endAll();
+}
 ```
 
 Attributes + host bridge are CNG into `ios/*/ExpoTargetsGenerated/` (gitignored). Activity UI stays under `targets/<widget>/ios/`. See [widgets.md](./widgets.md).
+
+---
+
+## Safari extension runtime
+
+Safari targets with an `entry` return `SafariExtensionTarget` (`closePopup`, `openTab`, `copyToClipboard`). Packaging (prebuild shell + `expo export` → copy `popup.js`) is in [configuration.md](./configuration.md#example-safari-extension).
+
+```typescript
+import {
+  createTarget,
+  useBrowserTab,
+  useBrowserStorage,
+  useLocalBrowserStorage,
+  useSendToContentScript,
+  useSendToNative,
+  useMessageListener,
+  openTab,
+  closePopup,
+  copyToClipboard,
+  getBrowserAPI,
+} from "expo-targets";
+
+const safari = createTarget<"safari">("MySafari");
+await safari.openTab("https://example.com");
+safari.closePopup();
+```
+
+Hooks for content/popup scripts: `useBrowserTab`, `useBrowserStorage`, `useLocalBrowserStorage`, `useSendToContentScript`, `useSendToNative`, `useMessageListener`, plus `getBrowserAPI` for imperative access.
+
+---
+
+## getExtensionNativeModule
+
+Low-level access to the native extension module (share/action/clip/messages). Prefer `createTarget` / `getSharedData` / `close` helpers for app code.
+
+```typescript
+import { getExtensionNativeModule } from "expo-targets";
+
+const mod = getExtensionNativeModule();
+```
 
 ---
 
@@ -511,7 +555,7 @@ npx create-expo-target
 1. **Type:** Widget (optional Live Activity), App Intent, Share, and other extension types
 2. **Name:** Target name in kebab-case (e.g., `my-widget`)
 3. **Platforms:** iOS (Android widgets bridge-grade)
-4. **Use React Native?** (only for share/action/clip) — Whether to use React Native for UI
+4. **Use React Native?** (share/action/clip/messages/notification-content/safari when applicable)
 5. **Live Activity?** (widget only) — Emits `liveActivity` config + one-shot UI bootstrap
 
 App Group is baked from `app.json` entitlements (`com.apple.security.application-groups`) into `expo-target.config.json` and Swift templates when present.
@@ -550,34 +594,17 @@ $ npx create-expo-target
 Run `npx expo prebuild` to generate Xcode project
 ```
 
-### expo-targets sync
+### expo-targets sync (unimplemented)
 
-Sync targets to an existing Xcode project (bare React Native workflow):
+> **Not ready.** `npx expo-targets sync` is an unpublished stub — it does not apply Podfile changes or generate sealed `ExpoTargetsGenerated` artifacts. Tracking: [#67](https://github.com/csark0812/expo-targets/issues/67).
 
-```bash
-npx expo-targets sync [options]
-```
-
-Use this when you have an existing `ios/` folder that you maintain manually (not generated by `expo prebuild`).
-
-**Options:**
-
-| Flag            | Description                        |
-| --------------- | ---------------------------------- |
-| `--clean`       | Remove orphaned targets from Xcode |
-| `--dry-run`     | Preview changes without writing    |
-| `-v, --verbose` | Show detailed output               |
-
-**Example:**
+**Managed Expo / prebuild path (supported):**
 
 ```bash
-# Preview what would change
-npx expo-targets sync --dry-run
-
-# Sync targets and remove old ones
-npx expo-targets sync --clean
-cd ios && pod install
+npx expo prebuild --platform ios
 ```
+
+Do not rely on `expo-targets sync` for bare RN until that package ships a real implementation.
 
 ---
 
@@ -591,6 +618,7 @@ import type {
   BaseTarget,
   ExtensionTarget,
   MessagesExtensionTarget,
+  SafariExtensionTarget,
   NonExtensionTarget,
   SharedData,
   ExtensionType,
@@ -603,68 +631,37 @@ import type {
 
 ### ExtensionType
 
-All supported extension types:
-
-```typescript
-type ExtensionType =
-  | "widget"
-  | "clip"
-  | "stickers"
-  | "messages"
-  | "share"
-  | "action"
-  | "wallet"
-  | "wallet-ui"
-  | "safari"
-  | "notification-content"
-  | "notification-service"
-  | "intent"
-  | "intent-ui"
-  | "app-intent"
-  | "spotlight"
-  | "bg-download"
-  | "quicklook-thumbnail"
-  | "location-push"
-  | "credentials-provider"
-  | "account-auth"
-  | "device-activity-monitor"
-  | "matter"
-  | "watch";
-```
+The full `ExtensionType` union and per-type maturity live in [configuration.md](./configuration.md) (single SSOT). Do not maintain a second hand-written type list here.
 
 ### Target Types
 
 ```typescript
-// Base target with storage methods (all targets have these)
 interface BaseTarget {
   name: string;
   type: ExtensionType;
   appGroup: string;
+  storage: AppGroupStorage;
+  config: TargetConfig;
   setData(data: Record<string, any>): void;
   getData<T extends Record<string, any>>(): T;
   refresh(): void;
 }
 
-// Extension target (share, action, clip) with close/openHostApp
 interface ExtensionTarget extends BaseTarget {
   close(): void;
   openHostApp(path?: string): void;
   getSharedData(): SharedData | null;
 }
 
-// Messages extension with messaging APIs
-interface MessagesExtensionTarget extends BaseTarget {
-  openHostApp(path?: string): void;
-  getSharedData(): SharedData | null;
-  getPresentationStyle(): PresentationStyle | null;
-  requestPresentationStyle(style: PresentationStyle): void;
-  sendMessage(layout: MessageLayout): void;
-  // ... other messages methods
+interface SafariExtensionTarget extends BaseTarget {
+  type: "safari";
+  closePopup(): void;
+  openTab(url: string): Promise<void>;
+  copyToClipboard(text: string): Promise<boolean>;
 }
 
-// Non-extension target (widget, stickers, etc.)
 interface NonExtensionTarget extends BaseTarget {
-  // Only has base methods, no close/openHostApp
+  // Widgets, stickers, etc. — no close/openHostApp
 }
 ```
 
@@ -674,38 +671,35 @@ interface NonExtensionTarget extends BaseTarget {
 
 ### Runtime API
 
-| API                       | iOS        | Android    |
-| ------------------------- | ---------- | ---------- |
-| `createTarget()`          | ✅ iOS 13+ | ✅ API 26+ |
-| `set/get/setData/getData` | ✅ iOS 13+ | ✅ API 26+ |
-| `refresh()`               | ✅ iOS 14+ | ✅ API 26+ |
-| `refreshAllTargets()`     | ✅ iOS 14+ | ✅ API 26+ |
-| `clearSharedData()`       | ✅ iOS 13+ | ✅ API 26+ |
-| `FileProviderDomain.*`    | ✅ iOS 11+ | —          |
-| `ContentBlocker.reload`   | ✅ iOS 11+ | —          |
-| `LiveActivity.*`          | ✅ iOS 16.2+ | —        |
-| `close()`                 | ✅ iOS 13+ | 🔜         |
-| `openHostApp()`           | ✅ iOS 13+ | 🔜         |
-| `getSharedData()`         | ✅ iOS 13+ | 🔜         |
+| API                       | iOS          | Android    |
+| ------------------------- | ------------ | ---------- |
+| `createTarget()`          | ✅ iOS 13+   | ✅ API 26+ |
+| `setData` / `getData`     | ✅ iOS 13+   | ✅ API 26+ |
+| `storage.set` / `.get`    | ✅ iOS 13+   | ✅ API 26+ |
+| `refresh()`               | ✅ iOS 14+   | ✅ API 26+ |
+| `refreshAllTargets()`     | ✅ iOS 14+   | ✅ API 26+ |
+| `clearSharedData()`       | ✅ iOS 13+   | ✅ API 26+ |
+| `FileProviderDomain.*`    | ✅ iOS 11+   | —          |
+| `ContentBlocker.reload`   | ✅ iOS 11+   | —          |
+| `LiveActivity.*`          | ✅ iOS 16.2+ | —          |
+| `close()`                 | ✅ iOS 13+   | 🔜         |
+| `openHostApp()`           | ✅ iOS 13+   | 🔜         |
+| `getSharedData()`         | ✅ iOS 13+   | 🔜         |
 
 ### Extension Types by Platform
 
-| Type         | iOS            | Android                      |
-| ------------ | -------------- | ---------------------------- |
-| `widget`     | ✅ iOS 14+     | ✅ API 26+ (Glance: API 33+) |
-| `clip`       | ✅ iOS 14+     | —                            |
-| `stickers`   | ✅ iOS 10+     | —                            |
-| `messages`   | ✅ iOS 10+     | —                            |
-| `share`      | ✅ iOS 8+      | 🔜                           |
-| `action`     | ✅ iOS 8+      | 🔜                           |
-| `wallet`     | 🧱 iOS 14+     | —                            |
-| `intent`     | 🧱 iOS 12+     | —                            |
-| `app-intent` | 🧱 iOS 16+     | —                            |
-| Others       | 🧱 Scaffold    | —                            |
+**Canonical table:** [configuration.md](./configuration.md) (all ~47 types + maturity). Showcase types below:
 
-**Legend:** ✅ Production ready · 🧱 Scaffold + example · 🔜 Planned · — Not applicable
+| Type       | iOS        | Android                        |
+| ---------- | ---------- | ------------------------------ |
+| `widget`   | ✅ iOS 14+ | ✅ API 26+ (Glance: API 33+)   |
+| `clip`     | ✅ iOS 14+ | —                              |
+| `stickers` | ✅ iOS 10+ | —                              |
+| `messages` | ✅ iOS 10+ | —                              |
+| `share`    | ✅ iOS 8+  | 🔜                             |
+| `action`   | ✅ iOS 8+  | 🔜                             |
 
-> **Note:** Only **stickers** is asset-only (`requiresCode: false`). Other types (`wallet`, NE family, etc.) are scaffold + real principals — see [limits.md](./limits.md). Do not add orphan ExtensionTypes without example + Devicewright row ([deprecations.md](./deprecations.md)). Full type set: [configuration.md](./configuration.md).
+> Only **stickers** is asset-only (`requiresCode: false`). Do not add orphan ExtensionTypes without example + Devicewright row ([deprecations.md](./deprecations.md)).
 
 ### Android Notes
 

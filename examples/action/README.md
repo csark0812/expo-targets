@@ -1,8 +1,23 @@
-# Action example
+# Action
 
-React Native action extension (image activation rule).
+Thin expo-targets example host for `action`.
 
-## OS path
+Suite how-to (install, Devicewright, icons): [../README.md](../README.md).
 
-1. Photos → Share → Example Action → Process
-2. Host → Refresh
+Type / maturity SSOT: [../../docs/configuration.md](../../docs/configuration.md).
+
+```bash
+# From repo root
+bun install
+cd examples/action
+npx expo prebuild --platform ios
+npx expo run:ios
+```
+
+Devicewright (operator, after Release install on a booted sim):
+
+```bash
+bun run examples:devicewright:matrix --ids=action
+```
+
+Do not commit generated `ios/` / `android/`. Never edit `ExpoTargetsGenerated/`.

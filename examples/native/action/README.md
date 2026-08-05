@@ -1,8 +1,23 @@
-# Native Action example
+# Native / Action
 
-Swift `ActionViewController` (no RN entry). RN host reads `nativeAction:items` via `AppGroupStorage`.
+Thin expo-targets example host for `action`.
 
-## OS path
+Suite how-to (install, Devicewright, icons): [../../README.md](../../README.md).
 
-1. Photos → Share → Native Action → Process Image
-2. Host shows processed items
+Type / maturity SSOT: [../../../docs/configuration.md](../../../docs/configuration.md).
+
+```bash
+# From repo root
+bun install
+cd examples/native/action
+npx expo prebuild --platform ios
+npx expo run:ios
+```
+
+Devicewright (operator, after Release install on a booted sim):
+
+```bash
+bun run examples:devicewright:matrix --ids=native-action
+```
+
+Do not commit generated `ios/` / `android/`. Never edit `ExpoTargetsGenerated/`.

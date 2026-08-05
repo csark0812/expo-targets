@@ -1,10 +1,23 @@
-# Stickers example
+# Stickers
 
-Asset-only iMessage sticker pack (no `withTargetsMetro`). Host shows pack status for Devicewright smoke.
+Thin expo-targets example host for `stickers`.
 
-Pack character: **Bip** (sage body, cream vest, minimal **dot-eye** face — locked in `stickers/bip.png`). Pack is cute **poses** regen’d from that base: bip, wave, hug, peek, jump, sit, heart. Grid size is **regular** (plugin default): provide sticker PNGs at **408×408 @3x**.
+Suite how-to (install, Devicewright, icons): [../README.md](../README.md).
 
-## OS path
+Type / maturity SSOT: [../../docs/configuration.md](../../docs/configuration.md).
 
-1. Build and run on iOS
-2. Messages → Stickers → Fun Stickers
+```bash
+# From repo root
+bun install
+cd examples/stickers
+npx expo prebuild --platform ios
+npx expo run:ios
+```
+
+Devicewright (operator, after Release install on a booted sim):
+
+```bash
+bun run examples:devicewright:matrix --ids=stickers
+```
+
+Do not commit generated `ios/` / `android/`. Never edit `ExpoTargetsGenerated/`.

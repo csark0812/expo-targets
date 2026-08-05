@@ -1,5 +1,9 @@
 # Devicewright example suite (consumer)
 
+**Source of truth for** Devicewright operator journeys for `examples/*`.
+
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-05 -->
+
 Owns REQUIRED_V2 journeys for public `examples/*`. Devicewright (`@csark0812/devicewright`) is the private npm library that runs them.
 
 See [PR_PROOF.md](./PR_PROOF.md) for operator pre-merge checklist, [claims.ts](./claims.ts) for approved `os-limit` rows, and [touchpoints.ts](./touchpoints.ts) for live-touchpoint definitions.
