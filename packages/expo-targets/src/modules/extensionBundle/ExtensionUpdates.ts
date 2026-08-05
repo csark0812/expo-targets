@@ -74,6 +74,23 @@ function defaultGetUpdates(): UpdatesLike | null {
   }
 }
 
+/**
+ * Convert an expo-asset `localUri` into a filesystem path.
+ * Must percent-decode: stripping only `file://` leaves `Application%20Support`
+ * and native `fileExists` fails.
+ */
+export function fileUriToFsPath(uri: string): string {
+  let path = uri;
+  if (path.startsWith('file://')) {
+    path = path.slice('file://'.length);
+  }
+  try {
+    return decodeURIComponent(path);
+  } catch {
+    return path;
+  }
+}
+
 function createDefaultResolveAssetPath(
   assetModules?: Record<string, number>
 ): (targetName: string) => Promise<string | null> {
@@ -98,7 +115,7 @@ function createDefaultResolveAssetPath(
       if (!uri) {
         return null;
       }
-      return uri.startsWith('file://') ? uri.slice('file://'.length) : uri;
+      return fileUriToFsPath(uri);
     } catch {
       return null;
     }

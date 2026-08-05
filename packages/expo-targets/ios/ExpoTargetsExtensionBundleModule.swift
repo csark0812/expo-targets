@@ -49,11 +49,16 @@ public class ExpoTargetsExtensionBundleModule: Module {
   }
 
   private func normalizeLocalPath(_ localPath: String) -> String {
-    if localPath.hasPrefix("file://") {
-      return URL(string: localPath)?.path ?? localPath.replacingOccurrences(
-        of: "file://",
-        with: ""
-      )
+    if localPath.hasPrefix("file://"),
+      let url = URL(string: localPath),
+      url.isFileURL
+    {
+      return url.path
+    }
+    // JS may already have stripped file:// but left percent-encoding
+    // (e.g. Application%20Support).
+    if let decoded = localPath.removingPercentEncoding {
+      return decoded
     }
     return localPath
   }

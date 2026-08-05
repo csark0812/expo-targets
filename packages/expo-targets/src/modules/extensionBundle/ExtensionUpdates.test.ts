@@ -7,7 +7,26 @@ import {
   installExtensionBundleToRoot,
   writePublishLayout,
 } from '../../../cli/src/extensionBundle/fsInstall';
-import { createExtensionUpdates } from './ExtensionUpdates';
+import {
+  createExtensionUpdates,
+  fileUriToFsPath,
+} from './ExtensionUpdates';
+
+describe('fileUriToFsPath', () => {
+  test('percent-decodes Application Support after stripping file://', () => {
+    const uri =
+      'file:///Users/me/Library/Application%20Support/.expo-internal/abc.jsbundle';
+    expect(fileUriToFsPath(uri)).toBe(
+      '/Users/me/Library/Application Support/.expo-internal/abc.jsbundle'
+    );
+  });
+
+  test('is a no-op for already-decoded absolute paths', () => {
+    const path =
+      '/Users/me/Library/Application Support/.expo-internal/abc.jsbundle';
+    expect(fileUriToFsPath(path)).toBe(path);
+  });
+});
 
 describe('ExtensionUpdates API (Updates-shaped)', () => {
   test('fetchUpdateAsync delegates to Updates then installs assets', async () => {

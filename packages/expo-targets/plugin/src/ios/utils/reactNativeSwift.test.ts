@@ -54,6 +54,16 @@ describe('generateReactNativeViewController', () => {
     expect(result).not.toContain('{{APP_GROUP}}');
     expect(result).not.toContain('{{RUNTIME_VERSION}}');
     expect(result).toContain('group.com.example');
+    expect(result).toContain('let bakedRuntimeVersion = "1.0.0"');
     expect(result).toContain('Could not load the JavaScript bundle');
+  });
+
+  test('empty runtimeVersion disables App Group load (fail closed)', () => {
+    const result = generateReactNativeViewController({
+      ...baseOptions,
+      entry: './index.tsx',
+      appGroup: 'group.com.example',
+    });
+    expect(result).toContain('let bakedRuntimeVersion = ""');
   });
 });

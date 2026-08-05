@@ -22,6 +22,21 @@ interface EvaluatedTarget {
   targetDirName: string;
 }
 
+/** Plain-string `expo.runtimeVersion` (or updates.*) for App Group sideload gates. */
+export function resolveRuntimeVersionFromExpoConfig(
+  expoConfig: { runtimeVersion?: unknown; updates?: unknown } | null | undefined
+): string {
+  const top = expoConfig?.runtimeVersion;
+  if (typeof top === 'string' && top) {
+    return top;
+  }
+  const updates = expoConfig?.updates as { runtimeVersion?: unknown } | undefined;
+  if (typeof updates?.runtimeVersion === 'string' && updates.runtimeVersion) {
+    return updates.runtimeVersion;
+  }
+  return '';
+}
+
 /**
  * Evaluate every `expo-target.config.*` once, up front, so the validation pass
  * and the processing pass agree on what they are looking at.
@@ -224,6 +239,19 @@ const withTargetIos: ConfigPlugin<{
     excludedPackages: evaluatedConfig.excludedPackages,
   });
 
+  const runtimeVersion = resolveRuntimeVersionFromExpoConfig(config);
+  if (
+    evaluatedConfig.entry &&
+    !runtimeVersion &&
+    ['share', 'action', 'clip', 'messages', 'notification-content'].includes(
+      evaluatedConfig.type
+    )
+  ) {
+    logger.warn(
+      `expo.runtimeVersion is missing — App Group sideload for "${targetName}" will never load (falls back to embedded). Set a string runtimeVersion in app.json.`
+    );
+  }
+
   let next = withIOSTarget(config, {
     ...(evaluatedConfig.ios || {}),
     type: evaluatedConfig.type,
@@ -232,6 +260,7 @@ const withTargetIos: ConfigPlugin<{
     appGroup: evaluatedConfig.appGroup,
     entry: evaluatedConfig.entry,
     excludedPackages,
+    runtimeVersion: runtimeVersion || undefined,
     directory: targetDirectory,
     configPath: target.targetPath,
     intents: intentsConfig,
