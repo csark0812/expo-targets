@@ -8,6 +8,7 @@ import { checkMetro } from './checks/metro';
 import { checkNameSync } from './checks/nameSync';
 import { checkPlugin } from './checks/plugin';
 import { warnSealedZone } from './checks/sealedZone';
+import { warnExtensionBundleExport } from './checks/updateScript';
 import { loadProject } from './project';
 import type { CheckResult } from './types';
 
@@ -38,6 +39,7 @@ function collectWarnings(ctx: ReturnType<typeof loadProject>): CheckResult[] {
     ...warnSealedZone(ctx),
     ...warnDualWidgets(ctx),
     ...warnHeavyExclusions(ctx),
+    ...warnExtensionBundleExport(ctx),
   ];
 }
 

@@ -1,3 +1,4 @@
+import type { LiveActivityAttributesName } from '../../generatedNames';
 import { requireNativeModule } from 'expo-modules-core';
 import { Platform } from 'react-native';
 import type {
@@ -62,7 +63,7 @@ function resolveAttributesConfig(attributesName: string): LiveActivityConfig {
 }
 
 /** Typed helpers keyed by configured attributesName (widgets-like paved path). */
-export function createLiveActivity(attributesName: string) {
+export function createLiveActivity(attributesName: LiveActivityAttributesName) {
   resolveAttributesConfig(attributesName);
   return {
     attributesName,
@@ -78,7 +79,7 @@ export const LiveActivity = {
   create: createLiveActivity,
 
   async start(
-    attributesName: string,
+    attributesName: LiveActivityAttributesName,
     options: LiveActivityStartOptions
   ): Promise<string> {
     resolveAttributesConfig(attributesName);

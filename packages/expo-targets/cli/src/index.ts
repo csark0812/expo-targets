@@ -31,7 +31,7 @@ program
 program
   .command('doctor')
   .description('Validate plugin, Metro, App Groups, entries, and name sync')
-  .option('--fix', 'Regenerate .expo/expo-targets.generated.ts')
+  .option('--fix', 'Regenerate .expo/types/expo-targets.d.ts')
   .action((options: { fix?: boolean }) => {
     if (options.fix) {
       runGenerate();
@@ -43,7 +43,7 @@ program
 program
   .command('generate')
   .description(
-    'Regenerate .expo/expo-targets.generated.ts without full prebuild'
+    'Regenerate .expo/types/expo-targets.d.ts without full prebuild'
   )
   .action(() => {
     process.exit(runGenerate());
@@ -86,21 +86,42 @@ program
 program
   .command('export-extension-bundles')
   .description(
-    'Export RN extension jsbundles into dist/expo-targets/bundles for eas update'
+    'Hermes-export RN extension entries into dist/ + assets/expo-targets for eas update'
   )
   .option('--dist <path>', 'Output directory', './dist')
+  .option(
+    '--assets <path>',
+    'Metro-requireable assets root (extensionBundleModules.js)',
+    './assets/expo-targets'
+  )
+  .option('--no-assets', 'Skip writing assets/expo-targets')
+  .option('--no-hermes', 'Do not run expo export:embed (requires --bundle or --placeholder)')
   .option(
     '--placeholder',
     'Write placeholder bundles (tests / dry-run only)',
     false
   )
-  .action((options: { dist?: string; placeholder?: boolean }) => {
-    const { code } = runExportExtensionBundles({
-      distRoot: resolve(process.cwd(), options.dist ?? './dist'),
-      allowPlaceholder: Boolean(options.placeholder),
-    });
-    process.exit(code);
-  });
+  .action(
+    (options: {
+      dist?: string;
+      assets?: string;
+      hermes?: boolean;
+      placeholder?: boolean;
+    }) => {
+      const cwd = process.cwd();
+      const assetsOpt = (options as { assets?: string | false }).assets;
+      const { code } = runExportExtensionBundles({
+        distRoot: resolve(cwd, options.dist ?? './dist'),
+        assetsRoot:
+          assetsOpt === false
+            ? false
+            : resolve(cwd, typeof assetsOpt === 'string' ? assetsOpt : './assets/expo-targets'),
+        allowPlaceholder: Boolean(options.placeholder),
+        hermes: options.hermes !== false,
+      });
+      process.exit(code);
+    }
+  );
 
 program
   .command('export-safari')

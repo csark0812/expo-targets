@@ -2,6 +2,11 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import process from 'node:process';
 
+import {
+  exportTargetHermesBundle,
+  type HermesExportRunner,
+  writeExtensionBundleAssetModules,
+} from './extensionBundle/hermesExport';
 import { writePublishLayout } from './extensionBundle/fsInstall';
 import { loadProject } from './project';
 
@@ -32,19 +37,31 @@ function resolveRuntimeVersion(
 }
 
 /**
- * Export extension bundles into dist/expo-targets/bundles for eas update assets.
+ * Export extension bundles into dist/expo-targets/bundles for eas update assets,
+ * and into assets/expo-targets for Metro `require` + Asset.fromModule on the host.
  */
 export function runExportExtensionBundles(opts: {
   projectRoot?: string;
   distRoot?: string;
+  /** Also copy publish layout here (default: `<project>/assets/expo-targets`). `false` skips. */
+  assetsRoot?: string | false;
   bundleFiles?: Record<string, string>;
   allowPlaceholder?: boolean;
-}): { code: number; written: string[] } {
+  /** When true (default), run `expo export:embed --bytecode` for each entry. */
+  hermes?: boolean;
+  runHermes?: HermesExportRunner;
+}): { code: number; written: string[]; assetModulesPath?: string } {
   const projectRoot = opts.projectRoot ?? process.cwd();
   const distRoot = opts.distRoot ?? path.join(projectRoot, 'dist');
+  const assetsRoot =
+    opts.assetsRoot === false
+      ? null
+      : (opts.assetsRoot ?? path.join(projectRoot, 'assets', 'expo-targets'));
+  const useHermes = opts.hermes !== false && !opts.allowPlaceholder;
   const ctx = loadProject(projectRoot);
   const runtimeVersion = resolveRuntimeVersion(ctx.expo);
   const written: string[] = [];
+  const exportedNames: string[] = [];
 
   if (!runtimeVersion && !opts.allowPlaceholder) {
     console.error(
@@ -75,9 +92,36 @@ export function runExportExtensionBundles(opts: {
       bytes = Buffer.from(
         `// expo-targets placeholder for ${targetName} (${type})\n`
       );
+    } else if (useHermes) {
+      const tmpOut = path.join(
+        projectRoot,
+        'node_modules',
+        '.cache',
+        'expo-targets-export',
+        targetName,
+        'main.jsbundle'
+      );
+      const assetsDest = path.join(path.dirname(tmpOut), 'assets');
+      try {
+        exportTargetHermesBundle({
+          projectRoot,
+          entryFile: entry,
+          bundleOutput: tmpOut,
+          assetsDest,
+          bytecode: true,
+          run: opts.runHermes,
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error(
+          `[expo-targets] Hermes export failed for ${targetName}: ${message}`
+        );
+        return { code: 1, written };
+      }
+      bytes = fs.readFileSync(tmpOut);
     } else {
       console.warn(
-        `[expo-targets] skip ${targetName}: no prebuilt bundle (pass --bundle or Hermes export)`
+        `[expo-targets] skip ${targetName}: no prebuilt bundle (pass --bundle, enable Hermes export, or --placeholder)`
       );
       continue;
     }
@@ -90,8 +134,25 @@ export function runExportExtensionBundles(opts: {
       bundleBytes: bytes,
     });
     written.push(bundlePath);
+    exportedNames.push(targetName);
+
+    if (assetsRoot) {
+      const dest = path.join(assetsRoot, 'bundles', targetName);
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.cpSync(path.dirname(bundlePath), dest, { recursive: true });
+    }
+
     console.log(`[expo-targets] exported ${bundlePath}`);
   }
 
-  return { code: 0, written };
+  let assetModulesPath: string | undefined;
+  if (assetsRoot && exportedNames.length > 0) {
+    assetModulesPath = writeExtensionBundleAssetModules({
+      assetsRoot,
+      targetNames: exportedNames,
+    });
+    console.log(`[expo-targets] wrote ${assetModulesPath}`);
+  }
+
+  return { code: 0, written, assetModulesPath };
 }

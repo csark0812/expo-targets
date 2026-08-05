@@ -10,13 +10,12 @@
 
 Creates a target instance for communicating with your extension.
 
-For compile-time target name literals, import from the generated file (see [Getting Started → Typed target names](./getting-started.md#typed-target-names)):
+Target names are plain strings matching `expo-target.config.json` `"name"`. After `prebuild` / `npx expo-targets generate`, TypeScript narrows those literals via ambient types under `.expo/types/` (Expo Router–style — no import from `.expo/`):
 
 ```typescript
-import { Targets } from "../.expo/expo-targets.generated";
 import { createTarget } from "expo-targets";
 
-const share = createTarget(Targets.MyShare);
+const share = createTarget("MyShare"); // typed as TargetName when generated
 ```
 
 ```typescript
@@ -28,45 +27,17 @@ const widget = createTarget("MyWidget");
 // For React Native extensions (share, action, clip, messages)
 // Pass the component as second argument - handles AppRegistry automatically
 import ShareExtension from "./ShareExtension";
-export const share = createTarget<"share">("ShareExt", ShareExtension);
+export const share = createTarget("ShareExt", ShareExtension);
 ```
 
 **Parameters:**
 
 | Parameter   | Type                  | Description                                                                                |
 | ----------- | --------------------- | ------------------------------------------------------------------------------------------ |
-| `name`      | `string`              | Must match the `name` field in your `expo-target.config.json` **exactly** (case-sensitive) |
+| `name`      | `string` (`TargetName` when generated) | Must match the `name` field in your `expo-target.config.json` **exactly** (case-sensitive) |
 | `component` | `React.ComponentType` | _(Optional)_ For RN extensions only. Automatically calls `AppRegistry.registerComponent()` |
 
-When you pass a component as the second argument, `createTarget` handles registration for you — no need to call `AppRegistry.registerComponent()` manually.
-
-### Type Parameter
-
-The `createTarget` function uses TypeScript overloads to provide the correct return type based on your target type. You can optionally specify the type parameter for better type inference:
-
-```typescript
-// For messages extensions - returns MessagesExtensionTarget with messaging APIs
-const messages = createTarget<"messages">("MyMessages");
-messages.sendMessage({ caption: "Hello!" }); // ✅ Type-safe
-
-// For share/action/clip extensions - returns ExtensionTarget with close/openHostApp
-const share = createTarget<"share">("MyShare");
-share.close(); // ✅ Type-safe
-
-// For widgets and other types - returns NonExtensionTarget
-const widget = createTarget<"widget">("MyWidget");
-widget.close(); // ❌ TypeScript error: close doesn't exist
-```
-
-**When to use the type parameter:**
-
-| Scenario            | Recommendation                                                    |
-| ------------------- | ----------------------------------------------------------------- |
-| Widgets, stickers   | Not needed — `createTarget('Name')` is sufficient                 |
-| Share/action/clip   | Optional but helpful for IDE autocomplete                         |
-| Messages extensions | Recommended — unlocks `sendMessage`, `getPresentationStyle`, etc. |
-
-**Without the type parameter**, TypeScript returns a union type and you may need to check properties before using them.
+When you pass a component as the second argument, `createTarget` handles registration for you — no need to call `AppRegistry.registerComponent()` manually. No type argument is required.
 
 ### Error Handling
 
@@ -287,12 +258,13 @@ interface SharedData {
 
 ## Messages Extension API
 
-For iMessage apps (`type: "messages"`), use the type parameter to get full API access:
+For iMessage apps (`type: "messages"`):
 
 ```typescript
 import { createTarget } from "expo-targets";
+import MessagesApp from "./MessagesApp";
 
-const messages = createTarget<"messages">("MyMessagesApp");
+const messages = createTarget("MyMessagesApp", MessagesApp);
 ```
 
 ### Presentation
@@ -528,7 +500,7 @@ import {
   getBrowserAPI,
 } from "expo-targets";
 
-const safari = createTarget<"safari">("MySafari");
+const safari = createTarget("MySafari");
 await safari.openTab("https://example.com");
 safari.closePopup();
 ```
@@ -549,32 +521,41 @@ const mod = getExtensionNativeModule();
 
 ---
 
-## ExtensionUpdates (`createExtensionUpdates`)
+## ExtensionUpdates
 
-Host-only helper that mirrors [expo-updates](https://docs.expo.dev/versions/latest/sdk/updates/) verbs. It does **not** run in the appex. After `fetchUpdateAsync`, it installs published extension assets into the App Group for Release load.
+Host-only. Sideloads extension JS into the App Group after [expo-updates](https://docs.expo.dev/versions/latest/sdk/updates/) applies. Does **not** run in the appex.
+
+**Default:** importing `expo-targets` on the **host** auto-calls `ExtensionUpdates.enable()` (no-ops in appexes — the install native module is host-only).
 
 ```typescript
-import { createExtensionUpdates } from "expo-targets";
-
-const ExtensionUpdates = createExtensionUpdates({
-  targets: [{ targetName: "ShareExt", type: "share" }],
-  resolveAssetPath: (name) => {
-    // Resolve local path for dist/expo-targets/bundles/{name}/main.jsbundle
-    // after Updates downloaded the update assets.
-    return resolveSideloadPath(name);
-  },
-  install: async ({ targetName, type, runtimeVersion, localPath }) => {
-    // Call native App Group install (or test double in unit tests).
-    return nativeInstall({ targetName, type, runtimeVersion, localPath });
-  },
-});
-
-await ExtensionUpdates.checkForUpdateAsync();
-await ExtensionUpdates.fetchUpdateAsync(); // Updates.fetch + App Group sync
-await ExtensionUpdates.reloadAsync(); // reloads host
+import { ExtensionUpdates } from "expo-targets";
+// Optional explicit call / options:
+ExtensionUpdates.enable();
 ```
 
-**CLI:** `npx expo-targets export-extension-bundles` writes `dist/expo-targets/bundles/…` for `eas update`. Prefer setting `expo.runtimeVersion` (fail closed if missing).
+**Publish** (regular eas update + a bundle export step):
+
+```bash
+npx expo-targets export-extension-bundles
+eas update --branch production
+```
+
+`enable` reads RN targets + App Group from `expo.extra.targets`, resolves bundles via Metro alias `expo-targets/extension-bundle-assets` → `assets/expo-targets/extensionBundleModules.js`, and syncs on launch.
+
+### Low-level
+
+```typescript
+import { ExtensionUpdates } from "expo-targets";
+
+const api = ExtensionUpdates.create({
+  appGroup: "group.com.yourcompany.myapp",
+  targets: [{ targetName: "ShareExt", type: "share" }],
+  assetModules: require("../assets/expo-targets/extensionBundleModules"),
+});
+await api.fetchUpdateAsync();
+```
+
+Set `expo.runtimeVersion` before export (fail closed if missing).
 
 ---
 

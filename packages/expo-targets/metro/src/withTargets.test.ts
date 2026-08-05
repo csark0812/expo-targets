@@ -114,10 +114,33 @@ describe('withTargets', () => {
     ]);
     tempRoots.push(root);
 
-    const config = withTargets({ resolver: {} } as any, {
-      projectRoot: root,
-      silent: true,
+    const config = withTargets(
+      { resolver: { assetExts: ['png', 'jpg'] } } as any,
+      {
+        projectRoot: root,
+        silent: true,
+      }
+    );
+
+    expect(config.resolver!.assetExts).toContain('jsbundle');
+    expect(config.resolver!.assetExts).toContain('png');
+
+    const assetsResult = config.resolver!.resolveRequest!(
+      {
+        resolveRequest: () => ({ type: 'sourceFile', filePath: '/fallback' }),
+      } as any,
+      'expo-targets/extension-bundle-assets',
+      'ios'
+    );
+    expect(assetsResult).toEqual({
+      type: 'sourceFile',
+      filePath: path.join(root, '.expo', 'expo-targets-extension-bundle-assets.js'),
     });
+    expect(
+      fs.existsSync(
+        path.join(root, '.expo', 'expo-targets-extension-bundle-assets.js')
+      )
+    ).toBe(true);
 
     const result = config.resolver!.resolveRequest!(
       {

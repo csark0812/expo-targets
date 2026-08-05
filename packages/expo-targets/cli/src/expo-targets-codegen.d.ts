@@ -24,4 +24,8 @@ declare module 'expo-targets/codegen' {
       liveActivity?: { attributesName?: string };
     }>
   ): string;
+
+  export function ensureTsconfigExpoTypesInclude(projectRoot: string): boolean;
+
+  export const GENERATED_RELATIVE_PATH: string;
 }

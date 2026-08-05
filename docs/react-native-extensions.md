@@ -96,7 +96,7 @@ import { createTarget } from "expo-targets";
 import ShareExtension from "./src/ShareExtension";
 
 // Pass the component as the second argument - handles registration automatically
-export const shareTarget = createTarget<"share">("ShareExt", ShareExtension);
+export const shareTarget = createTarget("ShareExt", ShareExtension);
 ```
 
 The second parameter to `createTarget` automatically calls `AppRegistry.registerComponent()` for you. The name must match the `name` field in your config exactly.
@@ -379,9 +379,9 @@ excluded — advisory only; it never auto-strips.
 
 RN extensions **never** link `expo-updates` (auto-excluded). To refresh extension JS without a store rebuild:
 
-1. Export target bundles into `dist/expo-targets/bundles/{TargetName}/` (`npx expo-targets export-extension-bundles`), then publish with `eas update` so they ride along as update **assets**.
-2. On the **host**, use `createExtensionUpdates` (Updates-shaped: `checkForUpdateAsync` / `fetchUpdateAsync` / `reloadAsync`) to copy those assets into the App Group after a download.
-3. **Release** appex loads the App Group file when size / sha256 / `runtimeVersion` match; otherwise embedded. **DEBUG** still uses Metro only.
+1. Host: importing `expo-targets` auto-enables `ExtensionUpdates` (or call `ExtensionUpdates.enable()`).
+2. Publish: `npx expo-targets export-extension-bundles` then normal `eas update`.
+3. Open the app (syncs App Group from the running update). **Release** appex loads App Group when size / sha256 / `runtimeVersion` match; otherwise embedded. **DEBUG** still uses Metro only.
 
 Size caps: **5 MiB** (share / action / messages / notification-content), **8 MiB** (clip).
 
@@ -532,10 +532,7 @@ import { createTarget } from "expo-targets";
 import MessagesApp from "./MessagesApp";
 
 // Pass component as second argument - name must match config exactly
-export const messagesTarget = createTarget<"messages">(
-  "MyMessages",
-  MessagesApp,
-);
+export const messagesTarget = createTarget("MyMessages", MessagesApp);
 ```
 
 ### Using Messages APIs
@@ -545,7 +542,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
 import { createTarget } from 'expo-targets';
 
-const messages = createTarget<'messages'>('MyMessages');
+const messages = createTarget('MyMessages');
 
 export default function MessagesApp() {
   const [style, setStyle] = useState(messages.getPresentationStyle());
@@ -591,7 +588,7 @@ const styles = StyleSheet.create({
 ### Messages API Reference
 
 ```typescript
-const messages = createTarget<'messages'>('MyMessages');
+const messages = createTarget('MyMessages');
 
 // Presentation
 messages.getPresentationStyle(); // 'compact' | 'expanded' | null

@@ -3,6 +3,7 @@
   "ios": {
     "modules": [
       "ExpoTargetsStorageModule",
+      "ExpoTargetsExtensionBundleModule",
       "ExpoTargetsExtensionModule",
       "ExpoTargetsMessagesModule",
       "ExpoTargetsFileProviderModule",

@@ -60,6 +60,7 @@ describe('example update smokes', () => {
       projectRoot: project,
       distRoot: dist,
       allowPlaceholder: true,
+      assetsRoot: false,
     });
     expect(code).toBe(0);
     expect(written.length).toBeGreaterThanOrEqual(1);
@@ -113,6 +114,7 @@ describe('example update smokes', () => {
       projectRoot: project,
       distRoot: dist,
       allowPlaceholder: true,
+      assetsRoot: false,
     });
     expect(code).toBe(0);
     // share + action + messages + clip (not widget)

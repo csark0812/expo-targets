@@ -81,5 +81,38 @@ export type {
   Target,
 } from './Target';
 export { createTarget } from './Target';
+export type {
+  LiveActivityAttributesName,
+  TargetName,
+} from './generatedNames';
+export type {
+  KnownLiveActivityAttributes,
+  KnownTargets,
+} from './generatedNames';
 export type { ExtensionBundleManifest } from './modules/extensionBundle/ExtensionUpdates';
 export { createExtensionUpdates } from './modules/extensionBundle/ExtensionUpdates';
+/** @deprecated Prefer `ExtensionUpdates.enable` */
+export { enableExtensionUpdates } from './modules/extensionBundle/enableExtensionUpdates';
+export {
+  ExtensionUpdates,
+  autoEnableExtensionUpdates,
+} from './modules/extensionBundle/ExtensionUpdatesApi';
+export {
+  clearExtensionBundleNative,
+  getExtensionBundleInfoNative,
+  installExtensionBundleNative,
+} from './modules/extensionBundle/nativeInstall';
+
+// Host default: App Group sync when this package loads (no-op in appex / Node).
+queueMicrotask(() => {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { autoEnableExtensionUpdates } =
+      require('./modules/extensionBundle/ExtensionUpdatesApi') as {
+        autoEnableExtensionUpdates: () => void;
+      };
+    autoEnableExtensionUpdates();
+  } catch {
+    // ignore
+  }
+});

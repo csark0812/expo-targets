@@ -5,6 +5,7 @@ import type {
   ReactNativeCompatibleType,
   TargetConfig,
 } from '../plugin/src/config';
+import type { TargetName } from './generatedNames';
 import { Extension, type SharedData } from './modules/extension/index';
 import {
   type ConversationInfo,
@@ -290,31 +291,31 @@ function tryCreateSafariTargetFromConfig(
 
 // Function overloads for better type inference
 export function createTarget<_T extends 'messages'>(
-  targetName: string,
+  targetName: TargetName,
   componentFunc?: React.ComponentType<any>
 ): MessagesExtensionTarget;
 export function createTarget<_T extends 'safari'>(
-  targetName: string,
+  targetName: TargetName,
   componentFunc?: React.ComponentType<any>
 ): SafariExtensionTarget;
 export function createTarget<
   _T extends Exclude<ReactNativeCompatibleType, 'messages'>,
 >(
-  targetName: string,
+  targetName: TargetName,
   componentFunc?: React.ComponentType<any>
 ): ExtensionTarget;
 export function createTarget<
   _T extends Exclude<ExtensionType, ReactNativeCompatibleType>,
 >(
-  targetName: string,
+  targetName: TargetName,
   componentFunc?: React.ComponentType<any>
 ): NonExtensionTarget;
 export function createTarget(
-  targetName: string,
+  targetName: TargetName,
   componentFunc?: React.ComponentType<any>
 ): Target;
 export function createTarget<_T extends ExtensionType = ExtensionType>(
-  targetName: string,
+  targetName: TargetName,
   componentFunc?: React.ComponentType<any>
 ): Target {
   if (isSafariExtension() && componentFunc) {

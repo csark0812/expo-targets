@@ -70,4 +70,18 @@ describe('ExtensionUpdates API (Updates-shaped)', () => {
     expect(check.isAvailable).toBe(false);
     expect(check.reason).toContain('expo-updates');
   });
+
+  test('default install requires appGroup', async () => {
+    const api = createExtensionUpdates({
+      targets: [{ targetName: 'Share', type: 'share' }],
+      resolveAssetPath: async () => '/tmp/missing.jsbundle',
+      getUpdates: () => ({
+        runtimeVersion: '1.0.0',
+        checkForUpdateAsync: async () => ({ isAvailable: false }),
+        fetchUpdateAsync: async () => ({ isNew: true, manifest: {} }),
+        reloadAsync: async () => {},
+      }),
+    });
+    await expect(api.fetchUpdateAsync()).rejects.toThrow(/appGroup/);
+  });
 });

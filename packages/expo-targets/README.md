@@ -36,7 +36,7 @@ module.exports = withTargets(getDefaultConfig(__dirname));
 import { createTarget } from "expo-targets";
 import ShareExtension from "./ShareExtension";
 
-export const myShare = createTarget<"share">("MyShare", ShareExtension);
+export const myShare = createTarget("MyShare", ShareExtension);
 ```
 
 ## Storage

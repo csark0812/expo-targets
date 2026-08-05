@@ -131,21 +131,16 @@ module.exports = withTargets(getDefaultConfig(__dirname));
 
 ### Typed target names
 
-After prebuild (or `npx expo-targets generate`), a gitignored file is written at `.expo/expo-targets.generated.ts`:
+After prebuild (or `npx expo-targets generate`), ambient types are written to `.expo/types/expo-targets.d.ts` (gitignored, same layout as Expo Router typed routes). That narrows `createTarget('…')` / `LiveActivity.create('…')` string literals — **no import from `.expo/`**.
 
 ```typescript
-import { Targets, type TargetName } from "../.expo/expo-targets.generated";
+import { createTarget, type TargetName } from "expo-targets";
 
-const name: TargetName = Targets.MyShare;
+const name: TargetName = "MyShare";
+createTarget(name);
 ```
 
-Widget targets with `liveActivity.attributesName` also emit `LiveActivityAttributes`. Include `.expo/` in `tsconfig.json` so the editor resolves the file:
-
-```json
-{
-  "include": ["**/*.ts", "**/*.tsx", ".expo/expo-targets.generated.ts"]
-}
-```
+`generate` also ensures `tsconfig.json` includes `.expo/types/**/*.ts` when missing (alongside Router’s include if present).
 
 Regenerate without a full prebuild: `npx expo-targets generate` (also runs with `npx expo-targets doctor --fix`).
 

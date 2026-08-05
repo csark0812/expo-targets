@@ -184,7 +184,7 @@ Use `npx expo-targets sync --dry-run` to preview. Managed Expo + `npx expo prebu
 import { createTarget, close, openHostApp, getSharedData } from "expo-targets";
 
 // RN extension entry
-export const share = createTarget<"share">("MyShare", ShareExtension);
+export const share = createTarget("MyShare", ShareExtension);
 
 const data = getSharedData();
 openHostApp("/inbox");

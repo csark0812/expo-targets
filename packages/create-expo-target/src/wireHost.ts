@@ -73,19 +73,7 @@ export function printWireSuccess(
   console.log('  2. npx expo-targets doctor');
   console.log('  3. npx expo prebuild');
   console.log('  4. npx expo run:ios');
-}
-
-export function printWireFailures(result: WireHostResult): void {
-  if (!result.expo.ok && result.expo.snippet) {
-    console.error('\nCould not patch app config automatically:\n');
-    console.error(result.expo.snippet);
-  }
-  if (!result.metro.ok && result.metro.snippet) {
-    console.error('\nCould not patch metro.config.js automatically. Use:\n');
-    console.error(result.metro.snippet);
-  }
-}
-
-export function wireHostFailed(result: WireHostResult): boolean {
-  return !(result.expo.ok && result.metro.ok);
+  console.log(
+    '  5. OTA: npx expo-targets export-extension-bundles && eas update'
+  );
 }

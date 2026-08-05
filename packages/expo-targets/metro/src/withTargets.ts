@@ -131,14 +131,47 @@ export function withTargets(
   }
 
   const previousResolveRequest = metroConfig.resolver?.resolveRequest;
+  const assetExts = metroConfig.resolver?.assetExts
+    ? [...metroConfig.resolver.assetExts]
+    : undefined;
+  if (assetExts && !assetExts.includes('jsbundle')) {
+    assetExts.push('jsbundle');
+  }
+
+  const extensionAssets = path.join(
+    projectRoot,
+    'assets',
+    'expo-targets',
+    'extensionBundleModules.js'
+  );
+  const stubAssets = path.join(
+    projectRoot,
+    '.expo',
+    'expo-targets-extension-bundle-assets.js'
+  );
 
   return {
     ...metroConfig,
     resolver: {
       ...metroConfig.resolver,
+      ...(assetExts ? { assetExts } : {}),
       resolveRequest: (context, moduleName, platform) => {
-        const normalized = moduleName.replace(/^\.\//, '');
-        const entryPath = entryMap.get(normalized);
+        if (
+          moduleName === 'expo-targets/extension-bundle-assets' ||
+          moduleName === 'expo-targets/extension-bundle-assets.js'
+        ) {
+          if (fs.existsSync(extensionAssets)) {
+            return { type: 'sourceFile', filePath: extensionAssets };
+          }
+          fs.mkdirSync(path.dirname(stubAssets), { recursive: true });
+          if (!fs.existsSync(stubAssets)) {
+            fs.writeFileSync(stubAssets, 'module.exports = {};\n');
+          }
+          return { type: 'sourceFile', filePath: stubAssets };
+        }
+
+        const entryKey = moduleName.replace(/^\.\//, '');
+        const entryPath = entryMap.get(entryKey);
 
         if (entryPath) {
           return { type: 'sourceFile', filePath: entryPath };
