@@ -10,13 +10,13 @@ See [PR_PROOF.md](./PR_PROOF.md) for operator pre-merge checklist, [claims.ts](.
 
 Phase 2 (same suite): keyboard / live-activity / stickers / watch(+widget) also require visible OS demos; Sim ceilings exit `os-limit` + CLAIMS, not soft host/pluginkit greens.
 
-## Layout (Maestro parallel)
+## Layout
 
-| Maestro                              | Devicewright                              |
-| ------------------------------------ | ----------------------------------------- |
-| `examples/share/.maestro/smoke.yaml` | `examples/share/.devicewright/journey.ts` |
-| `examples/.maestro/subflows/`        | `examples/.devicewright/` (shared)        |
-| `examples:maestro:share`             | `examples:devicewright:share`             |
+| Path | Role |
+| ---- | ---- |
+| `examples/share/.devicewright/journey.ts` | Per-example entry |
+| `examples/.devicewright/` | Shared suite (claims, touchpoints, matrix CLI) |
+| `examples:devicewright:share` | npm script → matrix `--ids=share` |
 
 ## Private dependency
 

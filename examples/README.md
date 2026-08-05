@@ -1,48 +1,39 @@
 # Examples
 
-Thin Expo SDK 57 hosts for exercising expo-targets. Each package is Maestro-ready with host-contract `testID`s.
+Thin Expo SDK 57 hosts for exercising expo-targets. Host contracts use `testID`s consumed by Devicewright journeys under [`examples/.devicewright/`](./.devicewright/).
 
-> **Agent constraint:** Humans boot the iOS Simulator and run `expo run:ios` (or Maestro) locally. Do not treat Maestro YAML as CI-proven without a built `.app` on a simulator.
+> **Agent constraint:** Humans boot the iOS Simulator and run `expo run:ios` locally. Devicewright matrix greens are operator-proven (not CI-gated) — see [`.devicewright/PR_PROOF.md`](./.devicewright/PR_PROOF.md).
 
 ## Packages
 
-| Package                            | NPM name                              | Target story                                                                      | Maestro                                           |
-| ---------------------------------- | ------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------- |
-| [`share`](./share)                 | `@expo-targets/example-share`         | React Native share extension                                                      | `smoke.yaml` (automated host)                     |
-| [`action`](./action)               | `@expo-targets/example-action`        | React Native action extension                                                     | `smoke.yaml` (automated host)                     |
-| [`messages`](./messages)           | `@expo-targets/example-messages`      | React Native messages extension                                                   | `smoke.yaml` (automated host)                     |
-| [`clip`](./clip)                   | `@expo-targets/example-clip`          | React Native App Clip + `expotargets-clip` scheme                                 | `smoke.yaml` (host + `openLink`)                  |
-| [`stickers`](./stickers)           | `@expo-targets/example-stickers`      | Asset-only sticker pack (no `withTargetsMetro`)                                   | `smoke.yaml` (automated host)                     |
-| [`widgets`](./widgets)             | `@expo-targets/example-widgets`       | iOS WidgetKit + ActivityKit spine — [`docs/widgets.md`](../docs/widgets.md)       | `smoke.yaml` (automated host)                     |
-| [`kitchen-sink`](./kitchen-sink)   | `@expo-targets/example-kitchen-sink`  | Five targets, one App Group (messages, not stickers — iOS payload-provider limit) | `smoke-{share,action,clip,widgets,messages}.yaml` |
-| [`native/share`](./native/share)   | `@expo-targets/example-native-share`  | Swift share + RN host (`AppGroupStorage`)                                         | `smoke.yaml` (automated host)                     |
-| [`native/action`](./native/action) | `@expo-targets/example-native-action` | Swift action + RN host                                                            | `smoke.yaml` (automated host)                     |
-| [`native/clip`](./native/clip)     | `@expo-targets/example-native-clip`   | SwiftUI App Clip + RN host (`expotargets-native-clip`)                            | `smoke.yaml` (host + `openLink`)                  |
+| Package                            | NPM name                              | Target story                                                                      |
+| ---------------------------------- | ------------------------------------- | --------------------------------------------------------------------------------- |
+| [`share`](./share)                 | `@expo-targets/example-share`         | React Native share extension                                                      |
+| [`action`](./action)               | `@expo-targets/example-action`        | React Native action extension                                                     |
+| [`messages`](./messages)           | `@expo-targets/example-messages`      | React Native messages extension                                                   |
+| [`clip`](./clip)                   | `@expo-targets/example-clip`          | React Native App Clip + `expotargets-clip` scheme                                 |
+| [`stickers`](./stickers)           | `@expo-targets/example-stickers`      | Asset-only sticker pack (no `withTargetsMetro`)                                   |
+| [`widgets`](./widgets)             | `@expo-targets/example-widgets`       | iOS WidgetKit + ActivityKit spine — [`docs/widgets.md`](../docs/widgets.md)       |
+| [`kitchen-sink`](./kitchen-sink)   | `@expo-targets/example-kitchen-sink`  | Five targets, one App Group (messages, not stickers — iOS payload-provider limit) |
+| [`native/share`](./native/share)   | `@expo-targets/example-native-share`  | Swift share + RN host (`AppGroupStorage`)                                         |
+| [`native/action`](./native/action) | `@expo-targets/example-native-action` | Swift action + RN host                                                            |
+| [`native/clip`](./native/clip)     | `@expo-targets/example-native-clip`   | SwiftUI App Clip + RN host (`expotargets-native-clip`)                            |
+
+Bacon-parity and other stub hosts live alongside these; REQUIRED journeys are listed in [`.devicewright/`](./.devicewright/).
 
 ## App icons
 
 Hosts share a target + extension-slot mark under [`_brand/`](./_brand) with per-package accent colors. Regenerate with `examples/_brand/render_icons.py` (see that folder’s README). Native AppIcon catalogs update on the next prebuild.
 
-## Maestro prerequisites
+## Devicewright
 
-1. [Maestro CLI](https://maestro.mobile.dev/) installed (`maestro --version`)
-2. iOS Simulator booted with the example app installed (`cd examples/<pkg> && bun run ios`)
-3. Optional: [Maestro MCP](https://maestro.mobile.dev/) via `.cursor/mcp.json` for agent-driven flows
+See [`.devicewright/README.md`](./.devicewright/README.md) for auth, Release install, and matrix commands.
 
-Shared subflow: [`examples/.maestro/subflows/ios-open-security-dialog.yaml`](./.maestro/subflows/ios-open-security-dialog.yaml) — dismisses an “Open” security prompt when present.
-
-## Automated vs manual matrix
-
-| Flow                     | Automated (Maestro host smoke) | Manual (OS / extension UI)  |
-| ------------------------ | ------------------------------ | --------------------------- |
-| Host seed/clear payload  | Yes — all packages             | —                           |
-| Share extension save     | —                              | Photos → Share sheet        |
-| Action extension process | —                              | Photos → action sheet       |
-| Messages extension send  | —                              | Messages → Apps             |
-| App Clip checkout        | Partial — `openLink` only      | Full clip UI in clip target |
-| Sticker pack             | —                              | Messages → Stickers drawer  |
-| Widget on Home Screen    | —                              | Add widget, verify message  |
-| Native Swift extensions  | —                              | Share/action/clip native UI |
+```bash
+bun run examples:devicewright:share
+# or full operator matrix:
+bun run examples:devicewright:matrix:ensure
+```
 
 ## Widgets + Live Activities
 
@@ -54,13 +45,12 @@ Native WidgetKit and ActivityKit are first-class in expo-targets. See [`widgets`
 bun install
 cd examples/share
 bun run ios
-maestro test .maestro/smoke.yaml
 ```
 
-From the repo root:
+From the repo root (after a Release install on a booted sim):
 
 ```bash
-bun run examples:maestro:share
+bun run examples:devicewright:share
 ```
 
 Do not commit generated `ios/` or `android/` folders from example prebuilds.

@@ -10,10 +10,11 @@ npx expo prebuild --platform ios
 npx expo run:ios
 ```
 
-## Maestro (host contract)
+## Devicewright
 
 ```bash
-maestro test .maestro
+# From repo root, after Release install on a booted sim
+bun run examples:devicewright:share
 ```
 
 ## OS path (Share Sheet)

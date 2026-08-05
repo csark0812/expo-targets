@@ -21,12 +21,21 @@ import type {
 } from './types';
 
 const PROJECT_ROOT = '/tmp/project';
+const PROJECT_NAME = 'App';
 const MAIN_BUNDLE_ID = 'com.example.app';
-const INFO_PLIST_REFERENCE = '../targets/my-share/ios/build/Info.plist';
+const PRODUCT_NAME = 'MyShareTarget';
+const SEALED_BUILD = path.join(
+  PROJECT_NAME,
+  'ExpoTargetsGenerated',
+  PRODUCT_NAME
+);
+const INFO_PLIST_REFERENCE = `${SEALED_BUILD}/Info.plist`;
+const ENTITLEMENTS_REFERENCE = `${SEALED_BUILD}/generated.entitlements`;
 
 const paths: ProjectPaths = {
   projectRoot: PROJECT_ROOT,
   platformProjectRoot: path.join(PROJECT_ROOT, 'ios'),
+  projectName: PROJECT_NAME,
 };
 
 function makeProps(overrides: Partial<IOSTargetProps> = {}): IOSTargetProps {
@@ -57,7 +66,13 @@ function makeWorkspace(
     directory,
     type,
     targetDirectory,
-    targetBuildPath: path.join(targetDirectory, 'build'),
+    targetBuildPath: path.join(
+      PROJECT_ROOT,
+      'ios',
+      PROJECT_NAME,
+      'ExpoTargetsGenerated',
+      PRODUCT_NAME
+    ),
     swiftFiles: [],
     bundleResourceFiles: [],
     userAssetsPath: path.join(targetDirectory, 'Assets.xcassets'),
@@ -175,7 +190,7 @@ describe('planBuildSettings', () => {
     expect(settings.IPHONEOS_DEPLOYMENT_TARGET).toBe('15.1');
     expect(settings.INFOPLIST_FILE).toBe(`"${INFO_PLIST_REFERENCE}"`);
     expect(settings.CODE_SIGN_ENTITLEMENTS).toBe(
-      '"../targets/my-share/ios/build/generated.entitlements"'
+      `"${ENTITLEMENTS_REFERENCE}"`
     );
   });
 
@@ -270,10 +285,16 @@ describe('planSwiftSources React Native generation', () => {
     expect(plans[0].file).toBe('ReactNativeViewController.swift');
     expect(plans[0].generate?.template).toBe('reactNativeViewController');
     expect(plans[0].sourcePath).toContain(
-      path.join('targets/my-share/ios/build', 'ReactNativeViewController.swift')
+      path.join(
+        'ios',
+        PROJECT_NAME,
+        'ExpoTargetsGenerated',
+        PRODUCT_NAME,
+        'ReactNativeViewController.swift'
+      )
     );
     expect(plans[0].referencePath).toBe(
-      '../targets/my-share/ios/build/ReactNativeViewController.swift'
+      `${SEALED_BUILD}/ReactNativeViewController.swift`
     );
   });
 
@@ -389,9 +410,7 @@ describe('planAssets', () => {
 
     expect(plan.isStickers).toBe(false);
     expect(plan.copyUserAssets).toBe(false);
-    expect(plan.referencePath).toBe(
-      '../targets/my-share/ios/build/Assets.xcassets'
-    );
+    expect(plan.referencePath).toBe(`${SEALED_BUILD}/Assets.xcassets`);
     expect(plan.colorsets).toHaveLength(2);
     expect(plan.colorsets[1]).toMatchObject({
       name: 'card',
@@ -422,7 +441,7 @@ describe('planAssets for sticker targets', () => {
   test('uses the Stickers catalog and an iMessage icon set', () => {
     expect(plan.isStickers).toBe(true);
     expect(plan.referencePath).toBe(
-      '../targets/my-share/ios/build/Stickers.xcassets'
+      `${PROJECT_NAME}/ExpoTargetsGenerated/MyStickersTarget/Stickers.xcassets`
     );
     expect(plan.stickers?.iconsetPath).toContain(
       'iMessage App Icon.stickersiconset'
@@ -477,8 +496,9 @@ describe('planInfoPlist', () => {
 });
 
 const entitlementPaths = {
-  projectRoot: PROJECT_ROOT,
-  targetDirectory: 'targets/my-share',
+  platformProjectRoot: path.join(PROJECT_ROOT, 'ios'),
+  projectName: PROJECT_NAME,
+  productName: PRODUCT_NAME,
 };
 
 describe('planEntitlements app groups', () => {
@@ -494,7 +514,14 @@ describe('planEntitlements app groups', () => {
     expect(plan.entitlements['com.apple.security.application-groups']).toEqual([
       'group.com.example.app',
     ]);
-    expect(plan.path).toContain('build/generated.entitlements');
+    expect(plan.path).toContain(
+      path.join(
+        PROJECT_NAME,
+        'ExpoTargetsGenerated',
+        PRODUCT_NAME,
+        'generated.entitlements'
+      )
+    );
   });
 
   test('syncs App Groups for action (host ↔ appex payload)', () => {
@@ -584,6 +611,7 @@ describe('composeXcodeTargetPlan content-blocker', () => {
       paths: {
         projectRoot: PROJECT_ROOT,
         platformProjectRoot: path.join(PROJECT_ROOT, 'ios'),
+        projectName: PROJECT_NAME,
       },
       mainBuildSettings: {},
     });
@@ -636,7 +664,9 @@ describe('composeXcodeTargetPlan safari', () => {
     });
 
     expect(plan.safari?.useCustomResources).toBe(false);
-    expect(plan.safari?.resourcesPath).toContain('build/Resources');
+    expect(plan.safari?.resourcesPath).toContain(
+      path.join('ExpoTargetsGenerated', PRODUCT_NAME, 'Resources')
+    );
     expect(plan.safari?.referencePath).toContain('Resources');
     expect(plan.bundleReactNative).toBeUndefined();
   });
@@ -653,6 +683,8 @@ describe('composeXcodeTargetPlan safari', () => {
       mainBuildSettings: {},
     });
 
-    expect(plan.safari?.resourcesPath).toContain('build/Resources');
+    expect(plan.safari?.resourcesPath).toContain(
+      path.join('ExpoTargetsGenerated', PRODUCT_NAME, 'Resources')
+    );
   });
 });

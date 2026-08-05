@@ -1,8 +1,10 @@
+import fs from 'node:fs';
 import path from 'node:path';
 
 import type { Logger } from '../../../logger';
 import type { XcodeTargetPlan } from '../../plan/types';
 import * as File from '../../utils/file';
+import * as Paths from '../../utils/paths';
 import { applyAssetPlan } from './assets';
 import { writeInfoPlist } from './infoPlist';
 import { applySafariResourcesPlan } from './safari';
@@ -24,6 +26,18 @@ export function applyFsTargetPlan(
   logger.log(
     `Build directory: ${path.relative(workspace.projectRoot, workspace.targetBuildPath)}`
   );
+
+  // Soft migration: remove legacy targets/<name>/ios/build if still present.
+  const legacyBuildPath = Paths.getLegacyTargetBuildPath({
+    projectRoot: workspace.projectRoot,
+    targetDirectory: workspace.directory,
+  });
+  if (fs.existsSync(legacyBuildPath)) {
+    fs.rmSync(legacyBuildPath, { recursive: true, force: true });
+    logger.log(
+      `Removed legacy build directory: ${path.relative(workspace.projectRoot, legacyBuildPath)}`
+    );
+  }
 
   writeInfoPlist(plan.infoPlist);
   logger.log(

@@ -19,7 +19,10 @@ export type TargetWorkspace = {
   type: ExtensionType;
   /** Absolute path to `<projectRoot>/<directory>/ios`. */
   targetDirectory: string;
-  /** Absolute path to the generated build directory inside the target. */
+  /**
+   * Absolute path to sealed build output:
+   * `ios/<App>/ExpoTargetsGenerated/<ProductName>/`.
+   */
   targetBuildPath: string;
   /** Existing user Swift files, relative to `targetDirectory`. */
   swiftFiles: string[];
@@ -43,7 +46,7 @@ const SWIFT_GLOB_IGNORE = [
   '**/Tests/**',
   '**/*.test.swift',
   '**/*Tests.swift',
-  // Exclude build directory - those are generated files
+  // Exclude legacy build directory - those are generated files
   '**/build/**',
 ];
 
@@ -92,14 +95,19 @@ function userAssetsCatalogPath(
  */
 export function buildTargetWorkspace({
   projectRoot,
+  platformProjectRoot,
+  projectName,
+  productName,
   directory,
   type,
-  buildSubdirectory,
 }: {
   projectRoot: string;
+  platformProjectRoot: string;
+  projectName: string;
+  /** Already-sanitized Xcode product name. */
+  productName: string;
   directory: string;
   type: ExtensionType;
-  buildSubdirectory?: string;
 }): TargetWorkspace {
   const typeConfig = TYPE_CHARACTERISTICS[type];
   const targetDirectory = Paths.getTargetDirectory({
@@ -115,9 +123,9 @@ export function buildTargetWorkspace({
     type,
     targetDirectory,
     targetBuildPath: Paths.getTargetBuildPath({
-      projectRoot,
-      targetDirectory: directory,
-      buildSubdirectory,
+      platformProjectRoot,
+      projectName,
+      productName,
     }),
     swiftFiles: typeConfig.requiresCode
       ? observeSwiftFiles(targetDirectory)

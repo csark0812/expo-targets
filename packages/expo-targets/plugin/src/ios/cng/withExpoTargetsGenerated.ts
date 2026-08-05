@@ -29,7 +29,7 @@ import {
   generateLiveActivityBridgeSwift,
 } from './liveActivityCodegen';
 
-export const GENERATED_DIR_NAME = 'ExpoTargetsGenerated';
+export { GENERATED_DIR_NAME } from '../utils/paths';
 
 type GeneratedFilePlan = {
   fileName: string;
@@ -116,23 +116,34 @@ function writeGeneratedSwiftFiles(options: {
   written: WrittenGeneratedFile[];
 }): void {
   const { platformRoot, projectName, plans, written } = options;
-  const outDir = path.join(platformRoot, projectName, GENERATED_DIR_NAME);
+  const outDir = path.join(platformRoot, projectName, Paths.GENERATED_DIR_NAME);
   fs.mkdirSync(outDir, { recursive: true });
 
-  for (const existing of fs.readdirSync(outDir)) {
-    if (existing.endsWith('.swift')) {
-      fs.unlinkSync(path.join(outDir, existing));
-    }
-  }
+  clearRootGeneratedSwiftFiles(outDir);
 
   written.length = 0;
   for (const plan of plans) {
     fs.writeFileSync(path.join(outDir, plan.fileName), plan.contents);
     written.push({
-      relativePath: `${projectName}/${GENERATED_DIR_NAME}/${plan.fileName}`,
+      relativePath: `${projectName}/${Paths.GENERATED_DIR_NAME}/${plan.fileName}`,
       fileName: plan.fileName,
       targetNames: plan.targetNames,
     });
+  }
+}
+
+/**
+ * Host CNG invariant: only delete root-level `*.swift` under ExpoTargetsGenerated.
+ * Never recursively wipe product subdirs (sealed target build output).
+ */
+export function clearRootGeneratedSwiftFiles(outDir: string): void {
+  if (!fs.existsSync(outDir)) {
+    return;
+  }
+  for (const existing of fs.readdirSync(outDir)) {
+    if (existing.endsWith('.swift')) {
+      fs.unlinkSync(path.join(outDir, existing));
+    }
   }
 }
 
@@ -145,17 +156,17 @@ function ensureGeneratedGroup(
     project.findPBXGroupKey({ path: projectName });
 
   let generatedGroupKey = project.findPBXGroupKey({
-    name: GENERATED_DIR_NAME,
+    name: Paths.GENERATED_DIR_NAME,
   });
   if (!generatedGroupKey && appGroupKey) {
     // Name-only group (no path) — file refs use ios/<App>/ExpoTargetsGenerated/…
     // like AppDelegate under the app group (path = ETTrick/AppDelegate.swift).
-    generatedGroupKey = project.pbxCreateGroup(GENERATED_DIR_NAME, undefined);
+    generatedGroupKey = project.pbxCreateGroup(Paths.GENERATED_DIR_NAME, undefined);
     const mainGroup = project.hash.project.objects.PBXGroup[appGroupKey];
     if (mainGroup?.children) {
       mainGroup.children.push({
         value: generatedGroupKey,
-        comment: GENERATED_DIR_NAME,
+        comment: Paths.GENERATED_DIR_NAME,
       });
     }
   }
@@ -316,7 +327,7 @@ function ensureWrittenPaths(
   if (written.length > 0) return;
   for (const plan of plans) {
     written.push({
-      relativePath: `${projectName}/${GENERATED_DIR_NAME}/${plan.fileName}`,
+      relativePath: `${projectName}/${Paths.GENERATED_DIR_NAME}/${plan.fileName}`,
       fileName: plan.fileName,
       targetNames: plan.targetNames,
     });

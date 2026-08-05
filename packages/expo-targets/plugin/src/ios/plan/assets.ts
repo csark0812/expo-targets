@@ -17,17 +17,17 @@ const IMESSAGE_APP_ICON = 'iMessage App Icon.stickersiconset';
 
 function planColorsets({
   props,
-  projectRoot,
+  paths,
 }: {
   props: IOSTargetProps;
-  projectRoot: string;
+  paths: ProjectPaths;
 }): ColorsetPlan[] {
   return Object.entries(props.colors || {}).map(([name, value]) => {
     const colorsetPath = Paths.getTargetColorsetPath({
-      projectRoot,
-      targetDirectory: props.directory,
+      platformProjectRoot: paths.platformProjectRoot,
+      projectName: paths.projectName,
+      productName: Paths.sanitizeTargetName(props.displayName || props.name),
       colorName: name,
-      buildSubdirectory: props.buildSubdirectory,
     });
 
     if (typeof value === 'string') {
@@ -55,7 +55,7 @@ function planStickerPacks({
 }): StickerPackPlan[] {
   return (props.stickerPacks || []).map((pack) => {
     // Packs must live in the same Stickers.xcassets Xcode references
-    // (targets/.../ios/build/), not the legacy ios/<Target>/ catalog.
+    // (ExpoTargetsGenerated/<Product>/), not a co-located user catalog.
     const stickerPackPath = path.join(
       buildAssetsPath,
       `${pack.name}.stickerpack`
@@ -118,10 +118,10 @@ export function planAssets({
 }): AssetPlan {
   const isStickers = props.type === 'stickers';
   const buildAssetsPath = Paths.getTargetAssetsPath({
-    projectRoot: paths.projectRoot,
-    targetDirectory: props.directory,
+    platformProjectRoot: paths.platformProjectRoot,
+    projectName: paths.projectName,
+    productName: Paths.sanitizeTargetName(props.displayName || props.name),
     isStickers,
-    buildSubdirectory: props.buildSubdirectory,
   });
 
   return {
@@ -130,7 +130,7 @@ export function planAssets({
     referencePath: path.relative(paths.platformProjectRoot, buildAssetsPath),
     userAssetsPath: workspace.userAssetsPath,
     copyUserAssets: workspace.hasUserAssets,
-    colorsets: planColorsets({ props, projectRoot: paths.projectRoot }),
+    colorsets: planColorsets({ props, paths }),
     stickers: isStickers
       ? planStickers({ props, paths, buildAssetsPath })
       : undefined,

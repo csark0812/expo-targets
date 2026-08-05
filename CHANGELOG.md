@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Breaking (iOS sealed build):** Plugin-generated target artifacts move from `targets/*/ios/build/` to `ios/<App>/ExpoTargetsGenerated/<SanitizedProductName>/` (Info.plist, entitlements, Assets, RN/Messages stubs, Safari Resources). Host Live Activity / App Shortcuts Swift stays flat under `ExpoTargetsGenerated/*.swift`. Re-run `expo prebuild` (or `expo-targets sync`). Update any scripts that `cp` into the old path — on apply the plugin deletes that target’s legacy `targets/<name>/ios/build` when present. Do not hand-edit sealed or legacy build dirs. See `docs/widgets.md` and Safari Resources in `docs/configuration.md`.
+- Removed Maestro example smoke YAML / `examples:maestro:*` scripts — Devicewright is the sole example journey surface (`examples/.devicewright/`).
 - Devicewright expansions (Sim-greenable): share/action(+native) image UTTypes + typed host markers; safari popup/content-script/native-msg host surfaces; content-blocker richer rules + host reload/rule-count; widgets family markers; keyboard type-into-field; photo-edit Done persistence; clip(+native) launchApp invocation; touchpoints updated.
 - `docs/limits.md`: max Sim-greenable (**P**) policy, S3a spike gate, leftover register, currently-green expansion backlog.
 - Live Activity CLAIMS narrowed to DI / push / StandBy (+ Watch after S3a); NCE expand→custom UI required (removed `notification-content` os-limit row).

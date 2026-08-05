@@ -141,111 +141,90 @@ export function getStickerPackPath({
 
 /**
  * ============================================================================
- * NEW: Reference-in-Place Path Utilities
+ * Sealed generated artifacts (CNG)
  * ============================================================================
- * The following functions return paths within targets/ directory where files
- * are referenced in place rather than copied to ios/. Generated files (Info.plist,
- * Assets.xcassets, entitlements) go in targets/TARGETNAME/ios/build/, while user Swift
- * files remain in targets/TARGETNAME/ios/.
+ * User Swift stays in targets/<name>/ios/ (referenced in place). Plugin-generated
+ * Info.plist, Assets, entitlements, and stub Swift live under
+ * ios/<App>/ExpoTargetsGenerated/<ProductName>/ (gitignored, always rewrite).
  */
 
+/** Shared with host Live Activity / App Shortcuts CNG. */
+export const GENERATED_DIR_NAME = 'ExpoTargetsGenerated';
+
 /**
- * Get build output directory in targets/ folder.
- * This is where generated files (Info.plist, Assets, entitlements) are placed.
- * Optional buildSubdirectory for auto-generated targets (e.g., intent-ui from combined config).
+ * Absolute path to the sealed build output for one Xcode product.
+ * `productName` must already be `sanitizeTargetName(...)`.
  */
 export function getTargetBuildPath({
-  projectRoot,
-  targetDirectory,
-  buildSubdirectory,
+  platformProjectRoot,
+  projectName,
+  productName,
 }: {
-  projectRoot: string;
-  targetDirectory: string;
-  buildSubdirectory?: string;
-}): string {
-  const basePath = path.join(projectRoot, targetDirectory, 'ios', 'build');
-  return buildSubdirectory ? path.join(basePath, buildSubdirectory) : basePath;
-}
-
-/**
- * Get path to Info.plist in targets/TARGETNAME/ios/build/.
- * New approach: Info.plist generated in targets/, referenced from Xcode.
- */
-export function getTargetInfoPlistPath({
-  projectRoot,
-  targetDirectory,
-  buildSubdirectory,
-}: {
-  projectRoot: string;
-  targetDirectory: string;
-  buildSubdirectory?: string;
+  platformProjectRoot: string;
+  projectName: string;
+  productName: string;
 }): string {
   return path.join(
-    getTargetBuildPath({ projectRoot, targetDirectory, buildSubdirectory }),
-    'Info.plist'
+    platformProjectRoot,
+    projectName,
+    GENERATED_DIR_NAME,
+    productName
   );
 }
 
-/**
- * Get path to entitlements file in targets/TARGETNAME/ios/build/.
- * New approach: Entitlements generated in targets/, referenced from Xcode.
- */
-export function getTargetEntitlementsPath({
+/** Legacy path under targets/ — deleted on apply after migration. */
+export function getLegacyTargetBuildPath({
   projectRoot,
   targetDirectory,
-  buildSubdirectory,
 }: {
   projectRoot: string;
   targetDirectory: string;
-  buildSubdirectory?: string;
 }): string {
-  return path.join(
-    getTargetBuildPath({ projectRoot, targetDirectory, buildSubdirectory }),
-    'generated.entitlements'
-  );
+  return path.join(projectRoot, targetDirectory, 'ios', 'build');
 }
 
 /**
- * Get path to Assets.xcassets in targets/TARGETNAME/ios/build/.
- * New approach: Assets generated/copied to targets/, referenced from Xcode.
+ * Get path to Info.plist in ios/<App>/ExpoTargetsGenerated/<Product>/.
+ */
+export function getTargetInfoPlistPath(
+  options: Parameters<typeof getTargetBuildPath>[0]
+): string {
+  return path.join(getTargetBuildPath(options), 'Info.plist');
+}
+
+/**
+ * Get path to entitlements in ios/<App>/ExpoTargetsGenerated/<Product>/.
+ */
+export function getTargetEntitlementsPath(
+  options: Parameters<typeof getTargetBuildPath>[0]
+): string {
+  return path.join(getTargetBuildPath(options), 'generated.entitlements');
+}
+
+/**
+ * Get path to Assets.xcassets in ios/<App>/ExpoTargetsGenerated/<Product>/.
  * For sticker targets, returns Stickers.xcassets instead.
  */
 export function getTargetAssetsPath({
-  projectRoot,
-  targetDirectory,
   isStickers,
-  buildSubdirectory,
-}: {
-  projectRoot: string;
-  targetDirectory: string;
+  ...buildPathOptions
+}: Parameters<typeof getTargetBuildPath>[0] & {
   isStickers?: boolean;
-  buildSubdirectory?: string;
 }): string {
   const assetsFolderName = isStickers ? 'Stickers.xcassets' : 'Assets.xcassets';
-  return path.join(
-    getTargetBuildPath({ projectRoot, targetDirectory, buildSubdirectory }),
-    assetsFolderName
-  );
+  return path.join(getTargetBuildPath(buildPathOptions), assetsFolderName);
 }
 
 /**
- * Get path to a specific colorset in targets/TARGETNAME/ios/build/Assets.xcassets/.
+ * Get path to a colorset in ExpoTargetsGenerated/<Product>/Assets.xcassets/.
  */
 export function getTargetColorsetPath({
-  projectRoot,
-  targetDirectory,
   colorName,
-  buildSubdirectory,
-}: {
-  projectRoot: string;
-  targetDirectory: string;
+  ...assetsOptions
+}: Parameters<typeof getTargetAssetsPath>[0] & {
   colorName: string;
-  buildSubdirectory?: string;
 }): string {
-  return path.join(
-    getTargetAssetsPath({ projectRoot, targetDirectory, buildSubdirectory }),
-    `${colorName}.colorset`
-  );
+  return path.join(getTargetAssetsPath(assetsOptions), `${colorName}.colorset`);
 }
 
 /**

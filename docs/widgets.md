@@ -2,7 +2,7 @@
 
 **Source of truth for** WidgetKit / ActivityKit ownership in expo-targets.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-04 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-05 -->
 
 ## Ownership
 
@@ -19,9 +19,12 @@ Do **not** configure both `expo-widgets` and expo-targets to generate WidgetKit 
 | Zone | Path | Write policy | Git |
 | --- | --- | --- | --- |
 | CNG generated (sealed) | `ios/<App>/ExpoTargetsGenerated/` | Always rewrite on prebuild | Gitignored |
+| Sealed target build | `ios/<App>/ExpoTargetsGenerated/<Product>/` | Always rewrite (Info.plist, assets, stubs) | Gitignored |
 | User deepen | `targets/<name>/ios/` | Never overwrite if exists; scaffolder creates once | Commit |
 
-Never edit `ExpoTargetsGenerated/`. Live Activity **attributes** + host **bridge** are generated there (attributes are dual-membered into the main app and the widget). Put `ActivityConfiguration` UI under `targets/<widget>/ios/`.
+Never edit `ExpoTargetsGenerated/`. Host Live Activity **attributes** + **bridge** (and App Shortcuts shells) are **flat** `*.swift` at the ExpoTargetsGenerated root. Per-target sealed artifacts (Info.plist, entitlements, Assets, RN stubs, Safari Resources) live in a **product subdirectory** named with the sanitized Xcode product name. Put `ActivityConfiguration` UI under `targets/<widget>/ios/`.
+
+Host CNG deletes only root-level `*.swift` under `ExpoTargetsGenerated/` — it never recursively wipes product subdirs.
 
 ## Live Activity config
 

@@ -67,9 +67,9 @@ function planEntitlementsSetting({
   paths: ProjectPaths;
 }): Record<string, string> {
   const entitlementsPath = Paths.getTargetEntitlementsPath({
-    projectRoot: paths.projectRoot,
-    targetDirectory: props.directory,
-    buildSubdirectory: props.buildSubdirectory,
+    platformProjectRoot: paths.platformProjectRoot,
+    projectName: paths.projectName,
+    productName: Paths.sanitizeTargetName(props.displayName || props.name),
   });
 
   return {

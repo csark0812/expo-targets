@@ -25,9 +25,9 @@ export function planEntitlements({
   mainBundleIdentifier?: string;
   mainAppGroups?: string[];
   paths: {
-    projectRoot: string;
-    targetDirectory: string;
-    buildSubdirectory?: string;
+    platformProjectRoot: string;
+    projectName: string;
+    productName: string;
   };
 }): EntitlementsPlan {
   const entitlementsPath = Paths.getTargetEntitlementsPath(paths);

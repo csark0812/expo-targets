@@ -1,6 +1,6 @@
 # Widgets example
 
-Native WidgetKit Hello widget with `createTarget` host, Devicewright spine journey, and Maestro smoke.
+Native WidgetKit Hello widget with `createTarget` host and Devicewright spine journey.
 
 For Live Activities + multi-target showcase, see [`examples/trick`](../trick). Ownership policy: [`docs/widgets.md`](../../docs/widgets.md).
 

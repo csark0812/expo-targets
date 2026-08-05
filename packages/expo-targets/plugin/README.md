@@ -2,7 +2,7 @@
 
 **Source of truth for** the config plugin's internal architecture.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-04 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-05 -->
 
 This is the internals guide for `packages/expo-targets/plugin`. For user-facing
 configuration see [configuration.md](../../../docs/configuration.md).
@@ -13,12 +13,17 @@ configuration see [configuration.md](../../../docs/configuration.md).
 xcodeproj mod runs **after** extension targets exist (Expo mods are LIFO). It
 reads `extra.targets` at mod time, rewrites sealed Swift under
 `ios/<App>/ExpoTargetsGenerated/` (gitignored), and sets Sources membership
-(add-to-build-phase once per needed target):
+(add-to-build-phase once per needed target). Per-target sealed build output
+(Info.plist, entitlements, Assets, stubs) nests under
+`ExpoTargetsGenerated/<SanitizedProductName>/` — host LA/App Shortcuts Swift
+stays flat at the ExpoTargetsGenerated root. Host CNG only deletes root-level
+`*.swift` (never product subdirs).
 
 | Surface | Generated files | Membership |
 | --- | --- | --- |
 | Live Activity | `{Attributes}.swift`, `{Attributes}Bridge.swift` | attributes → main + widget; bridge → main |
 | App Shortcuts | `{Intent}.generated.swift`, `ExpoTargetsAppShortcuts.swift` | main |
+| Target sealed build | `Info.plist`, `generated.entitlements`, Assets, stubs | extension product |
 | Perform hooks | _(not generated)_ `targets/*/ios/{Hook}.swift` | main (user-owned) |
 
 User deepen Swift stays under `targets/*/ios/` and is never overwritten. See

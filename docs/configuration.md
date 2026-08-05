@@ -2,7 +2,7 @@
 
 **Source of truth for** `expo-target.config` options and extension types.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-04 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-05 -->
 
 > **Orphan-stub freeze:** do not add new `ExtensionType` values without registry + scaffold + example + Devicewright row. See [deprecations.md](./deprecations.md). Widgets policy: [widgets.md](./widgets.md).
 
@@ -1104,10 +1104,12 @@ After `npx expo prebuild`, build the web bundle:
 # From your project root
 npx expo export --platform web --output-dir ios/build/safari-resources
 
-# Copy to extension Resources (the prebuild creates a placeholder popup.js)
-cp ios/build/safari-resources/bundle.js ios/[AppName]/targets/[ExtName]/ios/build/Resources/popup.js
+# Copy into the sealed Safari Resources folder (product name = sanitized displayName/name)
+# Example: ios/MyApp/ExpoTargetsGenerated/MySafariTarget/Resources/popup.js
+cp ios/build/safari-resources/bundle.js ios/[AppName]/ExpoTargetsGenerated/[ProductName]/Resources/popup.js
 ```
 
+After upgrading from older expo-targets that wrote `targets/*/ios/build/`, re-run prebuild (or sync) once. Update any scripts that copied into the legacy `targets/*/ios/build/` path — that directory is deleted on apply when the sealed path is written.
 ### Mode 2: Native/Manual
 
 For full control, provide your own web resources without an `entry` field. The Swift handler is still auto-generated.
@@ -1484,7 +1486,7 @@ import AppIntents
 struct MyAppIntentExtension: AppIntentsExtension {}
 ```
 
-**Filesystem zones:** generated shells/provider → `ios/*/ExpoTargetsGenerated/` (gitignored); perform hooks + empty `@main` extension → `targets/*/ios/` (committed). See [widgets.md](./widgets.md) for the same zone rule on Live Activities.
+**Filesystem zones:** host shells/provider → flat under `ios/*/ExpoTargetsGenerated/` (gitignored); per-target sealed build → `ExpoTargetsGenerated/<Product>/`; perform hooks + empty `@main` extension → `targets/*/ios/` (committed). See [widgets.md](./widgets.md) for the same zone rule on Live Activities.
 
 **When to use App Intents vs legacy Intent:**
 

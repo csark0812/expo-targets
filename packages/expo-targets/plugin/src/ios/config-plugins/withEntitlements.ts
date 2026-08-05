@@ -5,10 +5,12 @@ import type { ExtensionType } from '../../config';
 import { APP_GROUP_ENTITLEMENT_KEY } from '../../domain';
 import type { Logger } from '../../logger';
 import { writeEntitlements } from '../apply/fs';
+import { getProjectName } from '../apply/pbx';
 import { planEntitlements } from '../plan/entitlements';
+import * as Paths from '../utils/paths';
 
 /**
- * Generate `generated.entitlements` for a target in its build directory.
+ * Generate `generated.entitlements` for a target in its sealed build directory.
  */
 export const withTargetEntitlements: ConfigPlugin<{
   targetName: string;
@@ -21,7 +23,10 @@ export const withTargetEntitlements: ConfigPlugin<{
   withDangerousMod(config, [
     'ios',
     async (config) => {
-      const { projectRoot } = config.modRequest;
+      const { projectRoot, platformProjectRoot } = config.modRequest;
+      const projectName =
+        config.modRequest.projectName || getProjectName(platformProjectRoot);
+      const productName = Paths.sanitizeTargetName(props.targetName);
 
       const plan = planEntitlements({
         type: props.type,
@@ -31,9 +36,9 @@ export const withTargetEntitlements: ConfigPlugin<{
           | string[]
           | undefined,
         paths: {
-          projectRoot,
-          targetDirectory: props.targetDirectory,
-          buildSubdirectory: props.buildSubdirectory,
+          platformProjectRoot,
+          projectName,
+          productName,
         },
       });
 

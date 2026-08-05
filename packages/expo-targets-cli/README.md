@@ -54,7 +54,7 @@ The CLI tool applies the same transformations as `expo prebuild` but directly to
 2. Updates Xcode project to reference files in place
 3. Creates virtual `expo:targets` folder structure in Xcode
 4. Updates Podfile with target-specific configurations
-5. Generates build artifacts in `targets/*/ios/build/`
+5. Generates sealed build artifacts under `ios/<App>/ExpoTargetsGenerated/<Product>/`
 
 ## Workflow
 
