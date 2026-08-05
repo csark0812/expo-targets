@@ -161,7 +161,10 @@ function ensureGeneratedGroup(
   if (!generatedGroupKey && appGroupKey) {
     // Name-only group (no path) — file refs use ios/<App>/ExpoTargetsGenerated/…
     // like AppDelegate under the app group (path = ETTrick/AppDelegate.swift).
-    generatedGroupKey = project.pbxCreateGroup(Paths.GENERATED_DIR_NAME, undefined);
+    generatedGroupKey = project.pbxCreateGroup(
+      Paths.GENERATED_DIR_NAME,
+      undefined
+    );
     const mainGroup = project.hash.project.objects.PBXGroup[appGroupKey];
     if (mainGroup?.children) {
       mainGroup.children.push({

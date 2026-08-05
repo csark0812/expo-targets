@@ -7,7 +7,7 @@
 
 export { applyPodfilePlan } from './applyPodfilePlan';
 export * from './podfile';
-export type { PodfileTargetRef, ExcludedPackagesTargetRef } from './scan';
+export type { ExcludedPackagesTargetRef, PodfileTargetRef } from './scan';
 export {
   findExcludedPackagesTargets,
   findReactNativeExtensionTargets,

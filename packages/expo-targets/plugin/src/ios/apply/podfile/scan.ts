@@ -21,8 +21,7 @@ const PLATFORM_LINE = /platform\s+:ios,\s+'([^']+)'/;
 const STANDALONE_TARGET =
   /target\s+'([^']+)'\s+do\s+platform\s+:ios,\s+'([^']+)'/g;
 /** Keep in sync with EXCLUDED_PACKAGES_MARKER in podfile.ts */
-const EXCLUDED_PACKAGES_LINE =
-  /# \[expo-targets-excluded-packages\]\s*(.+)/;
+const EXCLUDED_PACKAGES_LINE = /# \[expo-targets-excluded-packages\]\s*(.+)/;
 
 /**
  * The main target's block, up to the `post_install` hook when there is one.

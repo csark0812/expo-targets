@@ -78,7 +78,7 @@ describe('getTargetInfoPlistForType golden output', () => {
   });
 });
 
-describe('getTargetInfoPlistForType options', () => {
+describe('getTargetInfoPlistForType displayName', () => {
   test('displayName becomes CFBundleDisplayName and CFBundleName (not PRODUCT_NAME)', () => {
     const parsed = plist.parse(
       getTargetInfoPlistForType('stickers', { displayName: 'Fun Stickers' })
@@ -94,7 +94,9 @@ describe('getTargetInfoPlistForType options', () => {
     expect(parsed.CFBundleDisplayName).toBe('Super');
     expect(parsed.CFBundleName).toBe('Super');
   });
+});
 
+describe('getTargetInfoPlistForType options', () => {
   test('watch companion sets WKCompanionAppBundleIdentifier', () => {
     const parsed = plist.parse(
       getTargetInfoPlistForType('watch', {

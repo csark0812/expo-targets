@@ -13,12 +13,12 @@ describe('clearRootGeneratedSwiftFiles', () => {
       const productDir = path.join(outDir, 'ShareMinimalTarget');
       fs.mkdirSync(productDir, { recursive: true });
 
-      fs.writeFileSync(path.join(outDir, 'LiveActivityBridge.swift'), '// host\n');
-      fs.writeFileSync(path.join(outDir, 'KeepMe.txt'), 'not swift\n');
       fs.writeFileSync(
-        path.join(productDir, 'Info.plist'),
-        '<plist/>\n'
+        path.join(outDir, 'LiveActivityBridge.swift'),
+        '// host\n'
       );
+      fs.writeFileSync(path.join(outDir, 'KeepMe.txt'), 'not swift\n');
+      fs.writeFileSync(path.join(productDir, 'Info.plist'), '<plist/>\n');
       fs.writeFileSync(
         path.join(productDir, 'ReactNativeViewController.swift'),
         '// sealed\n'
@@ -32,9 +32,7 @@ describe('clearRootGeneratedSwiftFiles', () => {
       expect(fs.existsSync(path.join(outDir, 'KeepMe.txt'))).toBe(true);
       expect(fs.existsSync(path.join(productDir, 'Info.plist'))).toBe(true);
       expect(
-        fs.existsSync(
-          path.join(productDir, 'ReactNativeViewController.swift')
-        )
+        fs.existsSync(path.join(productDir, 'ReactNativeViewController.swift'))
       ).toBe(true);
     } finally {
       removeTempDir(root);
