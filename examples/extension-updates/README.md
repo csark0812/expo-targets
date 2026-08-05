@@ -10,8 +10,25 @@ Suite how-to: [../README.md](../README.md). Feature docs: [../../docs/react-nati
 | --- | --- |
 | Host | `Host OTA: ota-v1` (`targets/share/otaLabel.ts`) |
 | Release share sheet | `OTA: ota-v1` (same file, Hermes-exported into App Group) |
+| Host + share | `env: spike-env-v1` (`EXPO_PUBLIC_SPIKE_TAG` from `.env`) |
+| Share | Orange `spike.png` + `font: Menlo (system)` |
 
-Bump `OTA_LABEL`, publish an update, fetch on device — both should change without a store rebuild.
+Bump `OTA_LABEL`, publish an update, fetch on device — both OTA labels should change without a store rebuild.
+
+### Spike: fonts / images / env across targets + OTA
+
+| Kind | DEBUG (Metro) | Release embed | After App Group OTA |
+| --- | --- | --- | --- |
+| JS / `OTA_LABEL` / `EXPO_PUBLIC_*` | live | baked into appex jsbundle | **updates** (sideloaded jsbundle) |
+| `require()` image | Metro serves | Xcode packs next to appex bundle | **gap** — only `main.jsbundle` is installed; image files beside App Group URL are missing |
+| System font (`Menlo`) | OK | OK | OK (no asset file) |
+| Custom `.ttf` via `expo-font` | OK if linked | OK if packed in appex | **same gap** as images |
+
+`export-extension-bundles` runs `expo export:embed --assets-dest` but discards that tree (locked by unit test). Host `eas update` and extension Hermes export are **separate** inlines of `EXPO_PUBLIC_*` — change `.env` between them and the tags can disagree.
+
+```bash
+cp .env.example .env   # once
+```
 
 ## Setup (once)
 

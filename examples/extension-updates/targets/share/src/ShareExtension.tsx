@@ -1,7 +1,14 @@
 import type { ExtensionTarget } from 'expo-targets';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 import { OTA_LABEL } from '../otaLabel';
+import { SPIKE_ENV_TAG } from '../spikeMarkers';
 
 type Props = {
   target: ExtensionTarget;
@@ -16,6 +23,18 @@ export default function ShareExtension({ target, text, url }: Props) {
       <View style={styles.otaBadge} testID="share-ota-label">
         <Text style={styles.ota}>OTA: {OTA_LABEL}</Text>
       </View>
+      <Text testID="share-env-tag" style={styles.meta}>
+        env: {SPIKE_ENV_TAG}
+      </Text>
+      <Text testID="share-font-system" style={styles.systemFont}>
+        font: Menlo (system)
+      </Text>
+      <Image
+        testID="share-spike-image"
+        source={require('../assets/spike.png')}
+        style={styles.spikeImage}
+        accessibilityLabel="spike-image"
+      />
       <Text testID="share-payload">{text || url || 'No content'}</Text>
       <TouchableOpacity
         style={styles.button}
@@ -32,7 +51,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    gap: 12,
+    gap: 10,
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
   },
@@ -50,6 +69,19 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '800',
     color: '#007755',
+  },
+  meta: { fontSize: 13, color: '#333333' },
+  systemFont: {
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Menlo',
+    color: '#222222',
+  },
+  spikeImage: {
+    width: 64,
+    height: 64,
+    borderRadius: 8,
+    backgroundColor: '#FFE0CC',
   },
   button: {
     backgroundColor: '#007AFF',

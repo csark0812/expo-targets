@@ -134,4 +134,85 @@ describe('hermesExport', () => {
       fs.rmSync(project, { recursive: true, force: true });
     }
   });
+
+  test('publish layout drops Metro --assets-dest files (OTA image gap)', () => {
+    const project = fs.mkdtempSync(path.join(os.tmpdir(), 'et-assets-gap-'));
+    try {
+      fs.writeFileSync(
+        path.join(project, 'app.json'),
+        JSON.stringify({
+          expo: {
+            name: 'gap',
+            slug: 'gap',
+            runtimeVersion: '1.0.0',
+            extra: { targets: [] },
+          },
+        })
+      );
+      const targetDir = path.join(project, 'targets', 'share');
+      fs.mkdirSync(targetDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(targetDir, 'expo-target.config.json'),
+        JSON.stringify({
+          type: 'share',
+          name: 'Share',
+          entry: './targets/share/index.tsx',
+        })
+      );
+      fs.writeFileSync(
+        path.join(targetDir, 'index.tsx'),
+        'export default () => null;\n'
+      );
+
+      const dist = path.join(project, 'dist');
+      const assets = path.join(project, 'assets', 'expo-targets');
+      const { code } = runExportExtensionBundles({
+        projectRoot: project,
+        distRoot: dist,
+        assetsRoot: assets,
+        hermes: true,
+        runHermes: (_cmd, args) => {
+          const bundleArgIdx = args.indexOf('--bundle-output');
+          const assetsArgIdx = args.indexOf('--assets-dest');
+          const out = args[bundleArgIdx + 1];
+          const assetsDest = args[assetsArgIdx + 1];
+          if (out) {
+            fs.mkdirSync(path.dirname(out), { recursive: true });
+            fs.writeFileSync(out, Buffer.from('// hermes fake\n'));
+          }
+          if (assetsDest) {
+            const packed = path.join(
+              assetsDest,
+              'assets',
+              'node_modules',
+              'spike.png'
+            );
+            fs.mkdirSync(path.dirname(packed), { recursive: true });
+            fs.writeFileSync(packed, Buffer.from([0xff, 0xd8, 0xff]));
+          }
+          return {
+            status: 0,
+            pid: 1,
+            output: [],
+            stdout: '',
+            stderr: '',
+            signal: null,
+          };
+        },
+      });
+      expect(code).toBe(0);
+      const publishDir = path.join(dist, 'expo-targets', 'bundles', 'Share');
+      expect(fs.existsSync(path.join(publishDir, 'main.jsbundle'))).toBe(true);
+      expect(fs.existsSync(path.join(publishDir, 'manifest.json'))).toBe(true);
+      // Gap: image tree from --assets-dest is not copied into the publish layout.
+      const leftover = fs
+        .readdirSync(publishDir, { recursive: true })
+        .map(String);
+      expect(leftover.some((p) => p.endsWith('.png') || p.endsWith('.jpg'))).toBe(
+        false
+      );
+    } finally {
+      fs.rmSync(project, { recursive: true, force: true });
+    }
+  });
 });

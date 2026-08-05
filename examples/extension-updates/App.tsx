@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 
 import { OTA_LABEL } from './targets/share/otaLabel';
+import { SPIKE_ENV_TAG } from './targets/share/spikeMarkers';
 
 type HostButtonProps = {
   testID: string;
@@ -107,6 +108,9 @@ export default function App() {
       <Text style={styles.title}>Extension Updates</Text>
       <Text testID="host-ota-label" style={styles.ota}>
         Host OTA: {OTA_LABEL}
+      </Text>
+      <Text testID="host-env-tag" style={styles.meta}>
+        env: {SPIKE_ENV_TAG}
       </Text>
       <Text testID="updates-meta" style={styles.meta}>
         embedded={String(Updates.isEmbeddedLaunch)}
