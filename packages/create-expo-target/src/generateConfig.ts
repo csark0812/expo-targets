@@ -5,6 +5,9 @@ export type GenerateConfigOptions = {
   platforms: string[];
   useReactNative?: boolean;
   includeIntentUi?: boolean;
+  appGroup?: string;
+  includeLiveActivity?: boolean;
+  liveActivityAttributesName?: string;
 };
 
 function formatDisplayName(kebabName: string): string {
@@ -53,6 +56,57 @@ function applyWalletIosConfig(
   };
 }
 
+function applyLiveActivityConfig(
+  config: Record<string, unknown>,
+  options: GenerateConfigOptions
+): void {
+  if (
+    options.type !== 'widget' ||
+    !options.includeLiveActivity ||
+    !options.platforms.includes('ios')
+  ) {
+    return;
+  }
+  const attributesName =
+    options.liveActivityAttributesName ?? `${options.pascalName}Attributes`;
+  config.liveActivity = {
+    attributesName,
+    static: { title: 'string' },
+    contentState: { status: 'string' },
+  };
+}
+
+function applyAppIntentIosConfig(
+  config: Record<string, unknown>,
+  options: GenerateConfigOptions
+): void {
+  if (options.type !== 'app-intent' || !options.platforms.includes('ios')) {
+    return;
+  }
+  const className = `${options.pascalName}Intent`;
+  const performHook = `${options.pascalName}IntentPerform`;
+  const title = formatDisplayName(options.kebabName);
+  config.ios = {
+    appIntents: [
+      {
+        className,
+        title,
+        description: `${title} shortcut`,
+        openAppWhenRun: true,
+        performHook,
+      },
+    ],
+    appShortcuts: [
+      {
+        intent: className,
+        phrases: [`Run ${title} in \\(.applicationName)`],
+        shortTitle: title,
+        systemImageName: 'app',
+      },
+    ],
+  };
+}
+
 export function generateConfig(options: GenerateConfigOptions): string {
   const configType = options.type === 'imessage' ? 'stickers' : options.type;
   const config: Record<string, unknown> = {
@@ -62,9 +116,15 @@ export function generateConfig(options: GenerateConfigOptions): string {
     platforms: options.platforms,
   };
 
+  if (options.appGroup) {
+    config.appGroup = options.appGroup;
+  }
+
   applyReactNativeConfig(config, options);
   applyIntentIosConfig(config, options);
   applyWalletIosConfig(config, options);
+  applyLiveActivityConfig(config, options);
+  applyAppIntentIosConfig(config, options);
 
   return JSON.stringify(config, null, 2);
 }

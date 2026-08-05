@@ -2,7 +2,7 @@
 
 **Source of truth for** the JavaScript/TypeScript runtime API.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-02 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-04 -->
 
 > Widget targets: first-class native WidgetKit + Live Activities — see [widgets.md](./widgets.md).
 
@@ -434,6 +434,68 @@ storage.refresh("WidgetName");
 
 ---
 
+## FileProviderDomain
+
+Register / unregister an `NSFileProviderDomain` using identity from `ios.fileProviderDomain` in the file-provider target config (strict CNG — JS may pass `targetName` or assert values; mismatch throws). Zero-arg when exactly one file-provider target exists.
+
+```typescript
+import { FileProviderDomain } from "expo-targets";
+
+await FileProviderDomain.register();
+await FileProviderDomain.register({ targetName: "MyFiles" });
+await FileProviderDomain.unregister({ targetName: "MyFiles" });
+```
+
+Config:
+
+```json
+{
+  "type": "file-provider",
+  "ios": {
+    "fileProviderDomain": {
+      "identifier": "com.example.app.files",
+      "displayName": "My Files"
+    }
+  }
+}
+```
+
+---
+
+## ContentBlocker
+
+Reload Safari content-blocker rules for the plugin-derived bundle id. Zero-arg when uniquely one content-blocker target.
+
+```typescript
+import { ContentBlocker } from "expo-targets";
+
+await ContentBlocker.reload();
+await ContentBlocker.reload({ targetName: "MyBlocker" });
+```
+
+---
+
+## LiveActivity
+
+Start / update / end ActivityKit Live Activities. `attributesName` must match `liveActivity.attributesName` on a widget target — unknown names throw with the configured list. Prefer `LiveActivity.create(name)` (widgets-like factory).
+
+```typescript
+import { LiveActivity } from "expo-targets";
+
+const order = LiveActivity.create("OrderAttributes");
+const id = await order.start({
+  attributes: { orderId: "12" },
+  contentState: { status: "preparing", progress: 0.1 },
+});
+await order.update(id, { status: "ready", progress: 1 });
+await LiveActivity.end(id);
+await LiveActivity.endAll();
+```
+
+Attributes + host bridge are CNG into `ios/*/ExpoTargetsGenerated/` (gitignored). Activity UI stays under `targets/<widget>/ios/`. See [widgets.md](./widgets.md).
+
+---
+
 ## CLI Commands
 
 ### create-expo-target
@@ -446,20 +508,25 @@ npx create-expo-target
 
 **Prompts:**
 
-1. **Type:** Widget, App Clip, iMessage Stickers, Messages App, Share Extension, or Action Extension
+1. **Type:** Widget (optional Live Activity), App Intent, Share, and other extension types
 2. **Name:** Target name in kebab-case (e.g., `my-widget`)
-3. **Platforms:** iOS (Android coming soon)
-4. **Use React Native?** (only for share/action/clip/messages) — Whether to use React Native for UI
+3. **Platforms:** iOS (Android widgets bridge-grade)
+4. **Use React Native?** (only for share/action/clip) — Whether to use React Native for UI
+5. **Live Activity?** (widget only) — Emits `liveActivity` config + one-shot UI bootstrap
+
+App Group is baked from `app.json` entitlements (`com.apple.security.application-groups`) into `expo-target.config.json` and Swift templates when present.
 
 **What it creates:**
 
 ```
 targets/{name}/
-├── expo-target.config.json  # Configuration
+├── expo-target.config.json  # Configuration (incl. appGroup when resolved)
 ├── index.ts                 # Pre-configured target instance
 └── ios/
     └── {Main}.swift         # Template code for the extension type
 ```
+
+Widget + Live Activity also creates `LiveActivity.swift` + a `WidgetBundle`. App Intent creates an empty `AppIntentExtension.swift` plus a user-owned `*IntentPerform.swift` hook.
 
 If you choose "Use React Native for UI", it also creates:
 
@@ -479,10 +546,6 @@ $ npx create-expo-target
 ✅ Created target at targets/share-content
 ✅ Created entry file: targets/share-content/index.tsx
 📝 Remember to add Metro config wrapper to metro.config.js
-
-⚠️  Remember to:
-   1. Update "appGroup" in expo-target.config.json to match your app.json
-   2. Update the App Group ID in ios/Widget.swift to match
 
 Run `npx expo prebuild` to generate Xcode project
 ```
@@ -618,6 +681,9 @@ interface NonExtensionTarget extends BaseTarget {
 | `refresh()`               | ✅ iOS 14+ | ✅ API 26+ |
 | `refreshAllTargets()`     | ✅ iOS 14+ | ✅ API 26+ |
 | `clearSharedData()`       | ✅ iOS 13+ | ✅ API 26+ |
+| `FileProviderDomain.*`    | ✅ iOS 11+ | —          |
+| `ContentBlocker.reload`   | ✅ iOS 11+ | —          |
+| `LiveActivity.*`          | ✅ iOS 16.2+ | —        |
 | `close()`                 | ✅ iOS 13+ | 🔜         |
 | `openHostApp()`           | ✅ iOS 13+ | 🔜         |
 | `getSharedData()`         | ✅ iOS 13+ | 🔜         |
@@ -656,5 +722,7 @@ interface NonExtensionTarget extends BaseTarget {
 | -------------------------- | ---------------------------------- | ------------------------------------------------------------ |
 | `Target "X" not found`     | Target name doesn't match config   | Check `createTarget('X')` matches `"name"` in config exactly |
 | `App Group not configured` | Missing `appGroup` in config       | Add `appGroup` to `expo-target.config.json` or `app.json`    |
+| `Unknown Live Activity attributesName` | Name not in widget `liveActivity` | Use a configured `attributesName` / `LiveActivity.create` |
+| `fileProviderDomain` missing | FP target lacks domain config      | Add `ios.fileProviderDomain` to the file-provider config     |
 | `No targets config found`  | Running in wrong context           | Ensure you're in the app/extension, not a unit test          |
 | `close is not a function`  | Calling `close()` on non-extension | Only share/action/clip targets have `close()`                |

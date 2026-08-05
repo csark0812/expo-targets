@@ -1,11 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
-import { AppGroupStorage } from 'expo-targets';
+import { AppGroupStorage, FileProviderDomain } from 'expo-targets';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import {
-  registerFileDomain,
-  unregisterFileDomain,
-} from './modules/file-provider-domain';
 
 const storage = new AppGroupStorage(
   'group.com.expotargets.example.file-provider'
@@ -55,7 +51,7 @@ function DomainControls({
         testID="btn-register-domain"
         label="Register domain"
         onPress={() => {
-          void registerFileDomain()
+          void FileProviderDomain.register()
             .then((name) => setDomain(`registered:${name}`))
             .catch((e) => setDomain(`error:${String(e)}`));
         }}
@@ -65,7 +61,7 @@ function DomainControls({
         label="Unregister domain"
         secondary
         onPress={() => {
-          void unregisterFileDomain()
+          void FileProviderDomain.unregister()
             .then(() => setDomain('not-registered'))
             .catch((e) => setDomain(`error:${String(e)}`));
         }}
@@ -99,9 +95,9 @@ export default function App() {
   useEffect(() => {
     // Drop any legacy domain registered with pathRelativeToDocumentStorage
     // (incompatible with NSFileProviderReplicatedExtension) then re-add.
-    void unregisterFileDomain()
+    void FileProviderDomain.unregister()
       .catch(() => undefined)
-      .then(() => registerFileDomain())
+      .then(() => FileProviderDomain.register())
       .then((name) => setDomain(`registered:${name}`))
       .catch((e) => setDomain(`error:${String(e)}`))
       .finally(() => {

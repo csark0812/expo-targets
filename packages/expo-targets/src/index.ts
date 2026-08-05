@@ -57,6 +57,21 @@ export {
   clearSharedData,
   refreshAllTargets,
 } from './modules/storage/index';
+// File Provider domain
+export { FileProviderDomain } from './modules/fileProvider/index';
+export type { FileProviderDomainOpts } from './modules/fileProvider/index';
+// Content Blocker
+export { ContentBlocker } from './modules/contentBlocker/index';
+export type { ContentBlockerReloadOpts } from './modules/contentBlocker/index';
+// Live Activity
+export {
+  LiveActivity,
+  createLiveActivity,
+} from './modules/liveActivity/index';
+export type {
+  LiveActivityStartOptions,
+  LiveActivityContentState,
+} from './modules/liveActivity/index';
 export type {
   BaseTarget,
   ExtensionTarget,

@@ -73,14 +73,8 @@ struct TrickHomeWidgetView: View {
 }
 
 // MARK: - Live Activity
-
-struct TrickActivityAttributes: ActivityAttributes {
-  public struct ContentState: Codable, Hashable {
-    var status: String
-  }
-
-  var title: String
-}
+// TrickActivityAttributes is CNG-generated into ios/*/ExpoTargetsGenerated/
+// (do not redefine here — dual-membered into this target + the host app).
 
 struct TrickLiveActivity: Widget {
   var body: some WidgetConfiguration {

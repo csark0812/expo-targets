@@ -4,7 +4,10 @@
     "modules": [
       "ExpoTargetsStorageModule",
       "ExpoTargetsExtensionModule",
-      "ExpoTargetsMessagesModule"
+      "ExpoTargetsMessagesModule",
+      "ExpoTargetsFileProviderModule",
+      "ExpoTargetsContentBlockerModule",
+      "ExpoTargetsLiveActivityModule"
     ]
   },
   "android": {

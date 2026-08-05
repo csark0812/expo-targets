@@ -6,6 +6,27 @@
   "appGroup": "group.com.expotargets.example.app-intent",
   "ios": {
     "bundleIdentifier": "com.expotargets.example.app-intent.app-intent",
-    "displayName": "ET AppIntent Target"
+    "displayName": "ET AppIntent Target",
+    "appIntents": [
+      {
+        "className": "ETHostGreetIntent",
+        "title": "ET Greet",
+        "description": "Returns a greeting from the expo-targets app-intent example.",
+        "openAppWhenRun": true,
+        "performHook": "ETHostGreetIntentPerform"
+      }
+    ],
+    "appShortcuts": [
+      {
+        "intent": "ETHostGreetIntent",
+        "phrases": [
+          "Say hello in \\(.applicationName)",
+          "Greet me in \\(.applicationName)",
+          "Hello in \\(.applicationName)"
+        ],
+        "shortTitle": "ET Greet",
+        "systemImageName": "hand.wave"
+      }
+    ]
   }
 }

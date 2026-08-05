@@ -7,6 +7,10 @@
   "ios": {
     "bundleIdentifier": "com.expotargets.example.trick.files",
     "displayName": "ET Trick Files",
+    "fileProviderDomain": {
+      "identifier": "com.expotargets.example.trick.files",
+      "displayName": "ET Trick Files"
+    },
     "infoPlist": {
       "NSExtension": {
         "NSExtensionPrincipalClass": "FileProviderExtension",

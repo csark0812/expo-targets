@@ -1,17 +1,14 @@
 import ExpoModulesCore
 import FileProvider
 
-public class FileProviderDomainModule: Module {
-  private let domainId = "com.expotargets.example.file-provider.file-provider"
-  private let displayName = "ET FileProv"
-
+public class ExpoTargetsFileProviderModule: Module {
   public func definition() -> ModuleDefinition {
-    Name("FileProviderDomain")
+    Name("ExpoTargetsFileProvider")
 
-    AsyncFunction("register") { () -> String in
+    AsyncFunction("register") { (identifier: String, displayName: String) -> String in
       guard #available(iOS 16.0, *) else {
         throw NSError(
-          domain: "FileProviderDomain",
+          domain: "ExpoTargetsFileProvider",
           code: 16,
           userInfo: [
             NSLocalizedDescriptionKey:
@@ -19,28 +16,28 @@ public class FileProviderDomainModule: Module {
           ]
         )
       }
-      let identifier = NSFileProviderDomainIdentifier(rawValue: self.domainId)
+      let domainIdentifier = NSFileProviderDomainIdentifier(rawValue: identifier)
       // ReplicatedExtension requires the 2-arg initializer. Using
       // pathRelativeToDocumentStorage forces legacy NSFileProviderExtension
       // bring-up and aborts (__FILEPROVIDER_V2_EXTENSION_WITHOUT_IMPL).
       let domain = NSFileProviderDomain(
-        identifier: identifier,
-        displayName: self.displayName
+        identifier: domainIdentifier,
+        displayName: displayName
       )
       try await NSFileProviderManager.add(domain)
       if let manager = NSFileProviderManager(for: domain) {
         try? await manager.signalEnumerator(for: .workingSet)
         try? await manager.signalEnumerator(for: .rootContainer)
       }
-      return self.displayName
+      return displayName
     }
 
-    AsyncFunction("unregister") { () in
+    AsyncFunction("unregister") { (identifier: String, displayName: String) in
       guard #available(iOS 16.0, *) else { return }
-      let identifier = NSFileProviderDomainIdentifier(rawValue: self.domainId)
+      let domainIdentifier = NSFileProviderDomainIdentifier(rawValue: identifier)
       let domain = NSFileProviderDomain(
-        identifier: identifier,
-        displayName: self.displayName
+        identifier: domainIdentifier,
+        displayName: displayName
       )
       try await NSFileProviderManager.remove(domain)
     }

@@ -3,17 +3,14 @@
  */
 import * as Notifications from 'expo-notifications';
 import { StatusBar } from 'expo-status-bar';
+import {
+  FileProviderDomain,
+  LiveActivity,
+} from 'expo-targets';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import {
-  registerFileDomain,
-  unregisterFileDomain,
-} from './modules/trick-file-domain';
-import {
-  endAllLiveActivities,
-  startLiveActivity,
-  updateLiveActivity,
-} from './modules/trick-live-activity';
+
+const trickLive = LiveActivity.create('TrickActivityAttributes');
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -245,7 +242,9 @@ async function bootTrickHost(): Promise<{
   await Notifications.setNotificationCategoryAsync(NCE_CATEGORY, []);
   const perm = await requestNotificationPermission();
   try {
-    const name = await registerFileDomain();
+    const name = await FileProviderDomain.register({
+      targetName: 'TrickFiles',
+    });
     return { perm, filesDomain: `registered:${name}` };
   } catch (e) {
     return { perm, filesDomain: `error:${String(e)}` };
@@ -267,7 +266,7 @@ function registerFilesDomain(
   setFilesDomain: (value: string) => void,
   setStatusLine: (value: string) => void
 ) {
-  void registerFileDomain()
+  void FileProviderDomain.register({ targetName: 'TrickFiles' })
     .then((name) => {
       setFilesDomain(`registered:${name}`);
       setStatusLine('Files domain registered');
@@ -282,7 +281,7 @@ function unregisterFilesDomain(
   setFilesDomain: (value: string) => void,
   setStatusLine: (value: string) => void
 ) {
-  void unregisterFileDomain()
+  void FileProviderDomain.unregister({ targetName: 'TrickFiles' })
     .then(() => {
       setFilesDomain('not-registered');
       setStatusLine('Files domain removed');
@@ -295,7 +294,11 @@ function startTrickLiveActivity(
   setLiveStatus: (value: string) => void,
   setStatusLine: (value: string) => void
 ) {
-  void startLiveActivity('ET Trick Live', 'active')
+  void trickLive
+    .start({
+      attributes: { title: 'ET Trick Live' },
+      contentState: { status: 'active' },
+    })
     .then((id) => {
       setLiveId(id);
       setLiveStatus('active');
@@ -313,7 +316,8 @@ function updateTrickLiveActivity(
     setStatusLine('No Live Activity to update');
     return;
   }
-  void updateLiveActivity(liveId, 'updated')
+  void trickLive
+    .update(liveId, { status: 'updated' })
     .then((ok) => {
       if (ok) {
         setLiveStatus('updated');
@@ -330,7 +334,7 @@ function endTrickLiveActivities(
   setLiveStatus: (value: string) => void,
   setStatusLine: (value: string) => void
 ) {
-  void endAllLiveActivities()
+  void LiveActivity.endAll()
     .then(() => {
       setLiveId('none');
       setLiveStatus('none');

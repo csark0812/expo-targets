@@ -313,6 +313,48 @@ interface BaseIosTargetConfig {
    * }
    */
   wallet?: WalletConfig;
+
+  /**
+   * File Provider domain identity (type='file-provider').
+   * Source of truth for FileProviderDomain.register() — strict CNG.
+   */
+  fileProviderDomain?: {
+    identifier: string;
+    displayName: string;
+  };
+
+  /**
+   * Host App Intent metadata (type='app-intent'). Generated into main app on prebuild.
+   */
+  appIntents?: AppIntentHostConfig[];
+
+  /**
+   * App Shortcuts provider entries (type='app-intent'). Generated into main app on prebuild.
+   */
+  appShortcuts?: AppShortcutConfig[];
+}
+
+/** Live Activity field schema for CNG codegen */
+export interface LiveActivityConfig {
+  attributesName: string;
+  static?: Record<string, 'string' | 'double' | 'int' | 'bool'>;
+  contentState: Record<string, 'string' | 'double' | 'int' | 'bool'>;
+}
+
+export interface AppIntentHostConfig {
+  className: string;
+  title: string;
+  description?: string;
+  openAppWhenRun?: boolean;
+  /** Swift symbol for user-owned perform hook under targets/<name>/ios/ */
+  performHook: string;
+}
+
+export interface AppShortcutConfig {
+  intent: string;
+  phrases: string[];
+  shortTitle: string;
+  systemImageName?: string;
 }
 
 // Types that support React Native rendering
@@ -368,6 +410,10 @@ interface BaseTargetConfig {
   appGroup?: string;
   platforms: string[];
   android?: AndroidTargetConfig;
+  /**
+   * Live Activity schema (type='widget'). Drives CNG ActivityAttributes + host bridge.
+   */
+  liveActivity?: LiveActivityConfig;
 }
 
 // Target config for React Native compatible types

@@ -5,7 +5,13 @@ import {
   IOS_TEMPLATES,
   TEMPLATE_FILENAMES,
   WALLET_UI_TEMPLATE,
+  type WidgetTemplateOptions,
 } from './templates/ios';
+import {
+  getLiveActivityUiTemplate,
+  getPerformHookStub,
+  getWidgetBundleTemplate,
+} from './templates/liveActivity';
 
 export type CopyTemplateOptions = {
   type: string;
@@ -13,6 +19,11 @@ export type CopyTemplateOptions = {
   targetDir: string;
   pascalName: string;
   includeIntentUi?: boolean;
+  appGroup?: string;
+  includeLiveActivity?: boolean;
+  liveActivityAttributesName?: string;
+  appIntentHookName?: string;
+  appIntentTitle?: string;
 };
 
 function getGenericStub(type: string, pascalName: string): string {
@@ -25,12 +36,16 @@ class ${pascalName}Handler: NSObject {
 `;
 }
 
-function resolveIosTemplate(type: string, pascalName: string): string {
+function resolveIosTemplate(
+  type: string,
+  pascalName: string,
+  widgetOptions?: WidgetTemplateOptions
+): string {
   const templateFn =
     IOS_TEMPLATES[type] ||
     (type === 'imessage' ? IOS_TEMPLATES.imessage : null);
   if (typeof templateFn === 'function') {
-    return templateFn(pascalName);
+    return templateFn(pascalName, widgetOptions);
   }
   if (typeof templateFn === 'string') {
     return templateFn;
@@ -82,13 +97,84 @@ function writeSupplementaryFiles(
   }
 }
 
+function writeAppIntentFiles(options: CopyTemplateOptions): void {
+  if (options.type !== 'app-intent' || options.platform !== 'ios') return;
+  const platformDir = path.join(options.targetDir, options.platform);
+  const hookName =
+    options.appIntentHookName ?? `${options.pascalName}IntentPerform`;
+  const title = options.appIntentTitle ?? options.pascalName;
+  const appGroup = options.appGroup ?? 'group.com.example.app';
+
+  fs.writeFileSync(
+    path.join(platformDir, 'AppIntentExtension.swift'),
+    `import AppIntents
+
+/// Empty AppIntentsExtension — pluginkit appintents-extension proof.
+/// Host Shortcuts intents are CNG-generated; fill in ${hookName}.swift.
+@main
+struct ${options.pascalName}Extension: AppIntentsExtension {}
+`
+  );
+
+  fs.writeFileSync(
+    path.join(platformDir, `${hookName}.swift`),
+    getPerformHookStub(hookName, title, appGroup)
+  );
+}
+
+function writeLiveActivityFiles(options: CopyTemplateOptions): void {
+  if (
+    options.type !== 'widget' ||
+    options.platform !== 'ios' ||
+    !options.includeLiveActivity
+  ) {
+    return;
+  }
+  const platformDir = path.join(options.targetDir, options.platform);
+  const attributesName =
+    options.liveActivityAttributesName ?? `${options.pascalName}Attributes`;
+
+  fs.writeFileSync(
+    path.join(platformDir, 'LiveActivity.swift'),
+    getLiveActivityUiTemplate({
+      attributesName,
+      widgetName: options.pascalName,
+    })
+  );
+
+  fs.writeFileSync(
+    path.join(platformDir, `${options.pascalName}Bundle.swift`),
+    getWidgetBundleTemplate({
+      pascalName: options.pascalName,
+      includeLiveActivity: true,
+    }).trimStart()
+  );
+}
+
 export function copyTemplate(options: CopyTemplateOptions): void {
   const platformDir = path.join(options.targetDir, options.platform);
   fs.mkdirSync(platformDir, { recursive: true });
 
-  const template = resolveIosTemplate(options.type, options.pascalName);
-  const filename = getTemplateFilename(options.type);
-  fs.writeFileSync(path.join(platformDir, filename), template);
+  // app-intent uses dedicated extension + perform-hook files (no generic Main.swift)
+  if (options.type !== 'app-intent') {
+    const widgetOptions: WidgetTemplateOptions | undefined =
+      options.type === 'widget'
+        ? {
+            appGroup: options.appGroup ?? 'group.com.example.app',
+            useBundle: Boolean(options.includeLiveActivity),
+          }
+        : undefined;
+
+    const template = resolveIosTemplate(
+      options.type,
+      options.pascalName,
+      widgetOptions
+    );
+    const filename = getTemplateFilename(options.type);
+    fs.writeFileSync(path.join(platformDir, filename), template);
+  }
 
   writeSupplementaryFiles(platformDir, options.type, options.includeIntentUi);
+  writeLiveActivityFiles(options);
+  writeAppIntentFiles(options);
 }
