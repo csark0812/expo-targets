@@ -2,7 +2,7 @@
 
 **Source of truth for** first-run setup (React Native share extension).
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-02 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-05 -->
 
 Build a React Native **share extension** with expo-targets.
 
@@ -11,7 +11,7 @@ Build a React Native **share extension** with expo-targets.
 ## Prerequisites
 
 - macOS with Xcode 14+
-- Expo SDK 50+ (tested with 52+)
+- **Tested on Expo SDK 57** (development builds; not Expo Go)
 - iOS Simulator or device running iOS 14+
 
 > **Device Testing Requirements**
@@ -77,8 +77,10 @@ This creates:
 targets/my-share/
 ├── expo-target.config.json
 ├── index.tsx                 # createTarget + component registration
-└── …                         # Native host generated at prebuild
+└── ios/                      # User deepen (committed)
 ```
+
+After `npx expo prebuild`, sealed artifacts land in `ios/<App>/ExpoTargetsGenerated/<Product>/` (gitignored). Never edit that tree — deepen under `targets/*/ios/`.
 
 Example config:
 
@@ -98,6 +100,8 @@ Example config:
 ```
 
 Update the placeholder `appGroup` to match your `app.json`.
+
+`excludedPackages` must include `expo-updates` and `expo-dev-client` so the extension host does not link packages that assume a full app process (they break extension builds).
 
 ### Naming Conventions
 
@@ -165,6 +169,10 @@ Ensure `metro.config.js` wraps with `withTargetsMetro` and `entry` points at a r
 
 Match App Group IDs in `app.json`, `expo-target.config.json`, and any native suite name.
 
+### Upgrading from expo-targets &lt; 0.2.8 (sealed path)
+
+Pre-0.2.8 docs referred to generated hosts under paths that are no longer the sealed zone. **CNG output is now** `ios/<App>/ExpoTargetsGenerated/<Product>/` (gitignored). Move any hand-edits you made under the old generated tree into `targets/<name>/ios/`, then `npx expo prebuild` again. Never commit or edit `ExpoTargetsGenerated/`.
+
 ---
 
 ## Next Steps
@@ -186,10 +194,4 @@ npx expo run:ios
 
 ### Bare React Native
 
-```bash
-npx expo-targets sync
-cd ios && pod install
-npx react-native run-ios
-```
-
-> Bare RN demos are out of the v1 `examples/` set; use `npx expo-targets sync` with the managed share example as the config reference.
+> **`npx expo-targets sync` is unimplemented** (unpublished stub). Prefer managed Expo + `npx expo prebuild` until a real sync ships. Tracking: [#67](https://github.com/csark0812/expo-targets/issues/67).

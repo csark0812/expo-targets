@@ -2,7 +2,9 @@
 
 CLI tool for scaffolding expo-targets extensions.
 
-> **Part of the expo-targets monorepo**. See the [main README](../../README.md) for complete documentation.
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-05 -->
+
+> **Part of the expo-targets monorepo**. See the [main README](../../README.md) and [getting-started](../../docs/getting-started.md). **Tested on Expo SDK 57.** Contributors: [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
 ## Usage
 
@@ -27,9 +29,10 @@ Interactive CLI that creates:
 - Notification Service / Content, Safari, Content Blocker, App Intent
 - Keyboard, Photo Editing, File Provider, Broadcast Upload, Call Directory, Credentials Provider
 
-Additional Bacon-parity types are available via hand-written `expo-target.config.json` + examples under `examples/`. See [migrate-from-bacons-apple-targets.md](../../docs/migrate-from-bacons-apple-targets.md).
+Additional types are available via hand-written `expo-target.config.json` + examples under `examples/`. See [configuration.md](../../docs/configuration.md).
 
 ## Related
 
 - [configuration.md](../../docs/configuration.md)
 - [deprecations.md](../../docs/deprecations.md)
+- [CONTRIBUTING.md](../../CONTRIBUTING.md)

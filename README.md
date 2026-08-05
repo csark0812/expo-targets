@@ -2,7 +2,7 @@
 
 **Source of truth for** package overview.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-04 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-05 -->
 
 Add **share extensions**, **action extensions**, **App Clips**, **iMessage apps**, **stickers**, **wallet extensions**, and other Apple targets Expo does not ship — including React Native UIs where supported.
 
@@ -10,7 +10,7 @@ Add **share extensions**, **action extensions**, **App Clips**, **iMessage apps*
 
 > **Important:** Requires development builds (`npx expo run:ios`). Does not work with Expo Go.
 >
-> **Prerequisites:** macOS, Xcode 14+, Expo SDK 50+, iOS 14+. [Full requirements →](./docs/getting-started.md#prerequisites)
+> **Prerequisites:** macOS, Xcode 14+, iOS 14+. **Tested on Expo SDK 57.** [Full requirements →](./docs/getting-started.md#prerequisites)
 
 > **mcp-dev:** The MCP stdio supervisor moved to [device-plane](https://github.com/csark0812/device-plane/tree/main/packages/mcp-dev) — install with `npx -y @csark0812/mcp-dev`.
 
@@ -55,8 +55,10 @@ This creates:
 targets/my-share/
 ├── expo-target.config.json   # Extension configuration
 ├── index.tsx                 # createTarget + RN entry
-└── ios/                      # Native host (generated at prebuild)
+└── ios/                      # User deepen (committed); sealed CNG under ios/<App>/ExpoTargetsGenerated/
 ```
+
+After `npx expo prebuild`, sealed build artifacts land in `ios/<App>/ExpoTargetsGenerated/<Product>/` (gitignored). Deepen Swift under `targets/*/ios/` — never edit `ExpoTargetsGenerated/`.
 
 ### 4. Configure Metro
 
@@ -91,28 +93,22 @@ close(); // Dismiss the extension
 
 ## Supported Extensions
 
-| Type                   | iOS  | Android | Description             |
-| ---------------------- | ---- | ------- | ----------------------- |
-| `share`                | ✅   | 🔜      | Share extensions        |
-| `action`               | ✅   | 🔜      | Action extensions       |
-| `clip`                 | ✅   | —       | App Clips               |
-| `stickers`             | ✅   | —       | iMessage sticker packs  |
-| `messages`             | ✅   | —       | iMessage apps           |
-| `wallet`               | ✅   | —       | Wallet extensions       |
-| `widget`               | ✅\* | ✅†     | Home screen widgets     |
-| `safari`               | 🧱   | —       | Safari web extensions   |
-| `notification-content` | 🧱   | 🔜      | Rich notification UI    |
-| `notification-service` | 🧱   | 🔜      | Notification processing |
-| `intent`               | 🧱   | —       | Siri intents            |
-| `intent-ui`            | 🧱   | —       | Siri intent UI          |
+Showcase subset (common adoption path). **Full type set + maturity (~47 types):** [configuration.md](./docs/configuration.md).
 
-**Legend:** ✅ Production ready · 🧱 Scaffold + example · 🔜 Planned · — Not applicable
+| Type       | iOS  | Android | Description                          |
+| ---------- | ---- | ------- | ------------------------------------ |
+| `share`    | ✅   | 🔜      | Share extensions (RN UI supported)   |
+| `action`   | ✅   | 🔜      | Action extensions (RN UI supported)  |
+| `clip`     | ✅   | —       | App Clips (RN UI supported)          |
+| `messages` | ✅   | —       | iMessage apps (RN UI supported)      |
+| `stickers` | ✅   | —       | iMessage sticker packs (asset-only)  |
+| `widget`   | ✅\* | ✅†     | Home screen widgets + Live Activities |
 
-> Scaffold types ship Xcode wiring plus an `examples/` host; deepen Swift to the Apple principal as needed. Lib floor vs Apple gates: [limits.md](./docs/limits.md). **No new orphan stubs** — [deprecations.md](./docs/deprecations.md).
->
+**Legend:** ✅ Production ready · 🔜 Planned · — Not applicable
+
 > \*`widget` (iOS): first-class native WidgetKit + Live Activities. †Android widgets: bridge-grade. Details: [widgets.md](./docs/widgets.md).
 >
-> Full Bacon-parity `ExtensionType` set: [configuration.md](./docs/configuration.md) · [migrate from `@bacons/apple-targets`](./docs/migrate-from-bacons-apple-targets.md).
+> Wallet, Safari, Network Extension family, file providers, and the rest: [configuration.md](./docs/configuration.md). Lib floor vs Apple gates: [limits.md](./docs/limits.md). **No new orphan stubs** — [deprecations.md](./docs/deprecations.md).
 
 ---
 
@@ -124,7 +120,8 @@ expo-targets uses **App Groups** to share data between your app and extensions, 
 ┌─────────────────┐        ┌─────────────────┐
 │   Your App      │        │   Extension     │
 │                 │        │                 │
-│  target.set()   │───────▶│  UserDefaults / │
+│  setData /      │───────▶│  UserDefaults / │
+│  storage.set    │        │  App Group      │
 │  getSharedData  │◀───────│  RN host        │
 └─────────────────┘        └─────────────────┘
 ```
@@ -141,20 +138,18 @@ cd expo-targets/examples/share
 npm install && npx expo run:ios
 ```
 
-| Example                                   | What it shows                                                     |
-| ----------------------------------------- | ----------------------------------------------------------------- |
-| [share](./examples/share)                 | React Native share extension                                      |
-| [action](./examples/action)               | React Native action extension                                     |
-| [clip](./examples/clip)                   | React Native App Clip                                             |
-| [stickers](./examples/stickers)           | Asset-only sticker pack                                           |
-| [widgets](./examples/widgets)             | iOS WidgetKit + Live Activities ([widgets.md](./docs/widgets.md)) |
-| [messages](./examples/messages)           | React Native messages extension                                   |
-| [kitchen-sink](./examples/kitchen-sink)   | Five primary types in one host (messages, not stickers)           |
-| [native/share](./examples/native/share)   | Swift share + RN host                                             |
-| [native/action](./examples/native/action) | Swift action + RN host                                            |
-| [native/clip](./examples/native/clip)     | SwiftUI App Clip + RN host                                        |
+| Example                                 | What it shows                                                     |
+| --------------------------------------- | ----------------------------------------------------------------- |
+| [share](./examples/share)               | React Native share extension                                      |
+| [action](./examples/action)             | React Native action extension                                     |
+| [clip](./examples/clip)                 | React Native App Clip                                             |
+| [messages](./examples/messages)         | React Native messages extension                                   |
+| [stickers](./examples/stickers)         | Asset-only sticker pack                                           |
+| [widgets](./examples/widgets)           | iOS WidgetKit + Live Activities ([widgets.md](./docs/widgets.md)) |
+| [kitchen-sink](./examples/kitchen-sink) | Five primary types in one host (messages, not stickers)           |
+| [trick](./examples/trick)               | Multi-target kitchen sink (Devicewright coverage host)            |
 
-See [examples/README.md](./examples/README.md) for Devicewright coverage and Bacon-parity stubs.
+See [examples/README.md](./examples/README.md) for the full suite (~48 hosts), Devicewright coverage, and stub READMEs.
 
 ---
 
@@ -180,11 +175,7 @@ npx expo run:ios
 
 ### Bare React Native
 
-```bash
-npx expo-targets sync
-cd ios && pod install
-npx react-native run-ios
-```
+> **`npx expo-targets sync` is unimplemented** (unpublished stub). Use managed Expo + `npx expo prebuild` until a real sync ships. Tracking: [#67](https://github.com/csark0812/expo-targets/issues/67).
 
 ---
 
@@ -206,6 +197,7 @@ Shared storage (widgets and other targets):
 ```typescript
 const target = createTarget("MyTarget");
 target.setData({ key: "value" });
+// or: target.storage.set("key", "value");
 target.refresh();
 ```
 
@@ -213,7 +205,7 @@ target.refresh();
 
 ## Contributing
 
-Contributions welcome. See [AGENTS.md](./AGENTS.md) for agent/docs conventions.
+Contributions welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) (humans) and [AGENTS.md](./AGENTS.md) (agent posture).
 
 ## License
 
@@ -221,6 +213,6 @@ MIT
 
 ## Credits
 
-Inspired by [@bacons/apple-targets](https://github.com/EvanBacon/expo-apple-targets) and [expo-share-extension](https://github.com/MaxAst/expo-share-extension).
+Inspired by [expo-share-extension](https://github.com/MaxAst/expo-share-extension) and related community Apple-target work.
 
-Widget-related prior art: official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) (React/Expo-UI alternative) and community [bittingz/expo-widgets](https://github.com/bittingz/expo-widgets) (historical inspiration only).
+Widget-related prior art: official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) (React/Expo-UI alternative).

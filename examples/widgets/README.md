@@ -1,25 +1,23 @@
-# Widgets example
+# Widgets
 
-Native WidgetKit Hello widget with `createTarget` host and Devicewright spine journey.
+Thin expo-targets example host for `widgets`.
 
-For Live Activities + multi-target showcase, see [`examples/trick`](../trick). Ownership policy: [`docs/widgets.md`](../../docs/widgets.md).
+Suite how-to (install, Devicewright, icons): [../README.md](../README.md).
 
-## OS path (iOS)
-
-1. Host → Seed payload
-2. Home Screen → add Hello Widget
-3. Widget shows the seeded message
-
-## Android (bridge-grade)
-
-`platforms: ["ios", "android"]` + Glance Kotlin under
-`targets/hello-widget/android/.../HelloWidget.kt`.
+Type / maturity SSOT: [../../docs/configuration.md](../../docs/configuration.md).
 
 ```bash
-npx expo prebuild --platform android
-npx expo run:android
+# From repo root
+bun install
+cd examples/widgets
+npx expo prebuild --platform ios
+npx expo run:ios
 ```
 
-Prebuild wires Glance deps, `HelloWidgetWidgetReceiver` /
-`HelloWidgetUpdateReceiver`, and `widgetprovider_hellowidget` XML.
-Other Apple extension types have no Android equivalent — see [`docs/limits.md`](../../docs/limits.md).
+Devicewright (operator, after Release install on a booted sim):
+
+```bash
+bun run examples:devicewright:matrix --ids=widgets
+```
+
+Do not commit generated `ios/` / `android/`. Never edit `ExpoTargetsGenerated/`.

@@ -1,9 +1,23 @@
-# Clip example
+# Clip
 
-React Native App Clip with `withTargetsMetro`, URL scheme `expotargets-clip`, and Devicewright journey.
+Thin expo-targets example host for `clip`.
 
-## OS path
+Suite how-to (install, Devicewright, icons): [../README.md](../README.md).
 
-1. Safari or terminal: `expotargets-clip://checkout`
-2. Complete checkout in the App Clip
-3. Host shows last checkout payload
+Type / maturity SSOT: [../../docs/configuration.md](../../docs/configuration.md).
+
+```bash
+# From repo root
+bun install
+cd examples/clip
+npx expo prebuild --platform ios
+npx expo run:ios
+```
+
+Devicewright (operator, after Release install on a booted sim):
+
+```bash
+bun run examples:devicewright:matrix --ids=clip
+```
+
+Do not commit generated `ios/` / `android/`. Never edit `ExpoTargetsGenerated/`.

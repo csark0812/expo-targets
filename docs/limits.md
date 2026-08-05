@@ -2,11 +2,11 @@
 
 **Source of truth for** lib floor vs Apple/account gates for extension types.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-04 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-05 -->
 
 ## Max Sim-greenable policy
 
-Devicewright deep greens prove the **Sim-greenable** subset (**P**): behavior that is AX- and/or journey-assertable on a stated iOS Simulator + `@csark0812/devicewright` version. Not device-only chrome, not entitlement-gated Settings flows.
+Devicewright deep greens prove the **Sim-greenable** subset (**P**): behavior that is AX- and/or journey-assertable on a stated iOS Simulator + pinned `@csark0812/devicewright@0.1.14` (root `package.json` / workspace dep). Not device-only chrome, not entitlement-gated Settings flows.
 
 - Phase ids must `green` on **P**. Expanding Notification Content → custom UI is **never** an `os-limit` leftover.
 - Public Apple APIs that cannot be proven on Simulator are documented leftovers (no dead product).
@@ -68,7 +68,7 @@ Deepen already-green ids before adding shallow types: share/action(+native); saf
 | Network Extensions                                                                | Real `NE*Provider` subclasses that fail closed without entitlement | Network Extension entitlement / VPN Personal / MDM |
 | Credentials / SSO / Call Directory / Family Controls / location-push              | Minimal real principals + host contract                            | Entitlement and/or Settings-only enablement        |
 | Watch / watch-widget                                                              | `watch` + `watch-widget`: watchOS SDK/family 4; widget nests under Watch `.app` PlugIns | Device-only Embed Watch Content; Smart Stack needs user-added complication |
-| Android                                                                           | Widget bridge (Glance / RemoteViews) only                          | No Apple-extension parity on Android               |
+| Android                                                                           | Widget bridge (Glance / RemoteViews) only                          | No Apple extension types on Android                |
 
 Frozen Devicewright `os-limit` allowlist: [`examples/.devicewright/claims.ts`](../examples/.devicewright/claims.ts).
 

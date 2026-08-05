@@ -1,23 +1,23 @@
-# Share example
+# Share
 
-React Native share extension with App Group host contract.
+Thin expo-targets example host for `share`.
 
-## Run
+Suite how-to (install, Devicewright, icons): [../README.md](../README.md).
+
+Type / maturity SSOT: [../../docs/configuration.md](../../docs/configuration.md).
 
 ```bash
+# From repo root
 bun install
+cd examples/share
 npx expo prebuild --platform ios
 npx expo run:ios
 ```
 
-## Devicewright
+Devicewright (operator, after Release install on a booted sim):
 
 ```bash
-# From repo root, after Release install on a booted sim
-bun run examples:devicewright:share
+bun run examples:devicewright:matrix --ids=share
 ```
 
-## OS path (Share Sheet)
-
-1. Open Safari → Share → Example Share → Save
-2. Return to host → Refresh → assert payload
+Do not commit generated `ios/` / `android/`. Never edit `ExpoTargetsGenerated/`.

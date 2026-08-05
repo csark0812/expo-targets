@@ -1,10 +1,8 @@
 # Migrate from `@bacons/apple-targets`
 
-**Source of truth for** mapping Bacon apple-targets projects onto expo-targets (`TargetConfig` / `createTarget` style).
+Field-map notes for moving a project onto expo-targets (`TargetConfig` / `createTarget` style). Not part of the docs SSOT — prefer [configuration.md](./configuration.md) for current APIs.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-02 -->
-
-This is a **field-map migration**, not a silent plugin swap. There is no Bacon `ConfigFunction` adapter or `@bacons/apple-targets` import shim.
+This is a **field-map migration**, not a silent plugin swap. There is no `ConfigFunction` adapter or import shim from the previous package.
 
 ## Quick steps (typical share / clip / widget project)
 
@@ -31,7 +29,7 @@ This is a **field-map migration**, not a silent plugin swap. There is no Bacon `
 | `watch-widget`                  | `watch-widget`                                | Paired watch DoD                               |
 | `imessage`                      | `stickers` or `messages`                      | No `imessage` in ExtensionType                 |
 | `share` / `action` / `clip` / … | same string when listed in ExtensionType      | See [configuration.md](./configuration.md)     |
-| Types only in Bacon             | Landed incrementally with scaffold+example+DW | Compare: `bun run compare:bacon-registry`      |
+| Other legacy type names         | Map to the closest ExtensionType + example    | See [configuration.md](./configuration.md)     |
 
 ## Config field map
 
@@ -39,13 +37,17 @@ This is a **field-map migration**, not a silent plugin swap. There is no Bacon `
 | ------------------------------------------------ | ------------------------------------------------------ |
 | `exportJs: true` / JS entry convention           | `entry: "./targets/<name>/index.tsx"` (+ Metro helper) |
 | Top-level entitlements / frameworks on config fn | `ios.entitlements`, `ios.frameworks` on `TargetConfig` |
-| `ExtensionStorage`                               | `createTarget(...).setData` / getData (App Groups)     |
-| Companion UI flags (wallet / intent)             | `ios.wallet.ui`, `ios.intents.ui`                      |
-| Color / icon assets                              | `ios.colors`, `ios.images`, `ios.targetIcon`           |
+| `ExtensionStorage`                               | `createTarget(...).setData` / `.storage` (App Groups)              |
+| Companion UI flags (wallet / intent)             | `ios.wallet.ui`, `ios.intents.ui`                                  |
+| Color / icon assets                              | `ios.colors`, `ios.images`, `ios.targetIcon`                       |
+
+## Sealed path (post-0.2.8)
+
+CNG write sealed artifacts under `ios/<App>/ExpoTargetsGenerated/<Product>/` (gitignored). User deepen stays in `targets/<name>/ios/`. If you migrated from Bacon while following older expo-targets docs that pointed at a different generated tree, move hand-edits into `targets/*/ios/` and re-run `npx expo prebuild`. Never edit `ExpoTargetsGenerated/`.
 
 ## Pods
 
-See existing note in `packages/expo-targets/plugin/src/ios/observe/podsRb.ts` — keep Expo pods wiring; do not copy Bacon pods.rb verbatim without review.
+See existing note in `packages/expo-targets/plugin/src/ios/observe/podsRb.ts` — keep Expo pods wiring; review any copied Podfile helpers carefully.
 
 ## Related
 

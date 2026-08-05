@@ -43,9 +43,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Messages Devicewright journey: describePoint-first sheet ladder (`messages-sheet.ts`) — RN MSMessages chrome is AX-tree-opaque on iOS 26.
 - File Provider example: host `NSFileProviderManager.add` domain module; journey requires Files Browse to list **ET FileProv**.
 - App Intent example: real `SayHelloIntent` + `AppShortcutsProvider`; journey requires Shortcuts action visibility.
-- Thin `examples/*` Maestro-ready suite (SDK 54 hosts: share, action, messages, clip, stickers, widgets, kitchen-sink, native/share, native/action, native/clip) plus Bacon-parity stub hosts and Devicewright journeys.
+- Thin `examples/*` Maestro-ready suite (SDK 57 hosts: share, action, messages, clip, stickers, widgets, kitchen-sink, native/share, native/action, native/clip) plus Devicewright journeys.
+- ExtensionType snapshot check (`bun run compare:bacon-registry`).
 - Skeleton docs SSOT (`@csark0812/skeleton`), `docs/widgets.md`, `docs/deprecations.md`, `docs/limits.md`.
-- Bacon `ExtensionType` registry parity (`bun run compare:bacon-registry`).
 - Sharper RN extension runtime errors when `ExpoTargetsExtension` is missing; `getExtensionNativeModule()` helper.
 - `withTargetsMetro` entry validation/logging; `scanTargetsDirectory` export.
 

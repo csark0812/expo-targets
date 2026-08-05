@@ -970,7 +970,7 @@ Types with a production example + Devicewright row are marked ✅. Entitlement-g
 
 > **Combined targets:** For `wallet` and `intent` types, you can use the `ios.wallet.ui` or `ios.intents.ui` config options to generate both the main extension and its UI companion from a single config file. The CLI generates combined wallet extensions by default. See [Wallet Extension](#wallet-extension) and [Intent UI Extension](#intent-ui-extension) sections for details.
 
-> **New types:** A type joins `ExtensionType` only with registry + scaffold + example + Devicewright in the same PR. See [deprecations.md](./deprecations.md) and [migrate-from-bacons-apple-targets.md](./migrate-from-bacons-apple-targets.md).
+> **New types:** A type joins `ExtensionType` only with registry + scaffold + example + Devicewright in the same PR. See [deprecations.md](./deprecations.md).
 
 ### iOS Limitations
 
@@ -1014,13 +1014,20 @@ Older docs used a 📋 “config-only” maturity label. Prefer **scaffold + exa
 - Swift/Kotlin conformance beyond the stub principal where Apple APIs require it
 - Entitlement / Settings / device gates called out in [limits.md](./limits.md)
 
-**Example: Safari Extension**
+## Example: Safari Extension
 
-Safari extensions support two modes: **React Native Web** (write React components) or **Native** (manual HTML/JS/CSS). Both modes auto-generate the Swift handler for you.
+Safari extensions support two modes: **React Native Web** (write React components) or **Native** (manual HTML/JS/CSS).
 
 ### Mode 1: React Native Web (Recommended)
 
 Write your Safari extension popup using React Native components. The same `createTarget` API used for share/action extensions works here.
+
+**What prebuild generates vs what you ship:**
+
+| Artifact | Who writes it |
+| --- | --- |
+| `SafariWebExtensionHandler.swift`, `popup.html`, `manifest.json`, Resources shell | Config plugin on `npx expo prebuild` (sealed under `ios/<App>/ExpoTargetsGenerated/<Product>/`) |
+| `popup.js` (your RN Web bundle) | **You** — `npx expo export` then copy into the sealed Resources folder (see below) |
 
 **Minimal setup:**
 
@@ -1030,8 +1037,6 @@ targets/my-safari/
 └── src/
     └── SafariExtension.tsx
 ```
-
-That's it! The Swift handler, popup.html, manifest.json, and other resources are auto-generated during prebuild.
 
 **Config (`expo-target.config.json`):**
 
@@ -1080,25 +1085,12 @@ const styles = StyleSheet.create({
 export default createTarget("MySafariExt", SafariPopup);
 ```
 
-**Available Safari hooks:**
+Safari hooks (`useBrowserTab`, `useBrowserStorage`, `openTab`, `closePopup`, …) are documented under [API → Safari extension runtime](./api.md#safari-extension-runtime).
 
-```tsx
-import {
-  useBrowserTab, // Get current tab info (url, title)
-  useBrowserStorage, // Sync storage (across devices)
-  useLocalBrowserStorage, // Local storage
-  useSendToContentScript, // Send message to content script
-  useSendToNative, // Send message to Swift handler
-  useMessageListener, // Listen for messages
-  openTab, // Open new tab
-  closePopup, // Close extension popup
-  copyToClipboard, // Copy text
-} from "expo-targets";
-```
+**Building and deploying the popup bundle:**
 
-**Building the bundle:**
-
-After `npx expo prebuild`, build the web bundle:
+1. `npx expo prebuild` — creates the sealed Safari Resources shell.
+2. Export the web bundle, then copy it into that shell:
 
 ```bash
 # From your project root
@@ -1109,7 +1101,9 @@ npx expo export --platform web --output-dir ios/build/safari-resources
 cp ios/build/safari-resources/bundle.js ios/[AppName]/ExpoTargetsGenerated/[ProductName]/Resources/popup.js
 ```
 
-After upgrading from older expo-targets that wrote `targets/*/ios/build/`, re-run prebuild (or sync) once. Update any scripts that copied into the legacy `targets/*/ios/build/` path — that directory is deleted on apply when the sealed path is written.
+3. Rebuild the app (`npx expo run:ios`). Re-run the export + copy whenever the popup UI changes. Prebuild alone does **not** compile your RN Web entry into `popup.js`.
+
+After upgrading from older expo-targets that wrote `targets/*/ios/build/`, re-run prebuild once. Update any scripts that copied into the legacy `targets/*/ios/build/` path — that directory is deleted on apply when the sealed path is written.
 ### Mode 2: Native/Manual
 
 For full control, provide your own web resources without an `entry` field. The Swift handler is still auto-generated.

@@ -1,9 +1,23 @@
-# Native Clip example
+# Native / Clip
 
-SwiftUI `ClipApp` / `ClipView` App Clip with RN host handoff via App Group. Scheme: `expotargets-native-clip`.
+Thin expo-targets example host for `clip`.
 
-## OS path
+Suite how-to (install, Devicewright, icons): [../../README.md](../../README.md).
 
-1. `expotargets-native-clip://checkout` or associated domain
-2. Complete checkout in App Clip
-3. Host shows checkout payload
+Type / maturity SSOT: [../../../docs/configuration.md](../../../docs/configuration.md).
+
+```bash
+# From repo root
+bun install
+cd examples/native/clip
+npx expo prebuild --platform ios
+npx expo run:ios
+```
+
+Devicewright (operator, after Release install on a booted sim):
+
+```bash
+bun run examples:devicewright:matrix --ids=native-clip
+```
+
+Do not commit generated `ios/` / `android/`. Never edit `ExpoTargetsGenerated/`.

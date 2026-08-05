@@ -1,11 +1,23 @@
-# Kitchen Sink example
+# Kitchen Sink
 
-Five targets in one host sharing `group.com.expotargets.example.kitchensink`: ks-share, ks-action, ks-clip, ks-widgets, ks-messages.
+Thin expo-targets example host for `multi-type (see host config)`.
 
-Stickers are intentionally omitted: iOS allows only one `com.apple.message-payload-provider` extension per app, so messages and stickers cannot coexist. Use [`examples/stickers`](../stickers) for the stickers path.
+Suite how-to (install, Devicewright, icons): [../README.md](../README.md).
 
-Devicewright journeys live under `examples/.devicewright/` (kitchen-sink rows when present).
+Type / maturity SSOT: [../../docs/configuration.md](../../docs/configuration.md).
 
-## OS path
+```bash
+# From repo root
+bun install
+cd examples/kitchen-sink
+npx expo prebuild --platform ios
+npx expo run:ios
+```
 
-Build once, exercise each section from the host or via the corresponding extension.
+Devicewright (operator, after Release install on a booted sim):
+
+```bash
+bun run examples:devicewright:matrix --ids=kitchen-sink
+```
+
+Do not commit generated `ios/` / `android/`. Never edit `ExpoTargetsGenerated/`.
