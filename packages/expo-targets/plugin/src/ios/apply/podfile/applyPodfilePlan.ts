@@ -1,6 +1,7 @@
 import type { Logger } from '../../../logger';
 import type { PodfilePlan } from '../../plan/types';
 import {
+  ensureExcludedPackagesPostIntegrate,
   ensureExtensionDeploymentTargets,
   ensureMainTargetUsesFrameworks,
   ensureReactNativeExtensionFrameworkPaths,
@@ -14,6 +15,7 @@ import {
   updatePodfilePlatform,
 } from './podfile';
 import {
+  findExcludedPackagesTargets,
   findReactNativeExtensionTargets,
   findStandaloneExtensionTargets,
   highestDeploymentTarget,
@@ -35,6 +37,7 @@ function targetBlockFor(
       deploymentTarget: plan.deploymentTarget,
       extensionType: plan.extensionType,
       podsRbContent: plan.podsRbContent,
+      excludedPackages: plan.excludedPackages,
     });
   }
 
@@ -51,6 +54,7 @@ function targetBlockFor(
 /**
  * `inherit! :search_paths` alone is not enough for Swift imports in React
  * Native extensions; they need explicit framework search paths.
+ * Also rebuild the excludedPackages post_integrate hook from all nested markers.
  */
 function applyReactNativePostInstall(
   podfile: string,
@@ -62,14 +66,18 @@ function applyReactNativePostInstall(
     fallbackDeploymentTarget: plan.deploymentTarget,
   });
 
-  if (reactNativeTargets.length === 0) {
-    return podfile;
+  let next = podfile;
+  if (reactNativeTargets.length > 0) {
+    next = ensureReactNativeExtensionFrameworkPaths(
+      next,
+      reactNativeTargets,
+      mainTargetName
+    );
   }
 
-  return ensureReactNativeExtensionFrameworkPaths(
-    podfile,
-    reactNativeTargets,
-    mainTargetName
+  return ensureExcludedPackagesPostIntegrate(
+    next,
+    findExcludedPackagesTargets(next, mainTargetName)
   );
 }
 

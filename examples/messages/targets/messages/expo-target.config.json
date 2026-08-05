@@ -4,6 +4,7 @@
   "displayName": "Example Messages",
   "platforms": ["ios"],
   "entry": "./targets/messages/index.tsx",
+  "excludedPackages": ["expo-updates", "expo-dev-client"],
   "appGroup": "group.com.expotargets.example.messages",
   "ios": {
     "bundleIdentifier": "com.expotargets.example.messages.messages",

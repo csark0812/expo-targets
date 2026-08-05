@@ -428,9 +428,11 @@ type TargetConfigReactNativeCompatible = BaseTargetConfig & {
    */
   entry?: string;
   /**
-   * Exclude specific Expo packages from the extension bundle
-   * Reduces bundle size by removing unused modules
-   * Only applies when `entry` is specified
+   * Exclude specific Expo packages from the nested extension's ExpoModulesProvider.
+   * Applied in a CocoaPods `post_integrate` hook (nested `use_expo_modules!(exclude:)`
+   * is a no-op). Prefer excluding `expo-updates` and `expo-dev-client` for Messages /
+   * share / action / clip — they assert in appex processes and blank the RN sheet.
+   * Only applies when `entry` is specified.
    * @example ['expo-dev-client', 'expo-updates']
    */
   excludedPackages?: string[];

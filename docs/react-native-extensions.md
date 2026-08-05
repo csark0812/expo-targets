@@ -83,7 +83,7 @@ Or manually configure `expo-target.config.json`:
 Key fields:
 
 - `entry`: Path to your React Native entry file **(relative to project root)**
-- `excludedPackages`: Packages to exclude from the extension bundle (reduces size)
+- `excludedPackages`: Expo packages to omit from the extension's `ExpoModulesProvider` (via CocoaPods `post_integrate`). Always exclude `expo-updates` and `expo-dev-client` for Messages/share/action/clip — they crash appex processes and leave a blank sheet. Nested `use_expo_modules!(exclude:)` alone does **not** work.
 
 ### 2. Create the Entry Point
 
@@ -327,7 +327,13 @@ iOS extensions have **strict memory limits**. Exceeding them causes iOS to termi
 
 ### Excluding Packages
 
-Reduce bundle size by excluding packages your extension doesn't need:
+Omit host-only Expo modules from the nested extension's `ExpoModulesProvider`. Nested
+`use_expo_modules!(exclude:)` is a no-op (parent AutolinkingManager); expo-targets
+strips the listed packages from `expo-configure-project.sh` in a `post_integrate`
+hook and regenerates the provider.
+
+Always exclude `expo-updates` and `expo-dev-client` for Messages / share / action /
+clip — Updates asserts before the RN factory is ready and blanks the sheet:
 
 ```json
 {

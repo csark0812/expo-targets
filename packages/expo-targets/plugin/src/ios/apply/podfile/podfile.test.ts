@@ -3,6 +3,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { normalizePodfile } from '../../../../test-utils/normalizePodfile';
 import {
+  ensureExcludedPackagesPostIntegrate,
   ensureMainTargetUsesFrameworks,
   generateReactNativeTargetBlock,
   generateStandaloneTargetBlock,
@@ -62,6 +63,7 @@ describe('generateReactNativeTargetBlock', () => {
       extensionType: 'share',
     });
     expect(block).toContain('inherit! :search_paths');
+    expect(block).not.toContain('[expo-targets-excluded-packages]');
   });
 
   test('clip also inherits search_paths (host copies frameworks into AppClips)', () => {
@@ -71,6 +73,55 @@ describe('generateReactNativeTargetBlock', () => {
       extensionType: 'clip',
     });
     expect(block).toContain('inherit! :search_paths');
+  });
+
+  test('records excludedPackages as a marker comment', () => {
+    const block = generateReactNativeTargetBlock({
+      targetName: 'ExampleMessagesTarget',
+      deploymentTarget: '16.4',
+      extensionType: 'messages',
+      excludedPackages: ['expo-updates', 'expo-dev-client'],
+    });
+    expect(block).toContain(
+      '# [expo-targets-excluded-packages] expo-updates,expo-dev-client'
+    );
+  });
+});
+
+describe('ensureExcludedPackagesPostIntegrate', () => {
+  test('injects an idempotent post_integrate hook', () => {
+    const once = ensureExcludedPackagesPostIntegrate(plainPodfile, [
+      {
+        targetName: 'ExampleMessagesTarget',
+        packages: ['expo-updates', 'expo-dev-client'],
+      },
+    ]);
+    expect(once).toContain('# [expo-targets-excluded-packages-start]');
+    expect(once).toContain('post_integrate do |installer|');
+    expect(once).toContain(
+      "'ExampleMessagesTarget' => ['expo-updates', 'expo-dev-client']"
+    );
+    expect(once).toContain('expo-configure-project.sh');
+    expect(once).toContain('Pods-#{target_name}');
+
+    const twice = ensureExcludedPackagesPostIntegrate(once, [
+      {
+        targetName: 'ExampleMessagesTarget',
+        packages: ['expo-updates', 'expo-dev-client'],
+      },
+    ]);
+    expect(twice.split('# [expo-targets-excluded-packages-start]').length).toBe(
+      2
+    );
+  });
+
+  test('removes the hook when exclusions are empty', () => {
+    const withHook = ensureExcludedPackagesPostIntegrate(plainPodfile, [
+      { targetName: 'ExampleMessagesTarget', packages: ['expo-updates'] },
+    ]);
+    const cleared = ensureExcludedPackagesPostIntegrate(withHook, []);
+    expect(cleared).not.toContain('# [expo-targets-excluded-packages-start]');
+    expect(cleared).not.toContain('post_integrate do |installer|');
   });
 });
 

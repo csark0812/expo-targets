@@ -356,9 +356,12 @@ export function getTargetInfoPlistForType(
 
   const basePlist = deepMerge(createBasePlist(), characteristics.basePlist);
   // Literal displayName wins over $(PRODUCT_NAME). INFOPLIST_KEY_* does not
-  // override an existing Info.plist key, so write it here.
+  // override an existing Info.plist key, so write it here. Set both DisplayName
+  // and Name — Messages drawer and other chrome read either key.
   if (options.displayName?.trim()) {
-    basePlist.CFBundleDisplayName = options.displayName.trim();
+    const name = options.displayName.trim();
+    basePlist.CFBundleDisplayName = name;
+    basePlist.CFBundleName = name;
   }
   if (type === 'watch' && options.companionAppBundleIdentifier?.trim()) {
     basePlist.WKCompanionAppBundleIdentifier =

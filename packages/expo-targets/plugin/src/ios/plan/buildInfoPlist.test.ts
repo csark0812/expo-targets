@@ -79,11 +79,20 @@ describe('getTargetInfoPlistForType golden output', () => {
 });
 
 describe('getTargetInfoPlistForType options', () => {
-  test('displayName becomes CFBundleDisplayName (not PRODUCT_NAME)', () => {
+  test('displayName becomes CFBundleDisplayName and CFBundleName (not PRODUCT_NAME)', () => {
     const parsed = plist.parse(
       getTargetInfoPlistForType('stickers', { displayName: 'Fun Stickers' })
-    ) as { CFBundleDisplayName?: string };
+    ) as { CFBundleDisplayName?: string; CFBundleName?: string };
     expect(parsed.CFBundleDisplayName).toBe('Fun Stickers');
+    expect(parsed.CFBundleName).toBe('Fun Stickers');
+  });
+
+  test('messages displayName is literal in both CFBundle keys', () => {
+    const parsed = plist.parse(
+      getTargetInfoPlistForType('messages', { displayName: 'Super' })
+    ) as { CFBundleDisplayName?: string; CFBundleName?: string };
+    expect(parsed.CFBundleDisplayName).toBe('Super');
+    expect(parsed.CFBundleName).toBe('Super');
   });
 
   test('watch companion sets WKCompanionAppBundleIdentifier', () => {
