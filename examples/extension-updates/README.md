@@ -37,10 +37,10 @@ cd examples/extension-updates
 # 1. Edit targets/share/otaLabel.ts → e.g. ota-v2
 # 2. Hermes-export share entry + publish host update
 npx expo-targets export-extension-bundles
-eas update --branch preview --message "ota-v2"
+eas update --channel preview --message "ota-v2"
 ```
 
-Or: `bun run update` (same two steps).
+Or: `bun run update` (same two steps; uses `--branch preview`).
 
 ## On device
 
