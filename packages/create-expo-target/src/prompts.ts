@@ -63,5 +63,11 @@ export function getTargetPromptQuestions(): PromptObject[] {
       message: 'Include custom UI extension? (displays custom visuals in Siri)',
       initial: true,
     },
+    {
+      type: (_prev, values) => (values.type === 'widget' ? 'confirm' : null),
+      name: 'includeLiveActivity',
+      message: 'Include Live Activity (ActivityKit) bootstrap?',
+      initial: false,
+    },
   ];
 }

@@ -34,6 +34,9 @@ Thumbs.db
 # iOS - auto-generated Expo prebuild projects (keep targets/*/ios templates)
 examples/*/ios/
 examples/native/*/ios/
+
+# Sealed CNG Swift from expo-targets (never edit; regenerated on prebuild)
+**/ios/**/ExpoTargetsGenerated/
 *.xcworkspace
 *.xcuserdata
 Pods/

@@ -2,10 +2,27 @@
 
 **Source of truth for** the config plugin's internal architecture.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-02 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-04 -->
 
 This is the internals guide for `packages/expo-targets/plugin`. For user-facing
 configuration see [configuration.md](../../../docs/configuration.md).
+
+## ExpoTargetsGenerated (CNG Swift inject)
+
+`withExpoTargetsGenerated` is registered **before** `withTargetsDir` so its
+xcodeproj mod runs **after** extension targets exist (Expo mods are LIFO). It
+reads `extra.targets` at mod time, rewrites sealed Swift under
+`ios/<App>/ExpoTargetsGenerated/` (gitignored), and sets Sources membership
+(add-to-build-phase once per needed target):
+
+| Surface | Generated files | Membership |
+| --- | --- | --- |
+| Live Activity | `{Attributes}.swift`, `{Attributes}Bridge.swift` | attributes → main + widget; bridge → main |
+| App Shortcuts | `{Intent}.generated.swift`, `ExpoTargetsAppShortcuts.swift` | main |
+| Perform hooks | _(not generated)_ `targets/*/ios/{Hook}.swift` | main (user-owned) |
+
+User deepen Swift stays under `targets/*/ios/` and is never overwritten. See
+[widgets.md](../../../docs/widgets.md) and [configuration.md](../../../docs/configuration.md).
 
 ## Observe → Plan → Apply
 

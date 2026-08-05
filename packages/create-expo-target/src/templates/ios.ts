@@ -1,4 +1,15 @@
-export function getWidgetTemplate(name: string): string {
+export type WidgetTemplateOptions = {
+  appGroup: string;
+  /** When true, omit @main — caller emits a WidgetBundle instead. */
+  useBundle?: boolean;
+};
+
+export function getWidgetTemplate(
+  name: string,
+  options?: WidgetTemplateOptions
+): string {
+  const appGroup = options?.appGroup ?? 'group.com.example.app';
+  const mainAttr = options?.useBundle ? '' : '@main\n';
   return `import WidgetKit
 import SwiftUI
 
@@ -8,10 +19,7 @@ struct SimpleEntry: TimelineEntry {
 }
 
 struct Provider: TimelineProvider {
-    // ⚠️ IMPORTANT: Update this App Group ID to match your app.json entitlements
-    // Example: "group.com.yourcompany.yourapp"
-    // Must match exactly or data sharing will fail silently
-    let appGroup = "YOUR_APP_GROUP_HERE"
+    let appGroup = "${appGroup}"
 
     func placeholder(in context: Context) -> SimpleEntry {
         SimpleEntry(date: Date(), message: "Placeholder")
@@ -48,8 +56,7 @@ struct WidgetView: View {
     }
 }
 
-@main
-struct ${name}: Widget {
+${mainAttr}struct ${name}: Widget {
     // ⚠️ IMPORTANT: This "kind" must match the "name" field in expo-target.config.json exactly
     let kind: String = "${name}"
 
@@ -394,7 +401,7 @@ class IntentViewController: UIViewController, INUIHostedViewControlling {
 
 export const IOS_TEMPLATES: Record<
   string,
-  string | ((name: string) => string)
+  string | ((name: string, options?: WidgetTemplateOptions) => string)
 > = {
   widget: getWidgetTemplate,
   clip: CLIP_TEMPLATE,

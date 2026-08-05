@@ -2,7 +2,7 @@
 
 **Source of truth for** `expo-target.config` options and extension types.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-02 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-04 -->
 
 > **Orphan-stub freeze:** do not add new `ExtensionType` values without registry + scaffold + example + Devicewright row. See [deprecations.md](./deprecations.md). Widgets policy: [widgets.md](./widgets.md).
 
@@ -64,6 +64,7 @@ targets/my-widget/
 | ------------------ | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `displayName`      | `name`      | Human-readable name shown in widget picker                                                                                                                       |
 | `appGroup`         | _inherited_ | App Group ID. If not specified, automatically inherited from your main app's `app.json` entitlements (see [App Group Inheritance](#app-group-inheritance) below) |
+| `liveActivity`     | —           | Widget-only ActivityKit schema (`attributesName`, `static`, `contentState`) — CNG into `ExpoTargetsGenerated/` (see [widgets.md](./widgets.md))                  |
 | `entry`            | —           | React Native entry point for share/action/clip/messages (see [Entry Field](#entry-field) below)                                                                  |
 | `excludedPackages` | `[]`        | Packages to exclude from RN bundle                                                                                                                               |
 
@@ -497,6 +498,11 @@ widget.refresh();
   "displayName": "Weather",
   "platforms": ["ios"],
   "appGroup": "group.com.yourapp",
+  "liveActivity": {
+    "attributesName": "WeatherAttributes",
+    "static": { "location": "string" },
+    "contentState": { "temp": "double", "summary": "string" }
+  },
   "ios": {
     "deploymentTarget": "14.0",
     "colors": {
@@ -505,6 +511,30 @@ widget.refresh();
   }
 }
 ```
+
+`liveActivity` drives sealed CNG (`ActivityAttributes` + host bridge) under `ios/<App>/ExpoTargetsGenerated/`. Keep `ActivityConfiguration` UI in `targets/<widget>/ios/`. Host JS: `LiveActivity.create('WeatherAttributes')` — see [api.md](./api.md) and [widgets.md](./widgets.md).
+
+### File Provider domain (iOS)
+
+```json
+{
+  "type": "file-provider",
+  "name": "MyFiles",
+  "platforms": ["ios"],
+  "ios": {
+    "fileProviderDomain": {
+      "identifier": "com.example.app.files",
+      "displayName": "My Files"
+    }
+  }
+}
+```
+
+Identity is strict CNG for `FileProviderDomain.register()` / `unregister()`.
+
+### Content Blocker reload (iOS)
+
+Host JS calls `ContentBlocker.reload()` / `reload({ targetName })` using the plugin-derived bundle id. No extra config keys beyond a normal `content-blocker` target.
 
 ### Widget (Android)
 
@@ -1407,62 +1437,54 @@ class IntentViewController: UIViewController, INUIHostedViewControlling {
 
 App Intents are the modern replacement for legacy INIntent-based intents. They provide better Shortcuts integration, Focus Filters, and Spotlight suggestions.
 
+**Host vs empty appex:** Shortcuts-listable intents and the `AppShortcutsProvider` must live in the **main app** (CNG into `ios/<App>/ExpoTargetsGenerated/`). The `type: "app-intent"` target still emits an **empty** `AppIntentsExtension` appex — that keeps the `appintents-extension` pluginkit proof and room for future out-of-process intents. Do **not** duplicate Shortcuts intents in the appex (Sim often shows “Unable to run”).
+
+Declare host intents + shortcuts in config; put `perform` logic in a user-owned hook under `targets/<name>/ios/` (never overwritten on prebuild; main-app membership):
+
 ```json
 {
   "type": "app-intent",
   "name": "MyAppIntent",
-  "platforms": ["ios"]
+  "platforms": ["ios"],
+  "ios": {
+    "appIntents": [
+      {
+        "className": "ETHostGreetIntent",
+        "title": "ET Greet",
+        "description": "Returns a greeting",
+        "openAppWhenRun": true,
+        "performHook": "ETHostGreetIntentPerform"
+      }
+    ],
+    "appShortcuts": [
+      {
+        "intent": "ETHostGreetIntent",
+        "phrases": ["Say hello in \\(.applicationName)"],
+        "shortTitle": "ET Greet",
+        "systemImageName": "hand.wave"
+      }
+    ]
+  }
 }
 ```
 
-Create `ios/AppIntentExtension.swift`:
+```swift
+// targets/my-app-intent/ios/ETHostGreetIntentPerform.swift  (user-owned)
+enum ETHostGreetIntentPerform {
+  static func perform() async throws {
+    // your work — App Group writes, etc.
+  }
+}
+```
 
 ```swift
+// targets/my-app-intent/ios/AppIntentExtension.swift  (empty appex)
 import AppIntents
-
 @main
-struct MyAppIntentExtension: AppIntentsExtension {
-}
-
-struct MyAppShortcuts: AppShortcutsProvider {
-    static var appShortcuts: [AppShortcut] {
-        AppShortcut(
-            intent: OpenAppIntent(),
-            phrases: ["Open \(.applicationName)"],
-            shortTitle: "Open App",
-            systemImageName: "app"
-        )
-    }
-}
+struct MyAppIntentExtension: AppIntentsExtension {}
 ```
 
-Create `ios/MyIntents.swift` for your intent definitions:
-
-```swift
-import AppIntents
-
-struct OpenAppIntent: AppIntent {
-    static var title: LocalizedStringResource = "Open App"
-    static var description = IntentDescription("Opens the app")
-    static var openAppWhenRun: Bool = true
-
-    func perform() async throws -> some IntentResult {
-        return .result()
-    }
-}
-
-struct GetGreetingIntent: AppIntent {
-    static var title: LocalizedStringResource = "Get Greeting"
-    static var description = IntentDescription("Returns a personalized greeting")
-
-    @Parameter(title: "Name")
-    var name: String
-
-    func perform() async throws -> some IntentResult & ReturnsValue<String> {
-        return .result(value: "Hello, \(name)!")
-    }
-}
-```
+**Filesystem zones:** generated shells/provider → `ios/*/ExpoTargetsGenerated/` (gitignored); perform hooks + empty `@main` extension → `targets/*/ios/` (committed). See [widgets.md](./widgets.md) for the same zone rule on Live Activities.
 
 **When to use App Intents vs legacy Intent:**
 

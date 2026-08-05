@@ -16,8 +16,6 @@
     "expo-targets": "workspace:*",
     "react": "19.2.3",
     "react-native": "0.86.2",
-    "trick-file-domain": "file:./modules/trick-file-domain",
-    "trick-live-activity": "file:./modules/trick-live-activity",
     "expo-splash-screen": "~57.0.5"
   },
   "devDependencies": {

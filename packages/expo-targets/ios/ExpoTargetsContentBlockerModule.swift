@@ -1,9 +1,9 @@
-import SafariServices
 import ExpoModulesCore
+import SafariServices
 
-public class BlockerReloadModule: Module {
+public class ExpoTargetsContentBlockerModule: Module {
   public func definition() -> ModuleDefinition {
-    Name("BlockerReload")
+    Name("ExpoTargetsContentBlocker")
 
     AsyncFunction("reload") { (identifier: String) -> String in
       try await withCheckedThrowingContinuation { (cont: CheckedContinuation<String, Error>) in
@@ -15,11 +15,6 @@ public class BlockerReloadModule: Module {
           }
         }
       }
-    }
-
-    Function("ruleCount") { () -> Int in
-      // Keep in sync with targets/content-blocker/ios/blockerList.json
-      return 4
     }
   }
 }

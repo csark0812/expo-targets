@@ -4,6 +4,11 @@
   "displayName": "ET Trick Widget",
   "platforms": ["ios"],
   "appGroup": "group.com.expotargets.example.trick",
+  "liveActivity": {
+    "attributesName": "TrickActivityAttributes",
+    "static": { "title": "string" },
+    "contentState": { "status": "string" }
+  },
   "ios": {
     "bundleIdentifier": "com.expotargets.example.trick.widgets",
     "displayName": "ET Trick Widget",

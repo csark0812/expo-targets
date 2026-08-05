@@ -9,7 +9,6 @@
     "android": "expo run:android"
   },
   "dependencies": {
-    "blocker-reload": "file:./modules/blocker-reload",
     "expo": "~57.0.9",
     "expo-modules-core": "~57.0.8",
     "expo-status-bar": "~57.0.1",

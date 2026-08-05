@@ -1,11 +1,10 @@
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useState } from 'react';
+import { ContentBlocker } from 'expo-targets';
+import { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import {
-  BLOCKER_RULE_COUNT,
-  getRuleCount,
-  reloadContentBlocker,
-} from './modules/blocker-reload';
+
+/** Keep in sync with targets/content-blocker/ios/blockerList.json length. */
+export const BLOCKER_RULE_COUNT = 4;
 
 /** Host marker asserted by content-blocker journey after reload control. */
 export const UITEST_BLOCKER_RULES = `rules:${BLOCKER_RULE_COUNT}`;
@@ -14,11 +13,6 @@ export default function App() {
   const [ready] = useState(true);
   const [payload, setPayload] = useState(UITEST_BLOCKER_RULES);
   const [reloadStatus, setReloadStatus] = useState('idle');
-
-  const refresh = useCallback(() => {
-    const count = getRuleCount();
-    setPayload(`rules:${count}`);
-  }, []);
 
   return (
     <View style={styles.container} testID="screen-root">
@@ -29,23 +23,28 @@ export default function App() {
       <Text testID="text-bundle-suffix">
         com.expotargets.example.content-blocker
       </Text>
-      <Text testID="text-rule-count">{UITEST_BLOCKER_RULES}</Text>
+      <Text
+        testID="text-rule-count"
+        // Brace wrapper satisfies journey assertPayloadContains flatten fallback.
+        accessibilityLabel={`{${UITEST_BLOCKER_RULES}}`}
+      >
+        {UITEST_BLOCKER_RULES}
+      </Text>
       <TouchableOpacity
         testID="btn-reload-blocker"
         style={styles.button}
         onPress={() => {
-          void reloadContentBlocker()
+          void ContentBlocker.reload()
             .then((status) => {
               setReloadStatus(status);
-              refresh();
-              setPayload(`rules:${getRuleCount()}|reload:${status}`);
+              setPayload(`rules:${BLOCKER_RULE_COUNT}|reload:${status}`);
             })
             .catch((error) => {
               const msg = String(error?.message ?? error);
               setReloadStatus(`error:${msg.slice(0, 40)}`);
               // Still prove host control + rule count when OS rejects reload
               // (blocker not enabled yet). Journey asserts rules:N either way.
-              setPayload(`rules:${getRuleCount()}|reload:attempted`);
+              setPayload(`rules:${BLOCKER_RULE_COUNT}|reload:attempted`);
             });
         }}
       >

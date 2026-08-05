@@ -1,8 +1,10 @@
 import AppIntents
 
-/// ExtensionKit App Intents entry — pluginkit appintents-extension proof.
-/// Runnable App Shortcuts live in the main app (`ETAppShortcuts.swift`).
-/// Do not declare a second ET Greet here — Shortcuts may bind the tile to the
-/// appex intent and fail with "Unable to run App Shortcut".
+/// Empty AppIntentsExtension — keeps the `appintents-extension` pluginkit proof
+/// and room for future out-of-process intents.
+///
+/// Shortcuts-listable intents + AppShortcutsProvider are CNG-generated into the
+/// host app (`ios/*/ExpoTargetsGenerated/`). Perform hooks live under
+/// `targets/<name>/ios/` (user-owned). Do not duplicate Shortcuts intents here.
 @main
 struct ETAppIntentsExtension: AppIntentsExtension {}

@@ -6,7 +6,7 @@ Pod::Spec.new do |s|
   s.name           = 'ExpoTargetsStorage'
   s.version        = package['version']
   s.summary        = package['description']
-  s.description    = 'Expo Targets Storage Module - App Group storage and widget refresh functionality'
+  s.description    = 'Expo Targets Storage Module - App Group storage, widgets, File Provider, Content Blocker, Live Activities'
   s.license        = package['license']
   s.authors        = package['author']
   s.homepage       = package['homepage']
@@ -17,7 +17,13 @@ Pod::Spec.new do |s|
 
   s.dependency 'ExpoModulesCore'
 
-  s.source_files = "**/*.{h,m,mm,swift,hpp,cpp}"
-  s.exclude_files = "Tests/**/*"
+  # Only host/storage surfaces — do not share source_files with ExpoTargetsExtension
+  # or Live Activity bridge registration and the JS module resolve to different copies.
+  s.source_files = [
+    'ExpoTargetsStorageModule.swift',
+    'ExpoTargetsFileProviderModule.swift',
+    'ExpoTargetsContentBlockerModule.swift',
+    'ExpoTargetsLiveActivityModule.swift',
+    'ExpoTargetsLiveActivityBridge.swift',
+  ]
 end
-

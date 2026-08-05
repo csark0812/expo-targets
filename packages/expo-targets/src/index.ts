@@ -9,6 +9,9 @@ export type {
   ReactNativeCompatibleType,
   TargetConfig,
 } from '../plugin/src/config';
+export type { ContentBlockerReloadOpts } from './modules/contentBlocker/index';
+// Content Blocker
+export { ContentBlocker } from './modules/contentBlocker/index';
 export type { SharedData } from './modules/extension/index';
 // Extension module
 export {
@@ -18,6 +21,18 @@ export {
   getSharedData,
   openHostApp,
 } from './modules/extension/index';
+export type { FileProviderDomainOpts } from './modules/fileProvider/index';
+// File Provider domain
+export { FileProviderDomain } from './modules/fileProvider/index';
+export type {
+  LiveActivityContentState,
+  LiveActivityStartOptions,
+} from './modules/liveActivity/index';
+// Live Activity
+export {
+  createLiveActivity,
+  LiveActivity,
+} from './modules/liveActivity/index';
 export type {
   AttachmentPayload,
   ConversationInfo,

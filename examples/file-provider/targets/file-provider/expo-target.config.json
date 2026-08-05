@@ -7,6 +7,10 @@
   "ios": {
     "bundleIdentifier": "com.expotargets.example.file-provider.file-provider",
     "displayName": "ET FileProv Target",
+    "fileProviderDomain": {
+      "identifier": "com.expotargets.example.file-provider.file-provider",
+      "displayName": "ET FileProv"
+    },
     "infoPlist": {
       "NSExtension": {
         "NSExtensionFileProviderSupportsEnumeration": true,

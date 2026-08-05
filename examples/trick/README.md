@@ -24,10 +24,10 @@ Shared app group: `group.com.expotargets.example.trick`.
 | Register Files domain     | `NSFileProviderManager.add` → Files → Browse     |
 | Start / End Live Activity | ActivityKit (Lock Screen / Dynamic Island)       |
 
-Local Expo modules:
+Host APIs (from `expo-targets`):
 
-- `modules/trick-file-domain` — domain registration
-- `modules/trick-live-activity` — ActivityKit start/end (attributes must match `trick-widgets`)
+- `FileProviderDomain.register` / `unregister` — domain identity from `trick-files` config
+- `LiveActivity.create('TrickActivityAttributes')` — attributes CNG from `trick-widgets` `liveActivity`
 
 ## Simulator notes
 

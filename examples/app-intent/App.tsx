@@ -2,16 +2,12 @@ import { StatusBar } from 'expo-status-bar';
 import { AppGroupStorage } from 'expo-targets';
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { donateShortcuts } from './modules/app-intent-host';
 
-const storage = new AppGroupStorage(
-  'group.com.expotargets.example.app-intent'
-);
+const storage = new AppGroupStorage('group.com.expotargets.example.app-intent');
 
 export default function App() {
   const [ready, setReady] = useState(false);
   const [payload, setPayload] = useState('none');
-  const [donate, setDonate] = useState('pending');
 
   const refresh = useCallback(() => {
     const marker = storage.get<string>('ai:marker');
@@ -24,13 +20,8 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    void donateShortcuts()
-      .then((s) => setDonate(s))
-      .catch((e) => setDonate(`error:${String(e)}`))
-      .finally(() => {
-        refresh();
-        setReady(true);
-      });
+    refresh();
+    setReady(true);
     const interval = setInterval(refresh, 2000);
     return () => clearInterval(interval);
   }, [refresh]);
@@ -44,7 +35,6 @@ export default function App() {
       <Text testID="text-bundle-suffix">
         com.expotargets.example.app-intent
       </Text>
-      <Text accessibilityLabel={`ai-donate:${donate}`}>ai-donate:{donate}</Text>
       <Text accessibilityLabel="ai-shortcuts-hint">
         Shortcuts → ET Greet run writes App Group
       </Text>
@@ -58,7 +48,7 @@ export default function App() {
       </TouchableOpacity>
       <TouchableOpacity
         testID="btn-clear-payload"
-        accessibilityLabel="Clear payload"
+        accessibilityLabel="Clear"
         style={styles.button}
         onPress={() => {
           storage.remove('ai:marker');
