@@ -22,10 +22,6 @@ export {
   ensureBundleReactNativePhase,
 } from './bundleReactNative';
 export {
-  buildSafariWebBundleShellScript,
-  ensureSafariWebBundlePhase,
-} from './safariWebBundle';
-export {
   configureAppClipEmbed,
   configureAppExtensionEmbed,
   configureExtensionKitEmbed,
@@ -41,6 +37,10 @@ export {
   ensureExpoTargetsGroup,
   ensureGroupRecursively,
 } from './groups';
+export {
+  buildSafariWebBundleShellScript,
+  ensureSafariWebBundlePhase,
+} from './safariWebBundle';
 export {
   addTargetDependency,
   findAllTargetsByProductName,

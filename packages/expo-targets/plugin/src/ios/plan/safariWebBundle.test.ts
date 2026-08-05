@@ -1,10 +1,9 @@
 import { describe, expect, test } from 'bun:test';
 import * as path from 'node:path';
-
+import { Logger } from '../../logger';
 import { resolveIdentity } from './identity';
 import { planSafariWebBundle } from './safariWebBundle';
 import type { IOSTargetProps, ProjectPaths } from './types';
-import { Logger } from '../../logger';
 
 const PROJECT_ROOT = '/tmp/project';
 const PROJECT_NAME = 'App';

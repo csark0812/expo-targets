@@ -12,7 +12,6 @@ import {
 } from './buildPhases';
 import { applyBuildSettings, removeBuildSetting } from './buildSettings';
 import { ensureBundleReactNativePhase } from './bundleReactNative';
-import { ensureSafariWebBundlePhase } from './safariWebBundle';
 import { ensureCopyFrameworksIntoAppClipPhase } from './copyFrameworksIntoAppClip';
 import {
   configureAppClipEmbed,
@@ -24,6 +23,7 @@ import {
 } from './embed';
 import { addExternalFileReference } from './fileRefs';
 import { addTargetToVirtualGroup, ensureExpoTargetsGroup } from './groups';
+import { ensureSafariWebBundlePhase } from './safariWebBundle';
 import {
   addTargetDependency,
   findTargetByProductName,

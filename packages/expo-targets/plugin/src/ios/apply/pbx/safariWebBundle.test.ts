@@ -44,7 +44,8 @@ describe('ensureSafariWebBundlePhase', () => {
     const plan = {
       entryFile: 'targets/safari/index.tsx',
       popupJsPath: '/tmp/popup.js',
-      popupJsReferencePath: 'App/ExpoTargetsGenerated/MySafariTarget/Resources/popup.js',
+      popupJsReferencePath:
+        'App/ExpoTargetsGenerated/MySafariTarget/Resources/popup.js',
     };
 
     ensureSafariWebBundlePhase({ project, targetUuid, plan });

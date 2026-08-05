@@ -114,9 +114,10 @@ function copyBundleToPopup(bundlePath: string, popupPath: string): void {
 /**
  * Export a Safari target's RN Web entry and copy the bundle to sealed `popup.js`.
  */
-export function exportSafariWebBundle(
-  options: ExportSafariWebBundleOptions
-): { skipped: boolean; popupJsPath: string } {
+export function exportSafariWebBundle(options: ExportSafariWebBundleOptions): {
+  skipped: boolean;
+  popupJsPath: string;
+} {
   if (process.env.SKIP_SAFARI_EXPORT === '1') {
     return { skipped: true, popupJsPath: resolvePopupJsPath(options) };
   }

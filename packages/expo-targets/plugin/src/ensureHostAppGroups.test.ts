@@ -2,14 +2,13 @@ import { describe, expect, test } from 'bun:test';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-
-import { Logger } from './logger';
 import {
   anyTargetNeedsAppGroup,
   ensureHostAppGroups,
   targetNeedsAppGroup,
   warnMissingMetroWrapper,
 } from './ensureHostAppGroups';
+import { Logger } from './logger';
 
 describe('targetNeedsAppGroup', () => {
   test('share requires app group', () => {
@@ -96,9 +95,11 @@ describe('warnMissingMetroWrapper', () => {
       logSparse: () => {},
     } as Logger;
 
-    warnMissingMetroWrapper(root, [
-      { config: { entry: './targets/share/index.tsx' } },
-    ], logger);
+    warnMissingMetroWrapper(
+      root,
+      [{ config: { entry: './targets/share/index.tsx' } }],
+      logger
+    );
 
     expect(warnings.some((w) => w.includes('withTargets'))).toBe(true);
     fs.rmSync(root, { recursive: true, force: true });

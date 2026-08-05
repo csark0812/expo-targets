@@ -168,7 +168,9 @@ export function generatePopupHtml(
   File.writeFileSafe(outputPath, popupHtmlContent(targetName));
 }
 
-function buildManifestObject(config: SafariManifestConfig): Record<string, unknown> {
+function buildManifestObject(
+  config: SafariManifestConfig
+): Record<string, unknown> {
   return {
     manifest_version: 3,
     name: config.name,

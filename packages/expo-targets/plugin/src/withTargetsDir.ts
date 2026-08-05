@@ -8,11 +8,11 @@ import {
   type TargetCodegenConfig,
   writeTargetsTypesFile,
 } from './codegen/typedTargets';
+import { isReactNativeNative } from './domain';
 import {
   ensureHostAppGroups,
   warnMissingMetroWrapper,
 } from './ensureHostAppGroups';
-import { isReactNativeNative } from './domain';
 import { withIOSTarget } from './ios/config-plugins/withIOSTarget';
 import { Logger } from './logger';
 

@@ -38,7 +38,11 @@ function findShellScriptPhase({
   }
 }
 
-function applyPhaseFields(phase: any, shellScript: string, plan: SafariWebBundlePlan): void {
+function applyPhaseFields(
+  phase: any,
+  shellScript: string,
+  plan: SafariWebBundlePlan
+): void {
   phase.name = `"${PHASE_NAME}"`;
   phase.shellPath = '/bin/sh';
   phase.shellScript = toPbxString(shellScript);
@@ -55,7 +59,9 @@ function applyPhaseFields(phase: any, shellScript: string, plan: SafariWebBundle
 /**
  * Shell phase that invokes the expo-targets Safari web export helper.
  */
-export function buildSafariWebBundleShellScript(plan: SafariWebBundlePlan): string {
+export function buildSafariWebBundleShellScript(
+  plan: SafariWebBundlePlan
+): string {
   const safeEntry = plan.entryFile.replace(/"/g, '');
   const safePopup = plan.popupJsReferencePath.replace(/"/g, '');
   return `if [[ -f "$PODS_ROOT/../.xcode.env" ]]; then

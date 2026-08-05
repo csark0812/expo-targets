@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { getSafariPopupJsPath, sanitizeTargetName } from './paths';
 import * as path from 'node:path';
+import { getSafariPopupJsPath, sanitizeTargetName } from './paths';
 
 describe('sanitizeTargetName', () => {
   test('appends Target suffix', () => {

@@ -1,7 +1,12 @@
 import path from 'node:path';
 
 import * as Paths from '../utils/paths';
-import type { IOSTargetProps, ProjectPaths, SafariWebBundlePlan, TargetIdentity } from './types';
+import type {
+  IOSTargetProps,
+  ProjectPaths,
+  SafariWebBundlePlan,
+  TargetIdentity,
+} from './types';
 
 /**
  * Plan an Xcode shell phase that exports the Safari RN Web entry into sealed
