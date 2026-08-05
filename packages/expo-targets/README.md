@@ -52,7 +52,8 @@ target.refresh();
 
 - [Getting started](https://github.com/csark0812/expo-targets/blob/main/docs/getting-started.md)
 - [Configuration](https://github.com/csark0812/expo-targets/blob/main/docs/configuration.md)
-- [API](https://github.com/csark0812/expo-targets/blob/main/docs/api.md)
+- [API](https://github.com/csark0812/expo-targets/blob/main/docs/api.md) (includes [`ExtensionUpdates`](https://github.com/csark0812/expo-targets/blob/main/docs/api.md#extensionupdates))
+- [React Native extensions](https://github.com/csark0812/expo-targets/blob/main/docs/react-native-extensions.md) — [App Group OTA / eas update](https://github.com/csark0812/expo-targets/blob/main/docs/react-native-extensions.md#extension-bundle-sideload-with-expo-updates)
 - [Widgets](https://github.com/csark0812/expo-targets/blob/main/docs/widgets.md)
 - [Contributing](https://github.com/csark0812/expo-targets/blob/main/CONTRIBUTING.md)
 

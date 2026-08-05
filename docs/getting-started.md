@@ -108,6 +108,8 @@ Update the placeholder `appGroup` to match your `app.json`.
 
 For RN `entry` targets, the plugin **always** strips `expo-updates` and `expo-dev-client` from the nested `ExpoModulesProvider` (they crash appex processes). Add `excludedPackages` only for **extra** packages (e.g. reanimated). `npx expo-targets doctor` warns when heavy host deps look unused by the entry.
 
+Extension JS can still OTA without linking Updates in the appex: the host runs `eas update`, then sideloads Hermes bundles into the App Group. Set a string `expo.runtimeVersion`, run `npx expo-targets export-extension-bundles` before each update, and use a **Release** build to verify the share sheet. Full flow: [Extension bundle sideload](./react-native-extensions.md#extension-bundle-sideload-with-expo-updates).
+
 ### Naming Conventions
 
 | Location            | Format     | Example                        | Notes                     |

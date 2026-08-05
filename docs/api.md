@@ -523,9 +523,9 @@ const mod = getExtensionNativeModule();
 
 ## ExtensionUpdates
 
-Host-only. Sideloads extension JS into the App Group after [expo-updates](https://docs.expo.dev/versions/latest/sdk/updates/) applies. Does **not** run in the appex.
+Host-only bridge from [expo-updates](https://docs.expo.dev/versions/latest/sdk/updates/) to App Group sideload. The appex never runs Updates — see [Extension bundle sideload](./react-native-extensions.md#extension-bundle-sideload-with-expo-updates).
 
-**Default:** importing `expo-targets` on the **host** auto-calls `ExtensionUpdates.enable()` (no-ops in appexes — the install native module is host-only).
+**Default:** importing `expo-targets` on the **host** auto-calls `ExtensionUpdates.enable()` (no-op in appexes / when ExpoUpdates or the host install module is missing).
 
 ```typescript
 import { ExtensionUpdates } from "expo-targets";
@@ -533,14 +533,21 @@ import { ExtensionUpdates } from "expo-targets";
 ExtensionUpdates.enable();
 ```
 
-**Publish** (regular eas update + a bundle export step):
+`enable()`:
+
+- Discovers RN-native targets + App Group from `expo.extra.targets`
+- Resolves bundles via Metro alias `expo-targets/extension-bundle-assets` → `assets/expo-targets/extensionBundleModules.js`
+- Syncs App Group from the **currently running** update on launch (`syncOnStart`, default `true`)
+- Returns the Updates-shaped API (`checkForUpdateAsync`, `fetchUpdateAsync`, `reloadAsync`, `syncFromCurrentUpdate`)
+
+**Publish** — export extension Hermes bundles **before** the host update so assets land in the same publish:
 
 ```bash
 npx expo-targets export-extension-bundles
 eas update --branch production
 ```
 
-`enable` reads RN targets + App Group from `expo.extra.targets`, resolves bundles via Metro alias `expo-targets/extension-bundle-assets` → `assets/expo-targets/extensionBundleModules.js`, and syncs on launch.
+Require a **string** `expo.runtimeVersion` (baked into the appex at prebuild; also written into sideload manifests). Policy objects are not resolved here — App Group load stays disabled until a plain string is set.
 
 ### Low-level
 
@@ -552,10 +559,9 @@ const api = ExtensionUpdates.create({
   targets: [{ targetName: "ShareExt", type: "share" }],
   assetModules: require("../assets/expo-targets/extensionBundleModules"),
 });
-await api.fetchUpdateAsync();
+await api.fetchUpdateAsync(); // Updates.fetch + App Group install when isNew
+await api.syncFromCurrentUpdate(); // install from the already-running update
 ```
-
-Set `expo.runtimeVersion` before export (fail closed if missing).
 
 ---
 
@@ -628,6 +634,16 @@ npx expo-targets sync --clean   # opt-in orphan cleanup (sealed dirs + Podfile)
 ```bash
 npx expo prebuild --platform ios
 ```
+
+### expo-targets export-extension-bundles
+
+Hermes-export each RN-native target `entry` for App Group OTA. Writes `assets/expo-targets/` (bundles + `extensionBundleModules.js`) and optionally a publish layout under `dist/`. Run **before** `eas update`.
+
+```bash
+npx expo-targets export-extension-bundles
+```
+
+Fails closed if `expo.runtimeVersion` is not a non-empty string. Details: [Extension bundle sideload](./react-native-extensions.md#extension-bundle-sideload-with-expo-updates).
 
 ---
 

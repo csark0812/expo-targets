@@ -377,13 +377,82 @@ excluded — advisory only; it never auto-strips.
 
 ### Extension bundle sideload (with expo-updates)
 
-RN extensions **never** link `expo-updates` (auto-excluded). To refresh extension JS without a store rebuild:
+RN extensions **never** link `expo-updates` (auto-excluded — Updates in an appex crashes the process). Extension JS still OTAs via the **host**:
 
-1. Host: importing `expo-targets` auto-enables `ExtensionUpdates` (or call `ExtensionUpdates.enable()`).
-2. Publish: `npx expo-targets export-extension-bundles` then normal `eas update`.
-3. Open the app (syncs App Group from the running update). **Release** appex loads App Group when size / sha256 / `runtimeVersion` match; otherwise embedded. **DEBUG** still uses Metro only.
+| Process | Role |
+| ------- | ---- |
+| Host app | Runs `expo-updates`. After an update applies, copies each target’s Hermes `main.jsbundle` from the update into the App Group. |
+| Appex (Release) | Does **not** run Updates. Loads App Group sideload when valid; otherwise the Xcode-embedded `main.jsbundle`. |
+| Appex (DEBUG) | Metro only — App Group sideload is **not** consulted. |
 
-Size caps: **5 MiB** (share / action / messages / notification-content), **8 MiB** (clip).
+Layout on disk (App Group container):
+
+```text
+{AppGroup}/expo-targets/bundles/{config.name}/
+  main.jsbundle
+  manifest.json   # runtimeVersion, sha256, byteLength, targetName, type
+```
+
+`config.name` is the folder key (e.g. `"Share"`), not the Xcode product name (`UpdatesShareTarget`).
+
+#### Requirements
+
+1. **String `expo.runtimeVersion`** in `app.json` / `app.config` (e.g. `"1.0.0"`). Prebuild bakes it into the extension RN host. If it is missing or a policy object, App Group load is skipped forever and Release always uses the embedded bundle.
+2. **Shared App Group** on host + target (`appGroup` / entitlements).
+3. **Host import** of `expo-targets` (auto-enables `ExtensionUpdates`) or an explicit `ExtensionUpdates.enable()`.
+4. **Metro** wrapped with `withTargets` so the publish-time asset module resolves.
+
+#### Publish pipeline
+
+Order matters — host `eas update` must include the freshly exported extension assets:
+
+```bash
+npx expo-targets export-extension-bundles   # Hermes per RN entry → assets/expo-targets/
+eas update --branch production              # or --channel …
+```
+
+`export-extension-bundles` writes:
+
+- `assets/expo-targets/bundles/{Name}/main.jsbundle` (+ manifest)
+- `assets/expo-targets/extensionBundleModules.js` (`require()` map for the host)
+
+The host update then ships those files as normal Metro assets. On device, `Asset.fromModule` resolves the local file; native install copies it into the App Group.
+
+Dogfood walkthrough: [`examples/extension-updates`](../examples/extension-updates/README.md). API details: [ExtensionUpdates](./api.md#extensionupdates).
+
+#### How the appex chooses a bundle
+
+```text
+DEBUG:   Metro (packager) → embedded main.jsbundle
+Release: App Group sideload (if valid) → embedded main.jsbundle
+```
+
+App Group is **valid** only when all of these hold:
+
+- Manifest `runtimeVersion` equals the **baked** `expo.runtimeVersion` from prebuild
+- `byteLength` ≤ type cap (**5 MiB** share / action / messages / notification-content; **8 MiB** clip)
+- File `sha256` matches the manifest
+
+Invalid or missing sideloads stay on disk for diagnostics; the appex falls back to embedded.
+
+#### What updates vs what does not
+
+| Kind | DEBUG (Metro) | Release embedded | After App Group OTA |
+| ---- | ------------- | ---------------- | ------------------- |
+| Extension JS / inlined `EXPO_PUBLIC_*` | live | bake at `expo run:ios` | **updates** (sideloaded jsbundle) |
+| `require()` images / custom fonts | Metro / Xcode pack | packed next to appex | **gap** — only `main.jsbundle` is installed today |
+| System fonts | OK | OK | OK |
+
+Host `eas update` and `export-extension-bundles` each inline `EXPO_PUBLIC_*` separately — changing `.env` between the two can diverge host vs extension tags.
+
+#### Troubleshooting
+
+| Symptom | Likely cause |
+| ------- | ------------ |
+| Host OTA label updates; share still shows old / embed | Baked `runtimeVersion` empty (re-prebuild with a string `expo.runtimeVersion`), or sync never ran (`installed=0`) |
+| Sync error: bundle not found under `Application%20Support` | Fixed in current `expo-targets` (percent-decode asset paths); update the library |
+| Sync succeeds but share unchanged | Opening a **DEBUG** build (Metro/embed only), or wrong App Group / target `name` |
+| Host updated without `export-extension-bundles` | New host JS, stale extension asset in the update — share keeps previous sideload or embed |
 
 ---
 
@@ -391,7 +460,7 @@ Size caps: **5 MiB** (share / action / messages / notification-content), **8 MiB
 
 Extensions run in a **separate process** with limited debugging capabilities compared to the main app. In **DEBUG** builds, the native host uses `RCTBundleURLProvider` with your target's `bundleRoot` (from `entry` in config). When Metro is running and `withTargets` is configured, the extension can load from the packager — **Fast Refresh / HMR may work for JS-only edits** while the extension is open.
 
-**Release builds** (or DEBUG with no packager) load the embedded `main.jsbundle` baked into the appex at build time. If Metro is unreachable in DEBUG, the host **falls back to the embedded bundle** instead of showing a blank sheet. If neither Metro nor an embedded bundle is available, you get a clear error alert.
+**Release builds** prefer a valid **App Group sideload** (see [Extension bundle sideload](#extension-bundle-sideload-with-expo-updates)), then the embedded `main.jsbundle` baked into the appex at build time. **DEBUG** never reads the App Group. If Metro is unreachable in DEBUG, the host **falls back to the embedded bundle** instead of showing a blank sheet. If neither Metro nor an embedded bundle is available, you get a clear error alert.
 
 **Limitations (unchanged):**
 
