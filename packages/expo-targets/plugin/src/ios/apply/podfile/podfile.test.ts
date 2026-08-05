@@ -103,6 +103,7 @@ describe('ensureExcludedPackagesPostIntegrate', () => {
     );
     expect(once).toContain('expo-configure-project.sh');
     expect(once).toContain('Pods-#{target_name}');
+    expect(once).toContain('ExpoTargetsExtensionBundleModule');
 
     const twice = ensureExcludedPackagesPostIntegrate(once, [
       {

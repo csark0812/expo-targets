@@ -7,8 +7,8 @@
     "start": "expo start",
     "ios": "expo run:ios",
     "android": "expo run:android",
-    "export:targets": "expo-targets export-extension-bundles",
-    "update": "expo-targets export-extension-bundles && eas update --channel preview"
+    "export:targets": "node ../../packages/expo-targets/bin/expo-targets.js export-extension-bundles",
+    "update": "node ../../packages/expo-targets/bin/expo-targets.js export-extension-bundles && eas update --channel preview"
   },
   "dependencies": {
     "expo": "~57.0.9",

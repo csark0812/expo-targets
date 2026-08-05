@@ -159,11 +159,10 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: '700' },
   ota: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#0A7',
-    fontFamily: 'Courier',
+    fontWeight: '800',
+    color: '#007755',
   },
-  meta: { fontFamily: 'Courier', fontSize: 12, color: '#333' },
+  meta: { fontSize: 12, color: '#333' },
   button: {
     backgroundColor: '#007AFF',
     padding: 12,

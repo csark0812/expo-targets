@@ -615,11 +615,17 @@ const FRAMEWORK_PATHS_RULE = `      if target.name.include?('{{TARGET_NAME}}')
                     xcconfig_content.gsub!(/^HEADER_SEARCH_PATHS = .*$/, '')
                     xcconfig_content += "\\nHEADER_SEARCH_PATHS = #{header_paths_match[1]}\\n"
                   end
-                  # Copy OTHER_SWIFT_FLAGS (includes module map files for ExpoModulesCore)
+                  # Copy OTHER_SWIFT_FLAGS (module maps for ExpoModulesCore) but drop
+                  # host-only EXUpdates / expo-dev-client maps — nested targets inherit
+                  # search paths from the host and would otherwise link Updates into the appex.
                   swift_flags_match = main_xcconfig_content.match(/^OTHER_SWIFT_FLAGS = (.+)$/m)
                   if swift_flags_match
+                    swift_flags = swift_flags_match[1]
+                      .gsub(/\\s*-fmodule-map-file="[^"]*EXUpdates[^"]*"/, '')
+                      .gsub(/\\s*-fmodule-map-file="[^"]*EXDevLauncher[^"]*"/, '')
+                      .gsub(/\\s*-fmodule-map-file="[^"]*expo-dev-client[^"]*"/, '')
                     xcconfig_content.gsub!(/^OTHER_SWIFT_FLAGS = .*$/, '')
-                    xcconfig_content += "\\nOTHER_SWIFT_FLAGS = #{swift_flags_match[1]}\\n"
+                    xcconfig_content += "\\nOTHER_SWIFT_FLAGS = #{swift_flags}\\n"
                   end
                   # Copy SWIFT_INCLUDE_PATHS (Swift module search paths)
                   swift_include_match = main_xcconfig_content.match(/^SWIFT_INCLUDE_PATHS = (.+)$/m)
@@ -741,6 +747,11 @@ const EXCLUDED_PACKAGES_RUBY_SUFFIX = [
   '    unless File.exist?(provider_path)',
   '      raise "[expo-targets] ExpoModulesProvider missing after regenerate for #{target_name}"',
   '    end',
+  '    # Host-only: ExtensionBundle install API must not register inside RN appexes',
+  '    # (auto-enable used to treat its presence as "running on host").',
+  '    provider = File.read(provider_path)',
+  '    provider.gsub!(/^\\s*\\(module: ExpoTargetsExtensionBundleModule\\.self.*?\\),?\\n/, \'\')',
+  '    File.write(provider_path, provider)',
   '    Pod::UI.puts "[expo-targets] Applied excludedPackages to #{target_name}: #{packages.join(\', \')}"',
   '  end',
   'end',

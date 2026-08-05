@@ -228,12 +228,9 @@ class ReactNativeViewController: UIViewController {
 
         NotificationCenter.default.removeObserver(self)
 
-        // Remove React Native view and deallocate resources
-        view.subviews.forEach { subview in
-            if subview is RCTRootView {
-                subview.removeFromSuperview()
-            }
-        }
+        // Drop the RN root without referencing deprecated RCTRootView.
+        rootView?.removeFromSuperview()
+        rootView = nil
 
         reactNativeFactory = nil
         reactNativeFactoryDelegate = nil

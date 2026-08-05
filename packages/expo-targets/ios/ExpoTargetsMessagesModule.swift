@@ -2,7 +2,7 @@ import ExpoModulesCore
 import Messages
 import UIKit
 
-public class ExpoTargetsMessagesModule: Module {
+public class ExpoTargetsMessagesModule: Module, @unchecked Sendable {
   private var notificationObserver: NSObjectProtocol?
 
   deinit {
@@ -158,8 +158,9 @@ public class ExpoTargetsMessagesModule: Module {
       }
 
       return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Bool, Error>) in
-        DispatchQueue.main.async {
-          guard let msViewController = self.findMessagesViewController(),
+        DispatchQueue.main.async { [weak self] in
+          guard let self,
+                let msViewController = self.findMessagesViewController(),
                 let conversation = msViewController.activeConversation else {
             continuation.resume(returning: false)
             return

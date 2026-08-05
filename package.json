@@ -47,6 +47,7 @@
   "dependencies": {
     "@expo/config-plugins": "^57.0.6",
     "expo": "~57.0.9",
+    "expo-updates": "^57.0.12",
     "react": "19.2.3",
     "react-native": "0.86.2"
   }

@@ -23,9 +23,44 @@ export const ExtensionUpdates = {
 
 let didAutoEnable = false;
 
+/** Pure host gate — unit-tested. */
+export function shouldAutoEnableExtensionUpdates(opts: {
+  isAppExtension: boolean;
+  hasExpoUpdates: boolean;
+  hasExtensionBundle: boolean;
+}): boolean {
+  return (
+    !opts.isAppExtension && opts.hasExpoUpdates && opts.hasExtensionBundle
+  );
+}
+
 /**
- * Host-only auto-enable. No-ops in appexes (ExtensionBundle native module absent)
- * and in Node. Safe to call from the package entry.
+ * True when running inside an iOS app extension process (.appex).
+ */
+export function isAppExtensionProcess(): boolean {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { Platform } = require('react-native') as { Platform: { OS: string } };
+    if (Platform.OS !== 'ios') {
+      return false;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { isAppExtension } = require('../storage/index') as {
+      isAppExtension: () => boolean;
+    };
+    return isAppExtension();
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Host-only auto-enable. No-ops in appexes and in Node.
+ * Safe to call from the package entry.
+ *
+ * Gate: must have ExpoUpdates native (stripped from RN appexes) and must not
+ * be an .appex process. `ExpoTargetsExtensionBundle` alone is insufficient —
+ * it currently ships in ExpoTargetsStorage and is linked into extensions.
  */
 export function autoEnableExtensionUpdates(): void {
   if (didAutoEnable) {
@@ -33,13 +68,39 @@ export function autoEnableExtensionUpdates(): void {
   }
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { requireNativeModule } = require('expo-modules-core') as {
-      requireNativeModule: (name: string) => unknown;
-    };
-    requireNativeModule('ExpoTargetsExtensionBundle');
+    const { requireNativeModule, requireOptionalNativeModule } =
+      require('expo-modules-core') as {
+        requireNativeModule: (name: string) => unknown;
+        requireOptionalNativeModule: (name: string) => unknown;
+      };
+
+    const isAppex = isAppExtensionProcess();
+    const hasExpoUpdates =
+      requireOptionalNativeModule('ExpoUpdates') != null;
+    let hasExtensionBundle = false;
+    try {
+      requireNativeModule('ExpoTargetsExtensionBundle');
+      hasExtensionBundle = true;
+    } catch {
+      hasExtensionBundle = false;
+    }
+
+    if (
+      !shouldAutoEnableExtensionUpdates({
+        isAppExtension: isAppex,
+        hasExpoUpdates,
+        hasExtensionBundle,
+      })
+    ) {
+      return;
+    }
   } catch {
     return;
   }
   didAutoEnable = true;
-  ExtensionUpdates.enable();
+  try {
+    ExtensionUpdates.enable();
+  } catch {
+    // Never crash host / extension startup on sync wiring failures.
+  }
 }

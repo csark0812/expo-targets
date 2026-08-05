@@ -25,11 +25,13 @@ npx eas init
 # then: npx eas update:configure
 
 npx expo prebuild --platform ios
-# Release build required for App Group load path (DEBUG uses Metro only)
-npx expo run:ios --configuration Release
+# Release binary (needed for App Group sideload). Avoid Metro attaching:
+npx expo run:ios --configuration Release --no-bundler
 ```
 
 ## Publish a change
+
+Publish at least once so the `preview` channel exists (the Release binary requests that channel; until then you’ll see a 404 “no channel named preview”).
 
 ```bash
 cd examples/extension-updates
@@ -40,7 +42,15 @@ npx expo-targets export-extension-bundles
 eas update --channel preview --message "ota-v2"
 ```
 
-Or: `bun run update` (same two steps; uses `--branch preview`).
+In this monorepo, if `npx expo-targets` resolves the bare stub, use:
+
+```bash
+bun run export:targets
+# or:
+node ../../packages/expo-targets/bin/expo-targets.js export-extension-bundles
+```
+
+Or: `bun run update` (same two steps).
 
 ## On device
 

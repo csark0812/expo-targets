@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "ET Extension Updates",
+    "name": "ET Ext Updates",
     "slug": "example-extension-updates",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,7 +8,11 @@
     "userInterfaceStyle": "light",
     "runtimeVersion": "1.0.0",
     "updates": {
-      "fallbackToCacheTimeout": 0
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/f40b828a-0540-449d-a594-39f547fe060e",
+      "requestHeaders": {
+        "expo-channel-name": "preview"
+      }
     },
     "ios": {
       "supportsTablet": true,
@@ -18,9 +22,6 @@
         "com.apple.security.application-groups": [
           "group.com.expotargets.example.extensionupdates"
         ]
-      },
-      "infoPlist": {
-        "CFBundleDisplayName": "ET Ext Updates"
       }
     },
     "plugins": [
@@ -46,6 +47,53 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.expotargets.example.extensionupdates"
-    }
+    },
+    "extra": {
+      "eas": {
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "UpdatesShareTarget",
+                  "bundleIdentifier": "com.expotargets.example.extensionupdates.share",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.expotargets.example.extensionupdates"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "projectId": "f40b828a-0540-449d-a594-39f547fe060e"
+      },
+      "targets": [
+        {
+          "type": "share",
+          "name": "Share",
+          "displayName": "Updates Share",
+          "platforms": [
+            "ios"
+          ],
+          "entry": "./targets/share/index.tsx",
+          "appGroup": "group.com.expotargets.example.extensionupdates",
+          "ios": {
+            "bundleIdentifier": "com.expotargets.example.extensionupdates.share",
+            "displayName": "Updates Share",
+            "activationRules": [
+              {
+                "type": "text"
+              },
+              {
+                "type": "url"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "owner": "christopher.sarkissian"
   }
 }

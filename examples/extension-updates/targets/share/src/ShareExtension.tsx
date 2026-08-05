@@ -13,9 +13,9 @@ export default function ShareExtension({ target, text, url }: Props) {
   return (
     <View style={styles.container} testID="share-extension-root">
       <Text style={styles.title}>Updates Share</Text>
-      <Text testID="share-ota-label" style={styles.ota}>
-        OTA: {OTA_LABEL}
-      </Text>
+      <View style={styles.otaBadge} testID="share-ota-label">
+        <Text style={styles.ota}>OTA: {OTA_LABEL}</Text>
+      </View>
       <Text testID="share-payload">{text || url || 'No content'}</Text>
       <TouchableOpacity
         style={styles.button}
@@ -29,13 +29,27 @@ export default function ShareExtension({ target, text, url }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, gap: 12, justifyContent: 'center' },
-  title: { fontSize: 20, fontWeight: '700' },
+  container: {
+    flex: 1,
+    padding: 20,
+    gap: 12,
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  title: { fontSize: 20, fontWeight: '700', color: '#111111' },
+  otaBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#E6FFF5',
+    borderWidth: 2,
+    borderColor: '#00AA77',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
   ota: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0A7',
-    fontFamily: 'Courier',
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#007755',
   },
   button: {
     backgroundColor: '#007AFF',

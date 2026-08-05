@@ -120,5 +120,18 @@ public class ExpoTargetsStorageModule: Module {
       }
       return config
     }
+
+    /// Host vs appex: ExtensionBundle ships in this pod and is linked into RN
+    /// extensions — callers must not treat its presence as "running on host".
+    Function("isAppExtension") { () -> Bool in
+      if Bundle.main.bundlePath.hasSuffix(".appex") {
+        return true
+      }
+      // Share/action/etc. use package type "XPC!"; host apps use "APPL".
+      if let package = Bundle.main.object(forInfoDictionaryKey: "CFBundlePackageType") as? String {
+        return package == "XPC!"
+      }
+      return false
+    }
   }
 }
