@@ -20,9 +20,9 @@ Bump `OTA_LABEL`, publish an update, fetch on device — both should change with
 bun install
 cd examples/extension-updates
 
-# Link a real EAS project (replaces placeholder projectId / updates.url in app.json)
+# Link a real EAS project (writes projectId + updates.url into app.json)
 npx eas init
-# or: eas update:configure
+# then: npx eas update:configure
 
 npx expo prebuild --platform ios
 # Release build required for App Group load path (DEBUG uses Metro only)
@@ -54,5 +54,5 @@ If the sheet still shows the old label: confirm Release (not Debug), `runtimeVer
 ## Notes
 
 - Importing `expo-targets` auto-enables `ExtensionUpdates` on the host; this app also calls `ExtensionUpdates.enable()` so the control buttons are obvious.
-- Placeholder `updates.url` / `extra.eas.projectId` must be replaced via `eas init` before `eas update` works.
+- `eas init` + `eas update:configure` write `extra.eas.projectId` and `updates.url` into `app.json` (not committed with placeholders).
 - Do not commit generated `ios/` / `android/`. Never edit `ExpoTargetsGenerated/`.

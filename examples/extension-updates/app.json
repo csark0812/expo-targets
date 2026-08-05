@@ -8,7 +8,6 @@
     "userInterfaceStyle": "light",
     "runtimeVersion": "1.0.0",
     "updates": {
-      "url": "https://u.expo.dev/00000000-0000-0000-0000-000000000000",
       "fallbackToCacheTimeout": 0
     },
     "ios": {
@@ -47,11 +46,6 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.expotargets.example.extensionupdates"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "00000000-0000-0000-0000-000000000000"
-      }
     }
   }
 }
