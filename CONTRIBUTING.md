@@ -13,7 +13,7 @@ Agents: start with [AGENTS.md](./AGENTS.md), then this file for install/CI/relea
 - **macOS + Xcode** only when running example hosts / Devicewright
 - **`NODE_AUTH_TOKEN`** — required to install private `@csark0812/devicewright@0.1.14`. See [examples/.devicewright/AUTH.md](./examples/.devicewright/AUTH.md) and root `.env.example`.
 
-The root `package.json` `"version"` field is vestigial (private workspace); published versions live on `packages/expo-targets` and `packages/create-expo-target`.
+The root `package.json` `"version"` field is vestigial (private workspace); the published version lives on `packages/expo-targets`.
 
 ## Install → build
 
@@ -84,10 +84,11 @@ Publishing is [`.github/workflows/publish.yml`](./.github/workflows/publish.yml)
 
 - Triggers on **merged PR to `main`** or **`workflow_dispatch`** (optional explicit version / bump type).
 - Uses npm **trusted publishers** + OIDC (`id-token: write`) — no long-lived npm token for publish.
-- **Publishes:** `expo-targets`, `create-expo-target`.
-- **Does not publish separately:** `@expo-targets/cli` workspace package (dev mirror). User-facing CLI ships as the `expo-targets` bin (`npx expo-targets doctor|sync|…`).
+- **Publishes:** `expo-targets` (includes `npx expo-targets add|doctor|generate|sync|…`).
+- **Does not publish separately:** `@expo-targets/cli` workspace package (dev mirror).
 - Semver from PR labels: `major` → major, `minor` → minor, else patch. Manual dispatch can set version or bump type.
-- Bumps package versions, tags `v*`, builds, then `npm publish`.
+- Bumps package version, tags `v*`, builds, then `npm publish`.
+- **Legacy `create-expo-target`:** removed from the monorepo. After this lands, publish a one-shot redirect tarball from a throwaway folder (`npx create-expo-target` → print “use `npx expo-targets add`” + exit 1). Not kept in-repo.
 
 `NODE_AUTH_TOKEN` in CI is still required for **install** of private Devicewright during the publish job’s `bun install`.
 

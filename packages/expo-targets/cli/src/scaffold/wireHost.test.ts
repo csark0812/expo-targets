@@ -8,12 +8,12 @@ import {
   findJsonExpoConfig,
 } from './expoConfigIO';
 import { wireExpoConfig } from './wireExpoConfig';
-import { wireHost } from './wireHost';
+import { wireHost, wireHostFailed } from './wireHost';
 import { wireMetroConfig } from './wireMetro';
 import { ensureExpoTargetsDependency } from './wirePackageJson';
 
 function makeTempProject(): string {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'create-expo-target-'));
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'expo-targets-scaffold-'));
 }
 
 const tempRoots: string[] = [];
@@ -209,5 +209,24 @@ describe('wireHost', () => {
     expect(result.dependencyAdded).toBe(true);
     expect(result.expo.ok).toBe(true);
     expect(result.metro.ok).toBe(true);
+    expect(wireHostFailed(result)).toBe(false);
+  });
+
+  test('soft-fails dynamic app.config.js (metro can still succeed)', () => {
+    const root = makeTempProject();
+    tempRoots.push(root);
+    fs.writeFileSync(
+      path.join(root, 'package.json'),
+      JSON.stringify({ name: 'test-app' })
+    );
+    fs.writeFileSync(
+      path.join(root, 'app.config.js'),
+      'module.exports = { expo: { name: "Test", slug: "test" } };\n'
+    );
+
+    const result = wireHost(root);
+    expect(result.expo.ok).toBe(false);
+    expect(result.metro.ok).toBe(true);
+    expect(wireHostFailed(result)).toBe(false);
   });
 });

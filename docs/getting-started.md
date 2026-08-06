@@ -34,18 +34,19 @@ npm install expo-targets
 ## Step 2: Create a Share Extension
 
 ```bash
-npx create-expo-target
+npx expo-targets add
+# or non-interactive: npx expo-targets add share my-share
 ```
 
-Choose:
+Choose (interactive):
 
 - **Type:** Share Extension
 - **Name:** my-share
 - **Use React Native:** Yes
 
-`create-expo-target` scaffolds `targets/my-share/` and wires the host by default: adds `expo-targets` to `package.json`, registers the config plugin, ensures App Group entitlements, and patches `metro.config.js` with `withTargets`. Use `--no-wire` to scaffold only.
+`expo-targets add` scaffolds `targets/my-share/` and wires the host by default: adds `expo-targets` to `package.json`, registers the config plugin, ensures App Group entitlements, and patches `metro.config.js` with `withTargets`. Use `--no-wire` to scaffold only. Dynamic `app.config.ts`/`js` cannot be auto-patched — you get a snippet warning; finish with `npx expo-targets doctor`.
 
-If you added `expo-targets` to `package.json` during wiring, install dependencies before prebuild.
+If wiring added `expo-targets` to `package.json`, install dependencies before prebuild.
 
 This creates:
 
@@ -131,15 +132,21 @@ module.exports = withTargets(getDefaultConfig(__dirname));
 
 `withTargets` maps each target `entry` so the extension host can load the right bundle. (`withTargetsMetro` is a deprecated alias.) Details: [React Native Extensions](./react-native-extensions.md).
 
-### Typed target names
+### Typed target names + Live Activity payloads
 
-After prebuild (or `npx expo-targets generate`), ambient types are written to `.expo/types/expo-targets.d.ts` (gitignored, same layout as Expo Router typed routes). That narrows `createTarget('…')` / `LiveActivity.create('…')` string literals — **no import from `.expo/`**.
+After prebuild (or `npx expo-targets generate`), ambient types are written to `.expo/types/expo-targets.d.ts` (gitignored, same layout as Expo Router typed routes). That narrows `createTarget('…')` / `LiveActivity.create('…')` string literals — **no import from `.expo/`**. When `liveActivity.static` / `contentState` are set, `start` / `update` pick up those field types via module augmentation.
 
 ```typescript
-import { createTarget, type TargetName } from "expo-targets";
+import { createTarget, LiveActivity, type TargetName } from "expo-targets";
 
 const name: TargetName = "MyShare";
 createTarget(name);
+
+const order = LiveActivity.create("OrderAttributes");
+await order.start({
+  attributes: { orderId: "12" },
+  contentState: { status: "preparing", progress: 0.1 },
+});
 ```
 
 `generate` also ensures `tsconfig.json` includes `.expo/types/**/*.ts` when missing (alongside Router’s include if present).

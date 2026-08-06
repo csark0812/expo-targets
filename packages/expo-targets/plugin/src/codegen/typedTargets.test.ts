@@ -46,10 +46,29 @@ describe('formatTargetsTypesFile', () => {
     expect(content).toContain('"WeatherAttributes": true');
   });
 
+  test('emits LiveActivityPayloadRegistry from static/contentState', () => {
+    const content = formatTargetsTypesFile([
+      {
+        name: 'OrderWidget',
+        liveActivity: {
+          attributesName: 'OrderAttributes',
+          static: { orderId: 'string' },
+          contentState: { status: 'string', progress: 'double' },
+        },
+      },
+    ]);
+    expect(content).toContain('interface LiveActivityPayloadRegistry');
+    expect(content).toContain('"OrderAttributes"');
+    expect(content).toContain('"orderId": string');
+    expect(content).toContain('"progress": number');
+    expect(content).toContain('"status": string');
+  });
+
   test('omits attribute members when no live activities', () => {
     const content = formatTargetsTypesFile([{ name: 'Share' }]);
     expect(content).toContain('interface KnownLiveActivityAttributes');
     expect(content).not.toContain('WeatherAttributes');
+    expect(content).not.toContain('LiveActivityPayloadRegistry');
   });
 });
 

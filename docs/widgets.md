@@ -61,8 +61,8 @@ await LiveActivity.endAll();
 ## Scaffolding
 
 ```bash
-npx create-expo-target
-# choose Widget / Live Activity
+npx expo-targets add
+# choose Widget / Live Activity — or: npx expo-targets add widget my-widget
 # optional: Configurable (Edit Widget)? — AppIntentConfiguration (iOS 17+)
 # optional: Live Activity bootstrap
 ```
@@ -113,8 +113,8 @@ From the host app, keep the widget in sync after in-app picks:
 ```ts
 const widget = createTarget("HelloWidget");
 widget.storage.set("listId", selectedId);
-// or: widget.setData({ listId: selectedId });
 widget.refresh();
+// or: widget.setData({ listId: selectedId }, { refresh: true });
 ```
 
 Use the same `appGroup` as `expo-target.config.json` — the scaffold wires it

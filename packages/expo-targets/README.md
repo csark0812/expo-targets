@@ -18,11 +18,11 @@ Expo config plugin and runtime for Apple app extensions Expo does not ship — s
 
 ```bash
 npm install expo-targets
-npx create-expo-target
+npx expo-targets add
 # Share Extension → my-share → Use React Native: Yes
 ```
 
-`create-expo-target` wires the host by default. Install dependencies if wiring added `expo-targets` to `package.json`.
+`expo-targets add` wires the host by default. Install dependencies if wiring added `expo-targets` to `package.json`.
 
 ```js
 // metro.config.js

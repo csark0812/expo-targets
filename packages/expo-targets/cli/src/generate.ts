@@ -26,7 +26,13 @@ export function runGenerate(projectRoot = process.cwd()): number {
     projectRoot,
     runtimeConfigs.map((cfg) => ({
       name: cfg.name,
-      liveActivity: cfg.liveActivity,
+      liveActivity: cfg.liveActivity
+        ? {
+            attributesName: cfg.liveActivity.attributesName,
+            static: cfg.liveActivity.static,
+            contentState: cfg.liveActivity.contentState,
+          }
+        : undefined,
     }))
   );
 

@@ -2,8 +2,35 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { parse } from '@babel/parser';
 import traverse from '@babel/traverse';
+import type {
+  Expression,
+  MemberExpression,
+  OptionalMemberExpression,
+} from '@babel/types';
 
 import type { CheckResult, ProjectContext } from '../types';
+
+function memberName(
+  node: MemberExpression | OptionalMemberExpression
+): string | null {
+  if (
+    node.object.type === 'Identifier' &&
+    node.object.name === 'Targets' &&
+    !node.computed &&
+    node.property.type === 'Identifier'
+  ) {
+    return node.property.name;
+  }
+  if (
+    node.object.type === 'Identifier' &&
+    node.object.name === 'Targets' &&
+    node.computed &&
+    node.property.type === 'StringLiteral'
+  ) {
+    return node.property.value;
+  }
+  return null;
+}
 
 function parseCreateTargetName(filePath: string): string | null {
   const source = fs.readFileSync(filePath, 'utf8');
@@ -19,9 +46,22 @@ function parseCreateTargetName(filePath: string): string | null {
       if (callee.type !== 'Identifier' || callee.name !== 'createTarget') {
         return;
       }
-      const arg = path.node.arguments[0];
-      if (arg?.type === 'StringLiteral') {
+      const arg = path.node.arguments[0] as Expression | undefined;
+      if (!arg) {
+        return;
+      }
+      if (arg.type === 'StringLiteral') {
         found = arg.value;
+        return;
+      }
+      if (
+        arg.type === 'MemberExpression' ||
+        arg.type === 'OptionalMemberExpression'
+      ) {
+        const name = memberName(arg);
+        if (name) {
+          found = name;
+        }
       }
     },
   });

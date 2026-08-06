@@ -1,9 +1,28 @@
+const RN_CAPABLE = new Set([
+  'share',
+  'action',
+  'clip',
+  'messages',
+  'notification-content',
+  'safari',
+]);
+
+export function isReactNativeCapableType(type: string): boolean {
+  return RN_CAPABLE.has(type);
+}
+
+function toCamel(pascalName: string): string {
+  return pascalName.charAt(0).toLowerCase() + pascalName.slice(1);
+}
+
 export function getReactNativeTemplate(
-  _type: string,
+  type: string,
   pascalName: string
 ): string {
-  return `import { AppRegistry } from 'react-native';
-import React from 'react';
+  const generic = RN_CAPABLE.has(type) ? type : 'share';
+  const exportName = toCamel(pascalName);
+
+  return `import { createTarget } from 'expo-targets';
 import { View, Text, StyleSheet } from 'react-native';
 
 function ${pascalName}() {
@@ -33,7 +52,6 @@ const styles = StyleSheet.create({
   },
 });
 
-// ⚠️ IMPORTANT: Component name must match the "name" field in expo-target.config.json exactly
-AppRegistry.registerComponent('${pascalName}', () => ${pascalName});
+export const ${exportName} = createTarget<'${generic}'>('${pascalName}', ${pascalName});
 `;
 }

@@ -67,7 +67,7 @@ Same bootstrap + packaging. Additive APIs: `sendMessage`, `sendUpdate`, `request
 ### 1. Create the Target
 
 ```bash
-npx create-expo-target
+npx expo-targets add
 # Choose: Share Extension → share-ext → iOS → Yes (Use React Native)
 ```
 

@@ -83,11 +83,13 @@ export type {
 export { createTarget } from './Target';
 export type {
   LiveActivityAttributesName,
+  LiveActivityPayloadFor,
   TargetName,
 } from './generatedNames';
 export type {
   KnownLiveActivityAttributes,
   KnownTargets,
+  LiveActivityPayloadRegistry,
 } from './generatedNames';
 export type { ExtensionBundleManifest } from './modules/extensionBundle/ExtensionUpdates';
 export { createExtensionUpdates } from './modules/extensionBundle/ExtensionUpdates';
