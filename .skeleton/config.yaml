@@ -13,7 +13,6 @@ scan:
   exclude:
     - "refs/**"
     - "examples/**"
-    - "packages/create-expo-target/README.md"
     - "packages/expo-targets/README.md"
     - "packages/expo-targets/plugin/test-utils/README.md"
     - "packages/**/__fixtures__/**"

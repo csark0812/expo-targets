@@ -2,11 +2,17 @@ import process from 'node:process';
 
 import { checkAppGroups } from './checks/appGroups';
 import { warnDualWidgets } from './checks/dualWidgets';
+import {
+  checkEasCredentialErrors,
+  checkEasCredentialWarnings,
+} from './checks/easCredentials';
 import { checkEntries } from './checks/entries';
+import { warnHeavyExclusions } from './checks/heavyExclusions';
 import { checkMetro } from './checks/metro';
 import { checkNameSync } from './checks/nameSync';
 import { checkPlugin } from './checks/plugin';
 import { warnSealedZone } from './checks/sealedZone';
+import { warnExtensionBundleExport } from './checks/updateScript';
 import { loadProject } from './project';
 import type { CheckResult } from './types';
 
@@ -29,11 +35,18 @@ function collectFailures(ctx: ReturnType<typeof loadProject>): CheckResult[] {
   results.push(...checkAppGroups(ctx));
   results.push(...checkEntries(ctx));
   results.push(...checkNameSync(ctx));
+  results.push(...checkEasCredentialErrors(ctx));
   return results;
 }
 
 function collectWarnings(ctx: ReturnType<typeof loadProject>): CheckResult[] {
-  return [...warnSealedZone(ctx), ...warnDualWidgets(ctx)];
+  return [
+    ...warnSealedZone(ctx),
+    ...warnDualWidgets(ctx),
+    ...warnHeavyExclusions(ctx),
+    ...warnExtensionBundleExport(ctx),
+    ...checkEasCredentialWarnings(ctx),
+  ];
 }
 
 function passedChecks(ctx: ReturnType<typeof loadProject>): string[] {

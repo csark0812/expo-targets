@@ -2,7 +2,7 @@
   "type": "network-packet-tunnel",
   "name": "NetworkPacketTunnel",
   "displayName": "ET NETunnel Target",
-  "platforms": ["ios"],
+  "platforms": ["ios", "android"],
   "appGroup": "group.com.expotargets.example.network-packet-tunnel",
   "ios": {
     "bundleIdentifier": "com.expotargets.example.network-packet-tunnel.network-packet-tunnel",
@@ -12,5 +12,8 @@
         "NSExtensionPrincipalClass": "PacketTunnelProvider"
       }
     }
+  },
+  "android": {
+    "vpnDisplayName": "ET NETunnel Target"
   }
 }

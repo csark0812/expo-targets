@@ -67,7 +67,7 @@ Same bootstrap + packaging. Additive APIs: `sendMessage`, `sendUpdate`, `request
 ### 1. Create the Target
 
 ```bash
-npx create-expo-target
+npx expo-targets add
 # Choose: Share Extension → share-ext → iOS → Yes (Use React Native)
 ```
 
@@ -79,15 +79,14 @@ Or manually configure `expo-target.config.json`:
   "name": "ShareExt",
   "platforms": ["ios"],
   "appGroup": "group.com.yourcompany.yourapp",
-  "entry": "./targets/share-ext/index.tsx",
-  "excludedPackages": ["expo-updates", "expo-dev-client"]
+  "entry": "./targets/share-ext/index.tsx"
 }
 ```
 
 Key fields:
 
 - `entry`: Path to your React Native entry file **(relative to project root)**
-- `excludedPackages`: Expo packages to omit from the extension's `ExpoModulesProvider` (via CocoaPods `post_integrate`). Always exclude `expo-updates` and `expo-dev-client` for Messages/share/action/clip — they crash appex processes and leave a blank sheet. Nested `use_expo_modules!(exclude:)` alone does **not** work.
+- `excludedPackages`: Optional **additional** packages to omit from the extension's `ExpoModulesProvider` (via CocoaPods `post_integrate`). `expo-updates` and `expo-dev-client` are **auto-merged** for RN-native `entry` targets — do not list them. Nested `use_expo_modules!(exclude:)` alone does **not** work.
 
 ### 2. Create the Entry Point
 
@@ -97,7 +96,7 @@ import { createTarget } from "expo-targets";
 import ShareExtension from "./src/ShareExtension";
 
 // Pass the component as the second argument - handles registration automatically
-export const shareTarget = createTarget<"share">("ShareExt", ShareExtension);
+export const shareTarget = createTarget("ShareExt", ShareExtension);
 ```
 
 The second parameter to `createTarget` automatically calls `AppRegistry.registerComponent()` for you. The name must match the `name` field in your config exactly.
@@ -337,36 +336,123 @@ Omit host-only Expo modules from the nested extension's `ExpoModulesProvider`. N
 strips the listed packages from `expo-configure-project.sh` in a `post_integrate`
 hook and regenerates the provider.
 
-Always exclude `expo-updates` and `expo-dev-client` for Messages / share / action /
-clip — Updates asserts before the RN factory is ready and blanks the sheet:
+For RN-native targets with `entry`, **`expo-updates` and `expo-dev-client` are always
+union-merged** (no escape hatch) — Updates asserts before the RN factory is ready and
+blanks the sheet. List only **additional** packages:
 
 ```json
 {
   "excludedPackages": [
-    "expo-updates",
-    "expo-dev-client",
     "@react-native-community/netinfo",
     "react-native-reanimated"
   ]
 }
 ```
 
-**Common exclusions:**
+`npx expo-targets doctor` **warns** when heavy host dependencies (reanimated, Sentry,
+screens, netinfo, …) are present but not imported from the extension entry and not yet
+excluded — advisory only; it never auto-strips.
+
+**Auto-excluded (always):**
+
+| Package           | Reason                 | Savings |
+| ----------------- | ---------------------- | ------- |
+| `expo-updates`    | Crashes appex process  | ~500KB  |
+| `expo-dev-client` | Host-only dev tooling  | ~800KB  |
+
+**Common extra exclusions:**
 
 | Package                   | Reason                     | Savings |
 | ------------------------- | -------------------------- | ------- |
-| `expo-updates`            | OTA updates not needed     | ~500KB  |
-| `expo-dev-client`         | Dev tools not needed       | ~800KB  |
 | `react-native-reanimated` | Heavy animation library    | ~1.5MB  |
 | `@sentry/react-native`    | Error reporting not needed | ~1MB    |
 | `react-native-screens`    | Native nav not needed      | ~300KB  |
 
 ### Tips for Smaller Bundles
 
-1. **Exclude aggressively** — Start minimal, add packages only when needed
+1. **Exclude aggressively** — Start minimal, add packages only when needed; run `npx expo-targets doctor`
 2. **Avoid heavy UI libraries** — Use basic React Native components
 3. **Keep extension logic minimal** — Do heavy processing in your main app
 4. **Test on physical devices** — Simulators are more forgiving with memory
+
+### Extension bundle sideload (with expo-updates)
+
+RN extensions **never** link `expo-updates` (auto-excluded — Updates in an appex crashes the process). Extension JS still OTAs via the **host**:
+
+| Process | Role |
+| ------- | ---- |
+| Host app | Runs `expo-updates`. After an update applies, copies each target’s Hermes `main.jsbundle` from the update into the App Group. |
+| Appex (Release) | Does **not** run Updates. Loads App Group sideload when valid; otherwise the Xcode-embedded `main.jsbundle`. |
+| Appex (DEBUG) | Metro only — App Group sideload is **not** consulted. |
+
+Layout on disk (App Group container):
+
+```text
+{AppGroup}/expo-targets/bundles/{config.name}/
+  main.jsbundle
+  manifest.json   # runtimeVersion, sha256, byteLength, targetName, type
+```
+
+`config.name` is the folder key (e.g. `"Share"`), not the Xcode product name (`UpdatesShareTarget`).
+
+#### Requirements
+
+1. **String `expo.runtimeVersion`** in `app.json` / `app.config` (e.g. `"1.0.0"`). Prebuild bakes it into the extension RN host. If it is missing or a policy object, App Group load is skipped forever and Release always uses the embedded bundle.
+2. **Shared App Group** on host + target (`appGroup` / entitlements).
+3. **Host import** of `expo-targets` (auto-enables `ExtensionUpdates`) or an explicit `ExtensionUpdates.enable()`.
+4. **Metro** wrapped with `withTargets` so the publish-time asset module resolves.
+
+#### Publish pipeline
+
+Order matters — host `eas update` must include the freshly exported extension assets:
+
+```bash
+npx expo-targets export-extension-bundles   # Hermes per RN entry → assets/expo-targets/
+eas update --branch production              # or --channel …
+```
+
+`export-extension-bundles` writes:
+
+- `assets/expo-targets/bundles/{Name}/main.jsbundle` (+ manifest)
+- `assets/expo-targets/extensionBundleModules.js` (`require()` map for the host)
+
+The host update then ships those files as normal Metro assets. On device, `Asset.fromModule` resolves the local file; native install copies it into the App Group.
+
+Dogfood walkthrough: [`examples/extension-updates`](../examples/extension-updates/README.md). API details: [ExtensionUpdates](./api.md#extensionupdates).
+
+#### How the appex chooses a bundle
+
+```text
+DEBUG:   Metro (packager) → embedded main.jsbundle
+Release: App Group sideload (if valid) → embedded main.jsbundle
+```
+
+App Group is **valid** only when all of these hold:
+
+- Manifest `runtimeVersion` equals the **baked** `expo.runtimeVersion` from prebuild
+- `byteLength` ≤ type cap (**5 MiB** share / action / messages / notification-content; **8 MiB** clip)
+- File `sha256` matches the manifest
+
+Invalid or missing sideloads stay on disk for diagnostics; the appex falls back to embedded.
+
+#### What updates vs what does not
+
+| Kind | DEBUG (Metro) | Release embedded | After App Group OTA |
+| ---- | ------------- | ---------------- | ------------------- |
+| Extension JS / inlined `EXPO_PUBLIC_*` | live | bake at `expo run:ios` | **updates** (sideloaded jsbundle) |
+| `require()` images / custom fonts | Metro / Xcode pack | packed next to appex | **gap** — only `main.jsbundle` is installed today |
+| System fonts | OK | OK | OK |
+
+Host `eas update` and `export-extension-bundles` each inline `EXPO_PUBLIC_*` separately — changing `.env` between the two can diverge host vs extension tags.
+
+#### Troubleshooting
+
+| Symptom | Likely cause |
+| ------- | ------------ |
+| Host OTA label updates; share still shows old / embed | Baked `runtimeVersion` empty (re-prebuild with a string `expo.runtimeVersion`), or sync never ran (`installed=0`) |
+| Sync error: bundle not found under `Application%20Support` | Fixed in current `expo-targets` (percent-decode asset paths); update the library |
+| Sync succeeds but share unchanged | Opening a **DEBUG** build (Metro/embed only), or wrong App Group / target `name` |
+| Host updated without `export-extension-bundles` | New host JS, stale extension asset in the update — share keeps previous sideload or embed |
 
 ---
 
@@ -374,7 +460,7 @@ clip — Updates asserts before the RN factory is ready and blanks the sheet:
 
 Extensions run in a **separate process** with limited debugging capabilities compared to the main app. In **DEBUG** builds, the native host uses `RCTBundleURLProvider` with your target's `bundleRoot` (from `entry` in config). When Metro is running and `withTargets` is configured, the extension can load from the packager — **Fast Refresh / HMR may work for JS-only edits** while the extension is open.
 
-**Release builds** (or DEBUG with no packager) load the embedded `main.jsbundle` baked into the appex at build time. If Metro is unreachable in DEBUG, the host **falls back to the embedded bundle** instead of showing a blank sheet. If neither Metro nor an embedded bundle is available, you get a clear error alert.
+**Release builds** prefer a valid **App Group sideload** (see [Extension bundle sideload](#extension-bundle-sideload-with-expo-updates)), then the embedded `main.jsbundle` baked into the appex at build time. **DEBUG** never reads the App Group. If Metro is unreachable in DEBUG, the host **falls back to the embedded bundle** instead of showing a blank sheet. If neither Metro nor an embedded bundle is available, you get a clear error alert.
 
 **Limitations (unchanged):**
 
@@ -515,10 +601,7 @@ import { createTarget } from "expo-targets";
 import MessagesApp from "./MessagesApp";
 
 // Pass component as second argument - name must match config exactly
-export const messagesTarget = createTarget<"messages">(
-  "MyMessages",
-  MessagesApp,
-);
+export const messagesTarget = createTarget("MyMessages", MessagesApp);
 ```
 
 ### Using Messages APIs
@@ -528,7 +611,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
 import { createTarget } from 'expo-targets';
 
-const messages = createTarget<'messages'>('MyMessages');
+const messages = createTarget('MyMessages');
 
 export default function MessagesApp() {
   const [style, setStyle] = useState(messages.getPresentationStyle());
@@ -574,7 +657,7 @@ const styles = StyleSheet.create({
 ### Messages API Reference
 
 ```typescript
-const messages = createTarget<'messages'>('MyMessages');
+const messages = createTarget('MyMessages');
 
 // Presentation
 messages.getPresentationStyle(); // 'compact' | 'expanded' | null

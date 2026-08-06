@@ -18,5 +18,9 @@ dependencies {
   // Glance dependencies for widget sync utilities
   implementation "androidx.glance:glance-appwidget:1.1.1"
   implementation "androidx.datastore:datastore-preferences:1.1.1"
+  // Wave 2 notification / LiveActivity ongoing-notif helper
+  implementation "androidx.core:core-ktx:1.15.0"
+  // RN Share/Action host (ReactActivity) — resolved from the app's RN classpath
+  compileOnly 'com.facebook.react:react-android'
 }
 

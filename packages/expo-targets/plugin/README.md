@@ -97,7 +97,7 @@ directly; avoid inventing shims under `utils/` for PBX/Podfile helpers.
 Same PR must ship the full per-type DoD ([deprecations.md](../../../docs/deprecations.md)):
 
 1. **`src/domain/characteristics.ts`** — product type, frameworks, extension point, Info.plist base, RN flags. Prefer a flag over a plan-layer branch.
-2. **`packages/create-expo-target`** — scaffold template for the type.
+2. **`packages/expo-targets/cli/src/scaffold/`** — scaffold template for the type.
 3. **`examples/<id>`** — production-thin host with `expo-target.config` + principal.
 4. **Devicewright** — journey under `examples/.devicewright/`, row in `required.ts` / `touchpoints.ts` / `claims.ts` as needed.
 5. Docs: maturity in [configuration.md](../../../docs/configuration.md) only (README showcase stays curated).
@@ -114,7 +114,7 @@ The layering is iOS-first but deliberately open in these places:
 | Target discovery | `src/withTargetsDir.ts` — finds `targets/*` and their configs |
 | Metro | `packages/expo-targets/metro/src/` — entry resolution for RN extensions |
 | Runtime | `packages/expo-targets/src` — JS API and native modules |
-| Scaffolding | `packages/create-expo-target` — templates for new targets |
+| Scaffolding | `packages/expo-targets/cli/src/scaffold/` — templates for new targets |
 | Bare workflow | `npx expo-targets sync` for existing `ios/` trees; prefer `expo prebuild` for new apps |
 
 New extension types start in `src/domain/characteristics.ts`; if a type needs

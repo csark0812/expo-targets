@@ -1,6 +1,8 @@
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import {
+  Linking,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -10,6 +12,18 @@ import {
 
 /** Typed into the host field by Devicewright (custom keyboard inserts "ET"). */
 export const UITEST_KEYBOARD_TYPED = 'ET';
+
+async function openImeSettings() {
+  if (Platform.OS === 'android') {
+    try {
+      await Linking.sendIntent('android.settings.INPUT_METHOD_SETTINGS');
+      return;
+    } catch {
+      // fall through
+    }
+  }
+  await Linking.openSettings();
+}
 
 export default function App() {
   const [ready] = useState(true);
@@ -23,8 +37,10 @@ export default function App() {
       <Text testID="status-target-ready">{ready ? 'ready' : 'loading'}</Text>
       <Text testID="text-extension-type">keyboard</Text>
       <Text testID="text-bundle-suffix">com.expotargets.example.keyboard</Text>
-      <Text style={styles.hint}>
-        Type with ET Keyboard (Settings → Keyboards) or system keyboard.
+      <Text style={styles.hint} testID="text-platform-note">
+        {Platform.OS === 'android'
+          ? 'Enable ET Keyboard under Settings → Language & input (leftover if picker cannot be automated).'
+          : 'Type with ET Keyboard (Settings → Keyboards) or system keyboard.'}
       </Text>
       <TextInput
         testID="input-type-field"
@@ -39,6 +55,17 @@ export default function App() {
         autoCorrect={false}
         autoCapitalize="none"
       />
+      <TouchableOpacity
+        testID="btn-open-ime-settings"
+        style={styles.button}
+        onPress={() => {
+          void openImeSettings();
+        }}
+      >
+        <Text style={styles.buttonText}>
+          {Platform.OS === 'android' ? 'Open IME settings' : 'Open Settings'}
+        </Text>
+      </TouchableOpacity>
       <TouchableOpacity
         testID="btn-clear-payload"
         style={styles.button}

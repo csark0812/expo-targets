@@ -99,38 +99,57 @@ describe('scanTargetsDirectory', () => {
   });
 });
 
-describe('withTargets', () => {
-  test('resolveRequest returns mapped entry files', () => {
-    const root = makeTempProject([
-      {
-        dir: 'share-content',
-        config: {
-          type: 'share',
-          name: 'ShareContent',
-          entry: './targets/share-content/index.tsx',
-        },
-        entryFile: 'targets/share-content/index.tsx',
+function buildWithTargetsConfig(root: string) {
+  return withTargets({ resolver: { assetExts: ['png', 'jpg'] } } as any, {
+    projectRoot: root,
+    silent: true,
+  });
+}
+
+function shareContentProject() {
+  return makeTempProject([
+    {
+      dir: 'share-content',
+      config: {
+        type: 'share',
+        name: 'ShareContent',
+        entry: './targets/share-content/index.tsx',
       },
-    ]);
-    tempRoots.push(root);
+      entryFile: 'targets/share-content/index.tsx',
+    },
+  ]);
+}
 
-    const config = withTargets({ resolver: {} } as any, {
-      projectRoot: root,
-      silent: true,
-    });
+test('withTargets resolveRequest returns extension bundle assets stub', () => {
+  const root = shareContentProject();
+  tempRoots.push(root);
+  const config = buildWithTargetsConfig(root);
+  const assetsResult = config.resolver!.resolveRequest!(
+    {
+      resolveRequest: () => ({ type: 'sourceFile', filePath: '/fallback' }),
+    } as any,
+    'expo-targets/extension-bundle-assets',
+    'ios'
+  );
+  expect(assetsResult.filePath).toContain(
+    'expo-targets-extension-bundle-assets.js'
+  );
+});
 
-    const result = config.resolver!.resolveRequest!(
-      {
-        resolveRequest: () => ({ type: 'sourceFile', filePath: '/fallback' }),
-      } as any,
-      'targets/share-content/index',
-      'ios'
-    );
-
-    expect(result).toEqual({
-      type: 'sourceFile',
-      filePath: path.join(root, 'targets/share-content/index.tsx'),
-    });
+test('withTargets resolveRequest returns mapped entry files', () => {
+  const root = shareContentProject();
+  tempRoots.push(root);
+  const config = buildWithTargetsConfig(root);
+  const result = config.resolver!.resolveRequest!(
+    {
+      resolveRequest: () => ({ type: 'sourceFile', filePath: '/fallback' }),
+    } as any,
+    'targets/share-content/index',
+    'ios'
+  );
+  expect(result).toEqual({
+    type: 'sourceFile',
+    filePath: path.join(root, 'targets/share-content/index.tsx'),
   });
 });
 

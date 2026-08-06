@@ -1,0 +1,13 @@
+{
+  "type": "share",
+  "name": "Share",
+  "displayName": "Updates Share",
+  "platforms": ["ios"],
+  "entry": "./targets/share/index.tsx",
+  "appGroup": "group.com.expotargets.example.extensionupdates",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.extensionupdates.share",
+    "displayName": "Updates Share",
+    "activationRules": [{ "type": "text" }, { "type": "url" }]
+  }
+}

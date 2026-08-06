@@ -2,7 +2,7 @@
   "type": "keyboard",
   "name": "Keyboard",
   "displayName": "ET Keyboard Target",
-  "platforms": ["ios"],
+  "platforms": ["ios", "android"],
   "appGroup": "group.com.expotargets.example.keyboard",
   "ios": {
     "bundleIdentifier": "com.expotargets.example.keyboard.keyboard",
@@ -18,5 +18,8 @@
         }
       }
     }
+  },
+  "android": {
+    "imeLabel": "ET Keyboard Target"
   }
 }

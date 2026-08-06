@@ -3,6 +3,7 @@
   "ios": {
     "modules": [
       "ExpoTargetsStorageModule",
+      "ExpoTargetsExtensionBundleModule",
       "ExpoTargetsExtensionModule",
       "ExpoTargetsMessagesModule",
       "ExpoTargetsFileProviderModule",
@@ -14,7 +15,9 @@
     "modules": [
       "expo.modules.targets.storage.ExpoTargetsStorageModule",
       "expo.modules.targets.extension.ExpoTargetsExtensionModule",
-      "expo.modules.targets.messages.ExpoTargetsMessagesModule"
+      "expo.modules.targets.messages.ExpoTargetsMessagesModule",
+      "expo.modules.targets.notification.ExpoTargetsNotificationModule",
+      "expo.modules.targets.liveActivity.ExpoTargetsLiveActivityModule"
     ]
   }
 }

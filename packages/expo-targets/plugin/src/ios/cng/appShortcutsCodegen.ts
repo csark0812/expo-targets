@@ -70,7 +70,7 @@ ${entries}
 `;
 }
 
-/** Minimal perform-hook stub for create-expo-target (user-owned, not regenerated). */
+/** Minimal perform-hook stub for scaffolder (user-owned, not regenerated). */
 export function generatePerformHookStub(
   hookName: string,
   intentTitle: string

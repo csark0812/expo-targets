@@ -34,18 +34,19 @@ npm install expo-targets
 ## Step 2: Create a Share Extension
 
 ```bash
-npx create-expo-target
+npx expo-targets add
+# or non-interactive: npx expo-targets add share my-share
 ```
 
-Choose:
+Choose (interactive):
 
 - **Type:** Share Extension
 - **Name:** my-share
 - **Use React Native:** Yes
 
-`create-expo-target` scaffolds `targets/my-share/` and wires the host by default: adds `expo-targets` to `package.json`, registers the config plugin, ensures App Group entitlements, and patches `metro.config.js` with `withTargets`. Use `--no-wire` to scaffold only.
+`expo-targets add` scaffolds `targets/my-share/` and wires the host by default: adds `expo-targets` to `package.json`, registers the config plugin, ensures App Group entitlements, and patches `metro.config.js` with `withTargets`. Use `--no-wire` to scaffold only. Dynamic `app.config.ts`/`js` cannot be auto-patched — you get a snippet warning; finish with `npx expo-targets doctor`.
 
-If you added `expo-targets` to `package.json` during wiring, install dependencies before prebuild.
+If wiring added `expo-targets` to `package.json`, install dependencies before prebuild.
 
 This creates:
 
@@ -98,7 +99,6 @@ Add the plugin and App Groups to your `app.json`:
   "platforms": ["ios"],
   "appGroup": "group.com.yourcompany.myapp",
   "entry": "./targets/my-share/index.tsx",
-  "excludedPackages": ["expo-updates", "expo-dev-client"],
   "ios": {
     "deploymentTarget": "14.0"
   }
@@ -107,7 +107,9 @@ Add the plugin and App Groups to your `app.json`:
 
 Update the placeholder `appGroup` to match your `app.json`.
 
-`excludedPackages` must include `expo-updates` and `expo-dev-client` so the extension host does not link packages that assume a full app process (they break extension builds).
+For RN `entry` targets, the plugin **always** strips `expo-updates` and `expo-dev-client` from the nested `ExpoModulesProvider` (they crash appex processes). Add `excludedPackages` only for **extra** packages (e.g. reanimated). `npx expo-targets doctor` warns when heavy host deps look unused by the entry.
+
+Extension JS can still OTA without linking Updates in the appex: the host runs `eas update`, then sideloads Hermes bundles into the App Group. Set a string `expo.runtimeVersion`, run `npx expo-targets export-extension-bundles` before each update, and use a **Release** build to verify the share sheet. Full flow: [Extension bundle sideload](./react-native-extensions.md#extension-bundle-sideload-with-expo-updates).
 
 ### Naming Conventions
 
@@ -130,23 +132,24 @@ module.exports = withTargets(getDefaultConfig(__dirname));
 
 `withTargets` maps each target `entry` so the extension host can load the right bundle. (`withTargetsMetro` is a deprecated alias.) Details: [React Native Extensions](./react-native-extensions.md).
 
-### Typed target names
+### Typed target names + Live Activity payloads
 
-After prebuild (or `npx expo-targets generate`), a gitignored file is written at `.expo/expo-targets.generated.ts`:
+After prebuild (or `npx expo-targets generate`), ambient types are written to `.expo/types/expo-targets.d.ts` (gitignored, same layout as Expo Router typed routes). That narrows `createTarget('…')` / `LiveActivity.create('…')` string literals — **no import from `.expo/`**. When `liveActivity.static` / `contentState` are set, `start` / `update` pick up those field types via module augmentation.
 
 ```typescript
-import { Targets, type TargetName } from "../.expo/expo-targets.generated";
+import { createTarget, LiveActivity, type TargetName } from "expo-targets";
 
-const name: TargetName = Targets.MyShare;
+const name: TargetName = "MyShare";
+createTarget(name);
+
+const order = LiveActivity.create("OrderAttributes");
+await order.start({
+  attributes: { orderId: "12" },
+  contentState: { status: "preparing", progress: 0.1 },
+});
 ```
 
-Widget targets with `liveActivity.attributesName` also emit `LiveActivityAttributes`. Include `.expo/` in `tsconfig.json` so the editor resolves the file:
-
-```json
-{
-  "include": ["**/*.ts", "**/*.tsx", ".expo/expo-targets.generated.ts"]
-}
-```
+`generate` also ensures `tsconfig.json` includes `.expo/types/**/*.ts` when missing (alongside Router’s include if present).
 
 Regenerate without a full prebuild: `npx expo-targets generate` (also runs with `npx expo-targets doctor --fix`).
 

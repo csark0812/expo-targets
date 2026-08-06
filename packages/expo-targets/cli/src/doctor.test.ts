@@ -186,4 +186,20 @@ describe('checkNameSync', () => {
     });
     expect(checkNameSync(loadProject(root))).toHaveLength(0);
   });
+
+  test('passes when createTarget uses Targets.Share member', () => {
+    const root = makeProject({
+      'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
+      'targets/share/expo-target.config.json': JSON.stringify({
+        type: 'share',
+        name: 'Share',
+        platforms: ['ios'],
+      }),
+      'targets/share/index.ts':
+        "import { createTarget } from 'expo-targets';\n" +
+        'const Targets = { Share: "Share" } as const;\n' +
+        'export const share = createTarget(Targets.Share);\n',
+    });
+    expect(checkNameSync(loadProject(root))).toHaveLength(0);
+  });
 });

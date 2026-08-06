@@ -39,39 +39,73 @@ describe('TYPE_CHARACTERISTICS config maps', () => {
   });
 });
 
-describe('TYPE_CHARACTERISTICS entry shape', () => {
-  test('every entry declares all characteristics and flags', () => {
-    for (const type of EXTENSION_TYPES) {
-      const characteristics = TYPE_CHARACTERISTICS[type];
-      expect(typeof characteristics.requiresCode).toBe('boolean');
-      expect(typeof characteristics.requiresEntitlements).toBe('boolean');
-      expect(typeof characteristics.defaultUsesAppGroups).toBe('boolean');
-      expect(typeof characteristics.supportsActivationRules).toBe('boolean');
-      expect(typeof characteristics.productType).toBe('string');
-      expect(typeof characteristics.extensionPointIdentifier).toBe('string');
-      expect(Array.isArray(characteristics.frameworks)).toBe(true);
-      expect(['application', 'app_extension']).toContain(
-        characteristics.targetType
-      );
-      expect([
-        'foundation-extension',
-        'extensionkit-extension',
-        'app-clip',
-        'watch-content',
-        'watch-extension',
-        'none',
-      ]).toContain(characteristics.embedType);
-      expect(['direct', 'attributes', 'none']).toContain(
-        characteristics.activationRulesLocation
-      );
-      expect(typeof characteristics.isReactNativeNative).toBe('boolean');
-      expect(typeof characteristics.isReactNativeWeb).toBe('boolean');
-      expect(typeof characteristics.needsIsolatedSearchPaths).toBe('boolean');
-      expect(['dual', 'native-only', 'rn-only']).toContain(
-        characteristics.rnExample
-      );
-    }
-  });
+test.each(EXTENSION_TYPES)('%s core fields', (type) => {
+  const characteristics = TYPE_CHARACTERISTICS[type];
+  expect(typeof characteristics.requiresCode).toBe('boolean');
+  expect(typeof characteristics.requiresEntitlements).toBe('boolean');
+  expect(typeof characteristics.defaultUsesAppGroups).toBe('boolean');
+  expect(typeof characteristics.supportsActivationRules).toBe('boolean');
+  expect(typeof characteristics.productType).toBe('string');
+  expect(typeof characteristics.extensionPointIdentifier).toBe('string');
+  expect(Array.isArray(characteristics.frameworks)).toBe(true);
+  expect(['application', 'app_extension']).toContain(
+    characteristics.targetType
+  );
+});
+
+test.each(EXTENSION_TYPES)('%s embed + activation fields', (type) => {
+  const characteristics = TYPE_CHARACTERISTICS[type];
+  expect([
+    'foundation-extension',
+    'extensionkit-extension',
+    'app-clip',
+    'watch-content',
+    'watch-extension',
+    'none',
+  ]).toContain(characteristics.embedType);
+  expect(['direct', 'attributes', 'none']).toContain(
+    characteristics.activationRulesLocation
+  );
+  expect(typeof characteristics.isReactNativeNative).toBe('boolean');
+  expect(typeof characteristics.isReactNativeWeb).toBe('boolean');
+  expect(typeof characteristics.needsIsolatedSearchPaths).toBe('boolean');
+});
+
+test.each(EXTENSION_TYPES)('%s android ledger fields', (type) => {
+  const characteristics = TYPE_CHARACTERISTICS[type];
+  expect(['dual', 'native-only', 'rn-only']).toContain(
+    characteristics.rnExample
+  );
+  expect([
+    'none',
+    'widget',
+    'activity',
+    'service',
+    'provider',
+    'ime',
+    'vpn',
+    'wear',
+  ]).toContain(characteristics.androidComponent);
+  expect(['strong', 'partial', 'apple-only']).toContain(
+    characteristics.androidBucket
+  );
+  if (characteristics.androidBucket === 'partial') {
+    expect(typeof characteristics.androidPartial).toBe('string');
+  }
+});
+
+test('Android API-ceiling ledger counts', () => {
+  const strong = EXTENSION_TYPES.filter(
+    (t) => TYPE_CHARACTERISTICS[t].androidBucket === 'strong'
+  );
+  const partial = EXTENSION_TYPES.filter(
+    (t) => TYPE_CHARACTERISTICS[t].androidBucket === 'partial'
+  );
+  expect(strong).toHaveLength(12);
+  expect(partial.length).toBeGreaterThanOrEqual(8);
+  expect(TYPE_CHARACTERISTICS.share.androidComponent).toBe('activity');
+  expect(TYPE_CHARACTERISTICS.widget.androidComponent).toBe('widget');
+  expect(TYPE_CHARACTERISTICS.clip.androidBucket).toBe('apple-only');
 });
 
 describe('TYPE_CHARACTERISTICS lookup maps', () => {

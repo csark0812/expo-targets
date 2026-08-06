@@ -4,7 +4,7 @@
   "description": "CLI for syncing expo-targets in bare React Native projects",
   "main": "./build/index.js",
   "bin": {
-    "expo-targets": "./build/index.js"
+    "expo-targets-bare": "./build/index.js"
   },
   "scripts": {
     "build": "tsc",

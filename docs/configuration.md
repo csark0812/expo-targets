@@ -66,7 +66,7 @@ targets/my-widget/
 | `appGroup`         | _inherited_ | App Group ID. If not specified, automatically inherited from your main app's `app.json` entitlements (see [App Group Inheritance](#app-group-inheritance) below) |
 | `liveActivity`     | —           | Widget-only ActivityKit schema (`attributesName`, `static`, `contentState`) — CNG into `ExpoTargetsGenerated/` (see [widgets.md](./widgets.md))                  |
 | `entry`            | —           | React Native entry point for share/action/clip/messages (see [Entry Field](#entry-field) below)                                                                  |
-| `excludedPackages` | `[]`        | Expo packages to omit from the nested extension's `ExpoModulesProvider` (via Podfile `post_integrate`; needs `entry`) — e.g. `expo-updates`, `expo-dev-client`  |
+| `excludedPackages` | auto for RN `entry` | Extra packages to omit from the nested `ExpoModulesProvider` (`post_integrate`). `expo-updates` + `expo-dev-client` are always merged for RN-native `entry` targets; list only extras (e.g. reanimated) |
 
 ### Entry Field
 
@@ -440,8 +440,10 @@ npx expo run:android
 import { createTarget } from "expo-targets";
 
 const widget = createTarget("MyWidget");
-widget.setData({ message: "Hello from React Native!" });
-widget.refresh();
+widget.setData(
+  { message: "Hello from React Native!" },
+  { refresh: true }
+);
 ```
 
 ---
@@ -512,7 +514,7 @@ widget.refresh();
 }
 ```
 
-`liveActivity` drives sealed CNG (`ActivityAttributes` + host bridge) under `ios/<App>/ExpoTargetsGenerated/`. Keep `ActivityConfiguration` UI in `targets/<widget>/ios/`. Host JS: `LiveActivity.create('WeatherAttributes')` — see [api.md](./api.md) and [widgets.md](./widgets.md).
+`liveActivity` drives sealed CNG (`ActivityAttributes` + host bridge) under `ios/<App>/ExpoTargetsGenerated/`, and ambient TypeScript payload types in `.expo/types/expo-targets.d.ts` (`static` / `contentState` → `LiveActivity.create().start`). Keep `ActivityConfiguration` UI in `targets/<widget>/ios/`. Host JS: `LiveActivity.create('WeatherAttributes')` — see [api.md](./api.md) and [widgets.md](./widgets.md).
 
 ### File Provider domain (iOS)
 
@@ -649,7 +651,6 @@ The `targetIcon` for action extensions can be an SF Symbol name (e.g., `"photo.f
   "platforms": ["ios"],
   "appGroup": "group.com.yourapp",
   "entry": "./targets/share-to-app/index.tsx",
-  "excludedPackages": ["expo-updates", "expo-dev-client"],
   "ios": {
     "activationRules": [{ "type": "url" }]
   }
@@ -746,7 +747,7 @@ Until `grid-size` is configurable, use **408×408** source stickers. Keep each s
 
 Wallet extensions enable in-app payment pass provisioning via Apple Wallet.
 
-> **Note:** `npx create-expo-target` generates combined wallet extensions (with UI) by default, which is the recommended setup for most implementations.
+> **Note:** `npx expo-targets add` generates combined wallet extensions (with UI) by default, which is the recommended setup for most implementations.
 
 **Combined configuration (with authentication UI):**
 
@@ -927,46 +928,49 @@ Types with a production example + Devicewright row are marked ✅. Entitlement-g
 
 | Type                                                                                        | iOS                                      | Android             | Description                 |
 | ------------------------------------------------------------------------------------------- | ---------------------------------------- | ------------------- | --------------------------- |
-| `widget`                                                                                    | ✅ iOS 14+ (WidgetKit + Live Activities) | ✅ API 26+ (bridge) | Home screen widgets / LA    |
+| `widget`                                                                                    | ✅ iOS 14+ (WidgetKit + Live Activities) | ✅ API 26+ (Glance/RemoteViews) | Home screen widgets / LA    |
 | `clip`                                                                                      | ✅ iOS 14+                               | —                   | App Clips                   |
 | `stickers`                                                                                  | ✅ iOS 10+                               | —                   | iMessage sticker packs      |
 | `messages`                                                                                  | ✅ iOS 10+                               | —                   | iMessage apps               |
-| `share`                                                                                     | ✅ iOS 8+                                | 🔜                  | Share extensions            |
-| `action`                                                                                    | ✅ iOS 8+                                | 🔜                  | Action extensions           |
-| `wallet` / `wallet-ui`                                                                      | ✅ iOS 14+ (issuer may os-limit)         | —                   | Wallet pass provisioning    |
+| `share`                                                                                     | ✅ iOS 8+                                | ✅ W1 dedicated Activity + RN `entry` host | Share (same TS entry)       |
+| `action`                                                                                    | ✅ iOS 8+                                | ✅ W1 native Activity (RN host provisional) | Action (`PROCESS_TEXT`)     |
+| `wallet` / `wallet-ui`                                                                      | ✅ iOS 14+ (issuer may os-limit)         | 🔜 W4 partial       | Wallet / Google Wallet      |
 | `safari`                                                                                    | ✅ iOS 15+                               | —                   | Safari web extensions       |
 | `content-blocker`                                                                           | ✅ iOS 11+                               | —                   | Safari content blocker      |
-| `notification-content`                                                                      | ✅ iOS 10+                               | 🔜                  | Rich notification UI        |
-| `notification-service`                                                                      | ✅ iOS 10+                               | 🔜                  | Notification processing     |
+| `notification-content`                                                                      | ✅ iOS 10+                               | ✅ W2 partial (RemoteViews / A12 clamp) | Rich notification UI        |
+| `notification-service`                                                                      | ✅ iOS 10+                               | ✅ W2 partial (own FCM/local pre-display) | Notification processing     |
 | `intent` / `intent-ui`                                                                      | ✅ iOS 12+                               | —                   | Siri intents (legacy)       |
-| `app-intent`                                                                                | ✅ iOS 16+                               | —                   | App Intents (modern Siri)   |
-| `spotlight`                                                                                 | ✅ iOS 9+                                | —                   | Spotlight index             |
-| `spotlight-delegate`                                                                        | ✅ iOS 13+                               | —                   | CoreSpotlight delegate      |
-| `bg-download`                                                                               | ✅ iOS 7+                                | —                   | Background downloads        |
+| `app-intent`                                                                                | ✅ iOS 16+                               | 🔜 W4 partial       | App Intents / App Actions   |
+| `spotlight`                                                                                 | ✅ iOS 9+                                | 🔜 W4 partial       | Spotlight / AppSearch       |
+| `spotlight-delegate`                                                                        | ✅ iOS 13+                               | 🔜 W4 partial       | CoreSpotlight delegate      |
+| `bg-download`                                                                               | ✅ iOS 7+                                | 🔜 W4 partial       | Background downloads        |
 | `quicklook-thumbnail`                                                                       | ✅ iOS 11+                               | —                   | QuickLook thumbnails        |
 | `quicklook-preview`                                                                         | ✅ iOS 8+                                | —                   | QuickLook preview           |
 | `location-push`                                                                             | ✅ iOS 15+ (entitlement os-limit)        | —                   | Location push service       |
-| `credentials-provider`                                                                      | ✅ iOS 12+ (Settings os-limit)           | —                   | Credential provider         |
+| `credentials-provider`                                                                      | ✅ iOS 12+ (Settings os-limit)           | ✅ W3a (Autofill; Settings leftover) | Credential / Autofill       |
 | `account-auth`                                                                              | ✅ iOS 12.2+                             | —                   | Account authentication      |
 | `authentication-services`                                                                   | ✅ iOS 13+ (SSO os-limit)                | —                   | AppSSO identity provider    |
 | `device-activity-monitor`                                                                   | ✅ iOS 15+ (Family Controls os-limit)    | —                   | Device activity monitor     |
 | `shield-action` / `shield-config`                                                           | ✅ iOS 15+ (Family Controls os-limit)    | —                   | Screen Time shields         |
 | `matter`                                                                                    | ✅ iOS 16.1+                             | —                   | Matter extensions           |
-| `watch` / `watch-widget`                                                                    | ✅ watchOS (paired sim DoD)              | —                   | Watch app / complication    |
-| `keyboard`                                                                                  | ✅ iOS 8+                                | —                   | Custom keyboard             |
-| `photo-editing`                                                                             | ✅ iOS 8+                                | —                   | Photo Editing extension     |
-| `file-provider` / `file-provider-ui`                                                        | ✅ iOS 11+                               | —                   | File Provider               |
+| `watch` / `watch-widget`                                                                    | ✅ watchOS (paired sim DoD)              | 🔜 W5               | Watch / Wear tiles          |
+| `keyboard`                                                                                  | ✅ iOS 8+                                | ✅ W3b (IME; Settings leftover) | Custom keyboard / IME       |
+| `photo-editing`                                                                             | ✅ iOS 8+                                | 🔜 W4 partial       | Photo Editing / ACTION_EDIT |
+| `file-provider` / `file-provider-ui`                                                        | ✅ iOS 11+                               | ✅ W3a (DocumentsProvider + UI Activity) | File Provider / Documents   |
 | `broadcast-upload` / `broadcast-setup-ui`                                                   | ✅ iOS 10+                               | —                   | ReplayKit broadcast         |
-| `call-directory`                                                                            | ✅ iOS 10+                               | —                   | Call Directory              |
-| `message-filter`                                                                            | ✅ iOS 11+                               | —                   | SMS/MMS filter              |
-| `unwanted-communication`                                                                    | ✅ iOS 12+                               | —                   | Unwanted communication UI   |
-| `network-packet-tunnel` / `network-app-proxy` / `network-dns-proxy` / `network-filter-data` | ✅ (NE entitlement os-limit)             | —                   | Network Extensions          |
+| `call-directory`                                                                            | ✅ iOS 10+                               | ✅ W3b (CallScreening; role leftover) | Call Directory / Screening  |
+| `message-filter`                                                                            | ✅ iOS 11+                               | 🔜 W4 optional      | SMS/MMS filter              |
+| `unwanted-communication`                                                                    | ✅ iOS 12+                               | 🔜 W4 optional      | Unwanted communication UI   |
+| `network-packet-tunnel`                                                                     | ✅ (NE entitlement os-limit)             | ✅ W3c (VpnService fail-closed; consent leftover) | VPN / packet tunnel         |
+| `network-app-proxy` / `network-dns-proxy` / `network-filter-data`                           | ✅ (NE entitlement os-limit)             | — (use tunnel)      | Other NE types              |
 | `classkit-context`                                                                          | ✅ iOS 11.4+                             | —                   | ClassKit context provider   |
-| `print-service`                                                                             | ✅ iOS 14+                               | —                   | Print discovery             |
+| `print-service`                                                                             | ✅ iOS 14+                               | ✅ W3c (PrintService; Settings may leftover) | Print discovery             |
 | `smart-card`                                                                                | ✅ iOS 10+                               | —                   | CryptoTokenKit              |
 | `virtual-conference`                                                                        | ✅ iOS 15+                               | —                   | Calendar virtual conference |
 
-**Legend:** ✅ Production with example + Devicewright · 🔜 Android planned · — Not applicable
+**Legend:** ✅ Production with example + Devicewright · 🔜 Android wave planned · — Not applicable (Apple-only)
+
+> **Android API-ceiling:** ~12 strong + ~8 partial groups. SSOT flags: `TYPE_CHARACTERISTICS.androidBucket` / `androidComponent`. Waves 0–3: foundation through system services (DocumentsProvider, Autofill, IME, CallScreening, Print, VpnService). Settings/Play leftovers for IME/VPN/call/credentials (and print when non-automatable). ActivityKit / Dynamic Island / StandBy remain iOS-only.
 
 > **Combined targets:** For `wallet` and `intent` types, you can use the `ios.wallet.ui` or `ios.intents.ui` config options to generate both the main extension and its UI companion from a single config file. The CLI generates combined wallet extensions by default. See [Wallet Extension](#wallet-extension) and [Intent UI Extension](#intent-ui-extension) sections for details.
 
@@ -1195,12 +1199,19 @@ targets/my-safari/
 {
   "type": "notification-service",
   "name": "MyNotificationService",
-  "platforms": ["ios"],
+  "platforms": ["ios", "android"],
   "ios": {
     "deploymentTarget": "15.0"
+  },
+  "android": {
+    "channelId": "expo_targets_nse",
+    "channelName": "Notifications",
+    "mutationMarker": " [expo-targets]"
   }
 }
 ```
+
+Android: host-process Service + `AndroidNotification.processAndPresent` (local). Not a sealed NSE; FCM remote push may be leftover — see [limits.md](./limits.md).
 
 Create `ios/NotificationService.swift`:
 
@@ -1239,7 +1250,7 @@ class NotificationService: UNNotificationServiceExtension {
 {
   "type": "notification-content",
   "name": "MyNotificationContent",
-  "platforms": ["ios"],
+  "platforms": ["ios", "android"],
   "ios": {
     "deploymentTarget": "15.0",
     "infoPlist": {
@@ -1251,9 +1262,16 @@ class NotificationService: UNNotificationServiceExtension {
         }
       }
     }
+  },
+  "android": {
+    "channelId": "expo_targets_nce",
+    "channelName": "Rich notifications",
+    "category": "MY_CATEGORY"
   }
 }
 ```
+
+Android: `AndroidNotification.presentContent` uses RemoteViews / `DecoratedCustomViewStyle` (A12 system chrome clamp).
 
 Create `ios/NotificationViewController.swift`:
 

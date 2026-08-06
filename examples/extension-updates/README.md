@@ -1,0 +1,85 @@
+# Extension Updates
+
+Thin host to dogfood **extension JS OTA** via `eas update` + App Group sideload.
+
+Suite how-to: [../README.md](../README.md). Feature docs: [../../docs/react-native-extensions.md](../../docs/react-native-extensions.md#extension-bundle-sideload-with-expo-updates).
+
+## What to look for
+
+| Surface | Marker |
+| --- | --- |
+| Host | `Host OTA: ota-v1` (`targets/share/otaLabel.ts`) |
+| Release share sheet | `OTA: ota-v1` (same file, Hermes-exported into App Group) |
+| Host + share | `env: spike-env-v1` (`EXPO_PUBLIC_SPIKE_TAG` from `.env`) |
+| Share | Orange `spike.png` + `font: Menlo (system)` |
+
+Bump `OTA_LABEL`, publish an update, fetch on device — both OTA labels should change without a store rebuild.
+
+### Spike: fonts / images / env across targets + OTA
+
+| Kind | DEBUG (Metro) | Release embed | After App Group OTA |
+| --- | --- | --- | --- |
+| JS / `OTA_LABEL` / `EXPO_PUBLIC_*` | live | baked into appex jsbundle | **updates** (sideloaded jsbundle) |
+| `require()` image | Metro serves | Xcode packs next to appex bundle | **gap** — only `main.jsbundle` is installed; image files beside App Group URL are missing |
+| System font (`Menlo`) | OK | OK | OK (no asset file) |
+| Custom `.ttf` via `expo-font` | OK if linked | OK if packed in appex | **same gap** as images |
+
+`export-extension-bundles` runs `expo export:embed --assets-dest` but discards that tree (locked by unit test). Host `eas update` and extension Hermes export are **separate** inlines of `EXPO_PUBLIC_*` — change `.env` between them and the tags can disagree.
+
+```bash
+cp .env.example .env   # once
+```
+
+## Setup (once)
+
+```bash
+# From repo root
+bun install
+cd examples/extension-updates
+
+# Link a real EAS project (writes projectId + updates.url into app.json)
+npx eas init
+# then: npx eas update:configure
+
+npx expo prebuild --platform ios
+# Release binary (needed for App Group sideload). Avoid Metro attaching:
+npx expo run:ios --configuration Release --no-bundler
+```
+
+## Publish a change
+
+Publish at least once so the `preview` channel exists (the Release binary requests that channel; until then you’ll see a 404 “no channel named preview”).
+
+```bash
+cd examples/extension-updates
+
+# 1. Edit targets/share/otaLabel.ts → e.g. ota-v2
+# 2. Hermes-export share entry + publish host update
+npx expo-targets export-extension-bundles
+eas update --channel preview --message "ota-v2"
+```
+
+In this monorepo, if `npx expo-targets` resolves the bare stub, use:
+
+```bash
+bun run export:targets
+# or:
+node ../../packages/expo-targets/bin/expo-targets.js export-extension-bundles
+```
+
+Or: `bun run update` (same two steps).
+
+## On device
+
+1. Open **ET Ext Updates** (Release).
+2. Tap **Fetch + sync App Group + reload** (or Check → Fetch).
+3. Host label should show `ota-v2`.
+4. Tap **Open Share Sheet** → choose **Updates Share** → sheet shows `OTA: ota-v2`.
+
+If the sheet still shows the old label: confirm Release (not Debug), `runtimeVersion` matches, and sync logged `installed>=1`.
+
+## Notes
+
+- Importing `expo-targets` auto-enables `ExtensionUpdates` on the host; this app also calls `ExtensionUpdates.enable()` so the control buttons are obvious.
+- `eas init` + `eas update:configure` write `extra.eas.projectId` and `updates.url` into `app.json` (not committed with placeholders).
+- Do not commit generated `ios/` / `android/`. Never edit `ExpoTargetsGenerated/`.

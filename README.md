@@ -6,7 +6,7 @@
 
 Add **share extensions**, **action extensions**, **App Clips**, **iMessage apps**, **stickers**, **wallet extensions**, and other Apple targets Expo does not ship — including React Native UIs where supported.
 
-> **Widgets:** Native WidgetKit + Live Activities are first-class in this library. Official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) is an alternative React/Expo-UI path — do not dual-generate WidgetKit in one app. Android widgets remain bridge-grade. See [widgets.md](./docs/widgets.md) and [limits.md](./docs/limits.md).
+> **Widgets:** Native WidgetKit + Live Activities are first-class in this library. Official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) is an alternative React/Expo-UI path — do not dual-generate WidgetKit in one app. Android widgets are first-class Glance/Compose; `LiveActivity.*` on Android is an ongoing-notification helper. See [widgets.md](./docs/widgets.md) and [limits.md](./docs/limits.md).
 
 > **Important:** Requires development builds (`npx expo run:ios`). Does not work with Expo Go.
 >
@@ -23,11 +23,11 @@ npm install expo-targets
 ### 2. Create a Share Extension (React Native)
 
 ```bash
-npx create-expo-target
-# Choose: Share Extension → my-share → iOS → Yes (Use React Native)
+npx expo-targets add
+# interactive — or: npx expo-targets add share my-share
 ```
 
-`create-expo-target` scaffolds the target and wires the host by default (`package.json`, config plugin, App Groups, `metro.config.js`). Install dependencies if wiring added `expo-targets` to `package.json`.
+`expo-targets add` scaffolds the target and wires the host by default (`package.json`, config plugin, App Groups, `metro.config.js`). Install dependencies if wiring added `expo-targets` to `package.json`.
 
 ### 3. Manual host config (advanced)
 
@@ -91,16 +91,18 @@ Showcase subset (common adoption path). **Full type set + maturity (~47 types):*
 
 | Type       | iOS  | Android | Description                          |
 | ---------- | ---- | ------- | ------------------------------------ |
-| `share`    | ✅   | 🔜      | Share extensions (RN UI supported)   |
-| `action`   | ✅   | 🔜      | Action extensions (RN UI supported)  |
+| `share`    | ✅   | ✅‡     | Share extensions (RN on iOS; Android native Activity) |
+| `action`   | ✅   | ✅‡     | Action extensions (RN on iOS; Android native Activity) |
 | `clip`     | ✅   | —       | App Clips (RN UI supported)          |
 | `messages` | ✅   | —       | iMessage apps (RN UI supported)      |
 | `stickers` | ✅   | —       | iMessage sticker packs (asset-only)  |
 | `widget`   | ✅\* | ✅†     | Home screen widgets + Live Activities |
+| `notification-service` | ✅ | ✅§ | Push mutation (Android: local NotificationCompat; FCM leftover) |
+| `notification-content` | ✅ | ✅§ | Rich UI (Android: RemoteViews / A12 clamp) |
 
 **Legend:** ✅ Production ready · 🔜 Planned · — Not applicable
 
-> \*`widget` (iOS): first-class native WidgetKit + Live Activities. †Android widgets: bridge-grade. Details: [widgets.md](./docs/widgets.md).
+> \*`widget` (iOS): first-class native WidgetKit + Live Activities. †Android widgets: first-class Glance/Compose; LA → ongoing notif. ‡Android share/action: dedicated Activities (not MainActivity); RN host provisional. §Android notifications: host-process partial. Details: [widgets.md](./docs/widgets.md), [configuration.md](./docs/configuration.md).
 >
 > Wallet, Safari, Network Extension family, file providers, and the rest: [configuration.md](./docs/configuration.md). Lib floor vs Apple gates: [limits.md](./docs/limits.md). **No new orphan stubs** — [deprecations.md](./docs/deprecations.md).
 
@@ -150,10 +152,10 @@ See [examples/README.md](./examples/README.md) for the full suite (~48 hosts), D
 ## Documentation
 
 - **[Getting Started](./docs/getting-started.md)** — Build a React Native share extension
-- **[React Native Extensions](./docs/react-native-extensions.md)** — RN runtime contract + Metro
+- **[React Native Extensions](./docs/react-native-extensions.md)** — RN runtime contract + Metro; [App Group OTA / eas update](./docs/react-native-extensions.md#extension-bundle-sideload-with-expo-updates)
 - **[Widgets](./docs/widgets.md)** — WidgetKit / Live Activities ownership vs `expo-widgets`
 - **[Configuration](./docs/configuration.md)** — All config options
-- **[API Reference](./docs/api.md)** — JavaScript/TypeScript API
+- **[API Reference](./docs/api.md)** — JavaScript/TypeScript API ([`ExtensionUpdates`](./docs/api.md#extensionupdates))
 - **[Deprecations](./docs/deprecations.md)** — Roadmap freeze (no orphan stubs)
 
 ---
@@ -184,7 +186,7 @@ Use `npx expo-targets sync --dry-run` to preview. Managed Expo + `npx expo prebu
 import { createTarget, close, openHostApp, getSharedData } from "expo-targets";
 
 // RN extension entry
-export const share = createTarget<"share">("MyShare", ShareExtension);
+export const share = createTarget("MyShare", ShareExtension);
 
 const data = getSharedData();
 openHostApp("/inbox");

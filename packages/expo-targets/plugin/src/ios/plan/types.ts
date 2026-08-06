@@ -15,6 +15,9 @@ export interface IOSTargetProps extends IOSTargetConfigWithReactNative {
   name: string;
   entry?: string;
   excludedPackages?: string[];
+  appGroup?: string;
+  /** Baked into RN VC for App Group sideload matching (optional). */
+  runtimeVersion?: string;
   directory: string;
   configPath: string;
   logger: Logger;
@@ -62,6 +65,9 @@ export type SwiftTemplatePlan =
         targetName: string;
         preprocessingFile?: string;
         entry?: string;
+        appGroup?: string;
+        runtimeVersion?: string;
+        maxBundleBytes?: number;
       };
     }
   | { template: 'reactNativeClipApp' }

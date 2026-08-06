@@ -21,6 +21,7 @@ Pod::Spec.new do |s|
   # or Live Activity bridge registration and the JS module resolve to different copies.
   s.source_files = [
     'ExpoTargetsStorageModule.swift',
+    'ExpoTargetsExtensionBundleModule.swift',
     'ExpoTargetsFileProviderModule.swift',
     'ExpoTargetsContentBlockerModule.swift',
     'ExpoTargetsLiveActivityModule.swift',

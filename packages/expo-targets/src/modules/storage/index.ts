@@ -1,6 +1,34 @@
 import { requireNativeModule } from 'expo-modules-core';
 
-const ExpoTargetsStorageModule = requireNativeModule('ExpoTargetsStorage');
+const ExpoTargetsStorageModule = requireNativeModule('ExpoTargetsStorage') as {
+  setInt: (
+    key: string,
+    value: number,
+    suite: string | null,
+    targetName?: string
+  ) => void;
+  setString: (
+    key: string,
+    value: string,
+    suite: string | null,
+    targetName?: string
+  ) => void;
+  remove: (key: string, suite: string | null, targetName?: string) => void;
+  get: (
+    key: string,
+    suite: string | null,
+    targetName?: string
+  ) => string | null;
+  getAllData: (
+    suite: string | null,
+    targetName?: string
+  ) => Record<string, unknown>;
+  getAllKeys: (suite: string | null, targetName?: string) => string[];
+  clearAll: (suite: string | null, targetName?: string) => void;
+  refreshTarget: (name?: string | null) => void;
+  getTargetsConfig: () => unknown[] | null;
+  isAppExtension?: () => boolean;
+};
 
 export class AppGroupStorage {
   constructor(
@@ -148,5 +176,14 @@ export function getTargetsConfigFromBundle(): any[] | null {
     return ExpoTargetsStorageModule.getTargetsConfig();
   } catch {
     return null;
+  }
+}
+
+/** True inside an iOS .appex (share/action/…). */
+export function isAppExtension(): boolean {
+  try {
+    return ExpoTargetsStorageModule.isAppExtension?.() ?? false;
+  } catch {
+    return false;
   }
 }

@@ -73,13 +73,17 @@
     "@react-native/normalize-colors": "^0.79.2",
     "commander": "^11.1.0",
     "debug": "^4.3.4",
+    "fs-extra": "^11.2.0",
     "glob": "^10.4.2",
+    "prompts": "^2.4.2",
     "xcode": "3.0.1"
   },
   "devDependencies": {
     "@react-native-community/cli": "^16.0.0",
     "@types/babel__traverse": "^7.28.0",
     "@types/bun": "^1.2.21",
+    "@types/fs-extra": "^11.0.4",
+    "@types/prompts": "^2.4.9",
     "typescript": "~5.3.3"
   },
   "peerDependencies": {

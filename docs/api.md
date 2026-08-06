@@ -10,13 +10,12 @@
 
 Creates a target instance for communicating with your extension.
 
-For compile-time target name literals, import from the generated file (see [Getting Started → Typed target names](./getting-started.md#typed-target-names)):
+Target names are plain strings matching `expo-target.config.json` `"name"`. After `prebuild` / `npx expo-targets generate`, TypeScript narrows those literals via ambient types under `.expo/types/` (Expo Router–style — no import from `.expo/`):
 
 ```typescript
-import { Targets } from "../.expo/expo-targets.generated";
 import { createTarget } from "expo-targets";
 
-const share = createTarget(Targets.MyShare);
+const share = createTarget("MyShare"); // typed as TargetName when generated
 ```
 
 ```typescript
@@ -28,45 +27,17 @@ const widget = createTarget("MyWidget");
 // For React Native extensions (share, action, clip, messages)
 // Pass the component as second argument - handles AppRegistry automatically
 import ShareExtension from "./ShareExtension";
-export const share = createTarget<"share">("ShareExt", ShareExtension);
+export const share = createTarget("ShareExt", ShareExtension);
 ```
 
 **Parameters:**
 
 | Parameter   | Type                  | Description                                                                                |
 | ----------- | --------------------- | ------------------------------------------------------------------------------------------ |
-| `name`      | `string`              | Must match the `name` field in your `expo-target.config.json` **exactly** (case-sensitive) |
+| `name`      | `string` (`TargetName` when generated) | Must match the `name` field in your `expo-target.config.json` **exactly** (case-sensitive) |
 | `component` | `React.ComponentType` | _(Optional)_ For RN extensions only. Automatically calls `AppRegistry.registerComponent()` |
 
-When you pass a component as the second argument, `createTarget` handles registration for you — no need to call `AppRegistry.registerComponent()` manually.
-
-### Type Parameter
-
-The `createTarget` function uses TypeScript overloads to provide the correct return type based on your target type. You can optionally specify the type parameter for better type inference:
-
-```typescript
-// For messages extensions - returns MessagesExtensionTarget with messaging APIs
-const messages = createTarget<"messages">("MyMessages");
-messages.sendMessage({ caption: "Hello!" }); // ✅ Type-safe
-
-// For share/action/clip extensions - returns ExtensionTarget with close/openHostApp
-const share = createTarget<"share">("MyShare");
-share.close(); // ✅ Type-safe
-
-// For widgets and other types - returns NonExtensionTarget
-const widget = createTarget<"widget">("MyWidget");
-widget.close(); // ❌ TypeScript error: close doesn't exist
-```
-
-**When to use the type parameter:**
-
-| Scenario            | Recommendation                                                    |
-| ------------------- | ----------------------------------------------------------------- |
-| Widgets, stickers   | Not needed — `createTarget('Name')` is sufficient                 |
-| Share/action/clip   | Optional but helpful for IDE autocomplete                         |
-| Messages extensions | Recommended — unlocks `sendMessage`, `getPresentationStyle`, etc. |
-
-**Without the type parameter**, TypeScript returns a union type and you may need to check properties before using them.
+When you pass a component as the second argument, `createTarget` handles registration for you — no need to call `AppRegistry.registerComponent()` manually. No type argument is required.
 
 ### Error Handling
 
@@ -136,8 +107,8 @@ widget.refresh(); // Tell iOS/Android to reload this widget / surface
 **Important:** Call `refresh()` after updating data when you need an immediate widget reload.
 
 ```typescript
-widget.setData({ message: "Updated!" });
-widget.refresh();
+widget.setData({ message: "Updated!" }, { refresh: true });
+// or batch writes then: widget.refresh();
 ```
 
 ---
@@ -287,12 +258,13 @@ interface SharedData {
 
 ## Messages Extension API
 
-For iMessage apps (`type: "messages"`), use the type parameter to get full API access:
+For iMessage apps (`type: "messages"`):
 
 ```typescript
 import { createTarget } from "expo-targets";
+import MessagesApp from "./MessagesApp";
 
-const messages = createTarget<"messages">("MyMessagesApp");
+const messages = createTarget("MyMessagesApp", MessagesApp);
 ```
 
 ### Presentation
@@ -371,7 +343,7 @@ interface MessagesExtensionTarget {
   appGroup: string;
   storage: AppGroupStorage;
   config: TargetConfig;
-  setData(data: Record<string, any>): void;
+  setData(data: Record<string, any>, options?: { refresh?: boolean }): void;
   getData<T>(): T;
   refresh(): void;
 
@@ -488,7 +460,10 @@ await ContentBlocker.reload({ targetName: "MyBlocker" });
 
 ## LiveActivity
 
-Start / update / end ActivityKit Live Activities. `attributesName` must match `liveActivity.attributesName` on a widget target — unknown names throw with the configured list. Prefer `LiveActivity.create(name)` (widgets-like factory). Also exported as `createLiveActivity(name)`.
+Start / update / end Live Activities. `attributesName` must match `liveActivity.attributesName` on a widget target — unknown names throw with the configured list. Prefer `LiveActivity.create(name)` (widgets-like factory). Also exported as `createLiveActivity(name)`.
+
+- **iOS:** ActivityKit (16.2+). Attributes + host bridge are CNG into `ios/*/ExpoTargetsGenerated/` (gitignored). Activity UI stays under `targets/<widget>/ios/`.
+- **Android:** Ongoing `NotificationCompat` helper (same JS surface). No Dynamic Island / StandBy / ActivityKit push-to-start.
 
 ```typescript
 import { LiveActivity } from "expo-targets";
@@ -505,7 +480,31 @@ if (await LiveActivity.areActivitiesEnabled()) {
 }
 ```
 
-Attributes + host bridge are CNG into `ios/*/ExpoTargetsGenerated/` (gitignored). Activity UI stays under `targets/<widget>/ios/`. See [widgets.md](./widgets.md).
+See [widgets.md](./widgets.md).
+
+## AndroidNotification
+
+Android-only local path for `notification-service` / `notification-content` (Wave 2). Not a substitute for iOS NSE/NCE process isolation. FCM remote push is leftover when credentials are unavailable.
+
+```typescript
+import { AndroidNotification } from "expo-targets";
+
+// notification-service: mutate title + post
+const title = await AndroidNotification.processAndPresent({
+  title: "Hello",
+  body: "local",
+  targetName: "NotificationService",
+});
+
+// notification-content: RemoteViews / DecoratedCustomViewStyle
+await AndroidNotification.presentContent({
+  title: "Rich",
+  body: "custom view",
+  targetName: "NotificationContent",
+});
+
+await AndroidNotification.getLastProcessedTitle("group.com.example.app");
+```
 
 ---
 
@@ -528,7 +527,7 @@ import {
   getBrowserAPI,
 } from "expo-targets";
 
-const safari = createTarget<"safari">("MySafari");
+const safari = createTarget("MySafari");
 await safari.openTab("https://example.com");
 safari.closePopup();
 ```
@@ -549,17 +548,63 @@ const mod = getExtensionNativeModule();
 
 ---
 
-## CLI Commands
+## ExtensionUpdates
 
-### create-expo-target
+Host-only bridge from [expo-updates](https://docs.expo.dev/versions/latest/sdk/updates/) to App Group sideload. The appex never runs Updates — see [Extension bundle sideload](./react-native-extensions.md#extension-bundle-sideload-with-expo-updates).
 
-Interactive CLI to scaffold a new target:
+**Default:** importing `expo-targets` on the **host** auto-calls `ExtensionUpdates.enable()` (no-op in appexes / when ExpoUpdates or the host install module is missing).
 
-```bash
-npx create-expo-target
+```typescript
+import { ExtensionUpdates } from "expo-targets";
+// Optional explicit call / options:
+ExtensionUpdates.enable();
 ```
 
-**Prompts:**
+`enable()`:
+
+- Discovers RN-native targets + App Group from `expo.extra.targets`
+- Resolves bundles via Metro alias `expo-targets/extension-bundle-assets` → `assets/expo-targets/extensionBundleModules.js`
+- Syncs App Group from the **currently running** update on launch (`syncOnStart`, default `true`)
+- Returns the Updates-shaped API (`checkForUpdateAsync`, `fetchUpdateAsync`, `reloadAsync`, `syncFromCurrentUpdate`)
+
+**Publish** — export extension Hermes bundles **before** the host update so assets land in the same publish:
+
+```bash
+npx expo-targets export-extension-bundles
+eas update --branch production
+```
+
+Require a **string** `expo.runtimeVersion` (baked into the appex at prebuild; also written into sideload manifests). Policy objects are not resolved here — App Group load stays disabled until a plain string is set.
+
+### Low-level
+
+```typescript
+import { ExtensionUpdates } from "expo-targets";
+
+const api = ExtensionUpdates.create({
+  appGroup: "group.com.yourcompany.myapp",
+  targets: [{ targetName: "ShareExt", type: "share" }],
+  assetModules: require("../assets/expo-targets/extensionBundleModules"),
+});
+await api.fetchUpdateAsync(); // Updates.fetch + App Group install when isNew
+await api.syncFromCurrentUpdate(); // install from the already-running update
+```
+
+---
+
+## CLI Commands
+
+### expo-targets add
+
+Scaffold a new target (interactive when args are omitted):
+
+```bash
+npx expo-targets add
+npx expo-targets add share my-share
+npx expo-targets add --no-wire   # scaffold only
+```
+
+**Prompts (interactive):**
 
 1. **Type:** Widget (optional Live Activity), App Intent, Share, and other extension types
 2. **Name:** Target name in kebab-case (e.g., `my-widget`)
@@ -567,41 +612,19 @@ npx create-expo-target
 4. **Use React Native?** (share/action/clip/messages/notification-content/safari when applicable)
 5. **Live Activity?** (widget only) — Emits `liveActivity` config + one-shot UI bootstrap
 
-App Group is baked from `app.json` entitlements (`com.apple.security.application-groups`) into `expo-target.config.json` and Swift templates when present.
+Wires the host by default (plugin, App Groups, Metro). Dynamic `app.config.ts`/`js` gets a snippet warning instead of a hard fail — finish with `npx expo-targets doctor`. After scaffold, `generate` writes `.expo/types/expo-targets.d.ts`.
 
 **What it creates:**
 
 ```
 targets/{name}/
 ├── expo-target.config.json  # Configuration (incl. appGroup when resolved)
-├── index.ts                 # Pre-configured target instance
+├── index.tsx                # RN: createTarget<'type'>('Name', Component)
 └── ios/
     └── {Main}.swift         # Template code for the extension type
 ```
 
-Widget + Live Activity also creates `LiveActivity.swift` + a `WidgetBundle`. App Intent creates an empty `AppIntentExtension.swift` plus a user-owned `*IntentPerform.swift` hook.
-
-If you choose "Use React Native for UI", it also creates:
-
-- `targets/{name}/index.tsx` — React Native entry point with `createTarget()` and component
-
-**Example session:**
-
-```bash
-$ npx create-expo-target
-🎯 Create Expo Target
-
-? What type of target? Share Extension
-? Target name (e.g., my-widget): share-content
-? Select platforms: iOS
-? Use React Native for UI? Yes
-
-✅ Created target at targets/share-content
-✅ Created entry file: targets/share-content/index.tsx
-📝 Remember to add Metro config wrapper to metro.config.js
-
-Run `npx expo prebuild` to generate Xcode project
-```
+Native-only targets get `index.ts` with `createTarget('Name')` instead of `index.tsx`.
 
 ### expo-targets sync (bare React Native)
 
@@ -618,6 +641,16 @@ npx expo-targets sync --clean   # opt-in orphan cleanup (sealed dirs + Podfile)
 ```bash
 npx expo prebuild --platform ios
 ```
+
+### expo-targets export-extension-bundles
+
+Hermes-export each RN-native target `entry` for App Group OTA. Writes `assets/expo-targets/` (bundles + `extensionBundleModules.js`) and optionally a publish layout under `dist/`. Run **before** `eas update`.
+
+```bash
+npx expo-targets export-extension-bundles
+```
+
+Fails closed if `expo.runtimeVersion` is not a non-empty string. Details: [Extension bundle sideload](./react-native-extensions.md#extension-bundle-sideload-with-expo-updates).
 
 ---
 
@@ -655,7 +688,7 @@ interface BaseTarget {
   appGroup: string;
   storage: AppGroupStorage;
   config: TargetConfig;
-  setData(data: Record<string, any>): void;
+  setData(data: Record<string, any>, options?: { refresh?: boolean }): void;
   getData<T extends Record<string, any>>(): T;
   refresh(): void;
 }
@@ -694,10 +727,11 @@ interface NonExtensionTarget extends BaseTarget {
 | `clearSharedData()`       | ✅ iOS 13+   | ✅ API 26+ |
 | `FileProviderDomain.*`    | ✅ iOS 11+   | —          |
 | `ContentBlocker.reload`   | ✅ iOS 11+   | —          |
-| `LiveActivity.*`          | ✅ iOS 16.2+ | —          |
-| `close()`                 | ✅ iOS 13+   | 🔜         |
-| `openHostApp()`           | ✅ iOS 13+   | 🔜         |
-| `getSharedData()`         | ✅ iOS 13+   | 🔜         |
+| `LiveActivity.*`          | ✅ iOS 16.2+ | ✅ Ongoing-notif helper (partial) |
+| `AndroidNotification.*`   | —            | ✅ W2 local NSE/NCE path |
+| `close()`                 | ✅ iOS 13+   | ✅ Wave 0+ (target Activity) |
+| `openHostApp()`           | ✅ iOS 13+   | ✅ Wave 0+ |
+| `getSharedData()`         | ✅ iOS 13+   | ✅ Wave 0+ (Intent extras) |
 
 ### Extension Types by Platform
 
@@ -709,17 +743,30 @@ interface NonExtensionTarget extends BaseTarget {
 | `clip`     | ✅ iOS 14+ | —                              |
 | `stickers` | ✅ iOS 10+ | —                              |
 | `messages` | ✅ iOS 10+ | —                              |
-| `share`    | ✅ iOS 8+  | 🔜                             |
-| `action`   | ✅ iOS 8+  | 🔜                             |
+| `share`    | ✅ iOS 8+  | ✅ W1 dedicated Activity (native; RN provisional) |
+| `action`   | ✅ iOS 8+  | ✅ W1 `PROCESS_TEXT` Activity (native; RN provisional) |
+| `notification-service` | ✅ iOS 10+ | ✅ W2 partial (local NotificationCompat; FCM leftover) |
+| `notification-content` | ✅ iOS 10+ | ✅ W2 partial (RemoteViews / A12 clamp) |
+| `file-provider` | ✅ iOS 11+ | ✅ W3a DocumentsProvider |
+| `keyboard` | ✅ iOS 8+ | ✅ W3b IME (Settings leftover) |
+| `network-packet-tunnel` | ✅ NE | ✅ W3c VpnService (consent leftover) |
 
 > Only **stickers** is asset-only (`requiresCode: false`). Do not add orphan ExtensionTypes without example + Devicewright row ([deprecations.md](./deprecations.md)).
 
 ### Android Notes
 
-- **Widgets** use SharedPreferences for data storage (equivalent to iOS App Groups)
+- **Widgets** use SharedPreferences for data storage (equivalent to iOS App Groups); first-class Glance/Compose deepen
 - **Glance widgets** require Android 13+ (API 33) for full Compose support
 - **RemoteViews widgets** work on Android 8+ (API 26) with XML layouts
 - **Widget refresh** triggers via BroadcastReceiver
+- **Extension JS APIs** (`getSharedData` / `openHostApp` / `close`) need a target Activity (`ExpoTargetsHarnessActivity` or Share/Action Activities)
+- **Share/action** register dedicated Activities (not MainActivity) with MIME filters from `android.activationRules` or `ios.activationRules`
+- **Notifications** register a host-process Service + channels; use `AndroidNotification.*` for the local path. No sealed NSE process — only notifications you route. FCM push is leftover without credentials.
+- **LiveActivity on Android** posts ongoing notifications (partial vs ActivityKit)
+- **System services (W3):** DocumentsProvider, AutofillService, InputMethodService, CallScreeningService, PrintService, VpnService (fail-closed). Settings/Play leftovers documented in [limits.md](./limits.md)
+- **getTargetsConfig** reads `assets/expo_targets_config.json` written at prebuild
+- **RN on Android share:** provisional — native Activity is the default path until Expo RN Activity TTI is measured (spike `android-rn-host-2026-08-05.md`)
+- Full type matrix: [configuration.md](./configuration.md)
 
 ---
 

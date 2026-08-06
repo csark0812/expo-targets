@@ -401,6 +401,37 @@ export interface AndroidTargetConfig {
   targetCellHeight?: number;
   initialLayout?: string;
   colors?: Record<string, string | Color>;
+  /**
+   * Share/action MIME activation (optional). When omitted, plugin uses
+   * `ios.activationRules` if present, else text+url defaults.
+   */
+  activationRules?: ShareExtensionActivationRule[];
+  /**
+   * Notification channel id (notification-service / notification-content).
+   * Default: `expo_targets_<sanitizedName>`.
+   */
+  channelId?: string;
+  /** Human-readable channel name for NotificationManager. */
+  channelName?: string;
+  /**
+   * Content category key (notification-content). Defaults to iOS
+   * `UNNotificationExtensionCategory` or `myNotificationCategory`.
+   */
+  category?: string;
+  /**
+   * Title suffix applied by the local notification-service processor.
+   * Default: ` [expo-targets]` (matches iOS NSE example).
+   */
+  mutationMarker?: string;
+  /**
+   * DocumentsProvider authority (file-provider).
+   * Default: `{android.package}.expo_targets.documents.<segment>`.
+   */
+  authority?: string;
+  /** IME label override (keyboard). */
+  imeLabel?: string;
+  /** VPN service label (network-packet-tunnel). */
+  vpnDisplayName?: string;
 }
 
 // Base config shared by all targets
@@ -428,12 +459,12 @@ type TargetConfigReactNativeCompatible = BaseTargetConfig & {
    */
   entry?: string;
   /**
-   * Exclude specific Expo packages from the nested extension's ExpoModulesProvider.
-   * Applied in a CocoaPods `post_integrate` hook (nested `use_expo_modules!(exclude:)`
-   * is a no-op). Prefer excluding `expo-updates` and `expo-dev-client` for Messages /
-   * share / action / clip — they assert in appex processes and blank the RN sheet.
-   * Only applies when `entry` is specified.
-   * @example ['expo-dev-client', 'expo-updates']
+   * Extra Expo packages to omit from the nested extension's ExpoModulesProvider
+   * (via CocoaPods `post_integrate`). For RN-native targets with `entry`,
+   * `expo-updates` and `expo-dev-client` are **always** union-merged — no escape
+   * hatch. Use this field only for additional packages (e.g. reanimated, Sentry).
+   * Nested `use_expo_modules!(exclude:)` alone is a no-op.
+   * @example ['react-native-reanimated', '@sentry/react-native']
    */
   excludedPackages?: string[];
   ios?: IOSTargetConfigWithReactNative;

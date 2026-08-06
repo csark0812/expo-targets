@@ -219,6 +219,28 @@ export async function dismissSystemAlerts(
   }
 }
 
+/**
+ * Visible text for an a11y node. On Android, long JSON in `text=` often leaves
+ * `label`/`value` empty while the uiautomator `raw` still carries `text='...'`.
+ */
+export function nodeVisibleText(node: AccessibilityNode | undefined): string {
+  if (!node) return "";
+  const direct = String(
+    node.label ??
+      (node as { value?: string }).value ??
+      (node as { title?: string }).title ??
+      "",
+  ).trim();
+  if (direct) return direct;
+  const raw = (node as { raw?: unknown }).raw;
+  if (typeof raw !== "string" || !raw.includes("text=")) return "";
+  // Prefer single-quoted attrs (JSON payloads use double quotes inside).
+  const single = /\btext='([^']*)'/.exec(raw);
+  if (single?.[1]) return single[1];
+  const dbl = /\btext="([^"]*)"/.exec(raw);
+  return dbl?.[1] ?? "";
+}
+
 /** Poll host labels for a marker (payload text often has no AXUniqueId). */
 export async function assertPayloadContains(
   device: DeviceSession,
@@ -236,18 +258,17 @@ export async function assertPayloadContains(
           (n as { id?: string }).id ??
           "",
       );
-      return id === payloadId;
+      return id === payloadId || id.endsWith(`/${payloadId}`) || id.endsWith(`:id/${payloadId}`);
     });
-    const text = String(
-      hit?.label ??
-        (hit as { value?: string } | undefined)?.value ??
-        hit?.title ??
-        "",
-    );
-    last = text || flattenLabels(tree).join(" | ");
+    const text = nodeVisibleText(hit);
+    const texts = tree.map((n) => nodeVisibleText(n)).filter(Boolean);
+    last = text || texts.join(" | ") || flattenLabels(tree).join(" | ");
     if (text.includes(marker)) return;
     // JSON payload often surfaces as AXValue / AXLabel without matching id — require
     // curly braces so host titles cannot false-green.
+    if (texts.some((l) => l.includes("{") && l.includes(marker))) {
+      return;
+    }
     if (
       flattenLabels(tree).some(
         (l) => l.includes("{") && l.includes(marker),

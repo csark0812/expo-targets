@@ -14,7 +14,7 @@
     "lint": "biome lint .",
     "format": "biome format --write .",
     "check": "biome check .",
-    "typecheck": "tsc -p packages/expo-targets --noEmit && tsc -p packages/create-expo-target --noEmit && tsc -p packages/expo-targets-cli --noEmit",
+    "typecheck": "tsc -p packages/expo-targets --noEmit && tsc -p packages/expo-targets-cli --noEmit",
     "validate:changed": "skeleton validate changed",
     "validate:ci": "skeleton validate changed --base origin/main",
     "audit:docs": "skeleton audit docs",
@@ -31,6 +31,7 @@
     "examples:devicewright:matrix:live": "bun examples/.devicewright/cli.ts matrix --live-through=1",
     "examples:devicewright:matrix:ensure": "bun examples/.devicewright/cli.ts matrix --live-through=3 --no-fail-fast --ensure-install",
     "examples:devicewright:share": "bun examples/.devicewright/cli.ts matrix --ids=share",
+    "examples:devicewright:share:android": "bun examples/.devicewright/cli.ts matrix --ids=share --platform=android --device=emulator-5554 --live-through=1",
     "examples:devicewright:action": "bun examples/.devicewright/cli.ts matrix --ids=action",
     "examples:devicewright:messages": "bun examples/.devicewright/cli.ts matrix --ids=messages",
     "examples:devicewright:stickers": "bun examples/.devicewright/cli.ts matrix --ids=stickers",
@@ -39,7 +40,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.6",
-    "@csark0812/devicewright": "0.1.14",
+    "@csark0812/devicewright": "^0.1.15",
     "@csark0812/skeleton": "^1.5.7",
     "typescript": "~5.3.3"
   },
@@ -47,6 +48,7 @@
   "dependencies": {
     "@expo/config-plugins": "^57.0.6",
     "expo": "~57.0.9",
+    "expo-updates": "^57.0.12",
     "react": "19.2.3",
     "react-native": "0.86.2"
   }

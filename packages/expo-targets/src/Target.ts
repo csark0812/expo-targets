@@ -5,6 +5,7 @@ import type {
   ReactNativeCompatibleType,
   TargetConfig,
 } from '../plugin/src/config';
+import type { TargetName } from './generatedNames';
 import { Extension, type SharedData } from './modules/extension/index';
 import {
   type ConversationInfo,
@@ -24,13 +25,18 @@ import {
   getTargetsConfigFromBundle,
 } from './modules/storage/index';
 
+export type SetDataOptions = {
+  /** When true, reload WidgetKit timelines after writing (widgets). Default false. */
+  refresh?: boolean;
+};
+
 export interface BaseTarget {
   name: string;
   type: ExtensionType;
   appGroup: string;
   storage: AppGroupStorage;
   config: TargetConfig;
-  setData: (data: Record<string, any>) => void;
+  setData: (data: Record<string, any>, options?: SetDataOptions) => void;
   getData: <T extends Record<string, any>>() => T;
   refresh: () => void;
 }
@@ -156,8 +162,11 @@ function createBaseTarget(
     appGroup,
     storage,
     config,
-    setData(data: Record<string, any>) {
+    setData(data: Record<string, any>, options?: SetDataOptions) {
       storage.setData(data);
+      if (options?.refresh) {
+        storage.refresh(targetName);
+      }
     },
     getData<T extends Record<string, any>>(): T {
       return storage.getData<T>();
@@ -290,31 +299,31 @@ function tryCreateSafariTargetFromConfig(
 
 // Function overloads for better type inference
 export function createTarget<_T extends 'messages'>(
-  targetName: string,
+  targetName: TargetName,
   componentFunc?: React.ComponentType<any>
 ): MessagesExtensionTarget;
 export function createTarget<_T extends 'safari'>(
-  targetName: string,
+  targetName: TargetName,
   componentFunc?: React.ComponentType<any>
 ): SafariExtensionTarget;
 export function createTarget<
   _T extends Exclude<ReactNativeCompatibleType, 'messages'>,
 >(
-  targetName: string,
+  targetName: TargetName,
   componentFunc?: React.ComponentType<any>
 ): ExtensionTarget;
 export function createTarget<
   _T extends Exclude<ExtensionType, ReactNativeCompatibleType>,
 >(
-  targetName: string,
+  targetName: TargetName,
   componentFunc?: React.ComponentType<any>
 ): NonExtensionTarget;
 export function createTarget(
-  targetName: string,
+  targetName: TargetName,
   componentFunc?: React.ComponentType<any>
 ): Target;
 export function createTarget<_T extends ExtensionType = ExtensionType>(
-  targetName: string,
+  targetName: TargetName,
   componentFunc?: React.ComponentType<any>
 ): Target {
   if (isSafariExtension() && componentFunc) {

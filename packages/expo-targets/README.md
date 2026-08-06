@@ -18,11 +18,11 @@ Expo config plugin and runtime for Apple app extensions Expo does not ship — s
 
 ```bash
 npm install expo-targets
-npx create-expo-target
+npx expo-targets add
 # Share Extension → my-share → Use React Native: Yes
 ```
 
-`create-expo-target` wires the host by default. Install dependencies if wiring added `expo-targets` to `package.json`.
+`expo-targets add` wires the host by default. Install dependencies if wiring added `expo-targets` to `package.json`.
 
 ```js
 // metro.config.js
@@ -36,7 +36,7 @@ module.exports = withTargets(getDefaultConfig(__dirname));
 import { createTarget } from "expo-targets";
 import ShareExtension from "./ShareExtension";
 
-export const myShare = createTarget<"share">("MyShare", ShareExtension);
+export const myShare = createTarget("MyShare", ShareExtension);
 ```
 
 ## Storage
@@ -52,7 +52,8 @@ target.refresh();
 
 - [Getting started](https://github.com/csark0812/expo-targets/blob/main/docs/getting-started.md)
 - [Configuration](https://github.com/csark0812/expo-targets/blob/main/docs/configuration.md)
-- [API](https://github.com/csark0812/expo-targets/blob/main/docs/api.md)
+- [API](https://github.com/csark0812/expo-targets/blob/main/docs/api.md) (includes [`ExtensionUpdates`](https://github.com/csark0812/expo-targets/blob/main/docs/api.md#extensionupdates))
+- [React Native extensions](https://github.com/csark0812/expo-targets/blob/main/docs/react-native-extensions.md) — [App Group OTA / eas update](https://github.com/csark0812/expo-targets/blob/main/docs/react-native-extensions.md#extension-bundle-sideload-with-expo-updates)
 - [Widgets](https://github.com/csark0812/expo-targets/blob/main/docs/widgets.md)
 - [Contributing](https://github.com/csark0812/expo-targets/blob/main/CONTRIBUTING.md)
 

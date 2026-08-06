@@ -1,0 +1,11 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- Live Activity dual (ongoing NotificationCompat) + NSE/NCE routing on API 33+. -->
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+  <application>
+    <!-- Wave 0 harness: synthetic Intent surface for extension JS APIs (not a product ShareActivity). -->
+    <activity
+      android:name="expo.modules.targets.extension.ExpoTargetsHarnessActivity"
+      android:exported="false"
+      android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+  </application>
+</manifest>

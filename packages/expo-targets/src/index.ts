@@ -9,6 +9,14 @@ export type {
   ReactNativeCompatibleType,
   TargetConfig,
 } from '../plugin/src/config';
+export type {
+  KnownLiveActivityAttributes,
+  KnownTargets,
+  LiveActivityAttributesName,
+  LiveActivityPayloadFor,
+  LiveActivityPayloadRegistry,
+  TargetName,
+} from './generatedNames';
 export type { ContentBlockerReloadOpts } from './modules/contentBlocker/index';
 // Content Blocker
 export { ContentBlocker } from './modules/contentBlocker/index';
@@ -21,6 +29,19 @@ export {
   getSharedData,
   openHostApp,
 } from './modules/extension/index';
+export type { ExtensionBundleManifest } from './modules/extensionBundle/ExtensionUpdates';
+export { createExtensionUpdates } from './modules/extensionBundle/ExtensionUpdates';
+export {
+  autoEnableExtensionUpdates,
+  ExtensionUpdates,
+} from './modules/extensionBundle/ExtensionUpdatesApi';
+/** @deprecated Prefer `ExtensionUpdates.enable` */
+export { enableExtensionUpdates } from './modules/extensionBundle/enableExtensionUpdates';
+export {
+  clearExtensionBundleNative,
+  getExtensionBundleInfoNative,
+  installExtensionBundleNative,
+} from './modules/extensionBundle/nativeInstall';
 export type { FileProviderDomainOpts } from './modules/fileProvider/index';
 // File Provider domain
 export { FileProviderDomain } from './modules/fileProvider/index';
@@ -51,6 +72,8 @@ export {
   sendMessage,
   sendUpdate,
 } from './modules/messages/index';
+// Android notification local path (Wave 2)
+export { AndroidNotification } from './modules/notification/index';
 export type { BrowserTab } from './modules/safari/index';
 // Safari module
 export {
@@ -81,3 +104,17 @@ export type {
   Target,
 } from './Target';
 export { createTarget } from './Target';
+
+// Host default: App Group sync when this package loads (no-op in appex / Node).
+queueMicrotask(() => {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { autoEnableExtensionUpdates } =
+      require('./modules/extensionBundle/ExtensionUpdatesApi') as {
+        autoEnableExtensionUpdates: () => void;
+      };
+    autoEnableExtensionUpdates();
+  } catch {
+    // ignore
+  }
+});

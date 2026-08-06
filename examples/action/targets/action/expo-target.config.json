@@ -2,7 +2,7 @@
   "type": "action",
   "name": "Action",
   "displayName": "Example Action",
-  "platforms": ["ios"],
+  "platforms": ["ios", "android"],
   "entry": "./targets/action/index.tsx",
   "appGroup": "group.com.expotargets.example.action",
   "ios": {
@@ -12,6 +12,16 @@
       {
         "type": "image",
         "maxCount": 5
+      },
+      {
+        "type": "text"
+      }
+    ]
+  },
+  "android": {
+    "activationRules": [
+      {
+        "type": "text"
       }
     ]
   }

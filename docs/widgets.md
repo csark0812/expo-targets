@@ -61,8 +61,8 @@ await LiveActivity.endAll();
 ## Scaffolding
 
 ```bash
-npx create-expo-target
-# choose Widget / Live Activity
+npx expo-targets add
+# choose Widget / Live Activity — or: npx expo-targets add widget my-widget
 # optional: Configurable (Edit Widget)? — AppIntentConfiguration (iOS 17+)
 # optional: Live Activity bootstrap
 ```
@@ -113,8 +113,8 @@ From the host app, keep the widget in sync after in-app picks:
 ```ts
 const widget = createTarget("HelloWidget");
 widget.storage.set("listId", selectedId);
-// or: widget.setData({ listId: selectedId });
 widget.refresh();
+// or: widget.setData({ listId: selectedId }, { refresh: true });
 ```
 
 Use the same `appGroup` as `expo-target.config.json` — the scaffold wires it
@@ -125,7 +125,7 @@ React/Expo-UI-first configurable widgets: see official
 
 ## Android widgets
 
-Android home-screen widgets (Glance / RemoteViews) stay **bridge-grade** and intentional while Expo’s official widgets stack is iOS-led. Other Apple extension types have no Android equivalent — see [limits.md](./limits.md).
+Android home-screen widgets (Glance / RemoteViews) are **first-class** in expo-targets (Kotlin Compose deepen under `targets/<name>/android/`). Same DoD as iOS when Devicewright-green. One generator per app if official `expo-widgets` Android lands. ActivityKit / Dynamic Island / StandBy remain iOS-only; `LiveActivity.*` on Android maps to an **ongoing-notification helper** (same JS API; see `examples/widgets`). See [limits.md](./limits.md) and [configuration.md](./configuration.md) Android matrix.
 
 ## Related
 

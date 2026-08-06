@@ -33,6 +33,31 @@ See [AUTH.md](./AUTH.md).
 
 ## Release install (required for share/action/messages bars)
 
+```bash
+# iOS
+cd examples/share
+npx expo prebuild --platform ios
+# operator: Release install on booted sim
+
+# Android (share dual)
+npx expo prebuild --platform android
+cd android && ./gradlew assembleRelease
+adb -s emulator-5554 install -r app/build/outputs/apk/release/app-release.apk
+```
+
+Live matrix:
+
+```bash
+# iOS
+bun run examples:devicewright:share
+
+# Android — Share Activity ≠ MainActivity; Save; Open main app
+bun run examples:devicewright:share:android
+# or:
+bun examples/.devicewright/cli.ts matrix --ids=share --platform=android --device=emulator-5554 --live-through=1
+```
+
+
 Debug binaries are an **operator** fail. For each REQUIRED_V2 example:
 
 ```bash

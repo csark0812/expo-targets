@@ -2,6 +2,7 @@ export type { RuntimeTargetConfig } from './collectRuntimeConfigs';
 export { collectRuntimeConfigs } from './collectRuntimeConfigs';
 export type { TargetCodegenConfig } from './typedTargets';
 export {
+  ensureTsconfigExpoTypesInclude,
   formatTargetsTypesFile,
   GENERATED_RELATIVE_PATH,
   writeTargetsTypesFile,

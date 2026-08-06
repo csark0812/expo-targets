@@ -1,11 +1,19 @@
 import { StatusBar } from 'expo-status-bar';
 import { AppGroupStorage, FileProviderDomain } from 'expo-targets';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Linking,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
-const storage = new AppGroupStorage(
-  'group.com.expotargets.example.file-provider'
-);
+const APP_GROUP = 'group.com.expotargets.example.file-provider';
+const AUTHORITY =
+  'com.expotargets.example.file-provider.expo_targets.documents.fileprovider';
+const storage = new AppGroupStorage(APP_GROUP);
 
 function readPayload(): string {
   const marker = storage.get<string>('fp:marker');
@@ -36,15 +44,7 @@ function ActionButton({
   );
 }
 
-function DomainControls({
-  setDomain,
-  refreshPayload,
-  setPayload,
-}: {
-  setDomain: (v: string) => void;
-  refreshPayload: () => void;
-  setPayload: (v: string) => void;
-}) {
+function IosDomainControls({ setDomain }: { setDomain: (v: string) => void }) {
   return (
     <>
       <ActionButton
@@ -66,6 +66,61 @@ function DomainControls({
             .catch((e) => setDomain(`error:${String(e)}`));
         }}
       />
+    </>
+  );
+}
+
+function AndroidDomainControls({
+  refreshPayload,
+  setDomain,
+}: {
+  refreshPayload: () => void;
+  setDomain: (v: string) => void;
+}) {
+  return (
+    <>
+      <ActionButton
+        testID="btn-seed-android-docs"
+        label="Seed Android marker"
+        onPress={() => {
+          storage.set('fp:marker', 'android-docs');
+          storage.set('fp:lastFile', 'expo_targets_docs/');
+          storage.set('fp:lastAt', new Date().toISOString());
+          setDomain(`authority:${AUTHORITY}`);
+          refreshPayload();
+        }}
+      />
+      <ActionButton
+        testID="btn-open-documents-hint"
+        label="Open storage settings"
+        secondary
+        onPress={() => {
+          void Linking.openSettings();
+        }}
+      />
+    </>
+  );
+}
+
+function DomainControls({
+  setDomain,
+  refreshPayload,
+  setPayload,
+}: {
+  setDomain: (v: string) => void;
+  refreshPayload: () => void;
+  setPayload: (v: string) => void;
+}) {
+  return (
+    <>
+      {Platform.OS === 'ios' ? (
+        <IosDomainControls setDomain={setDomain} />
+      ) : (
+        <AndroidDomainControls
+          refreshPayload={refreshPayload}
+          setDomain={setDomain}
+        />
+      )}
       <ActionButton
         testID="btn-refresh"
         label="Refresh"
@@ -88,13 +143,20 @@ function DomainControls({
 
 export default function App() {
   const [ready, setReady] = useState(false);
-  const [domain, setDomain] = useState('not-registered');
+  const [domain, setDomain] = useState(
+    Platform.OS === 'android' ? `authority:${AUTHORITY}` : 'not-registered'
+  );
   const [payload, setPayload] = useState('none');
   const refreshPayload = useCallback(() => setPayload(readPayload()), []);
 
   useEffect(() => {
-    // Drop any legacy domain registered with pathRelativeToDocumentStorage
-    // (incompatible with NSFileProviderReplicatedExtension) then re-add.
+    if (Platform.OS !== 'ios') {
+      refreshPayload();
+      setReady(true);
+      const interval = setInterval(refreshPayload, 2000);
+      return () => clearInterval(interval);
+    }
+
     void FileProviderDomain.unregister()
       .catch(() => undefined)
       .then(() => FileProviderDomain.register())
@@ -114,6 +176,11 @@ export default function App() {
       <Text style={styles.title}>ET FileProv</Text>
       <Text testID="status-target-ready">{ready ? 'ready' : 'booting'}</Text>
       <Text testID="text-extension-type">file-provider</Text>
+      <Text testID="text-platform-note" style={styles.hint}>
+        {Platform.OS === 'android'
+          ? 'Android: DocumentsProvider root under filesDir/expo_targets_docs'
+          : 'iOS: FileProviderDomain register / Files app'}
+      </Text>
       <Text
         testID="text-files-domain"
         accessibilityLabel={`files-domain:${domain}`}
@@ -141,6 +208,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   title: { fontSize: 20, fontWeight: '600', marginBottom: 12 },
+  hint: { color: '#666', fontSize: 13, textAlign: 'center' },
   button: {
     backgroundColor: '#007AFF',
     paddingHorizontal: 16,
