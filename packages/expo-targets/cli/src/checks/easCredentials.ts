@@ -22,8 +22,18 @@ type AppExtensionRow = {
   entitlements?: Record<string, unknown>;
 };
 
+/** Mirror plugin `Paths.sanitizeTargetName` (Xcode product / EAS targetName). */
 function sanitizeTargetName(name: string): string {
   return `${name.replace(/[^a-zA-Z0-9]/g, '')}Target`;
+}
+
+/** Same input as `withIOSTarget`: displayName || name. */
+function productNameForTarget(
+  target: ProjectContext['targets'][number]
+): string {
+  const configName = target.config.name as string;
+  const label = target.config.displayName || configName;
+  return sanitizeTargetName(label);
 }
 
 function readAppExtensions(
@@ -98,7 +108,7 @@ function checkExtensionRow(
   hostAppGroups: string[]
 ): CheckResult[] {
   const configName = target.config.name as string;
-  const productName = sanitizeTargetName(configName);
+  const productName = productNameForTarget(target);
   if (!row) {
     return [missingExtensionWarn(productName, configName)];
   }
@@ -165,7 +175,7 @@ export function checkEasCredentials(ctx: ProjectContext): CheckResult[] {
   if (appExtensions) {
     for (const target of targets) {
       const configName = target.config.name as string;
-      const productName = sanitizeTargetName(configName);
+      const productName = productNameForTarget(target);
       const row = appExtensions.find(
         (ext) => ext.targetName === productName || ext.targetName === configName
       );

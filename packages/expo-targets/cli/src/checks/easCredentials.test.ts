@@ -27,9 +27,22 @@ function baseCtx(overrides: Partial<ProjectContext> = {}): ProjectContext {
 }
 
 function withAppExtensions(
-  rows: Array<{ targetName: string; bundleIdentifier: string }>
+  rows: Array<{
+    targetName: string;
+    bundleIdentifier: string;
+    entitlements?: Record<string, unknown>;
+  }>,
+  targetOverrides: Partial<ProjectContext['targets'][number]['config']> = {}
 ): ProjectContext {
+  const base = baseCtx();
+  const target = base.targets[0];
   return baseCtx({
+    targets: [
+      {
+        ...target,
+        config: { ...target.config, ...targetOverrides },
+      },
+    ],
     expo: {
       ios: { bundleIdentifier: 'com.example.app' },
       extra: {
@@ -45,27 +58,11 @@ function withAppExtensions(
   });
 }
 
-describe('checkEasCredentials', () => {
+describe('checkEasCredentials errors', () => {
   test('errors when host bundleIdentifier missing', () => {
     const results = checkEasCredentials(baseCtx({ expo: { ios: {} } }));
     expect(results.some((r) => r.level === 'error')).toBe(true);
     expect(results[0].message).toContain('bundleIdentifier');
-  });
-
-  test('warns when committed appExtensions misses a target', () => {
-    const results = checkEasCredentials(
-      withAppExtensions([
-        {
-          targetName: 'OtherTarget',
-          bundleIdentifier: 'com.example.app.other',
-        },
-      ])
-    );
-    expect(
-      results.some(
-        (r) => r.level === 'warn' && r.message.includes('ShareTarget')
-      )
-    ).toBe(true);
   });
 
   test('errors when targetName is not sanitized product', () => {
@@ -82,5 +79,44 @@ describe('checkEasCredentials', () => {
         (r) => r.level === 'error' && r.message.includes('ShareTarget')
       )
     ).toBe(true);
+  });
+});
+
+describe('checkEasCredentials displayName product', () => {
+  test('warns when committed appExtensions misses a target', () => {
+    const results = checkEasCredentials(
+      withAppExtensions([
+        {
+          targetName: 'OtherTarget',
+          bundleIdentifier: 'com.example.app.other',
+        },
+      ])
+    );
+    expect(
+      results.some(
+        (r) => r.level === 'warn' && r.message.includes('ShareTarget')
+      )
+    ).toBe(true);
+  });
+
+  test('matches plugin product from displayName || name', () => {
+    const results = checkEasCredentials(
+      withAppExtensions(
+        [
+          {
+            targetName: 'ExampleShareTarget',
+            bundleIdentifier: 'com.example.app.share',
+            entitlements: {
+              'com.apple.security.application-groups': [
+                'group.com.example.app',
+              ],
+            },
+          },
+        ],
+        { displayName: 'Example Share' }
+      )
+    );
+    expect(results.some((r) => r.message.includes('missing'))).toBe(false);
+    expect(results.some((r) => r.level === 'error')).toBe(false);
   });
 });
