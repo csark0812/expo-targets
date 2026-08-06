@@ -14,9 +14,7 @@ const RN_NATIVE = new Set([
 function hasRnNativeEntry(ctx: ProjectContext): boolean {
   return ctx.targets.some(
     (t) =>
-      t.config.entry &&
-      t.config.type &&
-      RN_NATIVE.has(t.config.type as string)
+      t.config.entry && t.config.type && RN_NATIVE.has(t.config.type as string)
   );
 }
 

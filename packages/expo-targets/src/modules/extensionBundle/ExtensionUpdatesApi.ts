@@ -8,8 +8,8 @@ import {
   type ExtensionUpdatesOptions,
 } from './ExtensionUpdates';
 import {
-  enableExtensionUpdates,
   type EnableExtensionUpdatesOptions,
+  enableExtensionUpdates,
 } from './enableExtensionUpdates';
 
 export type { EnableExtensionUpdatesOptions, ExtensionUpdatesOptions };
@@ -29,9 +29,7 @@ export function shouldAutoEnableExtensionUpdates(opts: {
   hasExpoUpdates: boolean;
   hasExtensionBundle: boolean;
 }): boolean {
-  return (
-    !opts.isAppExtension && opts.hasExpoUpdates && opts.hasExtensionBundle
-  );
+  return !opts.isAppExtension && opts.hasExpoUpdates && opts.hasExtensionBundle;
 }
 
 /**
@@ -40,7 +38,9 @@ export function shouldAutoEnableExtensionUpdates(opts: {
 export function isAppExtensionProcess(): boolean {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { Platform } = require('react-native') as { Platform: { OS: string } };
+    const { Platform } = require('react-native') as {
+      Platform: { OS: string };
+    };
     if (Platform.OS !== 'ios') {
       return false;
     }
@@ -75,8 +75,9 @@ export function autoEnableExtensionUpdates(): void {
       };
 
     const isAppex = isAppExtensionProcess();
+    const expoUpdatesModule = requireOptionalNativeModule('ExpoUpdates');
     const hasExpoUpdates =
-      requireOptionalNativeModule('ExpoUpdates') != null;
+      expoUpdatesModule !== undefined && expoUpdatesModule !== null;
     let hasExtensionBundle = false;
     try {
       requireNativeModule('ExpoTargetsExtensionBundle');

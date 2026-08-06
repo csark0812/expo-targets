@@ -1,4 +1,5 @@
 import path from 'node:path';
+import process from 'node:process';
 import type { ConfigPlugin } from '@expo/config-plugins';
 import { globSync } from 'glob';
 
@@ -31,7 +32,9 @@ export function resolveRuntimeVersionFromExpoConfig(
   if (typeof top === 'string' && top) {
     return top;
   }
-  const updates = expoConfig?.updates as { runtimeVersion?: unknown } | undefined;
+  const updates = expoConfig?.updates as
+    | { runtimeVersion?: unknown }
+    | undefined;
   if (typeof updates?.runtimeVersion === 'string' && updates.runtimeVersion) {
     return updates.runtimeVersion;
   }
@@ -217,6 +220,55 @@ const withCompanionUiTarget: ConfigPlugin<{
   return next;
 };
 
+const RN_SIDeload_TYPES = [
+  'share',
+  'action',
+  'clip',
+  'messages',
+  'notification-content',
+] as const;
+
+function warnMissingRuntimeForSideload(opts: {
+  evaluatedConfig: any;
+  targetName: string;
+  runtimeVersion: string;
+  logger: Logger;
+}): void {
+  if (
+    opts.evaluatedConfig.entry &&
+    !opts.runtimeVersion &&
+    RN_SIDeload_TYPES.includes(opts.evaluatedConfig.type)
+  ) {
+    opts.logger.warn(
+      `expo.runtimeVersion is missing — App Group sideload for "${opts.targetName}" will never load (falls back to embedded). Set a string runtimeVersion in app.json.`
+    );
+  }
+}
+
+function applyIosCompanionTargets(opts: {
+  config: any;
+  evaluatedConfig: any;
+  context: TargetContext;
+  runtimeConfigs: any[];
+}): any {
+  let next = opts.config;
+  if (opts.evaluatedConfig.type === 'intent') {
+    next = withCompanionUiTarget(next, {
+      context: opts.context,
+      companion: 'intent-ui',
+      runtimeConfigs: opts.runtimeConfigs,
+    });
+  }
+  if (opts.evaluatedConfig.type === 'wallet') {
+    next = withCompanionUiTarget(next, {
+      context: opts.context,
+      companion: 'wallet-ui',
+      runtimeConfigs: opts.runtimeConfigs,
+    });
+  }
+  return next;
+}
+
 const withTargetIos: ConfigPlugin<{
   context: TargetContext;
   runtimeConfigs: any[];
@@ -224,7 +276,6 @@ const withTargetIos: ConfigPlugin<{
   const { target, targetDirectory, targetName, logger } = context;
   const evaluatedConfig = target.config;
 
-  // Extract intents config from ios.intents for intent/intent-ui types
   const intentsConfig =
     evaluatedConfig.type === 'intent' && evaluatedConfig.ios?.intents
       ? {
@@ -241,19 +292,14 @@ const withTargetIos: ConfigPlugin<{
   });
 
   const runtimeVersion = resolveRuntimeVersionFromExpoConfig(config);
-  if (
-    evaluatedConfig.entry &&
-    !runtimeVersion &&
-    ['share', 'action', 'clip', 'messages', 'notification-content'].includes(
-      evaluatedConfig.type
-    )
-  ) {
-    logger.warn(
-      `expo.runtimeVersion is missing — App Group sideload for "${targetName}" will never load (falls back to embedded). Set a string runtimeVersion in app.json.`
-    );
-  }
+  warnMissingRuntimeForSideload({
+    evaluatedConfig,
+    targetName,
+    runtimeVersion,
+    logger,
+  });
 
-  let next = withIOSTarget(config, {
+  const iosConfig = withIOSTarget(config, {
     ...(evaluatedConfig.ios || {}),
     type: evaluatedConfig.type,
     name: targetName,
@@ -268,23 +314,12 @@ const withTargetIos: ConfigPlugin<{
     logger,
   });
 
-  if (evaluatedConfig.type === 'intent') {
-    next = withCompanionUiTarget(next, {
-      context,
-      companion: 'intent-ui',
-      runtimeConfigs,
-    });
-  }
-
-  if (evaluatedConfig.type === 'wallet') {
-    next = withCompanionUiTarget(next, {
-      context,
-      companion: 'wallet-ui',
-      runtimeConfigs,
-    });
-  }
-
-  return next;
+  return applyIosCompanionTargets({
+    config: iosConfig,
+    evaluatedConfig,
+    context,
+    runtimeConfigs,
+  });
 };
 
 const withTarget: ConfigPlugin<{
@@ -341,6 +376,71 @@ const withTarget: ConfigPlugin<{
   return next;
 };
 
+function finalizeTargetsConfig(
+  config: any,
+  opts: {
+    targets: EvaluatedTarget[];
+    projectRoot: string | undefined;
+    runtimeConfigs: any[];
+    expoConfig: any;
+  }
+): any {
+  let next = config;
+  next.extra = {
+    ...next.extra,
+    targets: opts.runtimeConfigs,
+  };
+
+  const hasAndroidTarget = opts.targets.some((t) =>
+    t.config.platforms?.includes('android')
+  );
+  if (hasAndroidTarget && opts.runtimeConfigs.length > 0) {
+    next = withAndroidTargetsConfig(next, {
+      runtimeConfigs: opts.runtimeConfigs,
+    });
+  }
+
+  if (opts.projectRoot) {
+    const codegenConfigs: TargetCodegenConfig[] = collectRuntimeConfigs(
+      opts.targets,
+      opts.expoConfig
+    ).map((cfg) => ({
+      name: cfg.name,
+      liveActivity: cfg.liveActivity,
+    }));
+    writeTargetsTypesFile(opts.projectRoot, codegenConfigs);
+  }
+
+  return next;
+}
+
+function applyAllTargets(
+  config: any,
+  opts: {
+    targets: EvaluatedTarget[];
+    projectRoot: string | undefined;
+    logger: Logger;
+    expoConfig: any;
+  }
+): any {
+  const runtimeConfigs: any[] = [];
+  let next = config;
+  for (const target of opts.targets) {
+    next = withTarget(next, {
+      target,
+      projectRoot: opts.projectRoot ?? process.cwd(),
+      runtimeConfigs,
+      logger: opts.logger,
+    });
+  }
+  return finalizeTargetsConfig(next, {
+    targets: opts.targets,
+    projectRoot: opts.projectRoot,
+    runtimeConfigs,
+    expoConfig: opts.expoConfig,
+  });
+}
+
 export const withTargetsDir: ConfigPlugin<{
   targetsRoot?: string;
   debug?: boolean;
@@ -349,7 +449,6 @@ export const withTargetsDir: ConfigPlugin<{
   const logger = new Logger(options?.debug ?? false);
   const projectRoot = config._internal?.projectRoot;
 
-  // Look for expo-target.config files (supports .js, .ts, or .json)
   const targetConfigFiles = globSync(
     `${targetsRoot}/*/expo-target.config.@(js|ts|json)`,
     {
@@ -371,41 +470,10 @@ export const withTargetsDir: ConfigPlugin<{
   let next = ensureHostAppGroups(config, targets, logger);
   warnMissingMetroWrapper(projectRoot, targets, logger);
 
-  // Collect target configs for runtime access
-  const runtimeConfigs: any[] = [];
-
-  for (const target of targets) {
-    next = withTarget(next, {
-      target,
-      projectRoot,
-      runtimeConfigs,
-      logger,
-    });
-  }
-
-  // Inject target configs into expo config for runtime access
-  next.extra = {
-    ...next.extra,
-    targets: runtimeConfigs,
-  };
-
-  const hasAndroidTarget = targets.some((t) =>
-    t.config.platforms?.includes('android')
-  );
-  if (hasAndroidTarget && runtimeConfigs.length > 0) {
-    next = withAndroidTargetsConfig(next, { runtimeConfigs });
-  }
-
-  if (projectRoot) {
-    const codegenConfigs: TargetCodegenConfig[] = collectRuntimeConfigs(
-      targets,
-      config
-    ).map((cfg) => ({
-      name: cfg.name,
-      liveActivity: cfg.liveActivity,
-    }));
-    writeTargetsTypesFile(projectRoot, codegenConfigs);
-  }
-
-  return next;
+  return applyAllTargets(next, {
+    targets,
+    projectRoot,
+    logger,
+    expoConfig: config,
+  });
 };

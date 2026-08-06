@@ -156,9 +156,15 @@ function ShareHostView({ payload, ready, refresh }: ShareHostViewProps) {
         label={android ? 'Demo: share image → sheet' : 'Open Image Share'}
         onPress={openImageShareSheetSafe}
       />
-      <HostButton testID="btn-refresh" label="Refresh payload" onPress={refresh} />
+      <HostButton
+        testID="btn-refresh"
+        label="Refresh payload"
+        onPress={refresh}
+      />
 
-      <Text style={styles.payloadLabel}>Last saved share (from Share Activity):</Text>
+      <Text style={styles.payloadLabel}>
+        Last saved share (from Share Activity):
+      </Text>
       <Text testID="text-last-payload" style={styles.payload}>
         {payload}
       </Text>
@@ -183,6 +189,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: { color: '#fff', fontWeight: '600' },
-  payloadLabel: { marginTop: 4, fontSize: 12, fontWeight: '600', color: '#333' },
+  payloadLabel: {
+    marginTop: 4,
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#333',
+  },
   payload: { fontFamily: 'Courier', fontSize: 11 },
 });

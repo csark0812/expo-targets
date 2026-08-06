@@ -74,9 +74,7 @@
           "type": "share",
           "name": "Share",
           "displayName": "Updates Share",
-          "platforms": [
-            "ios"
-          ],
+          "platforms": ["ios"],
           "entry": "./targets/share/index.tsx",
           "appGroup": "group.com.expotargets.example.extensionupdates",
           "ios": {

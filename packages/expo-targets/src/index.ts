@@ -9,6 +9,14 @@ export type {
   ReactNativeCompatibleType,
   TargetConfig,
 } from '../plugin/src/config';
+export type {
+  KnownLiveActivityAttributes,
+  KnownTargets,
+  LiveActivityAttributesName,
+  LiveActivityPayloadFor,
+  LiveActivityPayloadRegistry,
+  TargetName,
+} from './generatedNames';
 export type { ContentBlockerReloadOpts } from './modules/contentBlocker/index';
 // Content Blocker
 export { ContentBlocker } from './modules/contentBlocker/index';
@@ -21,6 +29,19 @@ export {
   getSharedData,
   openHostApp,
 } from './modules/extension/index';
+export type { ExtensionBundleManifest } from './modules/extensionBundle/ExtensionUpdates';
+export { createExtensionUpdates } from './modules/extensionBundle/ExtensionUpdates';
+export {
+  autoEnableExtensionUpdates,
+  ExtensionUpdates,
+} from './modules/extensionBundle/ExtensionUpdatesApi';
+/** @deprecated Prefer `ExtensionUpdates.enable` */
+export { enableExtensionUpdates } from './modules/extensionBundle/enableExtensionUpdates';
+export {
+  clearExtensionBundleNative,
+  getExtensionBundleInfoNative,
+  installExtensionBundleNative,
+} from './modules/extensionBundle/nativeInstall';
 export type { FileProviderDomainOpts } from './modules/fileProvider/index';
 // File Provider domain
 export { FileProviderDomain } from './modules/fileProvider/index';
@@ -33,8 +54,6 @@ export {
   createLiveActivity,
   LiveActivity,
 } from './modules/liveActivity/index';
-// Android notification local path (Wave 2)
-export { AndroidNotification } from './modules/notification/index';
 export type {
   AttachmentPayload,
   ConversationInfo,
@@ -53,6 +72,8 @@ export {
   sendMessage,
   sendUpdate,
 } from './modules/messages/index';
+// Android notification local path (Wave 2)
+export { AndroidNotification } from './modules/notification/index';
 export type { BrowserTab } from './modules/safari/index';
 // Safari module
 export {
@@ -83,29 +104,6 @@ export type {
   Target,
 } from './Target';
 export { createTarget } from './Target';
-export type {
-  LiveActivityAttributesName,
-  LiveActivityPayloadFor,
-  TargetName,
-} from './generatedNames';
-export type {
-  KnownLiveActivityAttributes,
-  KnownTargets,
-  LiveActivityPayloadRegistry,
-} from './generatedNames';
-export type { ExtensionBundleManifest } from './modules/extensionBundle/ExtensionUpdates';
-export { createExtensionUpdates } from './modules/extensionBundle/ExtensionUpdates';
-/** @deprecated Prefer `ExtensionUpdates.enable` */
-export { enableExtensionUpdates } from './modules/extensionBundle/enableExtensionUpdates';
-export {
-  ExtensionUpdates,
-  autoEnableExtensionUpdates,
-} from './modules/extensionBundle/ExtensionUpdatesApi';
-export {
-  clearExtensionBundleNative,
-  getExtensionBundleInfoNative,
-  installExtensionBundleNative,
-} from './modules/extensionBundle/nativeInstall';
 
 // Host default: App Group sync when this package loads (no-op in appex / Node).
 queueMicrotask(() => {

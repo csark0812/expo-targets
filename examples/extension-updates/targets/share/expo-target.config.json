@@ -8,9 +8,6 @@
   "ios": {
     "bundleIdentifier": "com.expotargets.example.extensionupdates.share",
     "displayName": "Updates Share",
-    "activationRules": [
-      { "type": "text" },
-      { "type": "url" }
-    ]
+    "activationRules": [{ "type": "text" }, { "type": "url" }]
   }
 }

@@ -2,10 +2,7 @@
   "type": "file-provider-ui",
   "name": "FileProviderUi",
   "displayName": "ET FileProvUI Target",
-  "platforms": [
-    "ios",
-    "android"
-  ],
+  "platforms": ["ios", "android"],
   "appGroup": "group.com.expotargets.example.file-provider-ui",
   "ios": {
     "bundleIdentifier": "com.expotargets.example.file-provider-ui.file-provider-ui",

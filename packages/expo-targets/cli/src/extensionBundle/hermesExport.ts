@@ -23,13 +23,44 @@ export type HermesExportOptions = {
   run?: HermesExportRunner;
 };
 
+function buildHermesExportArgs(options: {
+  entryPath: string;
+  bundleOutput: string;
+  assetsDest?: string;
+  bytecode: boolean;
+  platform: 'ios' | 'android';
+}): string[] {
+  const args = [
+    'expo',
+    'export:embed',
+    '--platform',
+    options.platform,
+    '--entry-file',
+    options.entryPath,
+    '--bundle-output',
+    options.bundleOutput,
+    '--dev',
+    'false',
+    '--minify',
+    'true',
+  ];
+  if (options.bytecode) {
+    args.push('--bytecode');
+    args.push('--unstable-transform-profile', 'hermes');
+  }
+  if (options.assetsDest) {
+    args.push('--assets-dest', options.assetsDest);
+  }
+  return args;
+}
+
 /**
  * Bundle a RN extension entry with Expo `export:embed` (Hermes bytecode by default).
  * Same engine path Xcode uses for Release embed, suitable for App Group sideload.
  */
-export function exportTargetHermesBundle(
-  options: HermesExportOptions
-): { bundleOutput: string } {
+export function exportTargetHermesBundle(options: HermesExportOptions): {
+  bundleOutput: string;
+} {
   const {
     projectRoot,
     entryFile,
@@ -53,27 +84,13 @@ export function exportTargetHermesBundle(
     throw new Error(`Extension entry not found: ${entryPath}`);
   }
 
-  const args = [
-    'expo',
-    'export:embed',
-    '--platform',
-    platform,
-    '--entry-file',
+  const args = buildHermesExportArgs({
     entryPath,
-    '--bundle-output',
     bundleOutput,
-    '--dev',
-    'false',
-    '--minify',
-    'true',
-  ];
-  if (bytecode) {
-    args.push('--bytecode');
-    args.push('--unstable-transform-profile', 'hermes');
-  }
-  if (assetsDest) {
-    args.push('--assets-dest', assetsDest);
-  }
+    assetsDest,
+    bytecode,
+    platform,
+  });
 
   const result = run('npx', args, {
     cwd: projectRoot,

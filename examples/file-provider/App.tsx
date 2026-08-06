@@ -44,6 +44,64 @@ function ActionButton({
   );
 }
 
+function IosDomainControls({ setDomain }: { setDomain: (v: string) => void }) {
+  return (
+    <>
+      <ActionButton
+        testID="btn-register-domain"
+        label="Register domain"
+        onPress={() => {
+          void FileProviderDomain.register()
+            .then((name) => setDomain(`registered:${name}`))
+            .catch((e) => setDomain(`error:${String(e)}`));
+        }}
+      />
+      <ActionButton
+        testID="btn-unregister-domain"
+        label="Unregister domain"
+        secondary
+        onPress={() => {
+          void FileProviderDomain.unregister()
+            .then(() => setDomain('not-registered'))
+            .catch((e) => setDomain(`error:${String(e)}`));
+        }}
+      />
+    </>
+  );
+}
+
+function AndroidDomainControls({
+  refreshPayload,
+  setDomain,
+}: {
+  refreshPayload: () => void;
+  setDomain: (v: string) => void;
+}) {
+  return (
+    <>
+      <ActionButton
+        testID="btn-seed-android-docs"
+        label="Seed Android marker"
+        onPress={() => {
+          storage.set('fp:marker', 'android-docs');
+          storage.set('fp:lastFile', 'expo_targets_docs/');
+          storage.set('fp:lastAt', new Date().toISOString());
+          setDomain(`authority:${AUTHORITY}`);
+          refreshPayload();
+        }}
+      />
+      <ActionButton
+        testID="btn-open-documents-hint"
+        label="Open storage settings"
+        secondary
+        onPress={() => {
+          void Linking.openSettings();
+        }}
+      />
+    </>
+  );
+}
+
 function DomainControls({
   setDomain,
   refreshPayload,
@@ -56,49 +114,12 @@ function DomainControls({
   return (
     <>
       {Platform.OS === 'ios' ? (
-        <>
-          <ActionButton
-            testID="btn-register-domain"
-            label="Register domain"
-            onPress={() => {
-              void FileProviderDomain.register()
-                .then((name) => setDomain(`registered:${name}`))
-                .catch((e) => setDomain(`error:${String(e)}`));
-            }}
-          />
-          <ActionButton
-            testID="btn-unregister-domain"
-            label="Unregister domain"
-            secondary
-            onPress={() => {
-              void FileProviderDomain.unregister()
-                .then(() => setDomain('not-registered'))
-                .catch((e) => setDomain(`error:${String(e)}`));
-            }}
-          />
-        </>
+        <IosDomainControls setDomain={setDomain} />
       ) : (
-        <>
-          <ActionButton
-            testID="btn-seed-android-docs"
-            label="Seed Android marker"
-            onPress={() => {
-              storage.set('fp:marker', 'android-docs');
-              storage.set('fp:lastFile', 'expo_targets_docs/');
-              storage.set('fp:lastAt', new Date().toISOString());
-              setDomain(`authority:${AUTHORITY}`);
-              refreshPayload();
-            }}
-          />
-          <ActionButton
-            testID="btn-open-documents-hint"
-            label="Open storage settings"
-            secondary
-            onPress={() => {
-              void Linking.openSettings();
-            }}
-          />
-        </>
+        <AndroidDomainControls
+          refreshPayload={refreshPayload}
+          setDomain={setDomain}
+        />
       )}
       <ActionButton
         testID="btn-refresh"

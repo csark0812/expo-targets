@@ -63,8 +63,7 @@ function applyLiveActivityConfig(
     options.type !== 'widget' ||
     !options.includeLiveActivity ||
     !(
-      options.platforms.includes('ios') ||
-      options.platforms.includes('android')
+      options.platforms.includes('ios') || options.platforms.includes('android')
     )
   ) {
     return;
@@ -109,6 +108,98 @@ function applyAppIntentIosConfig(
   };
 }
 
+function applyAndroidWidgetConfig(
+  config: Record<string, unknown>,
+  options: GenerateConfigOptions,
+  configType: string
+): void {
+  if (options.platforms.includes('android') && configType === 'widget') {
+    config.android = {
+      widgetType: 'glance',
+    };
+  }
+}
+
+function applyAndroidShareActionConfig(
+  config: Record<string, unknown>,
+  options: GenerateConfigOptions,
+  configType: string
+): void {
+  if (!options.platforms.includes('android')) {
+    return;
+  }
+  if (configType !== 'share' && configType !== 'action') {
+    return;
+  }
+  config.android = {
+    ...(typeof config.android === 'object' && config.android
+      ? (config.android as Record<string, unknown>)
+      : {}),
+    activationRules: [
+      { type: 'text' },
+      { type: 'url' },
+      { type: 'image', maxCount: 5 },
+    ],
+  };
+}
+
+function applyAndroidNotificationConfig(
+  config: Record<string, unknown>,
+  options: GenerateConfigOptions,
+  configType: string
+): void {
+  if (!options.platforms.includes('android')) {
+    return;
+  }
+  if (
+    configType !== 'notification-service' &&
+    configType !== 'notification-content'
+  ) {
+    return;
+  }
+  config.android = {
+    ...(typeof config.android === 'object' && config.android
+      ? (config.android as Record<string, unknown>)
+      : {}),
+    channelId: `expo_targets_${options.kebabName.replace(/-/g, '_')}`,
+    channelName: formatDisplayName(options.kebabName),
+    ...(configType === 'notification-content'
+      ? { category: 'myNotificationCategory' }
+      : { mutationMarker: ' [expo-targets]' }),
+  };
+}
+
+function applyAndroidSystemConfig(
+  config: Record<string, unknown>,
+  options: GenerateConfigOptions,
+  configType: string
+): void {
+  const systemTypes = new Set([
+    'file-provider',
+    'file-provider-ui',
+    'credentials-provider',
+    'keyboard',
+    'call-directory',
+    'print-service',
+    'network-packet-tunnel',
+  ]);
+  if (!(options.platforms.includes('android') && systemTypes.has(configType))) {
+    return;
+  }
+  const android: Record<string, unknown> = {
+    ...(typeof config.android === 'object' && config.android
+      ? (config.android as Record<string, unknown>)
+      : {}),
+  };
+  if (configType === 'keyboard') {
+    android.imeLabel = formatDisplayName(options.kebabName);
+  }
+  if (configType === 'network-packet-tunnel') {
+    android.vpnDisplayName = formatDisplayName(options.kebabName);
+  }
+  config.android = android;
+}
+
 export function generateConfig(options: GenerateConfigOptions): string {
   const configType = options.type === 'imessage' ? 'stickers' : options.type;
   const config: Record<string, unknown> = {
@@ -127,69 +218,10 @@ export function generateConfig(options: GenerateConfigOptions): string {
   applyWalletIosConfig(config, options);
   applyLiveActivityConfig(config, options);
   applyAppIntentIosConfig(config, options);
-
-  if (options.platforms.includes('android') && configType === 'widget') {
-    config.android = {
-      widgetType: 'glance',
-    };
-  }
-
-  if (
-    options.platforms.includes('android') &&
-    (configType === 'share' || configType === 'action')
-  ) {
-    config.android = {
-      ...(typeof config.android === 'object' && config.android
-        ? (config.android as Record<string, unknown>)
-        : {}),
-      activationRules: [
-        { type: 'text' },
-        { type: 'url' },
-        { type: 'image', maxCount: 5 },
-      ],
-    };
-  }
-
-  if (
-    options.platforms.includes('android') &&
-    (configType === 'notification-service' ||
-      configType === 'notification-content')
-  ) {
-    config.android = {
-      ...(typeof config.android === 'object' && config.android
-        ? (config.android as Record<string, unknown>)
-        : {}),
-      channelId: `expo_targets_${options.kebabName.replace(/-/g, '_')}`,
-      channelName: formatDisplayName(options.kebabName),
-      ...(configType === 'notification-content'
-        ? { category: 'myNotificationCategory' }
-        : { mutationMarker: ' [expo-targets]' }),
-    };
-  }
-
-  const systemTypes = new Set([
-    'file-provider',
-    'file-provider-ui',
-    'credentials-provider',
-    'keyboard',
-    'call-directory',
-    'print-service',
-    'network-packet-tunnel',
-  ]);
-  if (options.platforms.includes('android') && systemTypes.has(configType)) {
-    const android: Record<string, unknown> = {
-      ...(typeof config.android === 'object' && config.android
-        ? (config.android as Record<string, unknown>)
-        : {}),
-    };
-    if (configType === 'keyboard') {
-      android.imeLabel = formatDisplayName(options.kebabName);
-    }
-    if (configType === 'network-packet-tunnel') {
-      android.vpnDisplayName = formatDisplayName(options.kebabName);
-    }
-    config.android = android;
-  }
+  applyAndroidWidgetConfig(config, options, configType);
+  applyAndroidShareActionConfig(config, options, configType);
+  applyAndroidNotificationConfig(config, options, configType);
+  applyAndroidSystemConfig(config, options, configType);
 
   return JSON.stringify(config, null, 2);
 }

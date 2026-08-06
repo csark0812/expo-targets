@@ -97,38 +97,44 @@ function registerFileProvider(
     directory: props.directory,
     targetName: props.name,
     fileBaseName: deepenClassBaseName(props.name, 'DocumentsProvider'),
-    libraryDefault:
-      'expo.modules.targets.system.ExpoTargetsDocumentsProvider',
+    libraryDefault: 'expo.modules.targets.system.ExpoTargetsDocumentsProvider',
   });
   const authority =
     props.android?.authority ||
     `${packageName}.expo_targets.documents.${sanitizeTargetSegment(props.name)}`;
 
-  upsertProvider(AndroidConfig.Manifest.getMainApplicationOrThrow(cfg.modResults), {
-    $: {
-      'android:name': className,
-      'android:authorities': authority,
-      'android:exported': 'true',
-      'android:grantUriPermissions': 'true',
-      'android:permission': 'android.permission.MANAGE_DOCUMENTS',
-    },
-    'intent-filter': [
-      {
-        action: [
-          { $: { 'android:name': 'android.content.action.DOCUMENTS_PROVIDER' } },
-        ],
+  upsertProvider(
+    AndroidConfig.Manifest.getMainApplicationOrThrow(cfg.modResults),
+    {
+      $: {
+        'android:name': className,
+        'android:authorities': authority,
+        'android:exported': 'true',
+        'android:grantUriPermissions': 'true',
+        'android:permission': 'android.permission.MANAGE_DOCUMENTS',
       },
-    ],
-    'meta-data': [
-      ...commonMeta(props, packageName),
-      {
-        $: {
-          'android:name': 'expo.targets.AUTHORITY',
-          'android:value': authority,
+      'intent-filter': [
+        {
+          action: [
+            {
+              $: {
+                'android:name': 'android.content.action.DOCUMENTS_PROVIDER',
+              },
+            },
+          ],
         },
-      },
-    ],
-  });
+      ],
+      'meta-data': [
+        ...commonMeta(props, packageName),
+        {
+          $: {
+            'android:name': 'expo.targets.AUTHORITY',
+            'android:value': authority,
+          },
+        },
+      ],
+    }
+  );
 }
 
 function registerFileProviderUi(
@@ -145,8 +151,9 @@ function registerFileProviderUi(
     libraryDefault:
       'expo.modules.targets.system.ExpoTargetsFileProviderUiActivity',
   });
-  const mainApplication =
-    AndroidConfig.Manifest.getMainApplicationOrThrow(cfg.modResults);
+  const mainApplication = AndroidConfig.Manifest.getMainApplicationOrThrow(
+    cfg.modResults
+  );
   upsertActivity(mainApplication, {
     $: {
       'android:name': className,
@@ -180,8 +187,9 @@ function registerCredentials(
     fileBaseName: deepenClassBaseName(props.name, 'AutofillService'),
     libraryDefault: 'expo.modules.targets.system.ExpoTargetsAutofillService',
   });
-  const mainApplication =
-    AndroidConfig.Manifest.getMainApplicationOrThrow(cfg.modResults);
+  const mainApplication = AndroidConfig.Manifest.getMainApplicationOrThrow(
+    cfg.modResults
+  );
   upsertService(mainApplication, {
     $: {
       'android:name': className,
@@ -219,11 +227,11 @@ function registerKeyboard(
     directory: props.directory,
     targetName: props.name,
     fileBaseName: deepenClassBaseName(props.name, 'InputMethodService'),
-    libraryDefault:
-      'expo.modules.targets.system.ExpoTargetsInputMethodService',
+    libraryDefault: 'expo.modules.targets.system.ExpoTargetsInputMethodService',
   });
-  const mainApplication =
-    AndroidConfig.Manifest.getMainApplicationOrThrow(cfg.modResults);
+  const mainApplication = AndroidConfig.Manifest.getMainApplicationOrThrow(
+    cfg.modResults
+  );
   upsertService(mainApplication, {
     $: {
       'android:name': className,
@@ -264,8 +272,9 @@ function registerCallDirectory(
       'expo.modules.targets.system.ExpoTargetsCallScreeningService',
   });
   ensurePermission(cfg.modResults, 'android.permission.READ_PHONE_STATE');
-  const mainApplication =
-    AndroidConfig.Manifest.getMainApplicationOrThrow(cfg.modResults);
+  const mainApplication = AndroidConfig.Manifest.getMainApplicationOrThrow(
+    cfg.modResults
+  );
   upsertService(mainApplication, {
     $: {
       'android:name': className,
@@ -299,8 +308,9 @@ function registerPrintService(
     fileBaseName: deepenClassBaseName(props.name, 'PrintService'),
     libraryDefault: 'expo.modules.targets.system.ExpoTargetsPrintService',
   });
-  const mainApplication =
-    AndroidConfig.Manifest.getMainApplicationOrThrow(cfg.modResults);
+  const mainApplication = AndroidConfig.Manifest.getMainApplicationOrThrow(
+    cfg.modResults
+  );
   upsertService(mainApplication, {
     $: {
       'android:name': className,
@@ -327,11 +337,7 @@ function registerPrintService(
   });
 }
 
-function registerVpn(
-  cfg: any,
-  props: SystemProps,
-  packageName: string
-): void {
+function registerVpn(cfg: any, props: SystemProps, packageName: string): void {
   const className = resolveUserOrLibraryClass({
     packageName,
     projectRoot: cfg.modRequest.projectRoot,
@@ -340,8 +346,9 @@ function registerVpn(
     fileBaseName: deepenClassBaseName(props.name, 'VpnService'),
     libraryDefault: 'expo.modules.targets.system.ExpoTargetsVpnService',
   });
-  const mainApplication =
-    AndroidConfig.Manifest.getMainApplicationOrThrow(cfg.modResults);
+  const mainApplication = AndroidConfig.Manifest.getMainApplicationOrThrow(
+    cfg.modResults
+  );
   upsertService(mainApplication, {
     $: {
       'android:name': className,

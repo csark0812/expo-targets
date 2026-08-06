@@ -756,7 +756,7 @@ const EXCLUDED_PACKAGES_RUBY_SUFFIX = [
   '    # Host-only: ExtensionBundle install API must not register inside RN appexes',
   '    # (auto-enable used to treat its presence as "running on host").',
   '    provider = File.read(provider_path)',
-  '    provider.gsub!(/^\\s*\\(module: ExpoTargetsExtensionBundleModule\\.self.*?\\),?\\n/, \'\')',
+  "    provider.gsub!(/^\\s*\\(module: ExpoTargetsExtensionBundleModule\\.self.*?\\),?\\n/, '')",
   '    File.write(provider_path, provider)',
   '    Pod::UI.puts "[expo-targets] Applied excludedPackages to #{target_name}: #{packages.join(\', \')}"',
   '  end',

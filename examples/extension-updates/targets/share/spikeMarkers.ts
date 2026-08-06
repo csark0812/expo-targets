@@ -10,5 +10,5 @@
  * - System font (Menlo): no asset file — should work in appex without sideload
  */
 
-export const SPIKE_ENV_TAG =
-  process.env.EXPO_PUBLIC_SPIKE_TAG ?? '(env unset)';
+import process from 'node:process';
+export const SPIKE_ENV_TAG = process.env.EXPO_PUBLIC_SPIKE_TAG ?? '(env unset)';

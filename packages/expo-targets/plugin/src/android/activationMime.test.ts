@@ -1,5 +1,8 @@
 import { describe, expect, test } from 'bun:test';
-import { mimePlanFromActivationRules, sanitizeTargetSegment } from './activationMime';
+import {
+  mimePlanFromActivationRules,
+  sanitizeTargetSegment,
+} from './activationMime';
 
 describe('mimePlanFromActivationRules', () => {
   test('defaults to text/plain when rules omitted', () => {

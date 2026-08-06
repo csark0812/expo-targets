@@ -46,15 +46,180 @@ function resolveServiceClassName(
 
 function ensurePermission(manifest: any, name: string): void {
   const perms = manifest.manifest['uses-permission'] || [];
-  const exists = perms.some(
-    (p: any) => p.$?.['android:name'] === name
-  );
+  const exists = perms.some((p: any) => p.$?.['android:name'] === name);
   if (!exists) {
     manifest.manifest['uses-permission'] = [
       ...perms,
       { $: { 'android:name': name } },
     ];
   }
+}
+
+function buildNotificationMetaData(opts: {
+  props: NotificationProps;
+  packageName: string;
+  channelId: string;
+  channelName: string;
+  category: string;
+  mutationMarker: string;
+}) {
+  return [
+    {
+      $: {
+        'android:name': 'expo.targets.TARGET_NAME',
+        'android:value': opts.props.name,
+      },
+    },
+    {
+      $: {
+        'android:name': 'expo.targets.APP_GROUP',
+        'android:value': opts.props.appGroup || `group.${opts.packageName}`,
+      },
+    },
+    {
+      $: {
+        'android:name': 'expo.targets.CHANNEL_ID',
+        'android:value': opts.channelId,
+      },
+    },
+    {
+      $: {
+        'android:name': 'expo.targets.CHANNEL_NAME',
+        'android:value': opts.channelName,
+      },
+    },
+    {
+      $: {
+        'android:name': 'expo.targets.NOTIF_KIND',
+        'android:value':
+          opts.props.type === 'notification-content' ? 'content' : 'service',
+      },
+    },
+    {
+      $: {
+        'android:name': 'expo.targets.CATEGORY',
+        'android:value': opts.category,
+      },
+    },
+    {
+      $: {
+        'android:name': 'expo.targets.MUTATION_MARKER',
+        'android:value': opts.mutationMarker,
+      },
+    },
+  ];
+}
+
+function upsertAppMeta(
+  mainApplication: any,
+  props: NotificationProps,
+  channelId: string
+): void {
+  const appMetaKeys = [
+    {
+      name: `expo.targets.notif.${props.name}.CHANNEL_ID`,
+      value: channelId,
+    },
+    {
+      name: `expo.targets.notif.${props.name}.KIND`,
+      value: props.type === 'notification-content' ? 'content' : 'service',
+    },
+  ];
+  for (const { name, value } of appMetaKeys) {
+    const hit = mainApplication['meta-data'].find(
+      (m: any) => m.$?.['android:name'] === name
+    );
+    if (hit) {
+      hit.$['android:value'] = value;
+    } else {
+      mainApplication['meta-data'].push({
+        $: { 'android:name': name, 'android:value': value },
+      });
+    }
+  }
+}
+
+function registerNotificationService(opts: {
+  mainApplication: any;
+  className: string;
+  metaData: ReturnType<typeof buildNotificationMetaData>;
+}): void {
+  const serviceConfig = {
+    $: {
+      'android:name': opts.className,
+      'android:exported': 'false' as const,
+    },
+    'meta-data': opts.metaData,
+    'intent-filter': [
+      {
+        action: [
+          {
+            $: {
+              'android:name': 'expo.targets.action.PROCESS_NOTIFICATION',
+            },
+          },
+        ],
+      },
+    ],
+  };
+
+  const existing = opts.mainApplication.service.find(
+    (s: any) => s.$['android:name'] === opts.className
+  );
+  if (existing) {
+    Object.assign(existing, serviceConfig);
+  } else {
+    opts.mainApplication.service.push(serviceConfig as any);
+  }
+}
+
+function applyNotificationManifest(
+  cfg: Parameters<Parameters<typeof withAndroidManifest>[1]>[0],
+  props: NotificationProps
+) {
+  const packageName = cfg.android?.package;
+  if (!packageName) {
+    throw new Error(
+      `[expo-targets] Android package required for ${props.type} target "${props.name}"`
+    );
+  }
+
+  ensurePermission(cfg.modResults, 'android.permission.POST_NOTIFICATIONS');
+
+  const mainApplication = AndroidConfig.Manifest.getMainApplicationOrThrow(
+    cfg.modResults
+  );
+  mainApplication.service = mainApplication.service || [];
+  mainApplication['meta-data'] = mainApplication['meta-data'] || [];
+
+  const channelId = defaultChannelId(props);
+  const channelName = defaultChannelName(props);
+  const iosPlist = (
+    props.ios as { infoPlist?: Record<string, any> } | undefined
+  )?.infoPlist;
+  const category =
+    props.android?.category ||
+    iosPlist?.NSExtension?.NSExtensionAttributes
+      ?.UNNotificationExtensionCategory ||
+    'myNotificationCategory';
+  const mutationMarker = props.android?.mutationMarker ?? ' [expo-targets]';
+  const className = resolveServiceClassName(
+    packageName,
+    props,
+    cfg.modRequest.projectRoot
+  );
+  const metaData = buildNotificationMetaData({
+    props,
+    packageName,
+    channelId,
+    channelName,
+    category: String(category),
+    mutationMarker,
+  });
+
+  registerNotificationService({ mainApplication, className, metaData });
+  upsertAppMeta(mainApplication, props, channelId);
+  return cfg;
 }
 
 /**
@@ -65,140 +230,7 @@ export const withAndroidNotification: ConfigPlugin<NotificationProps> = (
   config,
   props
 ) => {
-  return withAndroidManifest(config, (cfg) => {
-    const packageName = cfg.android?.package;
-    if (!packageName) {
-      throw new Error(
-        `[expo-targets] Android package required for ${props.type} target "${props.name}"`
-      );
-    }
-
-    ensurePermission(
-      cfg.modResults,
-      'android.permission.POST_NOTIFICATIONS'
-    );
-
-    const mainApplication =
-      AndroidConfig.Manifest.getMainApplicationOrThrow(cfg.modResults);
-    mainApplication.service = mainApplication.service || [];
-    mainApplication['meta-data'] = mainApplication['meta-data'] || [];
-
-    const channelId = defaultChannelId(props);
-    const channelName = defaultChannelName(props);
-    const iosPlist = (props.ios as { infoPlist?: Record<string, any> } | undefined)
-      ?.infoPlist;
-    const category =
-      props.android?.category ||
-      iosPlist?.NSExtension?.NSExtensionAttributes
-        ?.UNNotificationExtensionCategory ||
-      'myNotificationCategory';
-    const mutationMarker =
-      props.android?.mutationMarker ?? ' [expo-targets]';
-
-    const className = resolveServiceClassName(
-      packageName,
-      props,
-      cfg.modRequest.projectRoot
-    );
-
-    const metaData = [
-      {
-        $: {
-          'android:name': 'expo.targets.TARGET_NAME',
-          'android:value': props.name,
-        },
-      },
-      {
-        $: {
-          'android:name': 'expo.targets.APP_GROUP',
-          'android:value': props.appGroup || `group.${packageName}`,
-        },
-      },
-      {
-        $: {
-          'android:name': 'expo.targets.CHANNEL_ID',
-          'android:value': channelId,
-        },
-      },
-      {
-        $: {
-          'android:name': 'expo.targets.CHANNEL_NAME',
-          'android:value': channelName,
-        },
-      },
-      {
-        $: {
-          'android:name': 'expo.targets.NOTIF_KIND',
-          'android:value':
-            props.type === 'notification-content' ? 'content' : 'service',
-        },
-      },
-      {
-        $: {
-          'android:name': 'expo.targets.CATEGORY',
-          'android:value': String(category),
-        },
-      },
-      {
-        $: {
-          'android:name': 'expo.targets.MUTATION_MARKER',
-          'android:value': mutationMarker,
-        },
-      },
-    ];
-
-    const serviceConfig = {
-      $: {
-        'android:name': className,
-        'android:exported': 'false' as const,
-      },
-      'meta-data': metaData,
-      'intent-filter': [
-        {
-          action: [
-            {
-              $: {
-                'android:name': 'expo.targets.action.PROCESS_NOTIFICATION',
-              },
-            },
-          ],
-        },
-      ],
-    };
-
-    const existing = mainApplication.service.find(
-      (s: any) => s.$['android:name'] === className
-    );
-    if (existing) {
-      Object.assign(existing, serviceConfig);
-    } else {
-      mainApplication.service.push(serviceConfig as any);
-    }
-
-    // Application-level channel defaults for LiveActivity helper + host routing.
-    const appMetaKeys = [
-      {
-        name: `expo.targets.notif.${props.name}.CHANNEL_ID`,
-        value: channelId,
-      },
-      {
-        name: `expo.targets.notif.${props.name}.KIND`,
-        value: props.type === 'notification-content' ? 'content' : 'service',
-      },
-    ];
-    for (const { name, value } of appMetaKeys) {
-      const hit = mainApplication['meta-data'].find(
-        (m: any) => m.$?.['android:name'] === name
-      );
-      if (hit) {
-        hit.$['android:value'] = value;
-      } else {
-        mainApplication['meta-data'].push({
-          $: { 'android:name': name, 'android:value': value },
-        });
-      }
-    }
-
-    return cfg;
-  });
+  return withAndroidManifest(config, (cfg) =>
+    applyNotificationManifest(cfg, props)
+  );
 };

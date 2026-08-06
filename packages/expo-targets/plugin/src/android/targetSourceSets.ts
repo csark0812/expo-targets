@@ -4,6 +4,38 @@ import process from 'node:process';
 import type { ConfigPlugin } from '@expo/config-plugins';
 import { withAppBuildGradle } from '@expo/config-plugins';
 
+function appendJavaSrcDir(contents: string, relativePath: string): string {
+  const srcPattern =
+    /(sourceSets\s*\{[^}]*main\s*\{[^}]*java\.srcDirs\s*\+=\s*\[)([^\]]*)(\])/s;
+  const srcMatch = contents.match(srcPattern);
+  if (srcMatch && !srcMatch[2].includes(`'${relativePath}'`)) {
+    return contents.replace(srcPattern, `$1$2, '${relativePath}'$3`);
+  }
+  if (srcMatch || contents.includes(`java.srcDirs += ['${relativePath}']`)) {
+    return contents;
+  }
+  return `${contents}
+
+android {
+    sourceSets {
+        main {
+            java.srcDirs += ['${relativePath}']
+        }
+    }
+}
+`;
+}
+
+function appendResSrcDir(contents: string, resPath: string): string {
+  const resPattern =
+    /(sourceSets\s*\{[^}]*main\s*\{[^}]*res\.srcDirs\s*\+=\s*\[)([^\]]*)(\])/s;
+  const match = contents.match(resPattern);
+  if (!match || match[2].includes(`'${resPath}'`)) {
+    return contents;
+  }
+  return contents.replace(resPattern, `$1$2, '${resPath}'$3`);
+}
+
 /**
  * Adds `targets/<name>/android` as a java/res source set (widget + future types).
  * Generalizes the widget-only helper for Wave 0+.
@@ -27,45 +59,11 @@ export const withAndroidTargetSourceSets: ConfigPlugin<{
       .relative(path.join(platformProjectRoot, 'app'), androidDir)
       .replace(/\\/g, '/');
 
-    let contents = cfg.modResults.contents;
-    const srcPattern =
-      /(sourceSets\s*\{[^}]*main\s*\{[^}]*java\.srcDirs\s*\+=\s*\[)([^\]]*)(\])/s;
-    const srcMatch = contents.match(srcPattern);
-    if (srcMatch && !srcMatch[2].includes(`'${relativePath}'`)) {
-      contents = contents.replace(
-        srcPattern,
-        `$1$2, '${relativePath}'$3`
-      );
-    } else if (
-      !srcMatch &&
-      !contents.includes(`java.srcDirs += ['${relativePath}']`)
-    ) {
-      // Fallback: append a sourceSets block if none matched
-      contents += `
-
-android {
-    sourceSets {
-        main {
-            java.srcDirs += ['${relativePath}']
-        }
-    }
-}
-`;
-    }
+    let contents = appendJavaSrcDir(cfg.modResults.contents, relativePath);
 
     const resPath = `${relativePath}/res`;
-    if (
-      fs.existsSync(path.join(androidDir, 'res')) &&
-      !contents.includes(`'${resPath}'`)
-    ) {
-      const resPattern =
-        /(sourceSets\s*\{[^}]*main\s*\{[^}]*res\.srcDirs\s*\+=\s*\[)([^\]]*)(\])/s;
-      if (resPattern.test(contents)) {
-        contents = contents.replace(resPattern, (full, prefix, dirs, suffix) => {
-          if (dirs.includes(`'${resPath}'`)) return full;
-          return `${prefix}${dirs}, '${resPath}'${suffix}`;
-        });
-      }
+    if (fs.existsSync(path.join(androidDir, 'res'))) {
+      contents = appendResSrcDir(contents, resPath);
     }
 
     cfg.modResults.contents = contents;

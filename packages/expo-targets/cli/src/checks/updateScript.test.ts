@@ -2,9 +2,8 @@ import { describe, expect, test } from 'bun:test';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-
-import { warnExtensionBundleExport } from './updateScript';
 import type { ProjectContext } from '../types';
+import { warnExtensionBundleExport } from './updateScript';
 
 function tmpProject(scripts?: Record<string, string>): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ext-export-warn-'));

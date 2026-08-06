@@ -5,10 +5,7 @@ import {
   type ConfigPlugin,
   withAndroidManifest,
 } from '@expo/config-plugins';
-import type {
-  ShareExtensionActivationRule,
-  TargetConfig,
-} from '../config';
+import type { ShareExtensionActivationRule, TargetConfig } from '../config';
 import {
   mimePlanFromActivationRules,
   sanitizeTargetSegment,
@@ -88,9 +85,7 @@ function buildIntentFilters(
   if (plan.singleMimes.length) {
     filters.push({
       action: [{ $: { 'android:name': 'android.intent.action.SEND' } }],
-      category: [
-        { $: { 'android:name': 'android.intent.category.DEFAULT' } },
-      ],
+      category: [{ $: { 'android:name': 'android.intent.category.DEFAULT' } }],
       data: plan.singleMimes.map((mime) => ({
         $: { 'android:mimeType': mime },
       })),
@@ -102,9 +97,7 @@ function buildIntentFilters(
       action: [
         { $: { 'android:name': 'android.intent.action.SEND_MULTIPLE' } },
       ],
-      category: [
-        { $: { 'android:name': 'android.intent.category.DEFAULT' } },
-      ],
+      category: [{ $: { 'android:name': 'android.intent.category.DEFAULT' } }],
       data: plan.multipleMimes.map((mime) => ({
         $: { 'android:mimeType': mime },
       })),
@@ -112,6 +105,67 @@ function buildIntentFilters(
   }
 
   return filters;
+}
+
+function buildShareActionMetaData(
+  props: ShareActionProps,
+  packageName: string
+) {
+  return [
+    {
+      $: {
+        'android:name': 'expo.targets.TARGET_NAME',
+        'android:value': props.name,
+      },
+    },
+    {
+      $: {
+        'android:name': 'expo.targets.MODULE_NAME',
+        'android:value': props.name,
+      },
+    },
+    {
+      $: {
+        'android:name': 'expo.targets.APP_GROUP',
+        'android:value': props.appGroup || `group.${packageName}`,
+      },
+    },
+    {
+      $: {
+        'android:name': 'expo.targets.USE_RN',
+        'android:value': 'entry' in props && props.entry ? 'true' : 'false',
+      },
+    },
+  ];
+}
+
+function registerShareActionActivity(opts: {
+  mainApplication: any;
+  className: string;
+  label: string;
+  intentFilters: any[];
+  metaData: ReturnType<typeof buildShareActionMetaData>;
+}): void {
+  const activityConfig = {
+    $: {
+      'android:name': opts.className,
+      'android:exported': 'true' as const,
+      'android:label': opts.label,
+      'android:theme': '@style/Theme.AppCompat.Light.Dialog',
+      'android:excludeFromRecents': 'true',
+    },
+    'intent-filter': opts.intentFilters,
+    'meta-data': opts.metaData,
+  };
+
+  const existing = opts.mainApplication.activity.find(
+    (a: any) => a.$['android:name'] === opts.className
+  );
+  if (existing) {
+    Object.assign(existing, activityConfig);
+  } else {
+    opts.mainApplication.activity.push(activityConfig as any);
+  }
 }
 
 /**
@@ -129,8 +183,9 @@ export const withAndroidShareAction: ConfigPlugin<ShareActionProps> = (
       );
     }
 
-    const mainApplication =
-      AndroidConfig.Manifest.getMainApplicationOrThrow(cfg.modResults);
+    const mainApplication = AndroidConfig.Manifest.getMainApplicationOrThrow(
+      cfg.modResults
+    );
     mainApplication.activity = mainApplication.activity || [];
 
     const className = resolveActivityClassName(
@@ -138,63 +193,21 @@ export const withAndroidShareAction: ConfigPlugin<ShareActionProps> = (
       props,
       cfg.modRequest.projectRoot
     );
-
     const label = props.displayName || props.name;
     const rules = resolveActivationRules(props);
     const intentFilters = buildIntentFilters(
       props.type === 'action' ? 'action' : 'share',
       rules
     );
+    const metaData = buildShareActionMetaData(props, packageName);
 
-    const existing = mainApplication.activity.find(
-      (a: any) => a.$['android:name'] === className
-    );
-
-    const metaData = [
-      {
-        $: {
-          'android:name': 'expo.targets.TARGET_NAME',
-          'android:value': props.name,
-        },
-      },
-      {
-        $: {
-          'android:name': 'expo.targets.MODULE_NAME',
-          'android:value': props.name,
-        },
-      },
-      {
-        $: {
-          'android:name': 'expo.targets.APP_GROUP',
-          'android:value': props.appGroup || `group.${packageName}`,
-        },
-      },
-      {
-        $: {
-          'android:name': 'expo.targets.USE_RN',
-          'android:value':
-            'entry' in props && props.entry ? 'true' : 'false',
-        },
-      },
-    ];
-
-    const activityConfig = {
-      $: {
-        'android:name': className,
-        'android:exported': 'true' as const,
-        'android:label': label,
-        'android:theme': '@style/Theme.AppCompat.Light.Dialog',
-        'android:excludeFromRecents': 'true',
-      },
-      'intent-filter': intentFilters,
-      'meta-data': metaData,
-    };
-
-    if (existing) {
-      Object.assign(existing, activityConfig);
-    } else {
-      mainApplication.activity.push(activityConfig as any);
-    }
+    registerShareActionActivity({
+      mainApplication,
+      className,
+      label,
+      intentFilters,
+      metaData,
+    });
 
     return cfg;
   });

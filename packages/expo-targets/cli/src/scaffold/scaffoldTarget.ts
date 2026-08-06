@@ -95,6 +95,161 @@ function writeIosFiles(options: {
   }
 }
 
+const SYSTEM_DEEPEN: Record<
+  string,
+  { fileBaseName: string; libraryClass: string; libraryImport: string }
+> = {
+  'file-provider': {
+    fileBaseName: 'DocumentsProvider',
+    libraryClass: 'ExpoTargetsDocumentsProvider',
+    libraryImport: 'expo.modules.targets.system.ExpoTargetsDocumentsProvider',
+  },
+  'file-provider-ui': {
+    fileBaseName: 'FileProviderUiActivity',
+    libraryClass: 'ExpoTargetsFileProviderUiActivity',
+    libraryImport:
+      'expo.modules.targets.system.ExpoTargetsFileProviderUiActivity',
+  },
+  'credentials-provider': {
+    fileBaseName: 'AutofillService',
+    libraryClass: 'ExpoTargetsAutofillService',
+    libraryImport: 'expo.modules.targets.system.ExpoTargetsAutofillService',
+  },
+  keyboard: {
+    fileBaseName: 'InputMethodService',
+    libraryClass: 'ExpoTargetsInputMethodService',
+    libraryImport: 'expo.modules.targets.system.ExpoTargetsInputMethodService',
+  },
+  'call-directory': {
+    fileBaseName: 'CallScreeningService',
+    libraryClass: 'ExpoTargetsCallScreeningService',
+    libraryImport:
+      'expo.modules.targets.system.ExpoTargetsCallScreeningService',
+  },
+  'print-service': {
+    fileBaseName: 'PrintService',
+    libraryClass: 'ExpoTargetsPrintService',
+    libraryImport: 'expo.modules.targets.system.ExpoTargetsPrintService',
+  },
+  'network-packet-tunnel': {
+    fileBaseName: 'VpnService',
+    libraryClass: 'ExpoTargetsVpnService',
+    libraryImport: 'expo.modules.targets.system.ExpoTargetsVpnService',
+  },
+};
+
+function writeShareActionAndroid(
+  deepenDir: string,
+  opts: {
+    type: string;
+    pascalName: string;
+    packageName: string;
+    segment: string;
+    useReactNative?: boolean;
+  }
+): boolean {
+  if (opts.type !== 'share' && opts.type !== 'action') {
+    return false;
+  }
+  const kind = opts.type === 'action' ? 'Action' : 'Share';
+  fs.mkdirSync(deepenDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(deepenDir, `${opts.pascalName}${kind}Activity.kt`),
+    getShareActionActivityTemplate({
+      packageName: opts.packageName,
+      pascalName: opts.pascalName,
+      segment: opts.segment,
+      kind,
+      useReactNative: Boolean(opts.useReactNative),
+    })
+  );
+  return true;
+}
+
+function writeNotificationAndroid(
+  deepenDir: string,
+  opts: {
+    type: string;
+    pascalName: string;
+    packageName: string;
+    segment: string;
+  }
+): boolean {
+  if (
+    opts.type !== 'notification-service' &&
+    opts.type !== 'notification-content'
+  ) {
+    return false;
+  }
+  fs.mkdirSync(deepenDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(deepenDir, `${opts.pascalName}NotificationService.kt`),
+    getNotificationServiceDeepenTemplate({
+      packageName: opts.packageName,
+      pascalName: opts.pascalName,
+      segment: opts.segment,
+    })
+  );
+  return true;
+}
+
+function writeSystemAndroid(
+  deepenDir: string,
+  opts: {
+    type: string;
+    pascalName: string;
+    packageName: string;
+    segment: string;
+  }
+): boolean {
+  const template = SYSTEM_DEEPEN[opts.type];
+  if (!template) {
+    return false;
+  }
+  const fileBaseName = `${opts.pascalName}${template.fileBaseName}`;
+  fs.mkdirSync(deepenDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(deepenDir, `${fileBaseName}.kt`),
+    getSystemServiceDeepenTemplate({
+      packageName: opts.packageName,
+      segment: opts.segment,
+      fileBaseName,
+      libraryClass: template.libraryClass,
+      libraryImport: template.libraryImport,
+    })
+  );
+  return true;
+}
+
+function writeWidgetAndroid(
+  targetDir: string,
+  opts: {
+    pascalName: string;
+    packageName: string;
+    appGroup: string;
+  }
+): void {
+  const widgetSegment = sanitizeAndroidWidgetSegment(opts.pascalName);
+  const packagePath = opts.packageName.replace(/\./g, '/');
+  const ktDir = path.join(
+    targetDir,
+    'android',
+    packagePath,
+    'widget',
+    widgetSegment
+  );
+  fs.mkdirSync(ktDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(ktDir, `${opts.pascalName}.kt`),
+    getGlanceWidgetTemplate({
+      packageName: opts.packageName,
+      pascalName: opts.pascalName,
+      widgetSegment,
+      appGroup: opts.appGroup,
+    })
+  );
+}
+
 /** Emit Android deepen stubs for in-wave types (W0–W3) — real .kt, not README. */
 function writeAndroidFiles(options: {
   targetDir: string;
@@ -118,121 +273,28 @@ function writeAndroidFiles(options: {
     'target',
     segment
   );
-
-  if (type === 'share' || type === 'action') {
-    const kind = type === 'action' ? 'Action' : 'Share';
-    fs.mkdirSync(deepenDir, { recursive: true });
-    fs.writeFileSync(
-      path.join(deepenDir, `${pascalName}${kind}Activity.kt`),
-      getShareActionActivityTemplate({
-        packageName,
-        pascalName,
-        segment,
-        kind,
-        useReactNative: Boolean(response.useReactNative),
-      })
-    );
-    return;
-  }
-
-  if (type === 'notification-service' || type === 'notification-content') {
-    fs.mkdirSync(deepenDir, { recursive: true });
-    fs.writeFileSync(
-      path.join(deepenDir, `${pascalName}NotificationService.kt`),
-      getNotificationServiceDeepenTemplate({
-        packageName,
-        pascalName,
-        segment,
-      })
-    );
-    return;
-  }
-
-  const systemDeepen: Record<
-    string,
-    { fileBaseName: string; libraryClass: string; libraryImport: string }
-  > = {
-    'file-provider': {
-      fileBaseName: `${pascalName}DocumentsProvider`,
-      libraryClass: 'ExpoTargetsDocumentsProvider',
-      libraryImport:
-        'expo.modules.targets.system.ExpoTargetsDocumentsProvider',
-    },
-    'file-provider-ui': {
-      fileBaseName: `${pascalName}FileProviderUiActivity`,
-      libraryClass: 'ExpoTargetsFileProviderUiActivity',
-      libraryImport:
-        'expo.modules.targets.system.ExpoTargetsFileProviderUiActivity',
-    },
-    'credentials-provider': {
-      fileBaseName: `${pascalName}AutofillService`,
-      libraryClass: 'ExpoTargetsAutofillService',
-      libraryImport: 'expo.modules.targets.system.ExpoTargetsAutofillService',
-    },
-    keyboard: {
-      fileBaseName: `${pascalName}InputMethodService`,
-      libraryClass: 'ExpoTargetsInputMethodService',
-      libraryImport:
-        'expo.modules.targets.system.ExpoTargetsInputMethodService',
-    },
-    'call-directory': {
-      fileBaseName: `${pascalName}CallScreeningService`,
-      libraryClass: 'ExpoTargetsCallScreeningService',
-      libraryImport:
-        'expo.modules.targets.system.ExpoTargetsCallScreeningService',
-    },
-    'print-service': {
-      fileBaseName: `${pascalName}PrintService`,
-      libraryClass: 'ExpoTargetsPrintService',
-      libraryImport: 'expo.modules.targets.system.ExpoTargetsPrintService',
-    },
-    'network-packet-tunnel': {
-      fileBaseName: `${pascalName}VpnService`,
-      libraryClass: 'ExpoTargetsVpnService',
-      libraryImport: 'expo.modules.targets.system.ExpoTargetsVpnService',
-    },
+  const deepenOpts = {
+    type,
+    pascalName,
+    packageName,
+    segment,
+    useReactNative: response.useReactNative,
   };
 
-  const system = systemDeepen[type];
-  if (system) {
-    fs.mkdirSync(deepenDir, { recursive: true });
-    fs.writeFileSync(
-      path.join(deepenDir, `${system.fileBaseName}.kt`),
-      getSystemServiceDeepenTemplate({
-        packageName,
-        segment,
-        fileBaseName: system.fileBaseName,
-        libraryClass: system.libraryClass,
-        libraryImport: system.libraryImport,
-      })
-    );
+  if (writeShareActionAndroid(deepenDir, deepenOpts)) {
     return;
   }
-
+  if (writeNotificationAndroid(deepenDir, deepenOpts)) {
+    return;
+  }
+  if (writeSystemAndroid(deepenDir, deepenOpts)) {
+    return;
+  }
   if (type !== 'widget') {
-    // Apple-only / not yet dual — leave empty android/ only if platforms includes android by mistake.
     fs.mkdirSync(path.join(targetDir, 'android'), { recursive: true });
     return;
   }
-
-  const widgetSegment = sanitizeAndroidWidgetSegment(pascalName);
-  const ktDir = path.join(
-    targetDir,
-    'android',
-    packagePath,
-    'widget',
-    widgetSegment
-  );
-  fs.mkdirSync(ktDir, { recursive: true });
-  fs.writeFileSync(
-    path.join(ktDir, `${pascalName}.kt`),
-    getGlanceWidgetTemplate({
-      packageName,
-      pascalName,
-      widgetSegment,
-      appGroup,
-    })
-  );
+  writeWidgetAndroid(targetDir, { pascalName, packageName, appGroup });
 }
 
 async function resolveResponse(
@@ -267,34 +329,19 @@ async function resolveResponse(
   })) as TargetPromptResponse;
 }
 
-export async function scaffoldTarget(
-  options: ScaffoldOptions = {}
-): Promise<number> {
-  const noWire = options.noWire ?? process.argv.includes('--no-wire');
-  const response = await resolveResponse(options);
-
-  if (!(response?.type && response.name)) {
-    return 0;
-  }
-
-  const projectRoot = process.cwd();
-  const targetDir = path.join(projectRoot, 'targets', response.name);
-  if (fs.existsSync(targetDir)) {
-    console.error(
-      `Target directory already exists: targets/${response.name}/\n` +
-        'Choose a different name or remove the existing directory.'
-    );
-    return 1;
-  }
-
+function writeScaffoldedTarget(
+  projectRoot: string,
+  response: TargetPromptResponse
+): string {
+  const targetDir = path.join(projectRoot, 'targets', response.name!);
   fs.mkdirSync(targetDir, { recursive: true });
 
-  const pascalName = kebabToPascal(response.name);
+  const pascalName = kebabToPascal(response.name!);
   const appGroup = resolveAppGroup(projectRoot);
   const packageName = resolveAndroidPackage(projectRoot);
   const config = generateConfig({
-    type: response.type,
-    kebabName: response.name,
+    type: response.type!,
+    kebabName: response.name!,
     pascalName,
     platforms: response.platforms,
     useReactNative: response.useReactNative,
@@ -317,6 +364,31 @@ export async function scaffoldTarget(
   if (!response.useReactNative) {
     writeHostHelper(targetDir, pascalName);
   }
+
+  return targetDir;
+}
+
+export async function scaffoldTarget(
+  options: ScaffoldOptions = {}
+): Promise<number> {
+  const noWire = options.noWire ?? process.argv.includes('--no-wire');
+  const response = await resolveResponse(options);
+
+  if (!(response?.type && response.name)) {
+    return 0;
+  }
+
+  const projectRoot = process.cwd();
+  const targetDir = path.join(projectRoot, 'targets', response.name);
+  if (fs.existsSync(targetDir)) {
+    console.error(
+      `Target directory already exists: targets/${response.name}/\n` +
+        'Choose a different name or remove the existing directory.'
+    );
+    return 1;
+  }
+
+  writeScaffoldedTarget(projectRoot, response);
 
   if (noWire) {
     console.log(`\n✓ Created target: targets/${response.name}/`);

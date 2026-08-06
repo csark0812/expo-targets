@@ -5,7 +5,7 @@ import {
   resolveExcludedPackages,
 } from './resolveExcludedPackages';
 
-describe('resolveExcludedPackages', () => {
+describe('resolveExcludedPackages omitted list', () => {
   test('omitted list → force-merges host-only packages for RN entry', () => {
     expect(
       resolveExcludedPackages({
@@ -14,7 +14,9 @@ describe('resolveExcludedPackages', () => {
       })
     ).toEqual([...HOST_ONLY_EXCLUDED_PACKAGES]);
   });
+});
 
+describe('resolveExcludedPackages user extras', () => {
   test('user extras are additive; host-only always present', () => {
     expect(
       resolveExcludedPackages({
@@ -22,10 +24,7 @@ describe('resolveExcludedPackages', () => {
         entry: './targets/share/index.tsx',
         excludedPackages: ['react-native-reanimated'],
       })
-    ).toEqual([
-      ...HOST_ONLY_EXCLUDED_PACKAGES,
-      'react-native-reanimated',
-    ]);
+    ).toEqual([...HOST_ONLY_EXCLUDED_PACKAGES, 'react-native-reanimated']);
   });
 
   test('empty array still gets host-only packages', () => {
@@ -47,7 +46,9 @@ describe('resolveExcludedPackages', () => {
       })
     ).toEqual(['expo-updates', 'expo-dev-client', 'expo-font']);
   });
+});
 
+describe('resolveExcludedPackages non-RN', () => {
   test('non-RN or no entry → no force-inject', () => {
     expect(
       resolveExcludedPackages({

@@ -20,8 +20,7 @@ const RN_NATIVE_TYPES = new Set([
   'notification-content',
 ]);
 
-const IMPORT_RE =
-  /(?:from\s+|require\s*\(\s*)['"](@?[^'"]+)['"]/g;
+const IMPORT_RE = /(?:from\s+|require\s*\(\s*)['"](@?[^'"]+)['"]/g;
 
 function readPackageDeps(projectRoot: string): Set<string> {
   const pkgPath = path.join(projectRoot, 'package.json');
@@ -50,45 +49,6 @@ function packageRoot(specifier: string): string {
   return specifier.split('/')[0] ?? specifier;
 }
 
-function collectImportsFromEntry(
-  projectRoot: string,
-  entryRel: string
-): Set<string> {
-  const seen = new Set<string>();
-  const visited = new Set<string>();
-  const queue: string[] = [path.resolve(projectRoot, entryRel)];
-
-  while (queue.length > 0) {
-    const file = queue.pop();
-    if (!file || visited.has(file) || !fs.existsSync(file)) {
-      continue;
-    }
-    visited.add(file);
-    let source: string;
-    try {
-      source = fs.readFileSync(file, 'utf8');
-    } catch {
-      continue;
-    }
-
-    for (const match of source.matchAll(IMPORT_RE)) {
-      const spec = match[1];
-      if (!spec) continue;
-      if (spec.startsWith('.') || spec.startsWith('/')) {
-        const dir = path.dirname(file);
-        const resolved = resolveLocal(dir, spec);
-        if (resolved) {
-          queue.push(resolved);
-        }
-        continue;
-      }
-      seen.add(packageRoot(spec));
-    }
-  }
-
-  return seen;
-}
-
 function resolveLocal(fromDir: string, spec: string): string | null {
   const base = path.resolve(fromDir, spec);
   const candidates = [
@@ -110,46 +70,123 @@ function resolveLocal(fromDir: string, spec: string): string | null {
   return null;
 }
 
+function readSourceFile(file: string): string | null {
+  try {
+    return fs.readFileSync(file, 'utf8');
+  } catch {
+    return null;
+  }
+}
+
+function collectSpecifiersFromSource(opts: {
+  source: string;
+  file: string;
+  queue: string[];
+}): string[] {
+  const roots: string[] = [];
+  for (const match of opts.source.matchAll(IMPORT_RE)) {
+    const spec = match[1];
+    if (!spec) continue;
+    if (spec.startsWith('.') || spec.startsWith('/')) {
+      const resolved = resolveLocal(path.dirname(opts.file), spec);
+      if (resolved) {
+        opts.queue.push(resolved);
+      }
+      continue;
+    }
+    roots.push(packageRoot(spec));
+  }
+  return roots;
+}
+
+function collectImportsFromEntry(
+  projectRoot: string,
+  entryRel: string
+): Set<string> {
+  const seen = new Set<string>();
+  const visited = new Set<string>();
+  const queue: string[] = [path.resolve(projectRoot, entryRel)];
+
+  while (queue.length > 0) {
+    const file = queue.pop();
+    if (!file || visited.has(file) || !fs.existsSync(file)) {
+      continue;
+    }
+    visited.add(file);
+    const source = readSourceFile(file);
+    if (!source) {
+      continue;
+    }
+    for (const root of collectSpecifiersFromSource({
+      source,
+      file,
+      queue,
+    })) {
+      seen.add(root);
+    }
+  }
+
+  return seen;
+}
+
+function findUnusedHeavyCandidates(opts: {
+  deps: Set<string>;
+  imported: Set<string>;
+  resolved: Set<string>;
+}): string[] {
+  const unused: string[] = [];
+  for (const candidate of HEAVY_EXCLUSION_CANDIDATES) {
+    if (!opts.deps.has(candidate)) continue;
+    if (opts.imported.has(candidate)) continue;
+    if (opts.resolved.has(candidate)) continue;
+    unused.push(candidate);
+  }
+  return unused;
+}
+
+function warnTargetHeavyExclusions(
+  ctx: ProjectContext,
+  target: ProjectContext['targets'][number],
+  deps: Set<string>
+): CheckResult | null {
+  const { type, entry, name, excludedPackages } = target.config;
+  if (!(entry && type && RN_NATIVE_TYPES.has(type))) {
+    return null;
+  }
+
+  const resolved = new Set(
+    resolveExcludedPackages({
+      type,
+      entry,
+      excludedPackages,
+    }) ?? []
+  );
+  const imported = collectImportsFromEntry(ctx.projectRoot, entry);
+  const targetLabel = name ?? target.dirName;
+  const unused = findUnusedHeavyCandidates({ deps, imported, resolved });
+
+  if (unused.length === 0) {
+    return null;
+  }
+
+  return {
+    ok: false,
+    level: 'warn',
+    title: 'Heavy exclusions',
+    message: `Target "${targetLabel}": host depends on ${unused.join(', ')} but ${unused.length === 1 ? 'it is' : 'they are'} not imported from ${entry}`,
+    fix: `Add ${unused.map((p) => `"${p}"`).join(', ')} to excludedPackages to shrink the nested ExpoModulesProvider`,
+  };
+}
+
 export function warnHeavyExclusions(ctx: ProjectContext): CheckResult[] {
   const deps = readPackageDeps(ctx.projectRoot);
   const warnings: CheckResult[] = [];
 
   for (const target of ctx.targets) {
-    const { type, entry, name, excludedPackages } = target.config;
-    if (!entry || !type || !RN_NATIVE_TYPES.has(type)) {
-      continue;
+    const warning = warnTargetHeavyExclusions(ctx, target, deps);
+    if (warning) {
+      warnings.push(warning);
     }
-
-    const resolved = new Set(
-      resolveExcludedPackages({
-        type,
-        entry,
-        excludedPackages,
-      }) ?? []
-    );
-
-    const imported = collectImportsFromEntry(ctx.projectRoot, entry);
-    const targetLabel = name ?? target.dirName;
-    const unused: string[] = [];
-
-    for (const candidate of HEAVY_EXCLUSION_CANDIDATES) {
-      if (!deps.has(candidate)) continue;
-      if (imported.has(candidate)) continue;
-      if (resolved.has(candidate)) continue;
-      unused.push(candidate);
-    }
-
-    if (unused.length === 0) {
-      continue;
-    }
-
-    warnings.push({
-      ok: false,
-      level: 'warn',
-      title: 'Heavy exclusions',
-      message: `Target "${targetLabel}": host depends on ${unused.join(', ')} but ${unused.length === 1 ? 'it is' : 'they are'} not imported from ${entry}`,
-      fix: `Add ${unused.map((p) => `"${p}"`).join(', ')} to excludedPackages to shrink the nested ExpoModulesProvider`,
-    });
   }
 
   return warnings;

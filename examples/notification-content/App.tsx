@@ -1,6 +1,6 @@
 import * as Notifications from 'expo-notifications';
-import { AndroidNotification } from 'expo-targets';
 import { StatusBar } from 'expo-status-bar';
+import { AndroidNotification } from 'expo-targets';
 import { useEffect, useState } from 'react';
 import {
   Platform,

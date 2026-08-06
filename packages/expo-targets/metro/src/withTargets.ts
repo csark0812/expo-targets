@@ -119,6 +119,60 @@ function logScanSummary(
   );
 }
 
+function resolveExtensionBundleAssets(projectRoot: string): {
+  type: 'sourceFile';
+  filePath: string;
+} {
+  const extensionAssets = path.join(
+    projectRoot,
+    'assets',
+    'expo-targets',
+    'extensionBundleModules.js'
+  );
+  const stubAssets = path.join(
+    projectRoot,
+    '.expo',
+    'expo-targets-extension-bundle-assets.js'
+  );
+  if (fs.existsSync(extensionAssets)) {
+    return { type: 'sourceFile', filePath: extensionAssets };
+  }
+  fs.mkdirSync(path.dirname(stubAssets), { recursive: true });
+  if (!fs.existsSync(stubAssets)) {
+    fs.writeFileSync(stubAssets, 'module.exports = {};\n');
+  }
+  return { type: 'sourceFile', filePath: stubAssets };
+}
+
+function createTargetsResolveRequest(
+  projectRoot: string,
+  entryMap: Map<string, string>,
+  previousResolveRequest?: NonNullable<
+    MetroConfig['resolver']
+  >['resolveRequest']
+) {
+  return (context: any, moduleName: string, platform: string | null) => {
+    if (
+      moduleName === 'expo-targets/extension-bundle-assets' ||
+      moduleName === 'expo-targets/extension-bundle-assets.js'
+    ) {
+      return resolveExtensionBundleAssets(projectRoot);
+    }
+
+    const entryKey = moduleName.replace(/^\.\//, '');
+    const entryPath = entryMap.get(entryKey);
+    if (entryPath) {
+      return { type: 'sourceFile' as const, filePath: entryPath };
+    }
+
+    if (previousResolveRequest) {
+      return previousResolveRequest(context, moduleName, platform);
+    }
+
+    return context.resolveRequest(context, moduleName, platform);
+  };
+}
+
 export function withTargets(
   metroConfig: MetroConfig,
   options?: { projectRoot?: string; silent?: boolean }
@@ -138,51 +192,16 @@ export function withTargets(
     assetExts.push('jsbundle');
   }
 
-  const extensionAssets = path.join(
-    projectRoot,
-    'assets',
-    'expo-targets',
-    'extensionBundleModules.js'
-  );
-  const stubAssets = path.join(
-    projectRoot,
-    '.expo',
-    'expo-targets-extension-bundle-assets.js'
-  );
-
   return {
     ...metroConfig,
     resolver: {
       ...metroConfig.resolver,
       ...(assetExts ? { assetExts } : {}),
-      resolveRequest: (context, moduleName, platform) => {
-        if (
-          moduleName === 'expo-targets/extension-bundle-assets' ||
-          moduleName === 'expo-targets/extension-bundle-assets.js'
-        ) {
-          if (fs.existsSync(extensionAssets)) {
-            return { type: 'sourceFile', filePath: extensionAssets };
-          }
-          fs.mkdirSync(path.dirname(stubAssets), { recursive: true });
-          if (!fs.existsSync(stubAssets)) {
-            fs.writeFileSync(stubAssets, 'module.exports = {};\n');
-          }
-          return { type: 'sourceFile', filePath: stubAssets };
-        }
-
-        const entryKey = moduleName.replace(/^\.\//, '');
-        const entryPath = entryMap.get(entryKey);
-
-        if (entryPath) {
-          return { type: 'sourceFile', filePath: entryPath };
-        }
-
-        if (previousResolveRequest) {
-          return previousResolveRequest(context, moduleName, platform);
-        }
-
-        return context.resolveRequest(context, moduleName, platform);
-      },
+      resolveRequest: createTargetsResolveRequest(
+        projectRoot,
+        entryMap,
+        previousResolveRequest
+      ),
     },
   };
 }

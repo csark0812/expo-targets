@@ -22,25 +22,23 @@ async function openAutofillSettings() {
   await Linking.openSettings();
 }
 
-export default function App() {
-  const [user, setUser] = useState('');
-  const [pass, setPass] = useState('');
-  const [payload, setPayload] = useState('none');
-
+function CredentialsForm({
+  user,
+  pass,
+  payload,
+  setUser,
+  setPass,
+  setPayload,
+}: {
+  user: string;
+  pass: string;
+  payload: string;
+  setUser: (v: string) => void;
+  setPass: (v: string) => void;
+  setPayload: (v: string) => void;
+}) {
   return (
-    <View style={styles.container} testID="screen-root">
-      <StatusBar style="auto" />
-      <Text style={styles.title}>ET Creds</Text>
-      <Text testID="status-target-ready">ready</Text>
-      <Text testID="text-extension-type">credentials-provider</Text>
-      <Text testID="text-bundle-suffix">
-        com.expotargets.example.credentials-provider
-      </Text>
-      <Text style={styles.hint} testID="text-platform-note">
-        {Platform.OS === 'android'
-          ? 'Android: AutofillService registered; set preferred service in Settings (leftover).'
-          : 'iOS: Credential Provider extension + AutoFill Settings.'}
-      </Text>
+    <>
       <TextInput
         testID="input-username"
         style={styles.input}
@@ -90,6 +88,37 @@ export default function App() {
       <Text testID="text-last-payload" style={styles.payload}>
         {payload}
       </Text>
+    </>
+  );
+}
+
+export default function App() {
+  const [user, setUser] = useState('');
+  const [pass, setPass] = useState('');
+  const [payload, setPayload] = useState('none');
+
+  return (
+    <View style={styles.container} testID="screen-root">
+      <StatusBar style="auto" />
+      <Text style={styles.title}>ET Creds</Text>
+      <Text testID="status-target-ready">ready</Text>
+      <Text testID="text-extension-type">credentials-provider</Text>
+      <Text testID="text-bundle-suffix">
+        com.expotargets.example.credentials-provider
+      </Text>
+      <Text style={styles.hint} testID="text-platform-note">
+        {Platform.OS === 'android'
+          ? 'Android: AutofillService registered; set preferred service in Settings (leftover).'
+          : 'iOS: Credential Provider extension + AutoFill Settings.'}
+      </Text>
+      <CredentialsForm
+        user={user}
+        pass={pass}
+        payload={payload}
+        setUser={setUser}
+        setPass={setPass}
+        setPayload={setPayload}
+      />
     </View>
   );
 }

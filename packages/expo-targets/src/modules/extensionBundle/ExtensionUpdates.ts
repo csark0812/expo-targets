@@ -96,7 +96,7 @@ function createDefaultResolveAssetPath(
 ): (targetName: string) => Promise<string | null> {
   return async (targetName: string) => {
     const mod = assetModules?.[targetName];
-    if (mod == null) {
+    if (mod === undefined) {
       return null;
     }
     try {
@@ -159,22 +159,6 @@ export function createExtensionUpdates(options: ExtensionUpdatesOptions) {
     createDefaultResolveAssetPath(options.assetModules);
   const install = options.install ?? createDefaultInstall(options.appGroup);
 
-  async function checkForUpdateAsync(): Promise<ExtensionUpdatesCheckResult> {
-    const Updates = getUpdates();
-    if (!Updates) {
-      return {
-        isAvailable: false,
-        reason: 'expo-updates is not installed',
-      };
-    }
-    const result = await Updates.checkForUpdateAsync();
-    return {
-      isAvailable: result.isAvailable,
-      manifest: result.manifest,
-      reason: result.reason,
-    };
-  }
-
   async function syncInstalledTargets(
     runtimeVersion: string
   ): Promise<ExtensionBundleManifest[]> {
@@ -202,35 +186,68 @@ export function createExtensionUpdates(options: ExtensionUpdatesOptions) {
     return installed;
   }
 
-  async function fetchUpdateAsync(): Promise<ExtensionUpdatesFetchResult> {
-    const Updates = getUpdates();
+  return buildExtensionUpdatesApi({
+    getUpdates,
+    syncInstalledTargets,
+  });
+}
+
+async function extensionUpdatesFetch(deps: {
+  getUpdates: () => UpdatesLike | null;
+  syncInstalledTargets: (
+    runtimeVersion: string
+  ) => Promise<ExtensionBundleManifest[]>;
+}): Promise<ExtensionUpdatesFetchResult> {
+  const Updates = deps.getUpdates();
+  if (!Updates) {
+    return {
+      isNew: false,
+      installed: [],
+      reason: 'expo-updates is not installed',
+    };
+  }
+  const result = await Updates.fetchUpdateAsync();
+  const runtimeVersion =
+    Updates.runtimeVersion ??
+    (typeof result.manifest?.runtimeVersion === 'string'
+      ? result.manifest.runtimeVersion
+      : '');
+  if (!result.isNew) {
+    return { isNew: false, installed: [] };
+  }
+  if (!runtimeVersion) {
+    throw new Error(
+      'runtimeVersion unresolved after fetchUpdateAsync — fail closed'
+    );
+  }
+  const installed = await deps.syncInstalledTargets(runtimeVersion);
+  return { isNew: true, installed };
+}
+
+function buildExtensionUpdatesApi(deps: {
+  getUpdates: () => UpdatesLike | null;
+  syncInstalledTargets: (
+    runtimeVersion: string
+  ) => Promise<ExtensionBundleManifest[]>;
+}) {
+  async function checkForUpdateAsync(): Promise<ExtensionUpdatesCheckResult> {
+    const Updates = deps.getUpdates();
     if (!Updates) {
       return {
-        isNew: false,
-        installed: [],
+        isAvailable: false,
         reason: 'expo-updates is not installed',
       };
     }
-    const result = await Updates.fetchUpdateAsync();
-    const runtimeVersion =
-      Updates.runtimeVersion ??
-      (typeof result.manifest?.runtimeVersion === 'string'
-        ? result.manifest.runtimeVersion
-        : '');
-    if (!result.isNew) {
-      return { isNew: false, installed: [] };
-    }
-    if (!runtimeVersion) {
-      throw new Error(
-        'runtimeVersion unresolved after fetchUpdateAsync — fail closed'
-      );
-    }
-    const installed = await syncInstalledTargets(runtimeVersion);
-    return { isNew: true, installed };
+    const result = await Updates.checkForUpdateAsync();
+    return {
+      isAvailable: result.isAvailable,
+      manifest: result.manifest,
+      reason: result.reason,
+    };
   }
 
   async function reloadAsync(): Promise<void> {
-    const Updates = getUpdates();
+    const Updates = deps.getUpdates();
     if (!Updates) {
       throw new Error('expo-updates is not installed');
     }
@@ -239,15 +256,15 @@ export function createExtensionUpdates(options: ExtensionUpdatesOptions) {
 
   return {
     checkForUpdateAsync,
-    fetchUpdateAsync,
+    fetchUpdateAsync: () => extensionUpdatesFetch(deps),
     reloadAsync,
     syncFromCurrentUpdate: async () => {
-      const Updates = getUpdates();
+      const Updates = deps.getUpdates();
       const runtimeVersion = Updates?.runtimeVersion ?? '';
       if (!runtimeVersion) {
         throw new Error('runtimeVersion unresolved — fail closed');
       }
-      return syncInstalledTargets(runtimeVersion);
+      return deps.syncInstalledTargets(runtimeVersion);
     },
   };
 }

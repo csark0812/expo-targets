@@ -45,9 +45,7 @@ export default function App() {
         testID="btn-open-settings"
         style={styles.button}
         onPress={() => {
-          void Linking.openSettings().then(() =>
-            setPayload('opened-settings')
-          );
+          void Linking.openSettings().then(() => setPayload('opened-settings'));
         }}
       >
         <Text style={styles.buttonText}>Open Settings</Text>

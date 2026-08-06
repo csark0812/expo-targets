@@ -1,13 +1,12 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import process from 'node:process';
-
+import { writePublishLayout } from './extensionBundle/fsInstall';
 import {
   exportTargetHermesBundle,
   type HermesExportRunner,
   writeExtensionBundleAssetModules,
 } from './extensionBundle/hermesExport';
-import { writePublishLayout } from './extensionBundle/fsInstall';
 import { loadProject } from './project';
 
 const RN_NATIVE = new Set([
@@ -36,6 +35,164 @@ function resolveRuntimeVersion(
   return '';
 }
 
+type ExportTargetOpts = {
+  projectRoot: string;
+  distRoot: string;
+  assetsRoot: string | null;
+  useHermes: boolean;
+  allowPlaceholder?: boolean;
+  bundleFiles?: Record<string, string>;
+  runHermes?: HermesExportRunner;
+  runtimeVersion: string;
+};
+
+type ExportTargetResult =
+  | { ok: true; bundlePath: string; targetName: string }
+  | { ok: false; code: number };
+
+function readTargetBundleBytes(opts: {
+  projectRoot: string;
+  targetName: string;
+  type: string;
+  entry: string;
+  fromMap?: string;
+  allowPlaceholder?: boolean;
+  useHermes: boolean;
+  runHermes?: HermesExportRunner;
+}): Buffer | null {
+  if (opts.fromMap && fs.existsSync(opts.fromMap)) {
+    return fs.readFileSync(opts.fromMap);
+  }
+  if (opts.allowPlaceholder) {
+    return Buffer.from(
+      `// expo-targets placeholder for ${opts.targetName} (${opts.type})\n`
+    );
+  }
+  if (!opts.useHermes) {
+    console.warn(
+      `[expo-targets] skip ${opts.targetName}: no prebuilt bundle (pass --bundle, enable Hermes export, or --placeholder)`
+    );
+    return null;
+  }
+
+  const tmpOut = path.join(
+    opts.projectRoot,
+    'node_modules',
+    '.cache',
+    'expo-targets-export',
+    opts.targetName,
+    'main.jsbundle'
+  );
+  const assetsDest = path.join(path.dirname(tmpOut), 'assets');
+  try {
+    exportTargetHermesBundle({
+      projectRoot: opts.projectRoot,
+      entryFile: opts.entry,
+      bundleOutput: tmpOut,
+      assetsDest,
+      bytecode: true,
+      run: opts.runHermes,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(
+      `[expo-targets] Hermes export failed for ${opts.targetName}: ${message}`
+    );
+    throw error;
+  }
+  return fs.readFileSync(tmpOut);
+}
+
+function resolveTargetRuntimeVersion(
+  target: ReturnType<typeof loadProject>['targets'][number],
+  opts: ExportTargetOpts
+): string {
+  return (
+    resolveRuntimeVersion(
+      loadProject(opts.projectRoot).expo,
+      (target.config as { runtimeVersion?: string }).runtimeVersion
+    ) ||
+    opts.runtimeVersion ||
+    '0.0.0'
+  );
+}
+
+function copyBundleToAssets(
+  assetsRoot: string,
+  targetName: string,
+  bundlePath: string
+): void {
+  const dest = path.join(assetsRoot, 'bundles', targetName);
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  fs.cpSync(path.dirname(bundlePath), dest, { recursive: true });
+}
+
+function exportSingleTarget(
+  target: ReturnType<typeof loadProject>['targets'][number],
+  opts: ExportTargetOpts
+): ExportTargetResult {
+  const { type, name, entry } = target.config;
+  if (!(entry && type && RN_NATIVE.has(type))) {
+    return { ok: false, code: 0 };
+  }
+
+  const targetName = name ?? target.dirName;
+  let bytes: Buffer;
+  try {
+    const read = readTargetBundleBytes({
+      projectRoot: opts.projectRoot,
+      targetName,
+      type,
+      entry,
+      fromMap: opts.bundleFiles?.[targetName],
+      allowPlaceholder: opts.allowPlaceholder,
+      useHermes: opts.useHermes,
+      runHermes: opts.runHermes,
+    });
+    if (!read) {
+      return { ok: false, code: 0 };
+    }
+    bytes = read;
+  } catch {
+    return { ok: false, code: 1 };
+  }
+
+  const { bundlePath } = writePublishLayout({
+    distRoot: opts.distRoot,
+    targetName,
+    type,
+    runtimeVersion: resolveTargetRuntimeVersion(target, opts),
+    bundleBytes: bytes,
+  });
+
+  if (opts.assetsRoot) {
+    copyBundleToAssets(opts.assetsRoot, targetName, bundlePath);
+  }
+
+  console.log(`[expo-targets] exported ${bundlePath}`);
+  return { ok: true, bundlePath, targetName };
+}
+
+function collectExportedTargets(
+  targets: ReturnType<typeof loadProject>['targets'],
+  exportOpts: ExportTargetOpts
+): { written: string[]; exportedNames: string[]; code: number } {
+  const written: string[] = [];
+  const exportedNames: string[] = [];
+  for (const target of targets) {
+    const result = exportSingleTarget(target, exportOpts);
+    if (!result.ok) {
+      if (result.code !== 0) {
+        return { written, exportedNames, code: result.code };
+      }
+      continue;
+    }
+    written.push(result.bundlePath);
+    exportedNames.push(result.targetName);
+  }
+  return { written, exportedNames, code: 0 };
+}
+
 /**
  * Export extension bundles into dist/expo-targets/bundles for eas update assets,
  * and into assets/expo-targets for Metro `require` + Asset.fromModule on the host.
@@ -60,89 +217,26 @@ export function runExportExtensionBundles(opts: {
   const useHermes = opts.hermes !== false && !opts.allowPlaceholder;
   const ctx = loadProject(projectRoot);
   const runtimeVersion = resolveRuntimeVersion(ctx.expo);
-  const written: string[] = [];
-  const exportedNames: string[] = [];
 
-  if (!runtimeVersion && !opts.allowPlaceholder) {
+  if (!(runtimeVersion || opts.allowPlaceholder)) {
     console.error(
       '[expo-targets] runtimeVersion unresolved — set expo.runtimeVersion before export'
     );
-    return { code: 1, written };
+    return { code: 1, written: [] };
   }
 
-  for (const target of ctx.targets) {
-    const { type, name, entry } = target.config;
-    if (!entry || !type || !RN_NATIVE.has(type)) {
-      continue;
-    }
-    const targetName = name ?? target.dirName;
-    const rv =
-      resolveRuntimeVersion(
-        ctx.expo,
-        (target.config as { runtimeVersion?: string }).runtimeVersion
-      ) ||
-      runtimeVersion ||
-      '0.0.0';
-
-    let bytes: Buffer;
-    const fromMap = opts.bundleFiles?.[targetName];
-    if (fromMap && fs.existsSync(fromMap)) {
-      bytes = fs.readFileSync(fromMap);
-    } else if (opts.allowPlaceholder) {
-      bytes = Buffer.from(
-        `// expo-targets placeholder for ${targetName} (${type})\n`
-      );
-    } else if (useHermes) {
-      const tmpOut = path.join(
-        projectRoot,
-        'node_modules',
-        '.cache',
-        'expo-targets-export',
-        targetName,
-        'main.jsbundle'
-      );
-      const assetsDest = path.join(path.dirname(tmpOut), 'assets');
-      try {
-        exportTargetHermesBundle({
-          projectRoot,
-          entryFile: entry,
-          bundleOutput: tmpOut,
-          assetsDest,
-          bytecode: true,
-          run: opts.runHermes,
-        });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        console.error(
-          `[expo-targets] Hermes export failed for ${targetName}: ${message}`
-        );
-        return { code: 1, written };
-      }
-      bytes = fs.readFileSync(tmpOut);
-    } else {
-      console.warn(
-        `[expo-targets] skip ${targetName}: no prebuilt bundle (pass --bundle, enable Hermes export, or --placeholder)`
-      );
-      continue;
-    }
-
-    const { bundlePath } = writePublishLayout({
-      distRoot,
-      targetName,
-      type,
-      runtimeVersion: rv,
-      bundleBytes: bytes,
-    });
-    written.push(bundlePath);
-    exportedNames.push(targetName);
-
-    if (assetsRoot) {
-      const dest = path.join(assetsRoot, 'bundles', targetName);
-      fs.mkdirSync(path.dirname(dest), { recursive: true });
-      fs.cpSync(path.dirname(bundlePath), dest, { recursive: true });
-    }
-
-    console.log(`[expo-targets] exported ${bundlePath}`);
+  const { written, exportedNames, code } = collectExportedTargets(ctx.targets, {
+    projectRoot,
+    distRoot,
+    assetsRoot,
+    useHermes,
+    allowPlaceholder: opts.allowPlaceholder,
+    bundleFiles: opts.bundleFiles,
+    runHermes: opts.runHermes,
+    runtimeVersion,
+  });
+  if (code !== 0) {
+    return { code, written };
   }
 
   let assetModulesPath: string | undefined;

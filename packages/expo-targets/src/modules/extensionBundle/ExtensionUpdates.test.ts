@@ -7,10 +7,39 @@ import {
   installExtensionBundleToRoot,
   writePublishLayout,
 } from '../../../cli/src/extensionBundle/fsInstall';
-import {
-  createExtensionUpdates,
-  fileUriToFsPath,
-} from './ExtensionUpdates';
+import { createExtensionUpdates, fileUriToFsPath } from './ExtensionUpdates';
+
+function makeFetchTestApi(dist: string, group: string) {
+  writePublishLayout({
+    distRoot: dist,
+    targetName: 'ShareExt',
+    type: 'share',
+    runtimeVersion: '1.2.3',
+    bundleBytes: Buffer.from('// share\n'),
+  });
+
+  return createExtensionUpdates({
+    targets: [
+      { targetName: 'ShareExt', type: 'share', runtimeVersion: '1.2.3' },
+    ],
+    resolveAssetPath: (name) =>
+      path.join(dist, 'expo-targets', 'bundles', name, 'main.jsbundle'),
+    install: async ({ targetName, type, runtimeVersion, localPath }) =>
+      installExtensionBundleToRoot({
+        appGroupRoot: group,
+        targetName,
+        type,
+        runtimeVersion,
+        sourcePath: localPath,
+      }),
+    getUpdates: () => ({
+      runtimeVersion: '1.2.3',
+      checkForUpdateAsync: async () => ({ isAvailable: true }),
+      fetchUpdateAsync: async () => ({ isNew: true, manifest: {} }),
+      reloadAsync: async () => {},
+    }),
+  });
+}
 
 describe('fileUriToFsPath', () => {
   test('percent-decodes Application Support after stripping file://', () => {
@@ -33,36 +62,7 @@ describe('ExtensionUpdates API (Updates-shaped)', () => {
     const dist = fs.mkdtempSync(path.join(os.tmpdir(), 'eu-dist-'));
     const group = fs.mkdtempSync(path.join(os.tmpdir(), 'eu-group-'));
     try {
-      writePublishLayout({
-        distRoot: dist,
-        targetName: 'ShareExt',
-        type: 'share',
-        runtimeVersion: '1.2.3',
-        bundleBytes: Buffer.from('// share\n'),
-      });
-
-      const api = createExtensionUpdates({
-        targets: [
-          { targetName: 'ShareExt', type: 'share', runtimeVersion: '1.2.3' },
-        ],
-        resolveAssetPath: (name) =>
-          path.join(dist, 'expo-targets', 'bundles', name, 'main.jsbundle'),
-        install: async ({ targetName, type, runtimeVersion, localPath }) =>
-          installExtensionBundleToRoot({
-            appGroupRoot: group,
-            targetName,
-            type,
-            runtimeVersion,
-            sourcePath: localPath,
-          }),
-        getUpdates: () => ({
-          runtimeVersion: '1.2.3',
-          checkForUpdateAsync: async () => ({ isAvailable: true }),
-          fetchUpdateAsync: async () => ({ isNew: true, manifest: {} }),
-          reloadAsync: async () => {},
-        }),
-      });
-
+      const api = makeFetchTestApi(dist, group);
       const check = await api.checkForUpdateAsync();
       expect(check.isAvailable).toBe(true);
 

@@ -32,6 +32,19 @@ function memberName(
   return null;
 }
 
+function parseCreateTargetArg(arg: Expression): string | null {
+  if (arg.type === 'StringLiteral') {
+    return arg.value;
+  }
+  if (
+    arg.type === 'MemberExpression' ||
+    arg.type === 'OptionalMemberExpression'
+  ) {
+    return memberName(arg);
+  }
+  return null;
+}
+
 function parseCreateTargetName(filePath: string): string | null {
   const source = fs.readFileSync(filePath, 'utf8');
   const ast = parse(source, {
@@ -50,18 +63,9 @@ function parseCreateTargetName(filePath: string): string | null {
       if (!arg) {
         return;
       }
-      if (arg.type === 'StringLiteral') {
-        found = arg.value;
-        return;
-      }
-      if (
-        arg.type === 'MemberExpression' ||
-        arg.type === 'OptionalMemberExpression'
-      ) {
-        const name = memberName(arg);
-        if (name) {
-          found = name;
-        }
+      const name = parseCreateTargetArg(arg);
+      if (name) {
+        found = name;
       }
     },
   });

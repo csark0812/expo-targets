@@ -2,10 +2,7 @@
   "type": "credentials-provider",
   "name": "CredentialsProvider",
   "displayName": "ET Creds Target",
-  "platforms": [
-    "ios",
-    "android"
-  ],
+  "platforms": ["ios", "android"],
   "appGroup": "group.com.expotargets.example.credentials-provider",
   "ios": {
     "bundleIdentifier": "com.expotargets.example.credentials-provider.credentials-provider",

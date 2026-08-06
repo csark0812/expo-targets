@@ -2,10 +2,7 @@
   "type": "keyboard",
   "name": "Keyboard",
   "displayName": "ET Keyboard Target",
-  "platforms": [
-    "ios",
-    "android"
-  ],
+  "platforms": ["ios", "android"],
   "appGroup": "group.com.expotargets.example.keyboard",
   "ios": {
     "bundleIdentifier": "com.expotargets.example.keyboard.keyboard",

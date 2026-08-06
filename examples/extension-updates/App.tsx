@@ -2,9 +2,10 @@
  * Host import of expo-targets auto-enables ExtensionUpdates (App Group sync).
  * We also import the API for the fetch/sync buttons below.
  */
+
+import { StatusBar } from 'expo-status-bar';
 import { ExtensionUpdates } from 'expo-targets';
 import * as Updates from 'expo-updates';
-import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
@@ -25,6 +26,10 @@ type HostButtonProps = {
   disabled?: boolean;
 };
 
+function formatError(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 function HostButton({ testID, label, onPress, disabled }: HostButtonProps) {
   return (
     <TouchableOpacity
@@ -38,14 +43,32 @@ function HostButton({ testID, label, onPress, disabled }: HostButtonProps) {
   );
 }
 
-export default function App() {
-  const [log, setLog] = useState('idle');
-  const [busy, setBusy] = useState(false);
+async function runExtensionUpdate(
+  mode: 'fetch' | 'sync',
+  append: (line: string) => void
+) {
+  const api = ExtensionUpdates.enable({ syncOnStart: false });
+  if (!api.enabled) {
+    append(`enable failed: ${api.reason}`);
+    return null;
+  }
+  if (mode === 'sync') {
+    const installed = await api.syncFromCurrentUpdate();
+    append(`sync: installed=${installed.length}`);
+    return api;
+  }
+  const fetched = await api.fetchUpdateAsync();
+  append(
+    `fetch: isNew=${fetched.isNew} installed=${fetched.installed.length}` +
+      (fetched.reason ? ` reason=${fetched.reason}` : '')
+  );
+  return { api, fetched };
+}
 
-  const append = useCallback((line: string) => {
-    setLog((prev) => `${line}\n---\n${prev}`);
-  }, []);
-
+function useExtensionUpdateActions(
+  append: (line: string) => void,
+  setBusy: (busy: boolean) => void
+) {
   const check = useCallback(async () => {
     setBusy(true);
     try {
@@ -55,52 +78,99 @@ export default function App() {
           (result.reason ? ` reason=${result.reason}` : '')
       );
     } catch (error) {
-      append(`check error: ${error instanceof Error ? error.message : error}`);
+      append(`check error: ${formatError(error)}`);
     } finally {
       setBusy(false);
     }
-  }, [append]);
+  }, [append, setBusy]);
 
   const fetchAndSync = useCallback(async () => {
     setBusy(true);
     try {
-      const api = ExtensionUpdates.enable({ syncOnStart: false });
-      if (!api.enabled) {
-        append(`enable failed: ${api.reason}`);
-        return;
-      }
-      const fetched = await api.fetchUpdateAsync();
-      append(
-        `fetch: isNew=${fetched.isNew} installed=${fetched.installed.length}` +
-          (fetched.reason ? ` reason=${fetched.reason}` : '')
-      );
-      if (fetched.isNew) {
+      const result = await runExtensionUpdate('fetch', append);
+      if (result && 'fetched' in result && result.fetched.isNew) {
         append('reloading host…');
-        await api.reloadAsync();
+        await result.api.reloadAsync();
       }
     } catch (error) {
-      append(`fetch error: ${error instanceof Error ? error.message : error}`);
+      append(`fetch error: ${formatError(error)}`);
     } finally {
       setBusy(false);
     }
-  }, [append]);
+  }, [append, setBusy]);
 
   const syncOnly = useCallback(async () => {
     setBusy(true);
     try {
-      const api = ExtensionUpdates.enable({ syncOnStart: false });
-      if (!api.enabled) {
-        append(`enable failed: ${api.reason}`);
-        return;
-      }
-      const installed = await api.syncFromCurrentUpdate();
-      append(`sync: installed=${installed.length}`);
+      await runExtensionUpdate('sync', append);
     } catch (error) {
-      append(`sync error: ${error instanceof Error ? error.message : error}`);
+      append(`sync error: ${formatError(error)}`);
     } finally {
       setBusy(false);
     }
-  }, [append]);
+  }, [append, setBusy]);
+
+  return { check, fetchAndSync, syncOnly };
+}
+
+function ExtensionUpdatesControls({
+  busy,
+  onCheck,
+  onFetchAndSync,
+  onSyncOnly,
+}: {
+  busy: boolean;
+  onCheck: () => void;
+  onFetchAndSync: () => void;
+  onSyncOnly: () => void;
+}) {
+  return (
+    <>
+      <HostButton
+        testID="btn-check"
+        label="Check for update"
+        onPress={onCheck}
+        disabled={busy}
+      />
+      <HostButton
+        testID="btn-fetch-sync"
+        label="Fetch + sync App Group + reload"
+        onPress={onFetchAndSync}
+        disabled={busy}
+      />
+      <HostButton
+        testID="btn-sync-only"
+        label="Sync App Group from current update"
+        onPress={onSyncOnly}
+        disabled={busy}
+      />
+      <HostButton
+        testID="btn-open-share"
+        label="Open Share Sheet"
+        onPress={() => {
+          void Share.share({
+            message: 'extension-updates probe',
+            url: 'https://example.com/expo-targets-extension-updates',
+          });
+        }}
+        disabled={busy}
+      />
+    </>
+  );
+}
+
+export default function App() {
+  const [log, setLog] = useState('idle');
+  const [busy, setBusy] = useState(false);
+
+  const append = useCallback((line: string) => {
+    setLog((prev) => `${line}\n---\n${prev}`);
+  }, []);
+
+  const { check, fetchAndSync, syncOnly } = useExtensionUpdateActions(
+    append,
+    setBusy
+  );
 
   return (
     <View style={styles.container} testID="screen-root">
@@ -120,34 +190,11 @@ export default function App() {
         updateId={Updates.updateId ?? '(none)'}
       </Text>
 
-      <HostButton
-        testID="btn-check"
-        label="Check for update"
-        onPress={() => void check()}
-        disabled={busy}
-      />
-      <HostButton
-        testID="btn-fetch-sync"
-        label="Fetch + sync App Group + reload"
-        onPress={() => void fetchAndSync()}
-        disabled={busy}
-      />
-      <HostButton
-        testID="btn-sync-only"
-        label="Sync App Group from current update"
-        onPress={() => void syncOnly()}
-        disabled={busy}
-      />
-      <HostButton
-        testID="btn-open-share"
-        label="Open Share Sheet"
-        onPress={() => {
-          void Share.share({
-            message: 'extension-updates probe',
-            url: 'https://example.com/expo-targets-extension-updates',
-          });
-        }}
-        disabled={busy}
+      <ExtensionUpdatesControls
+        busy={busy}
+        onCheck={() => void check()}
+        onFetchAndSync={() => void fetchAndSync()}
+        onSyncOnly={() => void syncOnly()}
       />
 
       {busy ? <ActivityIndicator /> : null}

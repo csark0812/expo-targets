@@ -1,11 +1,5 @@
 import type { ExtensionTarget } from 'expo-targets';
-import {
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { OTA_LABEL } from '../otaLabel';
 import { SPIKE_ENV_TAG } from '../spikeMarkers';

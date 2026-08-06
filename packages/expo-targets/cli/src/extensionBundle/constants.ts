@@ -11,7 +11,7 @@ export const EXTENSION_BUNDLE_REL_ROOT = 'expo-targets/bundles';
 
 export function maxBytesForType(type: string): number {
   const max = EXTENSION_BUNDLE_MAX_BYTES[type];
-  if (max == null) {
+  if (max === undefined) {
     throw new Error(
       `No sideload size cap for extension type "${type}". Supported: ${Object.keys(EXTENSION_BUNDLE_MAX_BYTES).join(', ')}`
     );

@@ -51,8 +51,8 @@ export function sanitizeTargetSegment(name: string): string {
 export function toPascalName(name: string): string {
   return (
     name.charAt(0).toUpperCase() +
-    name.slice(1).replace(/[-_]([a-z])/g, (_, letter: string) =>
-      letter.toUpperCase()
-    )
+    name
+      .slice(1)
+      .replace(/[-_]([a-z])/g, (_, letter: string) => letter.toUpperCase())
   );
 }

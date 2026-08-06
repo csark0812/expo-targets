@@ -1,11 +1,11 @@
 import { createHash } from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-
+import process from 'node:process';
 import {
   type ExtensionBundleManifest,
-  type PublishSidecar,
   maxBytesForType,
+  type PublishSidecar,
   publishBundleRelPath,
   publishManifestRelPath,
 } from './constants';

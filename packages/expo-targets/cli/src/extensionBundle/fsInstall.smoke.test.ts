@@ -1,12 +1,9 @@
+import { afterEach, describe, expect, test } from 'bun:test';
 import { createHash } from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { afterEach, describe, expect, test } from 'bun:test';
 
-import {
-  EXTENSION_BUNDLE_MAX_BYTES,
-  maxBytesForType,
-} from './constants';
+import { EXTENSION_BUNDLE_MAX_BYTES, maxBytesForType } from './constants';
 import {
   clearExtensionBundleFromRoot,
   getExtensionBundleInfoFromRoot,
@@ -19,7 +16,9 @@ import {
 const roots: string[] = [];
 
 function tmp(): string {
-  const dir = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'ext-bundle-'));
+  const dir = fs.mkdtempSync(
+    path.join(require('node:os').tmpdir(), 'ext-bundle-')
+  );
   roots.push(dir);
   return dir;
 }
@@ -42,47 +41,50 @@ describe('extension bundle caps', () => {
   });
 });
 
-describe('publish → sync smoke (simple share)', () => {
-  test('export layout then sync into app group root', () => {
-    const dist = tmp();
-    const group = tmp();
-    const bytes = Buffer.from('// share hermes-shaped fixture\n');
-    writePublishLayout({
-      distRoot: dist,
-      targetName: 'ShareExt',
-      type: 'share',
-      runtimeVersion: '1.0.0',
-      bundleBytes: bytes,
-    });
-
-    const installed = syncExtensionBundlesFromUpdateAssets({
-      updateAssetRoot: dist,
-      appGroupRoot: group,
-      targets: [
-        { targetName: 'ShareExt', type: 'share', runtimeVersion: '1.0.0' },
-      ],
-    });
-
-    expect(installed).toHaveLength(1);
-    expect(installed[0]?.sha256).toBe(
-      createHash('sha256').update(bytes).digest('hex')
-    );
-    expect(
-      isInstalledBundleValid({
-        appGroupRoot: group,
-        targetName: 'ShareExt',
-        bakedRuntimeVersion: '1.0.0',
-      })
-    ).toBe(true);
-    expect(
-      isInstalledBundleValid({
-        appGroupRoot: group,
-        targetName: 'ShareExt',
-        bakedRuntimeVersion: '9.9.9',
-      })
-    ).toBe(false);
+function syncSimpleShareFixture() {
+  const dist = tmp();
+  const group = tmp();
+  const bytes = Buffer.from('// share hermes-shaped fixture\n');
+  writePublishLayout({
+    distRoot: dist,
+    targetName: 'ShareExt',
+    type: 'share',
+    runtimeVersion: '1.0.0',
+    bundleBytes: bytes,
   });
+  const installed = syncExtensionBundlesFromUpdateAssets({
+    updateAssetRoot: dist,
+    appGroupRoot: group,
+    targets: [
+      { targetName: 'ShareExt', type: 'share', runtimeVersion: '1.0.0' },
+    ],
+  });
+  return { dist, group, bytes, installed };
+}
 
+test('publish → sync smoke: export layout then sync into app group root', () => {
+  const { group, bytes, installed } = syncSimpleShareFixture();
+  expect(installed).toHaveLength(1);
+  expect(installed[0]?.sha256).toBe(
+    createHash('sha256').update(bytes).digest('hex')
+  );
+  expect(
+    isInstalledBundleValid({
+      appGroupRoot: group,
+      targetName: 'ShareExt',
+      bakedRuntimeVersion: '1.0.0',
+    })
+  ).toBe(true);
+  expect(
+    isInstalledBundleValid({
+      appGroupRoot: group,
+      targetName: 'ShareExt',
+      bakedRuntimeVersion: '9.9.9',
+    })
+  ).toBe(false);
+});
+
+describe('publish → sync smoke (simple share rejects)', () => {
   test('rejects oversize and missing runtimeVersion', () => {
     const group = tmp();
     const src = path.join(tmp(), 'big.jsbundle');
