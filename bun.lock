@@ -12,7 +12,7 @@
       },
       "devDependencies": {
         "@biomejs/biome": "2.5.6",
-        "@csark0812/devicewright": "0.1.14",
+        "@csark0812/devicewright": "^0.1.15",
         "@csark0812/skeleton": "^1.5.7",
         "typescript": "~5.3.3",
       },
@@ -1137,7 +1137,7 @@
 
     "@biomejs/cli-win32-x64": ["@biomejs/cli-win32-x64@2.5.6", "", { "os": "win32", "cpu": "x64" }, "sha512-WN05KwXnTO/2J45RQPvzZMXf7tZUIofHoR35xIPfCo7pQ2RFidxI8sfb5mGsaTxdMmEOzHzOPRCdA5/fCpc7xQ=="],
 
-    "@csark0812/devicewright": ["@csark0812/devicewright@0.1.14", "", { "dependencies": { "@modelcontextprotocol/sdk": "^1.12.0", "zod": "^3.24.0" }, "bin": { "devicewright": "build/bin/cli.js", "devicewright-mcp": "build/bin/mcp.js", "devicewright-doctor": "build/bin/doctor.js" } }, "sha512-rwA57FpKWZxqhIkfjK3g8SwBcNkMLAi2tCY1RI2bVU43haew/efgYopmYa97AiGdYgEO7gKw7EK2v6Sc1Sdk+g=="],
+    "@csark0812/devicewright": ["@csark0812/devicewright@0.1.15", "", { "dependencies": { "@modelcontextprotocol/sdk": "^1.12.0", "zod": "^3.24.0" }, "bin": { "devicewright": "build/bin/cli.js", "devicewright-mcp": "build/bin/mcp.js", "devicewright-doctor": "build/bin/doctor.js" } }, "sha512-18c0h8zABheW5f21syDGM6od6CeXoMqkKKyQODbltiMkRrrK4MLA6zgFdcbddlrn9Lht0QS8uXEYW4+lUUmDDQ=="],
 
     "@csark0812/skeleton": ["@csark0812/skeleton@1.5.7", "", { "dependencies": { "ajv": "^8.17.1", "github-slugger": "^2.0.0", "remark": "^15.0.1", "remark-gfm": "^4.0.1", "tinyglobby": "^0.2.14", "unist-util-visit": "^5.0.0", "yaml": "^2.8.0" }, "bin": { "skeleton": "dist/cli.js" } }, "sha512-+ymzlfDxlwx2J8bSk2UrKF05XQFMuJsnoGtnJYmu2tOHNZxCFcvyE6Gzevc8XBICKGfyovOI/ET1fBih+IjSrg=="],
 
