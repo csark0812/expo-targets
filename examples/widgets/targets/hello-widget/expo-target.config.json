@@ -4,6 +4,11 @@
   "displayName": "Hello Widget",
   "platforms": ["ios", "android"],
   "appGroup": "group.com.expotargets.example.widgets",
+  "liveActivity": {
+    "attributesName": "HelloWidgetAttributes",
+    "static": { "title": "string" },
+    "contentState": { "status": "string" }
+  },
   "ios": {
     "bundleIdentifier": "com.expotargets.example.widgets.hello",
     "displayName": "Hello Widget",
@@ -15,6 +20,6 @@
   },
   "android": {
     "widgetType": "glance",
-    "description": "ET Widgets Hello (bridge-grade Glance)"
+    "description": "ET Widgets Hello (Glance + LiveActivity ongoing-notif)"
   }
 }

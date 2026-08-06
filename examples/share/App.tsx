@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
 import {
   AppState,
+  Platform,
   Share,
   StyleSheet,
   Text,
@@ -107,11 +108,34 @@ type ShareHostViewProps = {
 };
 
 function ShareHostView({ payload, ready, refresh }: ShareHostViewProps) {
+  const android = Platform.OS === 'android';
+
   return (
     <View style={styles.container} testID="screen-root">
       <StatusBar style="auto" />
       <Text style={styles.title}>Share example</Text>
+      <Text style={styles.subtitle}>This screen = the main app (host)</Text>
       <Text testID="status-target-ready">{ready ? 'ready' : 'loading'}</Text>
+
+      <Text testID="text-platform-note" style={styles.hint}>
+        {android
+          ? [
+              'How Android share works in expo-targets:',
+              '',
+              '1. Photos / Files / another app → system Share sheet',
+              '2. Pick “Example Share” → a SEPARATE Share Activity dialog',
+              '   (not this main app)',
+              '3. In that dialog:',
+              '   • Save — store shared item, close dialog',
+              '   • Open main app — launch THIS screen on purpose',
+              '   • Cancel — dismiss without saving',
+              '',
+              'Buttons below only demo the sheet FROM the host.',
+              'Real users usually share INTO the app from elsewhere.',
+            ].join('\n')
+          : 'iOS: system share sheet → Share extension (RN). Host reads App Group payload below.'}
+      </Text>
+
       <HostButton
         testID="btn-seed-payload"
         label="Seed payload"
@@ -124,15 +148,17 @@ function ShareHostView({ payload, ready, refresh }: ShareHostViewProps) {
       />
       <HostButton
         testID="btn-open-share-sheet"
-        label="Open Share Sheet"
+        label={android ? 'Demo: share text → sheet' : 'Open Share Sheet'}
         onPress={openTextShareSheet}
       />
       <HostButton
         testID="btn-open-image-share"
-        label="Open Image Share"
+        label={android ? 'Demo: share image → sheet' : 'Open Image Share'}
         onPress={openImageShareSheetSafe}
       />
-      <HostButton testID="btn-refresh" label="Refresh" onPress={refresh} />
+      <HostButton testID="btn-refresh" label="Refresh payload" onPress={refresh} />
+
+      <Text style={styles.payloadLabel}>Last saved share (from Share Activity):</Text>
       <Text testID="text-last-payload" style={styles.payload}>
         {payload}
       </Text>
@@ -146,8 +172,10 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, gap: 12, justifyContent: 'center' },
+  container: { flex: 1, padding: 24, gap: 10, justifyContent: 'center' },
   title: { fontSize: 22, fontWeight: '700' },
+  subtitle: { fontSize: 14, fontWeight: '600', color: '#111' },
+  hint: { color: '#444', fontSize: 12, lineHeight: 18 },
   button: {
     backgroundColor: '#007AFF',
     padding: 12,
@@ -155,5 +183,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: { color: '#fff', fontWeight: '600' },
-  payload: { fontFamily: 'Courier', fontSize: 12 },
+  payloadLabel: { marginTop: 4, fontSize: 12, fontWeight: '600', color: '#333' },
+  payload: { fontFamily: 'Courier', fontSize: 11 },
 });

@@ -1,7 +1,14 @@
 import * as Notifications from 'expo-notifications';
+import { AndroidNotification } from 'expo-targets';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import {
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -12,6 +19,8 @@ Notifications.setNotificationHandler({
     shouldSetBadge: false,
   }),
 });
+
+const APP_GROUP = 'group.com.expotargets.example.notification-service';
 
 async function requestNotificationPermission(): Promise<string> {
   const current = await Notifications.getPermissionsAsync();
@@ -44,6 +53,7 @@ function useNseBootstrap() {
   const [ready, setReady] = useState(false);
   const [perm, setPerm] = useState('pending');
   const [pushToken, setPushToken] = useState('pending');
+  const [lastTitle, setLastTitle] = useState('none');
 
   useEffect(() => {
     let cancelled = false;
@@ -67,16 +77,24 @@ function useNseBootstrap() {
     };
   }, []);
 
-  return { ready, perm, pushToken };
+  return { ready, perm, pushToken, lastTitle, setLastTitle };
 }
 
 type NseHostViewProps = {
   ready: boolean;
   perm: string;
   pushToken: string;
+  lastTitle: string;
+  onAndroidLocal: () => void;
 };
 
-function NseHostView({ ready, perm, pushToken }: NseHostViewProps) {
+function NseHostView({
+  ready,
+  perm,
+  pushToken,
+  lastTitle,
+  onAndroidLocal,
+}: NseHostViewProps) {
   return (
     <View style={styles.container} testID="screen-root">
       <StatusBar style="auto" />
@@ -91,15 +109,45 @@ function NseHostView({ ready, perm, pushToken }: NseHostViewProps) {
       <Text testID="text-device-push-token" selectable>
         {pushToken}
       </Text>
+      {Platform.OS === 'android' ? (
+        <TouchableOpacity
+          testID="btn-android-local-notif"
+          style={styles.button}
+          onPress={onAndroidLocal}
+        >
+          <Text style={styles.buttonText}>Android local process</Text>
+        </TouchableOpacity>
+      ) : null}
       <Text testID="btn-clear-payload">clear</Text>
-      <Text testID="text-last-payload">none</Text>
+      <Text testID="text-last-payload">{lastTitle}</Text>
     </View>
   );
 }
 
 export default function App() {
   const host = useNseBootstrap();
-  return <NseHostView {...host} />;
+
+  return (
+    <NseHostView
+      ready={host.ready}
+      perm={host.perm}
+      pushToken={host.pushToken}
+      lastTitle={host.lastTitle}
+      onAndroidLocal={() => {
+        void (async () => {
+          const mutated = await AndroidNotification.processAndPresent({
+            title: `host-${Date.now()}`,
+            body: 'local NSE path',
+            targetName: 'NotificationService',
+          });
+          const stored =
+            (await AndroidNotification.getLastProcessedTitle(APP_GROUP)) ??
+            mutated;
+          host.setLastTitle(stored);
+        })();
+      }}
+    />
+  );
 }
 
 const styles = StyleSheet.create({
@@ -108,6 +156,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
+    gap: 8,
   },
   title: { fontSize: 20, fontWeight: '600', marginBottom: 12 },
+  button: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  buttonText: { color: '#fff', fontWeight: '600' },
 });

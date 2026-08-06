@@ -70,7 +70,37 @@ describe('TYPE_CHARACTERISTICS entry shape', () => {
       expect(['dual', 'native-only', 'rn-only']).toContain(
         characteristics.rnExample
       );
+      expect([
+        'none',
+        'widget',
+        'activity',
+        'service',
+        'provider',
+        'ime',
+        'vpn',
+        'wear',
+      ]).toContain(characteristics.androidComponent);
+      expect(['strong', 'partial', 'apple-only']).toContain(
+        characteristics.androidBucket
+      );
+      if (characteristics.androidBucket === 'partial') {
+        expect(typeof characteristics.androidPartial).toBe('string');
+      }
     }
+  });
+
+  test('Android API-ceiling ledger counts', () => {
+    const strong = EXTENSION_TYPES.filter(
+      (t) => TYPE_CHARACTERISTICS[t].androidBucket === 'strong'
+    );
+    const partial = EXTENSION_TYPES.filter(
+      (t) => TYPE_CHARACTERISTICS[t].androidBucket === 'partial'
+    );
+    expect(strong).toHaveLength(12);
+    expect(partial.length).toBeGreaterThanOrEqual(8);
+    expect(TYPE_CHARACTERISTICS.share.androidComponent).toBe('activity');
+    expect(TYPE_CHARACTERISTICS.widget.androidComponent).toBe('widget');
+    expect(TYPE_CHARACTERISTICS.clip.androidBucket).toBe('apple-only');
   });
 });
 

@@ -2,7 +2,7 @@
   "type": "share",
   "name": "NativeShare",
   "displayName": "Native Share",
-  "platforms": ["ios"],
+  "platforms": ["ios", "android"],
   "appGroup": "group.com.expotargets.example.native.share",
   "ios": {
     "bundleIdentifier": "com.expotargets.example.native.share.share",
@@ -11,6 +11,13 @@
       "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" },
       "BackgroundColor": { "light": "#FFFFFF", "dark": "#1C1C1E" }
     },
+    "activationRules": [
+      { "type": "text" },
+      { "type": "url" },
+      { "type": "image", "maxCount": 5 }
+    ]
+  },
+  "android": {
     "activationRules": [
       { "type": "text" },
       { "type": "url" },

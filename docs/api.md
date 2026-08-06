@@ -460,7 +460,10 @@ await ContentBlocker.reload({ targetName: "MyBlocker" });
 
 ## LiveActivity
 
-Start / update / end ActivityKit Live Activities. `attributesName` must match `liveActivity.attributesName` on a widget target — unknown names throw with the configured list. Prefer `LiveActivity.create(name)` (widgets-like factory). Also exported as `createLiveActivity(name)`.
+Start / update / end Live Activities. `attributesName` must match `liveActivity.attributesName` on a widget target — unknown names throw with the configured list. Prefer `LiveActivity.create(name)` (widgets-like factory). Also exported as `createLiveActivity(name)`.
+
+- **iOS:** ActivityKit (16.2+). Attributes + host bridge are CNG into `ios/*/ExpoTargetsGenerated/` (gitignored). Activity UI stays under `targets/<widget>/ios/`.
+- **Android:** Ongoing `NotificationCompat` helper (same JS surface). No Dynamic Island / StandBy / ActivityKit push-to-start.
 
 ```typescript
 import { LiveActivity } from "expo-targets";
@@ -477,7 +480,31 @@ if (await LiveActivity.areActivitiesEnabled()) {
 }
 ```
 
-Attributes + host bridge are CNG into `ios/*/ExpoTargetsGenerated/` (gitignored). Activity UI stays under `targets/<widget>/ios/`. See [widgets.md](./widgets.md).
+See [widgets.md](./widgets.md).
+
+## AndroidNotification
+
+Android-only local path for `notification-service` / `notification-content` (Wave 2). Not a substitute for iOS NSE/NCE process isolation. FCM remote push is leftover when credentials are unavailable.
+
+```typescript
+import { AndroidNotification } from "expo-targets";
+
+// notification-service: mutate title + post
+const title = await AndroidNotification.processAndPresent({
+  title: "Hello",
+  body: "local",
+  targetName: "NotificationService",
+});
+
+// notification-content: RemoteViews / DecoratedCustomViewStyle
+await AndroidNotification.presentContent({
+  title: "Rich",
+  body: "custom view",
+  targetName: "NotificationContent",
+});
+
+await AndroidNotification.getLastProcessedTitle("group.com.example.app");
+```
 
 ---
 
@@ -700,10 +727,11 @@ interface NonExtensionTarget extends BaseTarget {
 | `clearSharedData()`       | ✅ iOS 13+   | ✅ API 26+ |
 | `FileProviderDomain.*`    | ✅ iOS 11+   | —          |
 | `ContentBlocker.reload`   | ✅ iOS 11+   | —          |
-| `LiveActivity.*`          | ✅ iOS 16.2+ | —          |
-| `close()`                 | ✅ iOS 13+   | 🔜         |
-| `openHostApp()`           | ✅ iOS 13+   | 🔜         |
-| `getSharedData()`         | ✅ iOS 13+   | 🔜         |
+| `LiveActivity.*`          | ✅ iOS 16.2+ | ✅ Ongoing-notif helper (partial) |
+| `AndroidNotification.*`   | —            | ✅ W2 local NSE/NCE path |
+| `close()`                 | ✅ iOS 13+   | ✅ Wave 0+ (target Activity) |
+| `openHostApp()`           | ✅ iOS 13+   | ✅ Wave 0+ |
+| `getSharedData()`         | ✅ iOS 13+   | ✅ Wave 0+ (Intent extras) |
 
 ### Extension Types by Platform
 
@@ -715,17 +743,30 @@ interface NonExtensionTarget extends BaseTarget {
 | `clip`     | ✅ iOS 14+ | —                              |
 | `stickers` | ✅ iOS 10+ | —                              |
 | `messages` | ✅ iOS 10+ | —                              |
-| `share`    | ✅ iOS 8+  | 🔜                             |
-| `action`   | ✅ iOS 8+  | 🔜                             |
+| `share`    | ✅ iOS 8+  | ✅ W1 dedicated Activity (native; RN provisional) |
+| `action`   | ✅ iOS 8+  | ✅ W1 `PROCESS_TEXT` Activity (native; RN provisional) |
+| `notification-service` | ✅ iOS 10+ | ✅ W2 partial (local NotificationCompat; FCM leftover) |
+| `notification-content` | ✅ iOS 10+ | ✅ W2 partial (RemoteViews / A12 clamp) |
+| `file-provider` | ✅ iOS 11+ | ✅ W3a DocumentsProvider |
+| `keyboard` | ✅ iOS 8+ | ✅ W3b IME (Settings leftover) |
+| `network-packet-tunnel` | ✅ NE | ✅ W3c VpnService (consent leftover) |
 
 > Only **stickers** is asset-only (`requiresCode: false`). Do not add orphan ExtensionTypes without example + Devicewright row ([deprecations.md](./deprecations.md)).
 
 ### Android Notes
 
-- **Widgets** use SharedPreferences for data storage (equivalent to iOS App Groups)
+- **Widgets** use SharedPreferences for data storage (equivalent to iOS App Groups); first-class Glance/Compose deepen
 - **Glance widgets** require Android 13+ (API 33) for full Compose support
 - **RemoteViews widgets** work on Android 8+ (API 26) with XML layouts
 - **Widget refresh** triggers via BroadcastReceiver
+- **Extension JS APIs** (`getSharedData` / `openHostApp` / `close`) need a target Activity (`ExpoTargetsHarnessActivity` or Share/Action Activities)
+- **Share/action** register dedicated Activities (not MainActivity) with MIME filters from `android.activationRules` or `ios.activationRules`
+- **Notifications** register a host-process Service + channels; use `AndroidNotification.*` for the local path. No sealed NSE process — only notifications you route. FCM push is leftover without credentials.
+- **LiveActivity on Android** posts ongoing notifications (partial vs ActivityKit)
+- **System services (W3):** DocumentsProvider, AutofillService, InputMethodService, CallScreeningService, PrintService, VpnService (fail-closed). Settings/Play leftovers documented in [limits.md](./limits.md)
+- **getTargetsConfig** reads `assets/expo_targets_config.json` written at prebuild
+- **RN on Android share:** provisional — native Activity is the default path until Expo RN Activity TTI is measured (spike `android-rn-host-2026-08-05.md`)
+- Full type matrix: [configuration.md](./configuration.md)
 
 ---
 

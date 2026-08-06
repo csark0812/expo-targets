@@ -31,6 +31,7 @@
     "examples:devicewright:matrix:live": "bun examples/.devicewright/cli.ts matrix --live-through=1",
     "examples:devicewright:matrix:ensure": "bun examples/.devicewright/cli.ts matrix --live-through=3 --no-fail-fast --ensure-install",
     "examples:devicewright:share": "bun examples/.devicewright/cli.ts matrix --ids=share",
+    "examples:devicewright:share:android": "bun examples/.devicewright/cli.ts matrix --ids=share --platform=android --device=emulator-5554 --live-through=1",
     "examples:devicewright:action": "bun examples/.devicewright/cli.ts matrix --ids=action",
     "examples:devicewright:messages": "bun examples/.devicewright/cli.ts matrix --ids=messages",
     "examples:devicewright:stickers": "bun examples/.devicewright/cli.ts matrix --ids=stickers",

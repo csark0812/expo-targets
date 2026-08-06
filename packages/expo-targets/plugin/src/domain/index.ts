@@ -17,6 +17,8 @@ export {
   TYPE_BUNDLE_IDENTIFIER_SUFFIXES,
 } from './bundleIds';
 export type {
+  AndroidBucket,
+  AndroidComponent,
   BaseTypeCharacteristics,
   TypeCharacteristicFlags,
   TypeCharacteristics,

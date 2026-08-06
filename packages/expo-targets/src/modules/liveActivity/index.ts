@@ -33,8 +33,10 @@ export type LiveActivityStartOptions = {
 };
 
 function getNative(): NativeLiveActivity {
-  if (Platform.OS !== 'ios') {
-    throw new Error('[expo-targets] LiveActivity is only available on iOS.');
+  if (Platform.OS !== 'ios' && Platform.OS !== 'android') {
+    throw new Error(
+      '[expo-targets] LiveActivity is only available on iOS and Android.'
+    );
   }
   return requireNativeModule<NativeLiveActivity>('ExpoTargetsLiveActivity');
 }

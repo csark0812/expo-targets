@@ -8,10 +8,11 @@ Humans: see [CONTRIBUTING.md](./CONTRIBUTING.md) for install, CI, Biome, and rel
 
 ## Product posture
 
-expo-targets owns **Expo’s negative space**: React Native share/action/clip/messages extensions, App Clips, stickers, wallet, native WidgetKit + Live Activities, and other Apple targets. Android widgets are **bridge-grade**.
+expo-targets owns **Expo’s negative space**: React Native share/action/clip/messages extensions, App Clips, stickers, wallet, native WidgetKit + Live Activities, and other Apple targets. Android is an **API-ceiling dual** spine (~40% of types): widgets through W3 system services (DocumentsProvider, Autofill, IME, CallScreening, Print, VpnService); W4 partials next.
 
-- **Native iOS widgets + Live Activities** → this library ([docs/widgets.md](docs/widgets.md)). Official `expo-widgets` is an alternative React/Expo-UI path — do not dual-generate WidgetKit in one app.
-- **Do not add** orphan config-only extension types. See [docs/deprecations.md](docs/deprecations.md) and [docs/limits.md](docs/limits.md).
+- **Native iOS widgets + Live Activities** → this library ([docs/widgets.md](docs/widgets.md)). Official `expo-widgets` is an alternative React/Expo-UI path — do not dual-generate WidgetKit in one app (same one-generator rule if Expo ships Android widgets).
+- **Android ledger** → `TYPE_CHARACTERISTICS.androidBucket` / `androidComponent` in the plugin domain.
+- **Do not add** orphan config-only extension types (iOS or Android). See [docs/deprecations.md](docs/deprecations.md) and [docs/limits.md](docs/limits.md).
 
 ## Sealed zones
 

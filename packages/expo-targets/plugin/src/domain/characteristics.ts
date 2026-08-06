@@ -28,12 +28,30 @@ export interface BaseTypeCharacteristics {
  * Behavioural flags derived from the sets below. Flags only — never value blobs,
  * so consumers branch on capabilities instead of hard-coded type checks.
  */
+export type AndroidComponent =
+  | 'none'
+  | 'widget'
+  | 'activity'
+  | 'service'
+  | 'provider'
+  | 'ime'
+  | 'vpn'
+  | 'wear';
+
+export type AndroidBucket = 'strong' | 'partial' | 'apple-only';
+
 export interface TypeCharacteristicFlags {
   isReactNativeNative: boolean; // Runs React Native with native modules
   isReactNativeWeb: boolean; // Runs React Native Web inside a web view
   needsIsolatedSearchPaths: boolean; // Standalone product; must not inherit Pods search paths
   /** Example host track for Devicewright / examples/. */
   rnExample: 'dual' | 'native-only' | 'rn-only';
+  /** Android host component family (API-ceiling dual ledger). */
+  androidComponent: AndroidComponent;
+  /** Strong dual / high-value partial / Apple-only. */
+  androidBucket: AndroidBucket;
+  /** Optional partial note when androidBucket is partial. */
+  androidPartial?: string;
 }
 
 export type TypeCharacteristics = BaseTypeCharacteristics &
@@ -71,6 +89,72 @@ function rnExampleFor(type: ExtensionType): 'dual' | 'native-only' | 'rn-only' {
   if (RN_EXAMPLE_DUAL.has(type)) return 'dual';
   if (RN_EXAMPLE_RN_ONLY.has(type)) return 'rn-only';
   return 'native-only';
+}
+
+/** API-ceiling dual ledger — keep in sync with Android parity plan type table. */
+const ANDROID_COMPONENT: Partial<Record<ExtensionType, AndroidComponent>> = {
+  widget: 'widget',
+  share: 'activity',
+  action: 'activity',
+  'file-provider': 'provider',
+  'file-provider-ui': 'activity',
+  'credentials-provider': 'service',
+  keyboard: 'ime',
+  'call-directory': 'service',
+  'print-service': 'service',
+  'network-packet-tunnel': 'vpn',
+  watch: 'wear',
+  'watch-widget': 'wear',
+  'notification-service': 'service',
+  'notification-content': 'service',
+  'app-intent': 'activity',
+  wallet: 'activity',
+  'wallet-ui': 'activity',
+  'photo-editing': 'activity',
+  spotlight: 'service',
+  'spotlight-delegate': 'service',
+  'bg-download': 'service',
+  'message-filter': 'service',
+  'unwanted-communication': 'service',
+};
+
+const ANDROID_STRONG = new Set<ExtensionType>([
+  'widget',
+  'share',
+  'action',
+  'file-provider',
+  'file-provider-ui',
+  'credentials-provider',
+  'keyboard',
+  'call-directory',
+  'print-service',
+  'network-packet-tunnel',
+  'watch',
+  'watch-widget',
+]);
+
+const ANDROID_PARTIAL_NOTES: Partial<Record<ExtensionType, string>> = {
+  'notification-service': 'Own FCM/service pre-display only',
+  'notification-content': 'RemoteViews / A12 template clamp',
+  'app-intent': 'App Actions shortcuts.xml',
+  wallet: 'Google Wallet passes ≠ PassKit',
+  'wallet-ui': 'Companion activities beside Wallet',
+  'photo-editing': 'ACTION_EDIT Activity',
+  spotlight: 'AppSearch helpers',
+  'spotlight-delegate': 'AppSearch helpers',
+  'bg-download': 'DownloadManager / WorkManager facade',
+  'message-filter': 'Optional W4; Call Screening / SMS role',
+  'unwanted-communication': 'Optional W4; Call Screening extras',
+};
+
+function androidBucketFor(type: ExtensionType): AndroidBucket {
+  if (ANDROID_STRONG.has(type)) return 'strong';
+  if (type in ANDROID_PARTIAL_NOTES) return 'partial';
+  return 'apple-only';
+}
+
+function androidComponentFor(type: ExtensionType): AndroidComponent {
+  return ANDROID_COMPONENT[type] ?? 'none';
 }
 
 const BASE_TYPE_CHARACTERISTICS: Record<
@@ -816,16 +900,24 @@ export const EXTENSION_TYPES = Object.keys(
  */
 export const TYPE_CHARACTERISTICS: Record<ExtensionType, TypeCharacteristics> =
   Object.fromEntries(
-    EXTENSION_TYPES.map((type) => [
-      type,
-      {
-        ...BASE_TYPE_CHARACTERISTICS[type],
-        isReactNativeNative: REACT_NATIVE_NATIVE.has(type),
-        isReactNativeWeb: REACT_NATIVE_WEB.has(type),
-        needsIsolatedSearchPaths: ISOLATED_SEARCH_PATHS.has(type),
-        rnExample: rnExampleFor(type),
-      },
-    ])
+    EXTENSION_TYPES.map((type) => {
+      const androidBucket = androidBucketFor(type);
+      return [
+        type,
+        {
+          ...BASE_TYPE_CHARACTERISTICS[type],
+          isReactNativeNative: REACT_NATIVE_NATIVE.has(type),
+          isReactNativeWeb: REACT_NATIVE_WEB.has(type),
+          needsIsolatedSearchPaths: ISOLATED_SEARCH_PATHS.has(type),
+          rnExample: rnExampleFor(type),
+          androidComponent: androidComponentFor(type),
+          androidBucket,
+          ...(androidBucket === 'partial' && ANDROID_PARTIAL_NOTES[type]
+            ? { androidPartial: ANDROID_PARTIAL_NOTES[type] }
+            : {}),
+        },
+      ];
+    })
   ) as Record<ExtensionType, TypeCharacteristics>;
 
 export function getFrameworksForType(type: ExtensionType): string[] {

@@ -17,6 +17,7 @@ import {
   tapProbeHit,
   waitForId,
 } from "./helpers";
+import { runAndroidShareJourney } from "./share.android";
 
 async function dismissShareSheet(device: DeviceSession): Promise<void> {
   for (const label of ["Close", "Cancel"]) {
@@ -74,14 +75,39 @@ async function findExtensionRow(
       ]
     : undefined;
 
-  const hit = await findSheetRowProbe(device, searchNames, {
+  const probeOpts = {
     expandMore: Boolean(entry.needsViewMore),
-    match: "exact",
+    match: "exact" as const,
     blockedLabels: BLOCKED_SHEET_LABELS,
     probeTimeoutMs: timeoutMs,
     ...(listFirstHotspots ? { hotspots: listFirstHotspots } : {}),
-  });
-  return hit;
+  };
+
+  try {
+    return await findSheetRowProbe(device, searchNames, probeOpts);
+  } catch (first) {
+    // Crowded favorites bury freshly installed extensions off-screen to the
+    // right (Reminders / other ET apps). Swipe the apps row, then re-probe.
+    for (let i = 0; i < 3; i++) {
+      await device.swipe({
+        xStart: 340,
+        yStart: 620,
+        xEnd: 80,
+        yEnd: 620,
+        duration: 0.35,
+      });
+      await sleep(400);
+      try {
+        return await findSheetRowProbe(device, searchNames, {
+          ...probeOpts,
+          probeTimeoutMs: Math.min(8_000, timeoutMs),
+        });
+      } catch {
+        // keep swiping
+      }
+    }
+    throw first;
+  }
 }
 
 async function completeAppex(
@@ -109,11 +135,12 @@ async function completeAppex(
             { x: 210, y: 280 },
           ]
         : [
-            // RN share Save / action Process — tap-space ~y500 on Air.
-            { x: 210, y: 500 },
-            { x: 210, y: 490 },
-            { x: 210, y: 480 },
+            // RN share Save — solid blue band ~y300–335 on Air (tall sheet).
+            { x: 210, y: 315 },
+            { x: 210, y: 330 },
+            { x: 210, y: 300 },
             { x: 210, y: 420 },
+            { x: 210, y: 500 },
           ];
     const complete = await findNamedViaPointProbe(device, completeLabels, {
       timeoutMs: 12_000,
@@ -192,6 +219,10 @@ export async function runShareActionJourney(
   device: DeviceSession,
   id: keyof typeof TARGET_CATALOG,
 ): Promise<TargetJourneyResult> {
+  if (device.platform === "android") {
+    return runAndroidShareJourney(device, id);
+  }
+
   const entry = TARGET_CATALOG[id];
   if (!entry?.testIds.openShareSheet) {
     return {

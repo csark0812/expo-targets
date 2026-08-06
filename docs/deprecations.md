@@ -12,11 +12,12 @@ Native WidgetKit + ActivityKit are **first-class** in expo-targets (not soft-dep
 | ------------------- | ------------------------------------------------------------------------------------------- |
 | **Now**             | Widget + Live Activity scaffolds and examples are supported                                 |
 | **Dual engines**    | Still unsupported: do not run expo-widgets and expo-targets WidgetKit generators in one app |
-| **Android widgets** | Bridge-grade until/unless Expo’s official Android widgets exit ramp applies                 |
+| **Android widgets** | **First-class** Glance/Compose or RemoteViews deepen (not bridge-grade). Same DoD as iOS: registry + scaffold + example + Devicewright (or leftover). One generator per app if official `expo-widgets` Android lands. |
+| **Android dual**    | API-ceiling program (~40% of types). Ledger in `TYPE_CHARACTERISTICS` (`androidBucket` / `androidComponent`). W0–W3 shipped (through system services). W4 partials next. No orphan Android stubs for unshipped waves. |
 
 ## New extension types (no orphan stubs)
 
-New `ExtensionType` values are allowed **only** when the same PR ships **registry + scaffold template + production example + Devicewright REQUIRED row** (full per-type DoD). Do **not** add config-only stubs that only generate Xcode targets.
+New `ExtensionType` values are allowed **only** when the same PR ships **registry + scaffold template + production example + Devicewright REQUIRED row** (full per-type DoD). Do **not** add config-only stubs that only generate Xcode targets. The same freeze applies to Android backends.
 
 ## Related
 

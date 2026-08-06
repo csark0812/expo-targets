@@ -401,6 +401,37 @@ export interface AndroidTargetConfig {
   targetCellHeight?: number;
   initialLayout?: string;
   colors?: Record<string, string | Color>;
+  /**
+   * Share/action MIME activation (optional). When omitted, plugin uses
+   * `ios.activationRules` if present, else text+url defaults.
+   */
+  activationRules?: ShareExtensionActivationRule[];
+  /**
+   * Notification channel id (notification-service / notification-content).
+   * Default: `expo_targets_<sanitizedName>`.
+   */
+  channelId?: string;
+  /** Human-readable channel name for NotificationManager. */
+  channelName?: string;
+  /**
+   * Content category key (notification-content). Defaults to iOS
+   * `UNNotificationExtensionCategory` or `myNotificationCategory`.
+   */
+  category?: string;
+  /**
+   * Title suffix applied by the local notification-service processor.
+   * Default: ` [expo-targets]` (matches iOS NSE example).
+   */
+  mutationMarker?: string;
+  /**
+   * DocumentsProvider authority (file-provider).
+   * Default: `{android.package}.expo_targets.documents.<segment>`.
+   */
+  authority?: string;
+  /** IME label override (keyboard). */
+  imeLabel?: string;
+  /** VPN service label (network-packet-tunnel). */
+  vpnDisplayName?: string;
 }
 
 // Base config shared by all targets

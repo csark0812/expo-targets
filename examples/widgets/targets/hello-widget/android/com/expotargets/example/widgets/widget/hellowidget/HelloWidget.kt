@@ -1,6 +1,7 @@
 package com.expotargets.example.widgets.widget.hellowidget
 
 import android.content.Context
+import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.appwidget.GlanceAppWidget
@@ -10,11 +11,10 @@ import androidx.glance.layout.Column
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.padding
 import androidx.glance.text.Text
-import androidx.glance.unit.dp
 import expo.modules.targets.ExpoTargetsWidgetUpdateReceiver
 
 /**
- * Bridge-grade Glance widget for examples/widgets.
+ * First-class Glance widget for examples/widgets.
  * FQCN must match withAndroidWidget: {package}.widget.hellowidget.HelloWidgetWidgetReceiver
  */
 class HelloWidget : GlanceAppWidget() {

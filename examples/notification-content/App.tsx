@@ -1,7 +1,14 @@
 import * as Notifications from 'expo-notifications';
+import { AndroidNotification } from 'expo-targets';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import {
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -14,6 +21,7 @@ Notifications.setNotificationHandler({
 });
 
 const NCE_CATEGORY = 'myNotificationCategory';
+const APP_GROUP = 'group.com.expotargets.example.notification-content';
 
 async function requestNotificationPermission(): Promise<string> {
   const current = await Notifications.getPermissionsAsync();
@@ -32,6 +40,7 @@ async function bootstrapNceHost(): Promise<string> {
 function useNceBootstrap() {
   const [ready, setReady] = useState(false);
   const [perm, setPerm] = useState('pending');
+  const [lastTitle, setLastTitle] = useState('none');
 
   useEffect(() => {
     let cancelled = false;
@@ -53,16 +62,24 @@ function useNceBootstrap() {
     };
   }, []);
 
-  return { ready, perm };
+  return { ready, perm, lastTitle, setLastTitle };
 }
 
 type NceHostViewProps = {
   ready: boolean;
   perm: string;
   bundleSuffix: string;
+  lastTitle: string;
+  onAndroidLocal: () => void;
 };
 
-function NceHostView({ ready, perm, bundleSuffix }: NceHostViewProps) {
+function NceHostView({
+  ready,
+  perm,
+  bundleSuffix,
+  lastTitle,
+  onAndroidLocal,
+}: NceHostViewProps) {
   return (
     <View style={styles.container} testID="screen-root">
       <StatusBar style="auto" />
@@ -71,19 +88,43 @@ function NceHostView({ ready, perm, bundleSuffix }: NceHostViewProps) {
       <Text testID="text-extension-type">notification-content</Text>
       <Text testID="text-bundle-suffix">{bundleSuffix}</Text>
       <Text testID="text-notif-perm">{perm}</Text>
+      {Platform.OS === 'android' ? (
+        <TouchableOpacity
+          testID="btn-android-rich-notif"
+          style={styles.button}
+          onPress={onAndroidLocal}
+        >
+          <Text style={styles.buttonText}>Android rich content</Text>
+        </TouchableOpacity>
+      ) : null}
       <Text testID="btn-clear-payload">clear</Text>
-      <Text testID="text-last-payload">none</Text>
+      <Text testID="text-last-payload">{lastTitle}</Text>
     </View>
   );
 }
 
 export default function App() {
-  const { ready, perm } = useNceBootstrap();
+  const host = useNceBootstrap();
   return (
     <NceHostView
-      ready={ready}
-      perm={perm}
+      ready={host.ready}
+      perm={host.perm}
       bundleSuffix="com.expotargets.example.notification-content"
+      lastTitle={host.lastTitle}
+      onAndroidLocal={() => {
+        void (async () => {
+          const title = `rich-${Date.now()}`;
+          await AndroidNotification.presentContent({
+            title,
+            body: 'RemoteViews content',
+            targetName: 'NotificationContent',
+          });
+          const stored =
+            (await AndroidNotification.getLastProcessedTitle(APP_GROUP)) ??
+            title;
+          host.setLastTitle(stored);
+        })();
+      }}
     />
   );
 }
@@ -94,6 +135,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
+    gap: 8,
   },
   title: { fontSize: 20, fontWeight: '600', marginBottom: 12 },
+  button: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  buttonText: { color: '#fff', fontWeight: '600' },
 });

@@ -58,7 +58,10 @@ export function getTargetPromptQuestions(): PromptObject[] {
       message: 'Select platforms:',
       choices: [
         { title: 'iOS', value: 'ios', selected: true },
-        { title: 'Android (widgets bridge-grade)', value: 'android' },
+        {
+          title: 'Android (widgets → system services)',
+          value: 'android',
+        },
       ],
     },
     {

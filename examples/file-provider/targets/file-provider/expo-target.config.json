@@ -2,7 +2,10 @@
   "type": "file-provider",
   "name": "FileProvider",
   "displayName": "ET FileProv Target",
-  "platforms": ["ios"],
+  "platforms": [
+    "ios",
+    "android"
+  ],
   "appGroup": "group.com.expotargets.example.file-provider",
   "ios": {
     "bundleIdentifier": "com.expotargets.example.file-provider.file-provider",
@@ -17,5 +20,8 @@
         "NSExtensionFileProviderDocumentGroup": "group.com.expotargets.example.file-provider"
       }
     }
+  },
+  "android": {
+    "authority": "com.expotargets.example.file-provider.expo_targets.documents.fileprovider"
   }
 }

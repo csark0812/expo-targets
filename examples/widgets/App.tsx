@@ -1,6 +1,13 @@
+import { LiveActivity } from 'expo-targets';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { getMessage, helloWidget, updateMessage } from './targets/hello-widget';
 
 /** Seeded host marker for Devicewright (avoid `|` — can confuse AX splits). */
@@ -9,6 +16,8 @@ export const UITEST_WIDGET_SEED = 'Hello from host · family:systemSmall';
 export default function App() {
   const [payload, setPayload] = useState('none');
   const [ready, setReady] = useState(false);
+  const [liveId, setLiveId] = useState<string | null>(null);
+  const [liveStatus, setLiveStatus] = useState('idle');
 
   const refresh = useCallback(() => {
     setPayload(getMessage() ?? 'none');
@@ -51,6 +60,67 @@ export default function App() {
       >
         <Text style={styles.buttonText}>Clear payload</Text>
       </TouchableOpacity>
+      <TouchableOpacity
+        testID="btn-live-start"
+        style={styles.button}
+        onPress={() => {
+          void (async () => {
+            if (!(await LiveActivity.areActivitiesEnabled())) {
+              setLiveStatus('disabled');
+              return;
+            }
+            const order = LiveActivity.create('HelloWidgetAttributes');
+            const id = await order.start({
+              attributes: { title: 'Hello' },
+              contentState: { status: 'preparing' },
+            });
+            setLiveId(id);
+            setLiveStatus(`started:${id.slice(0, 8)}`);
+          })();
+        }}
+      >
+        <Text style={styles.buttonText}>
+          {Platform.OS === 'android'
+            ? 'Start LiveActivity (ongoing notif)'
+            : 'Start Live Activity'}
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        testID="btn-live-update"
+        style={styles.button}
+        onPress={() => {
+          void (async () => {
+            if (!liveId) {
+              setLiveStatus('no-id');
+              return;
+            }
+            await LiveActivity.update(liveId, { status: 'ready' });
+            setLiveStatus('updated:ready');
+          })();
+        }}
+      >
+        <Text style={styles.buttonText}>Update Live Activity</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        testID="btn-live-end"
+        style={styles.button}
+        onPress={() => {
+          void (async () => {
+            if (liveId) {
+              await LiveActivity.end(liveId);
+            } else {
+              await LiveActivity.endAll();
+            }
+            setLiveId(null);
+            setLiveStatus('ended');
+          })();
+        }}
+      >
+        <Text style={styles.buttonText}>End Live Activity</Text>
+      </TouchableOpacity>
+      <Text testID="text-live-status" style={styles.payload}>
+        {liveStatus}
+      </Text>
       {/* Split seed parts — AX often truncates pipe-joined payload labels. */}
       <Text
         testID="text-last-payload"

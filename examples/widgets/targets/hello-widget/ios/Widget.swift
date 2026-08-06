@@ -52,7 +52,6 @@ struct Provider: TimelineProvider {
     }
 }
 
-@main
 struct HelloWidget: Widget {
     let kind: String = "HelloWidget"
 

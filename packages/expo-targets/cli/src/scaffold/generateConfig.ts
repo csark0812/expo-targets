@@ -62,7 +62,10 @@ function applyLiveActivityConfig(
   if (
     options.type !== 'widget' ||
     !options.includeLiveActivity ||
-    !options.platforms.includes('ios')
+    !(
+      options.platforms.includes('ios') ||
+      options.platforms.includes('android')
+    )
   ) {
     return;
   }
@@ -124,6 +127,69 @@ export function generateConfig(options: GenerateConfigOptions): string {
   applyWalletIosConfig(config, options);
   applyLiveActivityConfig(config, options);
   applyAppIntentIosConfig(config, options);
+
+  if (options.platforms.includes('android') && configType === 'widget') {
+    config.android = {
+      widgetType: 'glance',
+    };
+  }
+
+  if (
+    options.platforms.includes('android') &&
+    (configType === 'share' || configType === 'action')
+  ) {
+    config.android = {
+      ...(typeof config.android === 'object' && config.android
+        ? (config.android as Record<string, unknown>)
+        : {}),
+      activationRules: [
+        { type: 'text' },
+        { type: 'url' },
+        { type: 'image', maxCount: 5 },
+      ],
+    };
+  }
+
+  if (
+    options.platforms.includes('android') &&
+    (configType === 'notification-service' ||
+      configType === 'notification-content')
+  ) {
+    config.android = {
+      ...(typeof config.android === 'object' && config.android
+        ? (config.android as Record<string, unknown>)
+        : {}),
+      channelId: `expo_targets_${options.kebabName.replace(/-/g, '_')}`,
+      channelName: formatDisplayName(options.kebabName),
+      ...(configType === 'notification-content'
+        ? { category: 'myNotificationCategory' }
+        : { mutationMarker: ' [expo-targets]' }),
+    };
+  }
+
+  const systemTypes = new Set([
+    'file-provider',
+    'file-provider-ui',
+    'credentials-provider',
+    'keyboard',
+    'call-directory',
+    'print-service',
+    'network-packet-tunnel',
+  ]);
+  if (options.platforms.includes('android') && systemTypes.has(configType)) {
+    const android: Record<string, unknown> = {
+      ...(typeof config.android === 'object' && config.android
+        ? (config.android as Record<string, unknown>)
+        : {}),
+    };
+    if (configType === 'keyboard') {
+      android.imeLabel = formatDisplayName(options.kebabName);
+    }
+    if (configType === 'network-packet-tunnel') {
+      android.vpnDisplayName = formatDisplayName(options.kebabName);
+    }
+    config.android = android;
+  }
 
   return JSON.stringify(config, null, 2);
 }

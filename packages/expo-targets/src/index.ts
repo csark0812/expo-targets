@@ -33,6 +33,8 @@ export {
   createLiveActivity,
   LiveActivity,
 } from './modules/liveActivity/index';
+// Android notification local path (Wave 2)
+export { AndroidNotification } from './modules/notification/index';
 export type {
   AttachmentPayload,
   ConversationInfo,

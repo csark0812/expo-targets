@@ -12,6 +12,9 @@ bun install
 cd examples/action
 npx expo prebuild --platform ios
 npx expo run:ios
+# Android
+npx expo prebuild --platform android
+npx expo run:android
 ```
 
 Devicewright (operator, after Release install on a booted sim):

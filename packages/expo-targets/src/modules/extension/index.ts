@@ -18,6 +18,10 @@ type ExtensionNativeModule = {
 
 let cachedModule: ExtensionNativeModule | null | undefined;
 
+function isExtensionPlatform(): boolean {
+  return Platform.OS === 'ios' || Platform.OS === 'android';
+}
+
 /**
  * Resolve the ExpoTargetsExtension native module.
  * Returns null when unavailable (wrong platform, missing native build, or host app).
@@ -26,7 +30,7 @@ export function getExtensionNativeModule(): ExtensionNativeModule | null {
   if (cachedModule !== undefined) {
     return cachedModule;
   }
-  if (Platform.OS !== 'ios') {
+  if (!isExtensionPlatform()) {
     cachedModule = null;
     return null;
   }
@@ -45,16 +49,16 @@ function requireExtensionModule(action: string): ExtensionNativeModule {
   if (mod) {
     return mod;
   }
-  if (Platform.OS !== 'ios') {
+  if (!isExtensionPlatform()) {
     throw new Error(
-      `[expo-targets] ${action} is only available in iOS app extensions. ` +
+      `[expo-targets] ${action} is only available on iOS/Android extension surfaces. ` +
         `Current platform: ${Platform.OS}.`
     );
   }
   throw new Error(
     `[expo-targets] ${action} failed: native module "ExpoTargetsExtension" is unavailable. ` +
-      'Run this inside a share/action/clip/messages extension after `npx expo prebuild` ' +
-      '(or `expo-targets sync` on bare RN), and ensure the extension target embeds expo-targets.'
+      'Run this inside a share/action (iOS appex or Android target Activity) after `npx expo prebuild` ' +
+      '(or `expo-targets sync` on bare RN), and ensure the host embeds expo-targets.'
   );
 }
 
@@ -66,6 +70,7 @@ function requireExtensionModule(action: string): ExtensionNativeModule {
  * - `createTarget(name, Component)` registers the component via AppRegistry; `name` must match config.
  * - `getSharedData` / `close` / `openHostApp` require the ExpoTargetsExtension native module.
  * - Messages adds APIs on top of this contract (see Messages module).
+ * - Android: requires a target Activity (Wave 0 harness or Wave 1 Share/Action Activity).
  */
 export class Extension {
   /** Dismiss the extension UI (share/action). */

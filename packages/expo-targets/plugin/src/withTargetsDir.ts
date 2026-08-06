@@ -3,6 +3,7 @@ import type { ConfigPlugin } from '@expo/config-plugins';
 import { globSync } from 'glob';
 
 import { withAndroidTarget } from './android/withAndroidTarget';
+import { withAndroidTargetsConfig } from './android/withAndroidTargetsConfig';
 import { collectRuntimeConfigs } from './codegen/collectRuntimeConfigs';
 import {
   type TargetCodegenConfig,
@@ -387,6 +388,13 @@ export const withTargetsDir: ConfigPlugin<{
     ...next.extra,
     targets: runtimeConfigs,
   };
+
+  const hasAndroidTarget = targets.some((t) =>
+    t.config.platforms?.includes('android')
+  );
+  if (hasAndroidTarget && runtimeConfigs.length > 0) {
+    next = withAndroidTargetsConfig(next, { runtimeConfigs });
+  }
 
   if (projectRoot) {
     const codegenConfigs: TargetCodegenConfig[] = collectRuntimeConfigs(
