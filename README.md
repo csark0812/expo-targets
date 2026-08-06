@@ -23,11 +23,11 @@ npm install expo-targets
 ### 2. Create a Share Extension (React Native)
 
 ```bash
-npx create-expo-target
-# Choose: Share Extension → my-share → iOS → Yes (Use React Native)
+npx expo-targets add
+# interactive — or: npx expo-targets add share my-share
 ```
 
-`create-expo-target` scaffolds the target and wires the host by default (`package.json`, config plugin, App Groups, `metro.config.js`). Install dependencies if wiring added `expo-targets` to `package.json`.
+`expo-targets add` scaffolds the target and wires the host by default (`package.json`, config plugin, App Groups, `metro.config.js`). Install dependencies if wiring added `expo-targets` to `package.json`.
 
 ### 3. Manual host config (advanced)
 

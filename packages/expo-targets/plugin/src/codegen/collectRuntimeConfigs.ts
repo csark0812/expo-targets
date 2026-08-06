@@ -1,10 +1,16 @@
+export type LiveActivityFieldType = 'string' | 'double' | 'int' | 'bool';
+
 export interface RuntimeTargetConfig {
   name: string;
   type?: string;
   displayName?: string;
   platforms?: string[];
   appGroup?: string;
-  liveActivity?: { attributesName?: string };
+  liveActivity?: {
+    attributesName?: string;
+    static?: Record<string, LiveActivityFieldType>;
+    contentState?: Record<string, LiveActivityFieldType>;
+  };
   ios?: {
     intents?: { ui?: boolean | { name?: string } };
     wallet?: { ui?: boolean | { name?: string } };

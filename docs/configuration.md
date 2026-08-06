@@ -440,8 +440,10 @@ npx expo run:android
 import { createTarget } from "expo-targets";
 
 const widget = createTarget("MyWidget");
-widget.setData({ message: "Hello from React Native!" });
-widget.refresh();
+widget.setData(
+  { message: "Hello from React Native!" },
+  { refresh: true }
+);
 ```
 
 ---
@@ -512,7 +514,7 @@ widget.refresh();
 }
 ```
 
-`liveActivity` drives sealed CNG (`ActivityAttributes` + host bridge) under `ios/<App>/ExpoTargetsGenerated/`. Keep `ActivityConfiguration` UI in `targets/<widget>/ios/`. Host JS: `LiveActivity.create('WeatherAttributes')` — see [api.md](./api.md) and [widgets.md](./widgets.md).
+`liveActivity` drives sealed CNG (`ActivityAttributes` + host bridge) under `ios/<App>/ExpoTargetsGenerated/`, and ambient TypeScript payload types in `.expo/types/expo-targets.d.ts` (`static` / `contentState` → `LiveActivity.create().start`). Keep `ActivityConfiguration` UI in `targets/<widget>/ios/`. Host JS: `LiveActivity.create('WeatherAttributes')` — see [api.md](./api.md) and [widgets.md](./widgets.md).
 
 ### File Provider domain (iOS)
 
@@ -745,7 +747,7 @@ Until `grid-size` is configurable, use **408×408** source stickers. Keep each s
 
 Wallet extensions enable in-app payment pass provisioning via Apple Wallet.
 
-> **Note:** `npx create-expo-target` generates combined wallet extensions (with UI) by default, which is the recommended setup for most implementations.
+> **Note:** `npx expo-targets add` generates combined wallet extensions (with UI) by default, which is the recommended setup for most implementations.
 
 **Combined configuration (with authentication UI):**
 

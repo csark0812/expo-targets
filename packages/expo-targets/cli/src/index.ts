@@ -8,6 +8,7 @@ import { printDoctorReport, runDoctor } from './doctor';
 import { runExportExtensionBundles } from './exportExtensionBundles';
 import { runExportSafari } from './exportSafari';
 import { runGenerate } from './generate';
+import { scaffoldTarget } from './scaffold';
 import { runSync } from './sync';
 
 function readVersion(): string {
@@ -29,8 +30,43 @@ program
   .version(readVersion());
 
 program
+  .command('add')
+  .description(
+    'Scaffold a target (omit args for interactive; or: add <type> <name>)'
+  )
+  .argument('[type]', 'Extension type (e.g. share, widget, safari)')
+  .argument('[name]', 'Target folder name (kebab-case, e.g. my-share)')
+  .option('--no-wire', 'Scaffold only; skip host wiring')
+  .option('--no-rn', 'Do not use React Native UI (when type supports it)')
+  .action(
+    async (
+      type: string | undefined,
+      name: string | undefined,
+      options: { wire?: boolean; rn?: boolean }
+    ) => {
+      const code = await scaffoldTarget({
+        type,
+        name,
+        nonInteractive: Boolean(type && name),
+        noWire: options.wire === false,
+        useReactNative: options.rn === false ? false : undefined,
+      });
+      if (code === 0 && !(options.wire === false)) {
+        try {
+          runGenerate();
+        } catch {
+          // generate is best-effort after scaffold
+        }
+      }
+      process.exit(code);
+    }
+  );
+
+program
   .command('doctor')
-  .description('Validate plugin, Metro, App Groups, entries, and name sync')
+  .description(
+    'Validate plugin, Metro, App Groups, entries, name sync, and EAS signing hints'
+  )
   .option('--fix', 'Regenerate .expo/types/expo-targets.d.ts')
   .action((options: { fix?: boolean }) => {
     if (options.fix) {
@@ -42,9 +78,7 @@ program
 
 program
   .command('generate')
-  .description(
-    'Regenerate .expo/types/expo-targets.d.ts without full prebuild'
-  )
+  .description('Regenerate .expo/types/expo-targets.d.ts without full prebuild')
   .action(() => {
     process.exit(runGenerate());
   });
@@ -95,7 +129,10 @@ program
     './assets/expo-targets'
   )
   .option('--no-assets', 'Skip writing assets/expo-targets')
-  .option('--no-hermes', 'Do not run expo export:embed (requires --bundle or --placeholder)')
+  .option(
+    '--no-hermes',
+    'Do not run expo export:embed (requires --bundle or --placeholder)'
+  )
   .option(
     '--placeholder',
     'Write placeholder bundles (tests / dry-run only)',
@@ -115,7 +152,12 @@ program
         assetsRoot:
           assetsOpt === false
             ? false
-            : resolve(cwd, typeof assetsOpt === 'string' ? assetsOpt : './assets/expo-targets'),
+            : resolve(
+                cwd,
+                typeof assetsOpt === 'string'
+                  ? assetsOpt
+                  : './assets/expo-targets'
+              ),
         allowPlaceholder: Boolean(options.placeholder),
         hermes: options.hermes !== false,
       });

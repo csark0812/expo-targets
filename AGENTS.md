@@ -44,6 +44,5 @@ bun run validate:changed
 
 | Package | Role |
 | ----------------------------- | ---------------------------------------------------- |
-| `packages/expo-targets` | Config plugin, runtime, Metro helper, native modules |
-| `packages/create-expo-target` | Interactive scaffolder |
+| `packages/expo-targets` | Config plugin, runtime, Metro helper, CLI (`add`/`doctor`/`generate`/`sync`), native modules |
 | `packages/expo-targets-cli` | Bare RN sync dev mirror (ships with `expo-targets` npm package) |

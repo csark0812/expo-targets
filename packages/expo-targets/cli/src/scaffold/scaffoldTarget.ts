@@ -5,7 +5,10 @@ import prompts from 'prompts';
 import { copyTemplate } from './copyTemplate';
 import { generateConfig } from './generateConfig';
 import { getTargetPromptQuestions } from './prompts';
-import { getReactNativeTemplate } from './reactNativeTemplate';
+import {
+  getReactNativeTemplate,
+  isReactNativeCapableType,
+} from './reactNativeTemplate';
 import { resolveAppGroup } from './resolveAppGroup';
 import { kebabToPascal, pascalToCamel } from './utils';
 import {
@@ -14,6 +17,19 @@ import {
   wireHost,
   wireHostFailed,
 } from './wireHost';
+
+export type ScaffoldOptions = {
+  type?: string;
+  name?: string;
+  platforms?: string[];
+  useReactNative?: boolean;
+  includeIntentUI?: boolean;
+  includeLiveActivity?: boolean;
+  configurableWidget?: boolean;
+  noWire?: boolean;
+  /** When true, skip prompts and require type + name. */
+  nonInteractive?: boolean;
+};
 
 type TargetPromptResponse = {
   type?: string;
@@ -70,18 +86,46 @@ function writeIosFiles(options: {
   }
 }
 
-function parseNoWireFlag(): boolean {
-  return process.argv.includes('--no-wire');
-}
+async function resolveResponse(
+  options: ScaffoldOptions
+): Promise<TargetPromptResponse | null> {
+  if (options.nonInteractive || (options.type && options.name)) {
+    const type = options.type;
+    const name = options.name;
+    if (!(type && name)) {
+      console.error(
+        'Usage: npx expo-targets add <type> <name>\n' +
+          'Omit args for interactive mode: npx expo-targets add'
+      );
+      return null;
+    }
+    const platforms = options.platforms?.length ? options.platforms : ['ios'];
+    const useReactNative =
+      options.useReactNative ?? isReactNativeCapableType(type);
+    return {
+      type,
+      name,
+      platforms,
+      useReactNative,
+      includeIntentUI: options.includeIntentUI,
+      includeLiveActivity: options.includeLiveActivity,
+      configurableWidget: options.configurableWidget,
+    };
+  }
 
-export async function scaffoldTarget(): Promise<void> {
-  const noWire = parseNoWireFlag();
-  const response = (await prompts(getTargetPromptQuestions(), {
+  return (await prompts(getTargetPromptQuestions(), {
     onCancel: () => process.exit(0),
   })) as TargetPromptResponse;
+}
 
-  if (!(response.type && response.name)) {
-    process.exit(0);
+export async function scaffoldTarget(
+  options: ScaffoldOptions = {}
+): Promise<number> {
+  const noWire = options.noWire ?? process.argv.includes('--no-wire');
+  const response = await resolveResponse(options);
+
+  if (!(response?.type && response.name)) {
+    return 0;
   }
 
   const projectRoot = process.cwd();
@@ -91,7 +135,7 @@ export async function scaffoldTarget(): Promise<void> {
       `Target directory already exists: targets/${response.name}/\n` +
         'Choose a different name or remove the existing directory.'
     );
-    process.exit(1);
+    return 1;
   }
 
   fs.mkdirSync(targetDir, { recursive: true });
@@ -120,14 +164,21 @@ export async function scaffoldTarget(): Promise<void> {
   if (noWire) {
     console.log(`\n✓ Created target: targets/${response.name}/`);
     console.log('\nHost wiring skipped (--no-wire).');
-    return;
+    return 0;
   }
 
+  return finishHostWire(projectRoot, response.name);
+}
+
+function finishHostWire(projectRoot: string, targetName: string): number {
   const wireResult = wireHost(projectRoot);
+  if (!wireResult.expo.ok) {
+    printWireFailures({ ...wireResult, metro: { ok: true } });
+  }
   if (wireHostFailed(wireResult)) {
     printWireFailures(wireResult);
-    process.exit(1);
+    return 1;
   }
-
-  printWireSuccess(response.name, wireResult);
+  printWireSuccess(targetName, wireResult);
+  return 0;
 }

@@ -25,13 +25,18 @@ import {
   getTargetsConfigFromBundle,
 } from './modules/storage/index';
 
+export type SetDataOptions = {
+  /** When true, reload WidgetKit timelines after writing (widgets). Default false. */
+  refresh?: boolean;
+};
+
 export interface BaseTarget {
   name: string;
   type: ExtensionType;
   appGroup: string;
   storage: AppGroupStorage;
   config: TargetConfig;
-  setData: (data: Record<string, any>) => void;
+  setData: (data: Record<string, any>, options?: SetDataOptions) => void;
   getData: <T extends Record<string, any>>() => T;
   refresh: () => void;
 }
@@ -157,8 +162,11 @@ function createBaseTarget(
     appGroup,
     storage,
     config,
-    setData(data: Record<string, any>) {
+    setData(data: Record<string, any>, options?: SetDataOptions) {
       storage.setData(data);
+      if (options?.refresh) {
+        storage.refresh(targetName);
+      }
     },
     getData<T extends Record<string, any>>(): T {
       return storage.getData<T>();

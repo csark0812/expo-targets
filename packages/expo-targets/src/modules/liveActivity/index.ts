@@ -1,10 +1,13 @@
-import type { LiveActivityAttributesName } from '../../generatedNames';
 import { requireNativeModule } from 'expo-modules-core';
 import { Platform } from 'react-native';
 import type {
   LiveActivityConfig,
   TargetConfig,
 } from '../../../plugin/src/config';
+import type {
+  LiveActivityAttributesName,
+  LiveActivityPayloadFor,
+} from '../../generatedNames';
 import { listTargets } from '../targetsConfig';
 
 type NativeLiveActivity = {
@@ -63,13 +66,18 @@ function resolveAttributesConfig(attributesName: string): LiveActivityConfig {
 }
 
 /** Typed helpers keyed by configured attributesName (widgets-like paved path). */
-export function createLiveActivity(attributesName: LiveActivityAttributesName) {
+export function createLiveActivity<N extends LiveActivityAttributesName>(
+  attributesName: N
+) {
   resolveAttributesConfig(attributesName);
+  type Payload = LiveActivityPayloadFor<N>;
   return {
     attributesName,
-    start: (options: LiveActivityStartOptions) =>
-      LiveActivity.start(attributesName, options),
-    update: (activityId: string, contentState: LiveActivityContentState) =>
+    start: (options: {
+      attributes: Payload['attributes'];
+      contentState: Payload['contentState'];
+    }) => LiveActivity.start(attributesName, options),
+    update: (activityId: string, contentState: Payload['contentState']) =>
       LiveActivity.update(activityId, contentState),
     end: (activityId: string) => LiveActivity.end(activityId),
   };
@@ -78,9 +86,12 @@ export function createLiveActivity(attributesName: LiveActivityAttributesName) {
 export const LiveActivity = {
   create: createLiveActivity,
 
-  async start(
-    attributesName: LiveActivityAttributesName,
-    options: LiveActivityStartOptions
+  async start<N extends LiveActivityAttributesName>(
+    attributesName: N,
+    options: {
+      attributes: LiveActivityPayloadFor<N>['attributes'];
+      contentState: LiveActivityPayloadFor<N>['contentState'];
+    }
   ): Promise<string> {
     resolveAttributesConfig(attributesName);
     return getNative().start(
@@ -90,9 +101,9 @@ export const LiveActivity = {
     );
   },
 
-  async update(
+  async update<N extends LiveActivityAttributesName>(
     activityId: string,
-    contentState: LiveActivityContentState
+    contentState: LiveActivityPayloadFor<N>['contentState']
   ): Promise<boolean> {
     return getNative().update(activityId, JSON.stringify(contentState ?? {}));
   },

@@ -932,23 +932,6 @@
         "typescript": "~6.0.3",
       },
     },
-    "packages/create-expo-target": {
-      "name": "create-expo-target",
-      "version": "0.3.0",
-      "bin": {
-        "create-expo-target": "./build/index.js",
-      },
-      "dependencies": {
-        "fs-extra": "^11.2.0",
-        "prompts": "^2.4.2",
-      },
-      "devDependencies": {
-        "@types/fs-extra": "^11.0.4",
-        "@types/node": "^20.0.0",
-        "@types/prompts": "^2.4.9",
-        "typescript": "~5.3.3",
-      },
-    },
     "packages/expo-targets": {
       "name": "expo-targets",
       "version": "0.3.0",
@@ -966,13 +949,17 @@
         "@react-native/normalize-colors": "^0.79.2",
         "commander": "^11.1.0",
         "debug": "^4.3.4",
+        "fs-extra": "^11.2.0",
         "glob": "^10.4.2",
+        "prompts": "^2.4.2",
         "xcode": "3.0.1",
       },
       "devDependencies": {
         "@react-native-community/cli": "^16.0.0",
         "@types/babel__traverse": "^7.28.0",
         "@types/bun": "^1.2.21",
+        "@types/fs-extra": "^11.0.4",
+        "@types/prompts": "^2.4.9",
         "typescript": "~5.3.3",
       },
       "peerDependencies": {
@@ -1603,8 +1590,6 @@
     "cors": ["cors@2.8.6", "", { "dependencies": { "object-assign": "^4", "vary": "^1" } }, "sha512-tJtZBBHA6vjIAaF6EnIaq6laBBP9aq/Y3ouVJjEfoHbRBcHBAHYcMh/w8LDrk2PvIMMq8gmopa5D4V8RmbrxGw=="],
 
     "cosmiconfig": ["cosmiconfig@9.0.0", "", { "dependencies": { "env-paths": "^2.2.1", "import-fresh": "^3.3.0", "js-yaml": "^4.1.0", "parse-json": "^5.2.0" }, "peerDependencies": { "typescript": ">=4.9.5" }, "optionalPeers": ["typescript"] }, "sha512-itvL5h8RETACmOTFc4UfIyB2RfEHi71Ax6E/PivVxq9NseKbOWpeyHEOIbmAw1rs8Ak0VursQNww7lf7YtUwzg=="],
-
-    "create-expo-target": ["create-expo-target@workspace:packages/create-expo-target"],
 
     "cross-spawn": ["cross-spawn@7.0.6", "", { "dependencies": { "path-key": "^3.1.0", "shebang-command": "^2.0.0", "which": "^2.0.1" } }, "sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA=="],
 

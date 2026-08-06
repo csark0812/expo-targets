@@ -63,11 +63,9 @@ jobs:
             if [ -n "${{ inputs.version }}" ]; then
               NEW_VERSION="${{ inputs.version }}"
               npm version "$NEW_VERSION" --no-git-tag-version --allow-same-version --prefix packages/expo-targets
-              npm version "$NEW_VERSION" --no-git-tag-version --allow-same-version --prefix packages/create-expo-target
             else
               npm version "${{ inputs.bump_type }}" --no-git-tag-version --prefix packages/expo-targets
               NEW_VERSION=$(node -p "require('./packages/expo-targets/package.json').version")
-              npm version "$NEW_VERSION" --no-git-tag-version --allow-same-version --prefix packages/create-expo-target
             fi
           else
             LABELS='${{ toJson(github.event.pull_request.labels.*.name) }}'
@@ -80,11 +78,10 @@ jobs:
             fi
             npm version "$BUMP_TYPE" --no-git-tag-version --prefix packages/expo-targets
             NEW_VERSION=$(node -p "require('./packages/expo-targets/package.json').version")
-            npm version "$NEW_VERSION" --no-git-tag-version --allow-same-version --prefix packages/create-expo-target
           fi
 
           echo "NEW_VERSION=$NEW_VERSION" >> "$GITHUB_OUTPUT"
-          git add packages/expo-targets/package.json packages/create-expo-target/package.json
+          git add packages/expo-targets/package.json
           if git diff --cached --quiet; then
             echo "Version already at $NEW_VERSION; skipping release commit"
           else
@@ -105,24 +102,19 @@ jobs:
         working-directory: packages/expo-targets
         run: npm publish --access public --provenance
 
-      - name: Publish create-expo-target
-        working-directory: packages/create-expo-target
-        run: npm publish --access public --provenance
-
       - uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ steps.version.outputs.NEW_VERSION }}
           name: v${{ steps.version.outputs.NEW_VERSION }}
           body: |
             ## expo-targets@${{ steps.version.outputs.NEW_VERSION }}
-            ## create-expo-target@${{ steps.version.outputs.NEW_VERSION }}
 
             Published after ${{ github.event_name == 'workflow_dispatch' && 'manual workflow dispatch' || format('PR #{0} merge', github.event.pull_request.number) }}.
 
             ### npm
             ```bash
             npm install expo-targets@${{ steps.version.outputs.NEW_VERSION }}
-            npx create-expo-target@${{ steps.version.outputs.NEW_VERSION }}
+            npx expo-targets add
             ```
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

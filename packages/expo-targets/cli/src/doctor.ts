@@ -2,6 +2,10 @@ import process from 'node:process';
 
 import { checkAppGroups } from './checks/appGroups';
 import { warnDualWidgets } from './checks/dualWidgets';
+import {
+  checkEasCredentialErrors,
+  checkEasCredentialWarnings,
+} from './checks/easCredentials';
 import { checkEntries } from './checks/entries';
 import { warnHeavyExclusions } from './checks/heavyExclusions';
 import { checkMetro } from './checks/metro';
@@ -31,6 +35,7 @@ function collectFailures(ctx: ReturnType<typeof loadProject>): CheckResult[] {
   results.push(...checkAppGroups(ctx));
   results.push(...checkEntries(ctx));
   results.push(...checkNameSync(ctx));
+  results.push(...checkEasCredentialErrors(ctx));
   return results;
 }
 
@@ -40,6 +45,7 @@ function collectWarnings(ctx: ReturnType<typeof loadProject>): CheckResult[] {
     ...warnDualWidgets(ctx),
     ...warnHeavyExclusions(ctx),
     ...warnExtensionBundleExport(ctx),
+    ...checkEasCredentialWarnings(ctx),
   ];
 }
 

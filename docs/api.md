@@ -107,8 +107,8 @@ widget.refresh(); // Tell iOS/Android to reload this widget / surface
 **Important:** Call `refresh()` after updating data when you need an immediate widget reload.
 
 ```typescript
-widget.setData({ message: "Updated!" });
-widget.refresh();
+widget.setData({ message: "Updated!" }, { refresh: true });
+// or batch writes then: widget.refresh();
 ```
 
 ---
@@ -343,7 +343,7 @@ interface MessagesExtensionTarget {
   appGroup: string;
   storage: AppGroupStorage;
   config: TargetConfig;
-  setData(data: Record<string, any>): void;
+  setData(data: Record<string, any>, options?: { refresh?: boolean }): void;
   getData<T>(): T;
   refresh(): void;
 
@@ -567,15 +567,17 @@ await api.syncFromCurrentUpdate(); // install from the already-running update
 
 ## CLI Commands
 
-### create-expo-target
+### expo-targets add
 
-Interactive CLI to scaffold a new target:
+Scaffold a new target (interactive when args are omitted):
 
 ```bash
-npx create-expo-target
+npx expo-targets add
+npx expo-targets add share my-share
+npx expo-targets add --no-wire   # scaffold only
 ```
 
-**Prompts:**
+**Prompts (interactive):**
 
 1. **Type:** Widget (optional Live Activity), App Intent, Share, and other extension types
 2. **Name:** Target name in kebab-case (e.g., `my-widget`)
@@ -583,41 +585,19 @@ npx create-expo-target
 4. **Use React Native?** (share/action/clip/messages/notification-content/safari when applicable)
 5. **Live Activity?** (widget only) — Emits `liveActivity` config + one-shot UI bootstrap
 
-App Group is baked from `app.json` entitlements (`com.apple.security.application-groups`) into `expo-target.config.json` and Swift templates when present.
+Wires the host by default (plugin, App Groups, Metro). Dynamic `app.config.ts`/`js` gets a snippet warning instead of a hard fail — finish with `npx expo-targets doctor`. After scaffold, `generate` writes `.expo/types/expo-targets.d.ts`.
 
 **What it creates:**
 
 ```
 targets/{name}/
 ├── expo-target.config.json  # Configuration (incl. appGroup when resolved)
-├── index.ts                 # Pre-configured target instance
+├── index.tsx                # RN: createTarget<'type'>('Name', Component)
 └── ios/
     └── {Main}.swift         # Template code for the extension type
 ```
 
-Widget + Live Activity also creates `LiveActivity.swift` + a `WidgetBundle`. App Intent creates an empty `AppIntentExtension.swift` plus a user-owned `*IntentPerform.swift` hook.
-
-If you choose "Use React Native for UI", it also creates:
-
-- `targets/{name}/index.tsx` — React Native entry point with `createTarget()` and component
-
-**Example session:**
-
-```bash
-$ npx create-expo-target
-🎯 Create Expo Target
-
-? What type of target? Share Extension
-? Target name (e.g., my-widget): share-content
-? Select platforms: iOS
-? Use React Native for UI? Yes
-
-✅ Created target at targets/share-content
-✅ Created entry file: targets/share-content/index.tsx
-📝 Remember to add Metro config wrapper to metro.config.js
-
-Run `npx expo prebuild` to generate Xcode project
-```
+Native-only targets get `index.ts` with `createTarget('Name')` instead of `index.tsx`.
 
 ### expo-targets sync (bare React Native)
 
@@ -681,7 +661,7 @@ interface BaseTarget {
   appGroup: string;
   storage: AppGroupStorage;
   config: TargetConfig;
-  setData(data: Record<string, any>): void;
+  setData(data: Record<string, any>, options?: { refresh?: boolean }): void;
   getData<T extends Record<string, any>>(): T;
   refresh(): void;
 }

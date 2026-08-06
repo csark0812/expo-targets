@@ -1,38 +1,49 @@
 import type { PromptObject } from 'prompts';
 
+const TYPE_CHOICES = [
+  { title: 'Share Extension', value: 'share' },
+  { title: 'Action Extension', value: 'action' },
+  { title: 'App Clip', value: 'clip' },
+  { title: 'Messages App', value: 'messages' },
+  {
+    title: 'iMessage Stickers (writes type: stickers)',
+    value: 'imessage',
+  },
+  { title: 'Wallet Extension', value: 'wallet' },
+  { title: 'Siri Intent', value: 'intent' },
+  {
+    title: 'Widget / Live Activity (native WidgetKit)',
+    value: 'widget',
+  },
+  { title: 'Notification Service', value: 'notification-service' },
+  { title: 'Notification Content', value: 'notification-content' },
+  { title: 'Safari Web Extension', value: 'safari' },
+  { title: 'Content Blocker', value: 'content-blocker' },
+  { title: 'App Intent', value: 'app-intent' },
+  { title: 'Keyboard', value: 'keyboard' },
+  { title: 'Photo Editing', value: 'photo-editing' },
+  { title: 'File Provider', value: 'file-provider' },
+  { title: 'Broadcast Upload', value: 'broadcast-upload' },
+  { title: 'Call Directory', value: 'call-directory' },
+  { title: 'Credentials Provider', value: 'credentials-provider' },
+];
+
+const RN_PROMPT_TYPES = [
+  'share',
+  'action',
+  'clip',
+  'messages',
+  'notification-content',
+  'safari',
+];
+
 export function getTargetPromptQuestions(): PromptObject[] {
   return [
     {
       type: 'select',
       name: 'type',
       message: 'What type of target?',
-      choices: [
-        { title: 'Share Extension', value: 'share' },
-        { title: 'Action Extension', value: 'action' },
-        { title: 'App Clip', value: 'clip' },
-        { title: 'Messages App', value: 'messages' },
-        {
-          title: 'iMessage Stickers (writes type: stickers)',
-          value: 'imessage',
-        },
-        { title: 'Wallet Extension', value: 'wallet' },
-        { title: 'Siri Intent', value: 'intent' },
-        {
-          title: 'Widget / Live Activity (native WidgetKit)',
-          value: 'widget',
-        },
-        { title: 'Notification Service', value: 'notification-service' },
-        { title: 'Notification Content', value: 'notification-content' },
-        { title: 'Safari Web Extension', value: 'safari' },
-        { title: 'Content Blocker', value: 'content-blocker' },
-        { title: 'App Intent', value: 'app-intent' },
-        { title: 'Keyboard', value: 'keyboard' },
-        { title: 'Photo Editing', value: 'photo-editing' },
-        { title: 'File Provider', value: 'file-provider' },
-        { title: 'Broadcast Upload', value: 'broadcast-upload' },
-        { title: 'Call Directory', value: 'call-directory' },
-        { title: 'Credentials Provider', value: 'credentials-provider' },
-      ],
+      choices: TYPE_CHOICES,
     },
     {
       type: 'text',
@@ -52,7 +63,7 @@ export function getTargetPromptQuestions(): PromptObject[] {
     },
     {
       type: (_prev, values) =>
-        ['share', 'action', 'clip'].includes(values.type) ? 'confirm' : null,
+        RN_PROMPT_TYPES.includes(values.type) ? 'confirm' : null,
       name: 'useReactNative',
       message: 'Use React Native for UI?',
       initial: true,

@@ -22,6 +22,6 @@ export function checkPlugin(ctx: ProjectContext): CheckResult | null {
     fix:
       'Add to app.json:\n' +
       '  "plugins": ["expo-targets"]\n' +
-      'Or run: npx create-expo-target (auto-wires host)',
+      'Or run: npx expo-targets add (auto-wires host)',
   };
 }

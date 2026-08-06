@@ -14,7 +14,7 @@
     "lint": "biome lint .",
     "format": "biome format --write .",
     "check": "biome check .",
-    "typecheck": "tsc -p packages/expo-targets --noEmit && tsc -p packages/create-expo-target --noEmit && tsc -p packages/expo-targets-cli --noEmit",
+    "typecheck": "tsc -p packages/expo-targets --noEmit && tsc -p packages/expo-targets-cli --noEmit",
     "validate:changed": "skeleton validate changed",
     "validate:ci": "skeleton validate changed --base origin/main",
     "audit:docs": "skeleton audit docs",
