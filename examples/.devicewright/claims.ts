@@ -2,7 +2,12 @@
  * Frozen os-limit CLAIMS allowlist.
  * Unknown `os-limit` results fail the local/operator matrix runner.
  * New rows land only in the same tranche PR as the type (grill ownership A).
+ *
+ * `platforms` defaults to `["ios"]` when omitted (legacy iOS-only rows).
+ * Android draft rows must set `platforms: ["android"]` with Android-worded reasons.
  */
+
+export type ClaimsPlatform = "ios" | "android";
 
 export type ClaimsEntry = {
   /** REQUIRED matrix id (or type key when 1:1). */
@@ -11,6 +16,8 @@ export type ClaimsEntry = {
   reason: string;
   /** Optional operator notes. */
   notes?: string;
+  /** Defaults to ["ios"] when omitted (legacy iOS-only rows). */
+  platforms?: readonly ClaimsPlatform[];
 };
 
 export const OS_LIMIT_CLAIMS: readonly ClaimsEntry[] = [
@@ -111,18 +118,152 @@ export const OS_LIMIT_CLAIMS: readonly ClaimsEntry[] = [
     reason:
       "Paired watchOS Sim boots/connects, but watch-widget nest (companion PlugIns + ET Watch Widget displayName) or companion AX missing after honest pair+install",
   },
+
+  // --- Android draft rows (Phase 0b allowlist; live exits land with journeys) ---
+  {
+    id: "credentials-provider",
+    platforms: ["android"],
+    reason:
+      "Autofill settings list may not show this AutofillService after honest Settings open attempt (OEM/Settings leftover)",
+  },
+  {
+    id: "call-directory",
+    platforms: ["android"],
+    reason:
+      "Call Screening settings UI may not list this CallScreeningService after honest attempt",
+  },
+  {
+    id: "print-service",
+    platforms: ["android"],
+    reason:
+      "Print services Settings may not list this PrintService after honest attempt",
+  },
+  {
+    id: "network-packet-tunnel",
+    platforms: ["android"],
+    reason:
+      "System VPN consent/prepare UI may be unavailable or non-AX after honest VpnService prepare attempt",
+  },
+  {
+    id: "file-provider-ui",
+    platforms: ["android"],
+    reason:
+      "Opening a document may not surface FileProvUI chooser row + Activity chrome after honest DocumentsUI attempt",
+  },
+  {
+    id: "notification-service",
+    platforms: ["android"],
+    reason:
+      "Shade mutation may be unreachable after honest local/pre-display attempt (incl. FCM-transport-only)",
+  },
+  {
+    id: "app-intent",
+    platforms: ["android"],
+    reason:
+      "App Actions/shortcuts list may not show ET shortcut after honest attempt",
+  },
+  {
+    id: "photo-editing",
+    platforms: ["android"],
+    reason:
+      "ACTION_EDIT editor→save→host marker may be unreachable after honest attempt",
+  },
+  {
+    id: "wallet",
+    platforms: ["android"],
+    reason:
+      "Google Wallet/pass host surface unavailable after honest attempt on Google APIs+Play image (or Play Store image unavailable in lab)",
+  },
+  {
+    id: "wallet-ui",
+    platforms: ["android"],
+    reason:
+      "Companion/issuer Activity chrome unavailable after honest attempt (or Play Store image unavailable in lab)",
+  },
+  {
+    id: "spotlight",
+    platforms: ["android"],
+    reason:
+      "AppSearch query hit with ET marker may be unreachable after honest index+query attempt",
+  },
+  {
+    id: "spotlight-delegate",
+    platforms: ["android"],
+    reason:
+      "Host registration status testID may not appear after honest attempt (not dumpsys alone)",
+  },
+  {
+    id: "bg-download",
+    platforms: ["android"],
+    reason:
+      "Host marker may not update on Download/WorkManager completion after honest enqueue attempt",
+  },
+  {
+    id: "message-filter",
+    platforms: ["android"],
+    reason:
+      "Filter settings UI may not list this service after honest Settings attempt",
+  },
+  {
+    id: "unwanted-communication",
+    platforms: ["android"],
+    reason:
+      "Reporting/screening extras UI may not list this service after honest attempt",
+  },
+  {
+    id: "watch",
+    platforms: ["android"],
+    reason:
+      "Wear pair + companion AX miss after honest attempt, or Wear image/hardware unavailable in lab",
+  },
+  {
+    id: "watch-widget",
+    platforms: ["android"],
+    reason:
+      "Wear pair + tile AX miss after honest attempt, or Wear image/hardware unavailable in lab",
+  },
 ] as const;
 
-const BY_ID = new Map(OS_LIMIT_CLAIMS.map((c) => [c.id, c]));
-
-export function claimForId(id: string): ClaimsEntry | undefined {
-  return BY_ID.get(id);
+function claimPlatforms(entry: ClaimsEntry): readonly ClaimsPlatform[] {
+  return entry.platforms ?? ["ios"];
 }
 
-export function assertOsLimitAllowed(id: string): void {
-  if (!BY_ID.has(id)) {
+export function claimForId(
+  id: string,
+  platform?: ClaimsPlatform,
+): ClaimsEntry | undefined {
+  const matches = OS_LIMIT_CLAIMS.filter((c) => c.id === id);
+  if (!matches.length) return undefined;
+  if (platform === undefined) {
+    return (
+      matches.find((c) => claimPlatforms(c).includes("ios")) ?? matches[0]
+    );
+  }
+  return matches.find((c) => claimPlatforms(c).includes(platform));
+}
+
+export function claimAllowsPlatform(
+  id: string,
+  platform: ClaimsPlatform,
+): boolean {
+  return OS_LIMIT_CLAIMS.some(
+    (c) => c.id === id && claimPlatforms(c).includes(platform),
+  );
+}
+
+export function assertOsLimitAllowed(
+  id: string,
+  platform?: ClaimsPlatform,
+): void {
+  const matches = OS_LIMIT_CLAIMS.filter((c) => c.id === id);
+  if (!matches.length) {
     throw new Error(
       `os-limit claim for "${id}" is not in OS_LIMIT_CLAIMS — add it in the same PR as the type (examples/.devicewright/claims.ts)`,
+    );
+  }
+  if (platform !== undefined && !claimAllowsPlatform(id, platform)) {
+    throw new Error(
+      `os-limit claim for "${id}" does not include platform "${platform}" — Android needs an Android-worded CLAIMS row (platforms: ["android"]) in examples/.devicewright/claims.ts`,
     );
   }
 }

@@ -12,6 +12,8 @@ import { journeyFor, stubResult } from "./journeys";
 import { dismissSystemAlerts } from "./journeys/helpers";
 import { assertOsLimitAllowed } from "./claims";
 import {
+  REQUIRED_ANDROID,
+  REQUIRED_ANDROID_IDS,
   REQUIRED_V2,
   type RequiredTargetRow,
   type TargetPhase,
@@ -35,7 +37,42 @@ export type RunTargetMatrixOptions = {
   ensureInstall?: boolean;
 };
 
-function resolveRows(ids?: string[]): RequiredTargetRow[] {
+const SOFT_GREEN_STEP = /^(launch-host|hyphen-ok|pm-path|dumpsys)/i;
+const EMPTY_SURFACE_STEP = /^(launch-host|hyphen-ok)$/i;
+
+/**
+ * Soft-green = status green while every step is soft-exit evidence only.
+ * Throws so callers can convert to hard red.
+ */
+export function assertNotSoftGreen(result: {
+  status: string;
+  steps: readonly string[];
+}): void {
+  if (result.status !== "green") return;
+  if (!result.steps.length) return;
+  if (result.steps.every((s) => SOFT_GREEN_STEP.test(s))) {
+    throw new Error(
+      `soft-green: green with only soft-exit steps (${result.steps.join(", ")})`,
+    );
+  }
+}
+
+function resolveRows(
+  ids: string[] | undefined,
+  platform: "ios" | "android",
+): RequiredTargetRow[] {
+  if (platform === "android") {
+    const androidIdSet = new Set<string>(REQUIRED_ANDROID_IDS);
+    if (!ids?.length) return [...REQUIRED_ANDROID];
+    const missing = ids.filter((id) => !androidIdSet.has(id));
+    if (missing.length) {
+      throw new Error(
+        `id(s) not in REQUIRED_ANDROID: ${missing.join(", ")}`,
+      );
+    }
+    return REQUIRED_ANDROID.filter((r) => ids.includes(r.id));
+  }
+
   if (!ids?.length) return [...REQUIRED_V2];
   const wanted = new Set(ids);
   const rows = REQUIRED_V2.filter((r) => wanted.has(r.id));
@@ -49,6 +86,7 @@ function resolveRows(ids?: string[]): RequiredTargetRow[] {
 function normalizeResults(
   rows: RequiredTargetRow[],
   suiteResults: SuiteRowResult[],
+  platform: "ios" | "android",
 ): TargetJourneyResult[] {
   const byId = new Map(rows.map((r) => [r.id, r]));
   return suiteResults.map((r) => {
@@ -60,9 +98,40 @@ function normalizeResults(
     let error = r.error;
     let failureKind = r.failureKind as TargetJourneyResult["failureKind"];
     let ok = r.ok;
+    const steps = (r.steps as string[]) ?? [];
+
+    if (status === "operator") {
+      ok = false;
+      failureKind = failureKind ?? "operator";
+    }
+
+    try {
+      assertNotSoftGreen({ status, steps });
+    } catch (e) {
+      status = "red";
+      ok = false;
+      failureKind = "product";
+      error = String(e);
+    }
+
+    if (
+      status === "os-limit" &&
+      steps.length > 0 &&
+      steps.every((s) => EMPTY_SURFACE_STEP.test(s))
+    ) {
+      status = "red";
+      ok = false;
+      failureKind = "product";
+      error =
+        "empty-surface: os-limit with only launch-host/hyphen-ok steps (no honest Locked P attempt)";
+    }
+
     if (status === "os-limit") {
       try {
-        assertOsLimitAllowed(r.id);
+        assertOsLimitAllowed(
+          r.id,
+          platform === "android" ? "android" : undefined,
+        );
       } catch (e) {
         status = "red";
         ok = false;
@@ -76,7 +145,7 @@ function normalizeResults(
       phase: meta?.phase ?? 1,
       ok,
       status,
-      steps: (r.steps as string[]) ?? [],
+      steps,
       error,
       failureKind,
       checklist: (r as { checklist?: string[] }).checklist,
@@ -217,7 +286,7 @@ async function runAndroidTargetMatrix(
           });
         }
         return {
-          results: normalizeResults(rows, results),
+          results: normalizeResults(rows, results, "android"),
           claimState: buildClaimState(results),
           artifactDir,
           aborted: true,
@@ -229,20 +298,21 @@ async function runAndroidTargetMatrix(
   }
 
   return {
-    results: normalizeResults(rows, results),
+    results: normalizeResults(rows, results, "android"),
     claimState: buildClaimState(results),
     artifactDir,
   };
 }
 
 /**
- * REQUIRED_V2 matrix — consumer-owned.
+ * REQUIRED_V2 / REQUIRED_ANDROID matrix — consumer-owned.
  * iOS: DW suite runMatrix. Android: devices.launch + same journey runners.
  * Unknown os-limit (not in claims.ts) fails hard.
+ * Android os-limit requires an Android-worded CLAIMS row.
  */
 export async function runTargetMatrix(options: RunTargetMatrixOptions = {}) {
-  const rows = resolveRows(options.ids);
   const platform = options.platform ?? "ios";
+  const rows = resolveRows(options.ids, platform);
   const artifactDir =
     options.artifactDir ??
     path.join(
@@ -266,7 +336,7 @@ export async function runTargetMatrix(options: RunTargetMatrixOptions = {}) {
   });
 
   return {
-    results: normalizeResults(rows, result.results),
+    results: normalizeResults(rows, result.results, "ios"),
     claimState: result.claimState,
     artifactDir: result.artifactDir,
     aborted: result.aborted,

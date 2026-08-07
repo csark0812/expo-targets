@@ -2,7 +2,11 @@
 import process from "node:process";
 import { formatDryPreflight, runDryPreflight } from "./dry-preflight";
 import { runTargetMatrix } from "./matrix";
-import { REQUIRED_V2, type TargetPhase } from "./required";
+import {
+  REQUIRED_ANDROID,
+  REQUIRED_V2,
+  type TargetPhase,
+} from "./required";
 
 function usage(): never {
   console.error(`examples/.devicewright/cli.ts <command>
@@ -11,11 +15,12 @@ Commands:
   dry-preflight [--no-sim] [--android]
   matrix [--ids=a,b] [--stubs-only] [--live-through=1|2|3|4|5] [--no-fail-fast] [--ensure-install]
          [--platform=ios|android] [--device=<udid-or-serial>]
-  list
+  list [--platform=android]
 
   --ensure-install  Release-build + install missing hosts before live journeys
                     (iOS only today; slow on first run). Skips when already installed.
-  --platform=android  Drive journeys on an adb device (share Android dual).
+  --platform=android  Drive REQUIRED_ANDROID closed set on an adb device
+                      (skips Apple-only ids; default device emulator-5554 via npm script).
   --device=            iOS sim UDID or Android serial (default: env / soft-omit).
 
 Env:
@@ -90,7 +95,10 @@ async function main(): Promise<void> {
   if (cmd === "dry-preflight") return cmdDry(rest);
   if (cmd === "matrix") return cmdMatrix(rest);
   if (cmd === "list") {
-    console.log(JSON.stringify(REQUIRED_V2, null, 2));
+    const platformArg = rest.find((a) => a.startsWith("--platform="));
+    const platform = platformArg?.slice("--platform=".length);
+    const rows = platform === "android" ? REQUIRED_ANDROID : REQUIRED_V2;
+    console.log(JSON.stringify(rows, null, 2));
     return;
   }
   usage();

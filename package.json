@@ -40,7 +40,8 @@
     "examples:devicewright:widgets": "bun examples/.devicewright/cli.ts matrix --ids=widgets",
     "examples:devicewright:widgets:android": "bun examples/.devicewright/cli.ts matrix --ids=widgets --platform=android --device=emulator-5554 --live-through=3",
     "examples:devicewright:file-provider:android": "bun examples/.devicewright/cli.ts matrix --ids=file-provider --platform=android --device=emulator-5554 --live-through=5",
-    "examples:devicewright:keyboard:android": "bun examples/.devicewright/cli.ts matrix --ids=keyboard --platform=android --device=emulator-5554 --live-through=5"
+    "examples:devicewright:keyboard:android": "bun examples/.devicewright/cli.ts matrix --ids=keyboard --platform=android --device=emulator-5554 --live-through=5",
+    "examples:devicewright:android:matrix": "bun examples/.devicewright/cli.ts matrix --platform=android --device=emulator-5554 --live-through=5 --no-fail-fast"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.6",

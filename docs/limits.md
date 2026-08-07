@@ -40,6 +40,7 @@ Each open leftover:
 | unwanted-communication | Phone → SMS/Call Reporting lists ET Unwanted Target | CLAIMS | [spikes/unwanted-communication-call-directory-2026-08-04.md](../examples/.devicewright/artifacts/spikes/unwanted-communication-call-directory-2026-08-04.md) | eng |
 | file-provider | Files domain open → seed *file* visible in AX | CLAIMS | [spikes/file-provider-app-intent-2026-08-04.md](../examples/.devicewright/artifacts/spikes/file-provider-app-intent-2026-08-04.md) | eng |
 | app-intent | Shortcuts tap ET Greet → run + App Group `ai:*` | CLAIMS | [spikes/file-provider-app-intent-2026-08-04.md](../examples/.devicewright/artifacts/spikes/file-provider-app-intent-2026-08-04.md) | eng |
+| android-settings-* | Autofill / CallScreening / Print / VPN / IME / message-filter / unwanted-communication Settings lists | limits.md (Android hard-stop) | [leftovers/android-settings-system-services-2026-08-06.md](../examples/.devicewright/artifacts/leftovers/android-settings-system-services-2026-08-06.md) | eng |
 
 Entitlement/Settings items use `home: wont-do` or the hard-stop table below; **revisit** when DW/Sim coverage improves (plan edit + spike re-run).
 
