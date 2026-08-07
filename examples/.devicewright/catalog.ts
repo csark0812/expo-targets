@@ -7,6 +7,11 @@ export type TargetCatalogEntry = {
   id: string;
   path: string;
   hostBundleId: string;
+  /**
+   * Android applicationId when it must diverge from iOS `hostBundleId`
+   * (hyphens are valid in Apple bundle IDs, not in Android packages).
+   */
+  androidPackage?: string;
   hostDisplayName: string;
   extensionName: string;
   extensionAliases: string[];
@@ -349,6 +354,7 @@ export const TARGET_CATALOG: Record<string, TargetCatalogEntry> = {
     id: "credentials-provider",
     path: "examples/credentials-provider",
     hostBundleId: "com.expotargets.example.credentials-provider",
+    androidPackage: "com.expotargets.example.credentialsprovider",
     hostDisplayName: "ET credentials-provider",
     extensionName: "ET credentials-provider",
     extensionAliases: ["credentials-provider"],
@@ -409,6 +415,7 @@ export const TARGET_CATALOG: Record<string, TargetCatalogEntry> = {
     id: "file-provider",
     path: "examples/file-provider",
     hostBundleId: "com.expotargets.example.file-provider",
+    androidPackage: "com.expotargets.example.fileprovider",
     hostDisplayName: "ET FileProv",
     extensionName: "ET FileProv Target",
     extensionAliases: ["ET FileProv Target", "file-provider"],
@@ -417,6 +424,7 @@ export const TARGET_CATALOG: Record<string, TargetCatalogEntry> = {
     testIds: {
       screenRoot: "screen-root",
       clearPayload: "btn-clear-payload",
+      refresh: "btn-refresh",
       lastPayload: "text-last-payload",
     },
   },
@@ -424,6 +432,7 @@ export const TARGET_CATALOG: Record<string, TargetCatalogEntry> = {
     id: "file-provider-ui",
     path: "examples/file-provider-ui",
     hostBundleId: "com.expotargets.example.file-provider-ui",
+    androidPackage: "com.expotargets.example.fileproviderui",
     hostDisplayName: "ET FileProvUI",
     extensionName: "ET FileProvUI Target",
     extensionAliases: ["ET FileProvUI Target", "file-provider-ui"],
@@ -469,6 +478,7 @@ export const TARGET_CATALOG: Record<string, TargetCatalogEntry> = {
     id: "call-directory",
     path: "examples/call-directory",
     hostBundleId: "com.expotargets.example.call-directory",
+    androidPackage: "com.expotargets.example.calldirectory",
     hostDisplayName: "ET CallDir",
     extensionName: "ET CallDir Target",
     extensionAliases: ["ET CallDir Target", "ET CallDir", "call-directory"],
@@ -604,6 +614,7 @@ export const TARGET_CATALOG: Record<string, TargetCatalogEntry> = {
     id: "network-packet-tunnel",
     path: "examples/network-packet-tunnel",
     hostBundleId: "com.expotargets.example.network-packet-tunnel",
+    androidPackage: "com.expotargets.example.networkpackettunnel",
     hostDisplayName: "ET network-packet-tunnel",
     extensionName: "ET network-packet-tunnel",
     extensionAliases: ["network-packet-tunnel"],
@@ -754,6 +765,7 @@ export const TARGET_CATALOG: Record<string, TargetCatalogEntry> = {
     id: "print-service",
     path: "examples/print-service",
     hostBundleId: "com.expotargets.example.print-service",
+    androidPackage: "com.expotargets.example.printservice",
     hostDisplayName: "ET Print",
     extensionName: "ET Print Target",
     extensionAliases: ["ET Print Target", "print-service"],
@@ -826,6 +838,17 @@ export const TARGET_CATALOG: Record<string, TargetCatalogEntry> = {
     },
   },
 };
+
+/** Launch id for Devicewright — Android may diverge when iOS IDs contain hyphens. */
+export function hostLaunchId(
+  entry: TargetCatalogEntry,
+  platform: "ios" | "android",
+): string {
+  if (platform === "android" && entry.androidPackage) {
+    return entry.androidPackage;
+  }
+  return entry.hostBundleId;
+}
 
 /** System Share Sheet rows we must never tap (mirrors ShareSheetSmoke). */
 export const BLOCKED_SHEET_LABELS = new Set([

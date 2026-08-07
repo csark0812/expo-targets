@@ -40,7 +40,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.expotargets.example.network-packet-tunnel"
+      "package": "com.expotargets.example.networkpackettunnel"
     }
   }
 }

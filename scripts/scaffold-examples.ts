@@ -662,7 +662,8 @@ function scaffoldHost(
           foregroundImage: "./assets/adaptive-icon.png",
           backgroundColor: "#ffffff",
         },
-        package: bundleId,
+        // Android applicationId cannot contain hyphens (iOS bundle IDs can).
+        package: bundleId.replace(/-/g, ""),
       },
     },
   };

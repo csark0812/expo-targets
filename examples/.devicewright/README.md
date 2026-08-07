@@ -55,6 +55,8 @@ bun run examples:devicewright:share
 bun run examples:devicewright:share:android
 # Android — launcher widget tile must show seeded marker
 bun run examples:devicewright:widgets:android
+# Android — DocumentsUI lists Expo Targets root + host android-docs marker
+bun run examples:devicewright:file-provider:android
 # or:
 bun examples/.devicewright/cli.ts matrix --ids=share --platform=android --device=emulator-5554 --live-through=1
 ```

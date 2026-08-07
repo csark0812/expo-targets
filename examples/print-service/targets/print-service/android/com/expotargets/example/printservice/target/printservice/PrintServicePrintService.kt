@@ -1,9 +1,9 @@
-package com.expotargets.example.print-service.target.printservice
+package com.expotargets.example.printservice.target.printservice
 
 import expo.modules.targets.system.ExpoTargetsPrintService
 
 /**
  * User deepen — FQCN must match the Android config plugin:
- * com.expotargets.example.print-service.target.printservice.PrintServicePrintService
+ * com.expotargets.example.printservice.target.printservice.PrintServicePrintService
  */
 class PrintServicePrintService : ExpoTargetsPrintService()

@@ -19,6 +19,6 @@
     }
   },
   "android": {
-    "authority": "com.expotargets.example.file-provider.expo_targets.documents.fileprovider"
+    "authority": "com.expotargets.example.fileprovider.expo_targets.documents.fileprovider"
   }
 }
