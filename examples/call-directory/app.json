@@ -40,7 +40,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.expotargets.example.call-directory"
+      "package": "com.expotargets.example.calldirectory"
     }
   }
 }

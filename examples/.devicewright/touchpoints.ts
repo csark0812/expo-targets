@@ -216,7 +216,7 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     id: "file-provider",
     tranche: "T6",
     touchpoint:
-      "Replicated File Provider + Files Browse ET FileProv; open→App Group fp:* (seed file AX leftover)",
+      "iOS: Files Browse ET FileProv + App Group fp:*; Android: DocumentsUI lists Expo Targets root + host android-docs marker",
     status: "concrete",
   },
   {

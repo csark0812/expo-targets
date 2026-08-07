@@ -17,12 +17,23 @@ open class ExpoTargetsDocumentsProvider : DocumentsProvider() {
   private val rootId = "expo_targets_root"
   private val docRoot = "root"
 
-  override fun onCreate(): Boolean = true
+  override fun onCreate(): Boolean {
+    ensureSeedFile()
+    return true
+  }
 
   private fun docsDir(): File {
     val dir = File(context!!.filesDir, "expo_targets_docs")
     if (!dir.exists()) dir.mkdirs()
     return dir
+  }
+
+  /** Seed a visible file so DocumentsUI / Files can prove the root is live. */
+  private fun ensureSeedFile() {
+    val seed = File(docsDir(), "et-fp-seed.txt")
+    if (!seed.exists()) {
+      seed.writeText("expo-targets file-provider seed\n")
+    }
   }
 
   override fun queryRoots(projection: Array<out String>?): Cursor {

@@ -20,6 +20,7 @@ import {
   waitForNamed,
 } from "./helpers";
 import { tapLabelInTree } from "./settings-nav";
+import { runAndroidFileProviderJourney } from "./file-provider.android";
 
 const FILES_BUNDLE = "com.apple.DocumentsApp";
 const DOMAIN_MARKERS = ["ET FileProv", "FileProv"];
@@ -198,6 +199,9 @@ async function openDomainAndAssertSeed(
 export async function runFileProviderJourney(
   device: DeviceSession,
 ): Promise<TargetJourneyResult> {
+  if (device.platform === "android") {
+    return runAndroidFileProviderJourney(device);
+  }
   const entry = TARGET_CATALOG["file-provider"];
   const pathStr = entry?.path ?? "examples/file-provider";
   const steps: string[] = [];

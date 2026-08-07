@@ -12,7 +12,7 @@ import {
 
 const APP_GROUP = 'group.com.expotargets.example.file-provider';
 const AUTHORITY =
-  'com.expotargets.example.file-provider.expo_targets.documents.fileprovider';
+  'com.expotargets.example.fileprovider.expo_targets.documents.fileprovider';
 const storage = new AppGroupStorage(APP_GROUP);
 
 function readPayload(): string {
