@@ -59,7 +59,10 @@ for (const id of ids) {
     console.log(`\n=== ${id} → ${pkg} ===`);
     run("npx expo prebuild --platform android --no-install", exampleDir);
     const androidDir = path.join(exampleDir, "android");
-    run("./gradlew assembleRelease -x lintVitalAnalyzeRelease -x lintVitalReportRelease", androidDir);
+    run(
+      "./gradlew assembleRelease -x lintVitalAnalyzeRelease -x lintVitalReportRelease -x lintVitalRelease",
+      androidDir,
+    );
     const apk = findApk(androidDir);
     run(`adb -s ${device} install -r "${apk}"`, root);
     console.log(`installed ${id} (${pkg})`);
