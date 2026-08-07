@@ -1,11 +1,84 @@
 import { StatusBar } from 'expo-status-bar';
 import { AppGroupStorage } from 'expo-targets';
 import { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Linking,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 const storage = new AppGroupStorage(
   'group.com.expotargets.example.message-filter'
 );
+
+async function openFilterSettings() {
+  if (Platform.OS === 'android') {
+    try {
+      await Linking.sendIntent('android.settings.MANAGE_DEFAULT_APPS_SETTINGS');
+      return;
+    } catch {
+      // fall through
+    }
+  }
+  await Linking.openSettings();
+}
+
+function clearMsgFilterPayload(setPayload: (v: string) => void) {
+  storage.remove('msgFilter:lastAction');
+  storage.remove('msgFilter:lastBody');
+  storage.remove('msgFilter:lastSender');
+  storage.remove('msgFilter:lastAt');
+  setPayload('none');
+}
+
+function MessageFilterActions({
+  payload,
+  refresh,
+  setPayload,
+}: {
+  payload: string;
+  refresh: () => void;
+  setPayload: (v: string) => void;
+}) {
+  return (
+    <>
+      {Platform.OS === 'android' ? (
+        <TouchableOpacity
+          testID="btn-open-filter-settings"
+          accessibilityLabel="Open filter settings"
+          style={styles.button}
+          onPress={() => {
+            void openFilterSettings().then(() => setPayload('opened-settings'));
+          }}
+        >
+          <Text style={styles.buttonText}>Open filter settings</Text>
+        </TouchableOpacity>
+      ) : null}
+      <TouchableOpacity
+        testID="btn-refresh"
+        accessibilityLabel="Refresh"
+        style={styles.button}
+        onPress={refresh}
+      >
+        <Text style={styles.buttonText}>Refresh</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        testID="btn-clear-payload"
+        accessibilityLabel="Clear payload"
+        style={styles.button}
+        onPress={() => clearMsgFilterPayload(setPayload)}
+      >
+        <Text style={styles.buttonText}>Clear</Text>
+      </TouchableOpacity>
+      <Text testID="text-last-payload" style={styles.payload}>
+        {payload}
+      </Text>
+    </>
+  );
+}
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -38,31 +111,16 @@ export default function App() {
       <Text testID="text-bundle-suffix">
         com.expotargets.example.message-filter
       </Text>
-      <TouchableOpacity
-        testID="btn-refresh"
-        accessibilityLabel="Refresh"
-        style={styles.button}
-        onPress={refresh}
-      >
-        <Text style={styles.buttonText}>Refresh</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        testID="btn-clear-payload"
-        accessibilityLabel="Clear payload"
-        style={styles.button}
-        onPress={() => {
-          storage.remove('msgFilter:lastAction');
-          storage.remove('msgFilter:lastBody');
-          storage.remove('msgFilter:lastSender');
-          storage.remove('msgFilter:lastAt');
-          setPayload('none');
-        }}
-      >
-        <Text style={styles.buttonText}>Clear</Text>
-      </TouchableOpacity>
-      <Text testID="text-last-payload" style={styles.payload}>
-        {payload}
+      <Text style={styles.hint} testID="text-platform-note">
+        {Platform.OS === 'android'
+          ? 'Android: Filter settings UI should list ET MsgFilter (OEM/AOSP may leftover).'
+          : 'iOS: Messages Unknown Senders / Text Message Filter list.'}
       </Text>
+      <MessageFilterActions
+        payload={payload}
+        refresh={refresh}
+        setPayload={setPayload}
+      />
     </View>
   );
 }
@@ -76,6 +134,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   title: { fontSize: 20, fontWeight: '600', marginBottom: 12 },
+  hint: { color: '#666', fontSize: 13, textAlign: 'center' },
   button: {
     backgroundColor: '#007AFF',
     paddingHorizontal: 16,

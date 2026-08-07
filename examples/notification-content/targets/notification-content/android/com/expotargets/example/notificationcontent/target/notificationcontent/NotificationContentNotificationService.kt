@@ -1,9 +1,9 @@
-package com.expotargets.example.notification-content.target.notificationcontent
+package com.expotargets.example.notificationcontent.target.notificationcontent
 
 import expo.modules.targets.notification.ExpoTargetsNotificationService
 
 /**
  * User deepen — FQCN must match the Android config plugin:
- * com.expotargets.example.notification-content.target.notificationcontent.NotificationContentNotificationService
+ * com.expotargets.example.notificationcontent.target.notificationcontent.NotificationContentNotificationService
  */
 class NotificationContentNotificationService : ExpoTargetsNotificationService()

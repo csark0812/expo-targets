@@ -18,6 +18,7 @@ import {
   tapProbeHit,
   waitForNamed,
 } from "./helpers";
+import { runAndroidNotificationContentJourney } from "./notification-content.android";
 import { tapLabelInTree } from "./settings-nav";
 
 const NCE_CATEGORY = "myNotificationCategory";
@@ -82,6 +83,10 @@ export async function runNotificationContentJourney(
   device: DeviceSession,
   id: "notification-content" | "native-notification-content",
 ): Promise<TargetJourneyResult> {
+  if (device.platform === "android") {
+    return runAndroidNotificationContentJourney(device, id);
+  }
+
   const entry = TARGET_CATALOG[id];
   const path = entry?.path ?? `examples/${id}`;
   const steps: string[] = [];

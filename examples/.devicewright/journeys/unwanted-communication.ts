@@ -24,6 +24,7 @@ import {
   searchAppsAndOpen,
   tapLabelInTree,
 } from "./settings-nav";
+import { runAndroidUnwantedCommunicationJourney } from "./unwanted-communication.android";
 
 const SETTINGS_BUNDLE = "com.apple.Preferences";
 
@@ -208,6 +209,9 @@ async function tryOpenSmsCallReporting(
 export async function runUnwantedCommunicationJourney(
   device: DeviceSession,
 ): Promise<TargetJourneyResult> {
+  if (device.platform === "android") {
+    return runAndroidUnwantedCommunicationJourney(device);
+  }
   const entry = TARGET_CATALOG["unwanted-communication"];
   const pathStr = entry?.path ?? "examples/unwanted-communication";
   const claim = claimForId("unwanted-communication");

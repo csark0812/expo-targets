@@ -25,6 +25,7 @@ import {
   tapProbeHit,
   waitForNamed,
 } from "./helpers";
+import { runAndroidNotificationServiceJourney } from "./notification-service.android";
 import { tapLabelInTree } from "./settings-nav";
 
 const MUTATED_MARKER = "[expo-targets]";
@@ -133,6 +134,10 @@ export async function runNotificationServiceJourney(
   device: DeviceSession,
   id: "notification-service" = "notification-service",
 ): Promise<TargetJourneyResult> {
+  if (device.platform === "android") {
+    return runAndroidNotificationServiceJourney(device);
+  }
+
   const entry = TARGET_CATALOG[id];
   const pathStr = entry?.path ?? `examples/${id}`;
   const steps: string[] = [];

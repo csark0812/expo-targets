@@ -1,5 +1,9 @@
 import type { DeviceSession } from "@csark0812/devicewright";
-import { TARGET_CATALOG, type TargetCatalogEntry } from "../catalog";
+import {
+  hostLaunchId,
+  TARGET_CATALOG,
+  type TargetCatalogEntry,
+} from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
   assertPayloadContains,
@@ -16,7 +20,8 @@ import {
   waitForNamed,
 } from "./helpers";
 
-const ANDROID_ACTION_IDS = new Set(["action"]);
+/** RN action + native-action (Phase 1a). Locked P: host sheet → chooser → Process/Save → marker. */
+const ANDROID_ACTION_IDS = new Set(["action", "native-action"]);
 
 async function tapLabeledButton(
   device: DeviceSession,
@@ -75,7 +80,15 @@ async function pickActionTarget(
     entry.hostDisplayName,
     ...entry.extensionAliases,
   ].filter(Boolean);
-  const ordered = [...new Set(["Example Action", "ET Action", ...names])];
+  const ordered = [
+    ...new Set([
+      "Example Action",
+      "ET Action",
+      "Native Action",
+      "ET N Action",
+      ...names,
+    ]),
+  ];
   let tapped = false;
   for (const name of ordered) {
     try {
@@ -109,7 +122,7 @@ async function waitForActionChrome(
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const flat = await treeFlat(device);
-    if (/Process|Save|kind:image|Images:/i.test(flat)) {
+    if (/Process|Save|kind:image|kind:text|Images:|Action extension/i.test(flat)) {
       return "visible";
     }
     // Host ready again = ActionActivity already closed (auto-Process).
@@ -125,23 +138,28 @@ async function completeAction(
   device: DeviceSession,
   entry: TargetCatalogEntry,
 ): Promise<void> {
-  const label = entry.completeButton || "Process";
-  try {
-    await tapLabeledButton(device, label, 3_000);
-  } catch {
+  const labels = [
+    ...entry.completeButton.split(",").map((s) => s.trim()).filter(Boolean),
+    "Process",
+    "Save",
+  ];
+  for (const label of [...new Set(labels)]) {
     try {
-      await tapLabeledButton(device, "Save", 1_500);
+      await tapLabeledButton(device, label, 2_500);
+      return;
     } catch {
-      await sleep(500);
+      // try next (native Action Activity uses Save)
     }
   }
+  await sleep(500);
 }
 
 async function refreshHostPayload(
   device: DeviceSession,
   entry: TargetCatalogEntry,
 ): Promise<void> {
-  await device.launchApp(entry.hostBundleId, { terminateRunning: false });
+  const pkg = hostLaunchId(entry, "android");
+  await device.launchApp(pkg, { terminateRunning: false });
   await waitForId(device, hostReadyTestId(entry.testIds), 12_000);
   if (entry.testIds.refresh) {
     try {
@@ -165,7 +183,8 @@ async function openHostShareSheet(
 
 /**
  * Android dual of action C1 — host Share sheet required; Devicewright session only.
- * ActionExtension auto-Processes ~350ms; green is host marker `grayscale`.
+ * RN ActionExtension auto-Processes ~350ms (marker `grayscale`).
+ * native-action Locked P: Save on native Activity → host marker (`Original`).
  */
 export async function runAndroidActionJourney(
   device: DeviceSession,
@@ -187,10 +206,12 @@ export async function runAndroidActionJourney(
 
   const steps: string[] = [];
   const checklist: string[] = [];
+  const pkg = hostLaunchId(entry, "android");
+  const lockedPOnly = String(id) === "native-action";
 
   try {
     steps.push("android-launch-host");
-    await device.launchApp(entry.hostBundleId, { terminateRunning: true });
+    await device.launchApp(pkg, { terminateRunning: true });
     await dismissSystemAlerts(device);
     await waitForId(device, hostReadyTestId(entry.testIds), 15_000);
     steps.push("host-ready");
@@ -229,34 +250,36 @@ export async function runAndroidActionJourney(
     checklist.push(C1.assertHostMarker);
     steps.push("host-sheet-ok");
 
-    // Soft smoke: DW openShareText. OEM choosers often omit our target — never fail green.
-    steps.push("system-share-text-smoke");
-    try {
-      await tapId(device, entry.testIds.clearPayload, 3_000);
-    } catch {
-      // optional
-    }
-    await device.terminateApp(entry.hostBundleId);
-    await device.pressButton({ button: "HOME" });
-    await sleep(400);
-    await device.openShareText("expo-targets action process-text sample");
-    await sleep(800);
-    try {
-      await pickActionTarget(device, entry);
-      const smokeChrome = await waitForActionChrome(device, 3_000);
-      if (smokeChrome === "visible") {
-        try {
-          await tapLabeledButton(device, "Cancel", 2_000);
-        } catch {
-          await device.pressButton({ button: "BACK" });
-        }
-        steps.push("system-share-text-ok");
-      } else {
-        steps.push("system-share-text-auto-dismiss");
+    if (!lockedPOnly) {
+      // Soft smoke: DW openShareText. OEM choosers often omit our target — never fail green.
+      steps.push("system-share-text-smoke");
+      try {
+        await tapId(device, entry.testIds.clearPayload, 3_000);
+      } catch {
+        // optional
       }
-    } catch {
-      await device.pressButton({ button: "BACK" }).catch(() => undefined);
-      steps.push("system-share-text-chooser-skip");
+      await device.terminateApp(pkg);
+      await device.pressButton({ button: "HOME" });
+      await sleep(400);
+      await device.openShareText("expo-targets action process-text sample");
+      await sleep(800);
+      try {
+        await pickActionTarget(device, entry);
+        const smokeChrome = await waitForActionChrome(device, 3_000);
+        if (smokeChrome === "visible") {
+          try {
+            await tapLabeledButton(device, "Cancel", 2_000);
+          } catch {
+            await device.pressButton({ button: "BACK" });
+          }
+          steps.push("system-share-text-ok");
+        } else {
+          steps.push("system-share-text-auto-dismiss");
+        }
+      } catch {
+        await device.pressButton({ button: "BACK" }).catch(() => undefined);
+        steps.push("system-share-text-chooser-skip");
+      }
     }
 
     return {

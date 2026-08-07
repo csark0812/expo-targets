@@ -28,6 +28,10 @@ import {
   sleep,
   waitForNamed,
 } from "./helpers";
+import {
+  runAndroidWatchJourney,
+  runAndroidWatchWidgetJourney,
+} from "./watch.android";
 
 type WatchId = "watch" | "watch-widget";
 
@@ -240,6 +244,9 @@ export async function runWatchJourney(
   device: DeviceSession,
   id: WatchId = "watch",
 ): Promise<TargetJourneyResult> {
+  if (device.platform === "android") {
+    return runAndroidWatchJourney(device, id);
+  }
   const entry = TARGET_CATALOG[id];
   const pathStr = entry?.path ?? `examples/${id}`;
   const steps: string[] = [];
@@ -432,5 +439,8 @@ export async function runWatchJourney(
 export async function runWatchWidgetJourney(
   device: DeviceSession,
 ): Promise<TargetJourneyResult> {
+  if (device.platform === "android") {
+    return runAndroidWatchWidgetJourney(device);
+  }
   return runWatchJourney(device, "watch-widget");
 }

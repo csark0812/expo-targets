@@ -1,5 +1,9 @@
 import type { DeviceSession } from "@csark0812/devicewright";
-import { TARGET_CATALOG, type TargetCatalogEntry } from "../catalog";
+import {
+  hostLaunchId,
+  TARGET_CATALOG,
+  type TargetCatalogEntry,
+} from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
   assertPayloadContains,
@@ -16,7 +20,8 @@ import {
   waitForNamed,
 } from "./helpers";
 
-const ANDROID_SHARE_IDS = new Set(["share"]);
+/** RN share + native-share (Phase 1a). Locked P: host sheet → chooser → Save → marker. */
+const ANDROID_SHARE_IDS = new Set(["share", "native-share"]);
 
 async function tapLabeledButton(
   device: DeviceSession,
@@ -75,7 +80,15 @@ async function pickShareTarget(
     entry.hostDisplayName,
     ...entry.extensionAliases,
   ].filter((n) => n && n !== "Share");
-  const ordered = [...new Set(["Example Share", "ET Share", ...names])];
+  const ordered = [
+    ...new Set([
+      "Example Share",
+      "ET Share",
+      "Native Share",
+      "ET N Share",
+      ...names,
+    ]),
+  ];
   let tapped = false;
   for (const name of ordered) {
     try {
@@ -93,6 +106,26 @@ async function pickShareTarget(
   }
   await confirmChooserIfNeeded(device);
   await sleep(1_000);
+}
+
+/** Android native Activity primary is "Save"; iOS catalog may say "Save to App". */
+async function tapSave(device: DeviceSession, entry: TargetCatalogEntry): Promise<void> {
+  const labels = [
+    ...entry.completeButton.split(",").map((s) => s.trim()).filter(Boolean),
+    "Save",
+  ];
+  let lastErr: unknown;
+  for (const label of [...new Set(labels)]) {
+    try {
+      await tapLabeledButton(device, label, 4_000);
+      return;
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr instanceof Error
+    ? lastErr
+    : new Error(`android share Save missing; tried=${labels.join(",")}`);
 }
 
 async function treeFlat(device: DeviceSession): Promise<string> {
@@ -143,7 +176,8 @@ async function refreshHostPayload(
   device: DeviceSession,
   entry: TargetCatalogEntry,
 ): Promise<void> {
-  await device.launchApp(entry.hostBundleId, { terminateRunning: false });
+  const pkg = hostLaunchId(entry, "android");
+  await device.launchApp(pkg, { terminateRunning: false });
   await waitForHostMain(device, entry);
   if (entry.testIds.refresh) {
     try {
@@ -190,10 +224,13 @@ export async function runAndroidShareJourney(
 
   const steps: string[] = [];
   const checklist: string[] = [];
+  const pkg = hostLaunchId(entry, "android");
+  /** native-share Locked P is host-sheet only; RN share keeps open-main + soft smoke. */
+  const lockedPOnly = String(id) === "native-share";
 
   try {
     steps.push("android-launch-host");
-    await device.launchApp(entry.hostBundleId, { terminateRunning: true });
+    await device.launchApp(pkg, { terminateRunning: true });
     await dismissSystemAlerts(device);
     await waitForHostMain(device, entry, 15_000);
     steps.push("host-ready");
@@ -205,7 +242,7 @@ export async function runAndroidShareJourney(
       steps.push("clear-payload-skip");
     }
 
-    // --- Authoritative: host Share sheet → chooser → Save → host marker ---
+    // --- Authoritative Locked P: host sheet → chooser → Save → host marker ---
     steps.push("host-sheet-primary");
     await openHostShareSheet(device, entry);
     checklist.push(C1.triggerFromHost);
@@ -215,7 +252,7 @@ export async function runAndroidShareJourney(
     await assertShareActivityUi(device);
     steps.push("share-chrome-ok");
 
-    await tapLabeledButton(device, "Save", 8_000);
+    await tapSave(device, entry);
     checklist.push(C1.completeAppex);
     await sleep(800);
     // Host may already be under the sheet — relaunch/refresh for payload.
@@ -230,35 +267,37 @@ export async function runAndroidShareJourney(
     checklist.push(C1.assertHostMarker);
     steps.push("host-sheet-ok");
 
-    // --- Open main app (DW session only) ---
-    steps.push("open-main-app");
-    await openHostShareSheet(device, entry);
-    await pickShareTarget(device, entry);
-    await waitForShareChrome(device);
-    await tapLabeledButton(device, "Open main app", 8_000);
-    await sleep(1_200);
-    await waitForHostMain(device, entry);
-    steps.push("open-main-ok");
-
-    // Soft smoke: DW openShareText. OEM choosers often omit our target — never fail green.
-    steps.push("system-share-text-smoke");
-    await device.terminateApp(entry.hostBundleId);
-    await device.pressButton({ button: "HOME" });
-    await sleep(400);
-    await device.openShareText(entry.payloadMarker);
-    await sleep(800);
-    try {
+    if (!lockedPOnly) {
+      // --- Open main app (DW session only) ---
+      steps.push("open-main-app");
+      await openHostShareSheet(device, entry);
       await pickShareTarget(device, entry);
-      await waitForShareChrome(device, 6_000);
+      await waitForShareChrome(device);
+      await tapLabeledButton(device, "Open main app", 8_000);
+      await sleep(1_200);
+      await waitForHostMain(device, entry);
+      steps.push("open-main-ok");
+
+      // Soft smoke: DW openShareText. OEM choosers often omit our target — never fail green.
+      steps.push("system-share-text-smoke");
+      await device.terminateApp(pkg);
+      await device.pressButton({ button: "HOME" });
+      await sleep(400);
+      await device.openShareText(entry.payloadMarker);
+      await sleep(800);
       try {
-        await tapLabeledButton(device, "Cancel", 5_000);
+        await pickShareTarget(device, entry);
+        await waitForShareChrome(device, 6_000);
+        try {
+          await tapLabeledButton(device, "Cancel", 5_000);
+        } catch {
+          await device.pressButton({ button: "BACK" });
+        }
+        steps.push("system-share-text-ok");
       } catch {
-        await device.pressButton({ button: "BACK" });
+        await device.pressButton({ button: "BACK" }).catch(() => undefined);
+        steps.push("system-share-text-chooser-skip");
       }
-      steps.push("system-share-text-ok");
-    } catch {
-      await device.pressButton({ button: "BACK" }).catch(() => undefined);
-      steps.push("system-share-text-chooser-skip");
     }
 
     return {

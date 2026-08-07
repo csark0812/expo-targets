@@ -3,11 +3,13 @@ import type { RequiredTargetRow } from "../required";
 import type { TargetJourneyResult } from "../types";
 import { runAppIntentJourney } from "./app-intent";
 import { runAppsSettingsJourney } from "./apps-settings";
+import { runBgDownloadJourney } from "./bg-download";
 import { runBroadcastSetupUiJourney } from "./broadcast-setup-ui";
 import { runBroadcastUploadJourney } from "./broadcast-upload";
 import { runCallDirectoryJourney } from "./call-directory";
 import { runClipJourney } from "./clip";
 import { runContentBlockerJourney } from "./content-blocker";
+import { runCredentialsProviderJourney } from "./credentials-provider";
 import { runFileProviderJourney } from "./file-provider";
 import { runFileProviderUiJourney } from "./file-provider-ui";
 import { runHostContractJourney } from "./host-contract";
@@ -18,28 +20,34 @@ import { runLiveActivityJourney } from "./live-activity";
 import { runLocationPushJourney } from "./location-push";
 import { runMessageFilterJourney } from "./message-filter";
 import { runMessagesJourney } from "./messages";
+import { runNetworkPacketTunnelJourney } from "./network-packet-tunnel";
 import { runNotificationContentJourney } from "./notification-content";
 import { runNotificationServiceJourney } from "./notification-service";
 import { runPhotoEditingJourney } from "./photo-editing";
+import { runPrintServiceJourney } from "./print-service";
 import { runQuicklookPreviewJourney } from "./quicklook-preview";
 import { runQuicklookThumbnailJourney } from "./quicklook-thumbnail";
 import { runSafariJourney } from "./safari";
 import { runUnwantedCommunicationJourney } from "./unwanted-communication";
 import { runShareActionJourney } from "./share";
 import { runSpotlightJourney } from "./spotlight";
+import { runSpotlightDelegateJourney } from "./spotlight-delegate";
 import { runStickersJourney } from "./stickers";
 import { stubClusterJourneyFor } from "./stub-cluster";
+import { runWalletJourney } from "./wallet";
 import { runWalletUiJourney } from "./wallet-ui";
 import { runWatchJourney, runWatchWidgetJourney } from "./watch";
 import { runWidgetsJourney } from "./widgets";
 
 export { runAppIntentJourney } from "./app-intent";
 export { runAppsSettingsJourney } from "./apps-settings";
+export { runBgDownloadJourney } from "./bg-download";
 export { runBroadcastSetupUiJourney } from "./broadcast-setup-ui";
 export { runBroadcastUploadJourney } from "./broadcast-upload";
 export { runCallDirectoryJourney } from "./call-directory";
 export { runClipJourney } from "./clip";
 export { runContentBlockerJourney } from "./content-blocker";
+export { runCredentialsProviderJourney } from "./credentials-provider";
 export {
   assertPayloadContains,
   C1,
@@ -57,15 +65,18 @@ export { runLiveActivityJourney } from "./live-activity";
 export { runLocationPushJourney } from "./location-push";
 export { runMessageFilterJourney } from "./message-filter";
 export { runMessagesJourney } from "./messages";
+export { runNetworkPacketTunnelJourney } from "./network-packet-tunnel";
 export { runNotificationContentJourney } from "./notification-content";
 export { runNotificationServiceJourney } from "./notification-service";
 export { runPhotoEditingJourney } from "./photo-editing";
+export { runPrintServiceJourney } from "./print-service";
 export { runQuicklookPreviewJourney } from "./quicklook-preview";
 export { runQuicklookThumbnailJourney } from "./quicklook-thumbnail";
 export { runSafariJourney } from "./safari";
 export { runUnwantedCommunicationJourney } from "./unwanted-communication";
 export { runShareActionJourney } from "./share";
 export { runSpotlightJourney } from "./spotlight";
+export { runSpotlightDelegateJourney } from "./spotlight-delegate";
 export {
   navigatePath,
   allowAppexOnWebsite,
@@ -80,6 +91,7 @@ export {
   tapLabelInTree,
 } from "./settings-nav";
 export { runStickersJourney } from "./stickers";
+export { runWalletJourney } from "./wallet";
 export { runWalletUiJourney } from "./wallet-ui";
 export { runWatchJourney, runWatchWidgetJourney } from "./watch";
 export { runWidgetsJourney } from "./widgets";
@@ -90,11 +102,8 @@ export type JourneyRunner = (
 
 /** ids proven via generic Settings→Apps→search host→host settings page. */
 const APPS_SETTINGS_IDS = [
-  "spotlight-delegate",
-  "bg-download",
   "matter",
   "classkit-context",
-  "print-service",
   "smart-card",
   "virtual-conference",
 ] as const;
@@ -116,6 +125,7 @@ const LIVE: Record<string, JourneyRunner> = {
   keyboard: (d) => runKeyboardJourney(d),
   intent: (d) => runIntentJourney(d),
   "intent-ui": (d) => runIntentUiJourney(d),
+  wallet: (d) => runWalletJourney(d),
   "wallet-ui": (d) => runWalletUiJourney(d),
   "notification-service": (d) => runNotificationServiceJourney(d),
   "notification-content": (d) =>
@@ -129,24 +139,27 @@ const LIVE: Record<string, JourneyRunner> = {
   "broadcast-upload": (d) => runBroadcastUploadJourney(d),
   "broadcast-setup-ui": (d) => runBroadcastSetupUiJourney(d),
   "call-directory": (d) => runCallDirectoryJourney(d),
+  "credentials-provider": (d) => runCredentialsProviderJourney(d),
+  "print-service": (d) => runPrintServiceJourney(d),
+  "network-packet-tunnel": (d) => runNetworkPacketTunnelJourney(d),
   "message-filter": (d) => runMessageFilterJourney(d),
   "unwanted-communication": (d) => runUnwantedCommunicationJourney(d),
   "quicklook-preview": (d) => runQuicklookPreviewJourney(d),
   "quicklook-thumbnail": (d) => runQuicklookThumbnailJourney(d),
   spotlight: (d) => runSpotlightJourney(d),
+  "spotlight-delegate": (d) => runSpotlightDelegateJourney(d),
+  "bg-download": (d) => runBgDownloadJourney(d),
   "location-push": (d) => runLocationPushJourney(d),
   watch: (d) => runWatchJourney(d, "watch"),
   "watch-widget": (d) => runWatchWidgetJourney(d),
 };
 
 const STUB_CLUSTER_IDS = [
-  "credentials-provider",
   "account-auth",
   "authentication-services",
   "device-activity-monitor",
   "shield-action",
   "shield-config",
-  "network-packet-tunnel",
   "network-app-proxy",
   "network-dns-proxy",
   "network-filter-data",

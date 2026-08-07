@@ -1,4 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
+import { prepareVpnConsent } from 'expo-targets';
 import { useState } from 'react';
 import {
   Linking,
@@ -41,6 +42,18 @@ export default function App() {
       >
         <Text style={styles.buttonText}>Show registration status</Text>
       </TouchableOpacity>
+      {Platform.OS === 'android' ? (
+        <TouchableOpacity
+          testID="btn-vpn-prepare"
+          style={styles.button}
+          onPress={() => {
+            const result = prepareVpnConsent();
+            setPayload(`vpn-prepare:${result}`);
+          }}
+        >
+          <Text style={styles.buttonText}>Prepare VPN consent</Text>
+        </TouchableOpacity>
+      ) : null}
       <TouchableOpacity
         testID="btn-open-settings"
         style={styles.button}

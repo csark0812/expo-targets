@@ -24,6 +24,7 @@ import {
   waitForNamed,
 } from "./helpers";
 import { tapLabelInTree } from "./settings-nav";
+import { runAndroidSpotlightJourney } from "./spotlight.android";
 
 const FILES_BUNDLE = "com.apple.DocumentsApp";
 const FIXTURE_NAME = "et-import.etspot";
@@ -234,6 +235,9 @@ async function trySpotlightSearch(
 export async function runSpotlightJourney(
   device: DeviceSession,
 ): Promise<TargetJourneyResult> {
+  if (device.platform === "android") {
+    return runAndroidSpotlightJourney(device);
+  }
   const entry = TARGET_CATALOG.spotlight;
   const pathStr = entry?.path ?? "examples/spotlight";
   const claim = claimForId("spotlight");

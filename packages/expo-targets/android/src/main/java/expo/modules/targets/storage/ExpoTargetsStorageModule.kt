@@ -2,6 +2,7 @@ package expo.modules.targets.storage
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.net.VpnService
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import expo.modules.targets.ExpoTargetsLogger
@@ -140,6 +141,28 @@ class ExpoTargetsStorageModule : Module() {
         null
       } else {
         readTargetsConfigAsset(context)
+      }
+    }
+
+    /**
+     * Host helper for network-packet-tunnel Devicewright Locked P.
+     * Starts the system VpnService.prepare consent UI when needed.
+     * @return "consent-shown" | "already-consented" | "unavailable"
+     */
+    Function("prepareVpn") {
+      val activity = appContext.currentActivity
+      if (activity == null) {
+        ExpoTargetsLogger.w(TAG, "prepareVpn: no foreground Activity")
+        return@Function "unavailable"
+      }
+      val prepareIntent = VpnService.prepare(activity)
+      if (prepareIntent != null) {
+        activity.startActivity(prepareIntent)
+        ExpoTargetsLogger.d(TAG, "prepareVpn: consent intent started")
+        "consent-shown"
+      } else {
+        ExpoTargetsLogger.d(TAG, "prepareVpn: already consented")
+        "already-consented"
       }
     }
   }

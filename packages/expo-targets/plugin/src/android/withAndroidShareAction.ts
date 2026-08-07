@@ -66,7 +66,9 @@ function buildIntentFilters(
   rules: ShareExtensionActivationRule[] | undefined
 ): any[] {
   if (type === 'action') {
-    return [
+    // PROCESS_TEXT = selection toolbar; SEND = host Share.share / DW openShareText
+    // Locked P (host sheet → chooser → Activity). MIME from activationRules.
+    const filters: any[] = [
       {
         action: [
           { $: { 'android:name': 'android.intent.action.PROCESS_TEXT' } },
@@ -77,6 +79,19 @@ function buildIntentFilters(
         data: [{ $: { 'android:mimeType': 'text/plain' } }],
       },
     ];
+    const plan = mimePlanFromActivationRules(rules);
+    if (plan.singleMimes.length) {
+      filters.push({
+        action: [{ $: { 'android:name': 'android.intent.action.SEND' } }],
+        category: [
+          { $: { 'android:name': 'android.intent.category.DEFAULT' } },
+        ],
+        data: plan.singleMimes.map((mime) => ({
+          $: { 'android:mimeType': mime },
+        })),
+      });
+    }
+    return filters;
   }
 
   const plan = mimePlanFromActivationRules(rules);

@@ -13,7 +13,7 @@ import {
 } from "./required";
 import { exampleExists } from "./root";
 import { claimAllowsPlatform, OS_LIMIT_CLAIMS } from "./claims";
-import { TOUCHPOINTS } from "./touchpoints";
+import { ANDROID_LOCKED_P, TOUCHPOINTS } from "./touchpoints";
 
 function claimPlatforms(
   entry: (typeof OS_LIMIT_CLAIMS)[number],
@@ -130,6 +130,15 @@ describe("CLAIMS + touchpoints", () => {
     expect(early.length).toBeGreaterThan(0);
     for (const t of early) {
       expect(t.status).toBe("concrete");
+    }
+  });
+
+  test("ANDROID_LOCKED_P covers every REQUIRED_ANDROID id", () => {
+    expect(Object.keys(ANDROID_LOCKED_P).sort()).toEqual(
+      [...REQUIRED_ANDROID_IDS].sort(),
+    );
+    for (const id of REQUIRED_ANDROID_IDS) {
+      expect(ANDROID_LOCKED_P[id]?.length).toBeGreaterThan(0);
     }
   });
 });

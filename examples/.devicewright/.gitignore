@@ -1,7 +1,9 @@
 devicewright-artifacts/
-# Ignore matrix run dirs under artifacts/, keep committed spikes + leftovers.
+# Ignore matrix run dirs under artifacts/, keep committed spikes + leftovers + matrix gates.
 artifacts/*
 !artifacts/spikes/
 !artifacts/spikes/**
 !artifacts/leftovers/
 !artifacts/leftovers/**
+!artifacts/matrix/
+!artifacts/matrix/**
