@@ -236,6 +236,8 @@ function registerKeyboard(
     $: {
       'android:name': className,
       'android:exported': 'true',
+      // Same-process IMEs often no-op commitText from the input view; isolate.
+      'android:process': ':ime',
       'android:permission': 'android.permission.BIND_INPUT_METHOD',
       'android:label':
         props.android?.imeLabel || props.displayName || props.name,

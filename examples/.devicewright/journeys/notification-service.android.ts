@@ -5,7 +5,8 @@
  */
 import type { DeviceSession } from "@csark0812/devicewright";
 import { claimForId } from "../claims";
-import { hostLaunchId, TARGET_CATALOG } from "../catalog";
+import { hostLaunchId,
+  TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
   dismissSystemAlerts,
@@ -18,6 +19,8 @@ import {
   tapProbeHit,
   waitForId,
   waitForNamed,
+  ANDROID_POST_TAP_MS,
+  ANDROID_SETTINGS_SETTLE_MS,
 } from "./helpers";
 
 const MUTATED_MARKER = "[expo-targets]";
@@ -61,7 +64,7 @@ async function openNotificationShade(device: DeviceSession): Promise<void> {
     yEnd: 1400,
     duration: 0.45,
   });
-  await sleep(900);
+  await sleep(ANDROID_POST_TAP_MS);
 }
 
 function labelsHitMutation(labels: string[]): boolean {
@@ -97,7 +100,7 @@ export async function runAndroidNotificationServiceJourney(
 
     steps.push("post-local-process");
     await tapId(device, "btn-android-local-notif", 8_000);
-    await sleep(1_200);
+    await sleep(ANDROID_SETTINGS_SETTLE_MS);
 
     // Background so shade can show the posted notification.
     await device.pressButton({ button: "HOME" });

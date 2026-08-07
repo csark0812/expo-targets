@@ -20,6 +20,8 @@ import {
   tapProbeHit,
   waitForId,
   waitForNamed,
+  ANDROID_POST_TAP_MS,
+  ANDROID_SETTINGS_SETTLE_MS,
 } from "./helpers";
 
 /** Prefer RemoteViews custom marker; avoid bare "ET NCE" (host/app label). */
@@ -66,7 +68,7 @@ async function openNotificationShade(device: DeviceSession): Promise<void> {
     yEnd: 1400,
     duration: 0.45,
   });
-  await sleep(900);
+  await sleep(ANDROID_POST_TAP_MS);
 }
 
 function treeHasNceMarker(
@@ -128,7 +130,7 @@ async function expandNotificationRow(
   const cy = Math.round(row.y + row.h / 2);
   // Long-press then swipe-down expand (OEM shade chrome varies).
   await device.tap({ x: cx, y: cy, duration: 1.2 });
-  await sleep(700);
+  await sleep(ANDROID_POST_TAP_MS);
   await device.swipe({
     xStart: cx,
     yStart: cy,
@@ -136,7 +138,7 @@ async function expandNotificationRow(
     yEnd: Math.min(cy + 280, 1800),
     duration: 0.55,
   });
-  await sleep(1_000);
+  await sleep(450);
 }
 
 export async function runAndroidNotificationContentJourney(
@@ -179,7 +181,7 @@ export async function runAndroidNotificationContentJourney(
     // Own posting — must not depend on notification-service.
     steps.push("post-rich-content");
     await tapId(device, "btn-android-rich-notif", 8_000);
-    await sleep(1_200);
+    await sleep(ANDROID_SETTINGS_SETTLE_MS);
 
     await device.pressButton({ button: "HOME" });
     await sleep(500);

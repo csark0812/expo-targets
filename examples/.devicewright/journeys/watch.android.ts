@@ -13,9 +13,10 @@ import {
   devices,
   launchWearPhonePair,
   type DeviceSession,
-} from "@csark0812/devicewright";
+  } from "@csark0812/devicewright";
 import { claimForId } from "../claims";
-import { hostLaunchId, TARGET_CATALOG } from "../catalog";
+import { hostLaunchId,
+  TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
   dismissSystemAlerts,
@@ -24,6 +25,8 @@ import {
   sleep,
   tapId,
   waitForId,
+  ANDROID_POST_TAP_MS,
+  ANDROID_SETTINGS_SETTLE_MS,
 } from "./helpers";
 
 type WatchId = "watch" | "watch-widget";
@@ -200,7 +203,7 @@ export async function runAndroidWatchJourney(
       // watch-widget: Wear tile / complication AX on the wear device.
       try {
         await wear.pressButton({ button: "HOME" });
-        await sleep(800);
+        await sleep(400);
         steps.push("wear-home");
       } catch {
         steps.push("wear-home-skip");
@@ -213,7 +216,7 @@ export async function runAndroidWatchJourney(
           yEnd: 80,
           duration: 0.4,
         });
-        await sleep(1_000);
+        await sleep(450);
         steps.push("wear-tile-swipe");
       } catch {
         steps.push("wear-tile-swipe-skip");
@@ -225,7 +228,7 @@ export async function runAndroidWatchJourney(
           wearLabels = flattenLabels(await wear.accessibilityTree());
           break;
         } catch {
-          await sleep(800);
+          await sleep(400);
         }
       }
       steps.push(`wear-ax-labels:${wearLabels.length}`);

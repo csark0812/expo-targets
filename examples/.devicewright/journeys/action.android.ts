@@ -3,7 +3,7 @@ import {
   hostLaunchId,
   TARGET_CATALOG,
   type TargetCatalogEntry,
-} from "../catalog";
+  } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
   assertPayloadContains,
@@ -18,6 +18,8 @@ import {
   tapProbeHit,
   waitForId,
   waitForNamed,
+  ANDROID_POST_TAP_MS,
+  ANDROID_SETTINGS_SETTLE_MS,
 } from "./helpers";
 
 /** RN action + native-action (Phase 1a). Locked P: host sheet → chooser → Process/Save → marker. */
@@ -42,7 +44,7 @@ async function tapLabeledButton(
     });
     if (node?.frame && node.frame.width >= 8 && node.frame.height >= 8) {
       await tapCenter(device, node);
-      await sleep(600);
+      await sleep(ANDROID_POST_TAP_MS);
       return;
     }
     await sleep(250);
@@ -59,7 +61,7 @@ async function tapLabeledButton(
     });
     await tapProbeHit(device, hit);
   }
-  await sleep(600);
+  await sleep(ANDROID_POST_TAP_MS);
 }
 
 async function confirmChooserIfNeeded(device: DeviceSession): Promise<void> {
@@ -105,7 +107,7 @@ async function pickActionTarget(
     );
   }
   await confirmChooserIfNeeded(device);
-  await sleep(1_000);
+  await sleep(450);
 }
 
 /** Flat AX text for Process|Save|Action chrome (no dumpsys). */
@@ -178,7 +180,7 @@ async function openHostShareSheet(
     throw new Error("catalog missing openShareSheet testID");
   }
   await tapId(device, entry.testIds.openShareSheet, 8_000);
-  await sleep(1_000);
+  await sleep(450);
 }
 
 /**
@@ -237,7 +239,7 @@ export async function runAndroidActionJourney(
       steps.push("action-auto-dismissed");
     }
     checklist.push(C1.completeAppex);
-    await sleep(600);
+    await sleep(ANDROID_POST_TAP_MS);
 
     await refreshHostPayload(device, entry);
     steps.push("assert-action-marker");
@@ -262,7 +264,7 @@ export async function runAndroidActionJourney(
       await device.pressButton({ button: "HOME" });
       await sleep(400);
       await device.openShareText("expo-targets action process-text sample");
-      await sleep(800);
+      await sleep(400);
       try {
         await pickActionTarget(device, entry);
         const smokeChrome = await waitForActionChrome(device, 3_000);

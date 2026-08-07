@@ -3,7 +3,7 @@ import {
   hostLaunchId,
   TARGET_CATALOG,
   type TargetCatalogEntry,
-} from "../catalog";
+  } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
   assertPayloadContains,
@@ -18,6 +18,8 @@ import {
   tapProbeHit,
   waitForId,
   waitForNamed,
+  ANDROID_POST_TAP_MS,
+  ANDROID_SETTINGS_SETTLE_MS,
 } from "./helpers";
 
 /** RN share + native-share (Phase 1a). Locked P: host sheet → chooser → Save → marker. */
@@ -42,7 +44,7 @@ async function tapLabeledButton(
     });
     if (node?.frame && node.frame.width >= 8 && node.frame.height >= 8) {
       await tapCenter(device, node);
-      await sleep(600);
+      await sleep(ANDROID_POST_TAP_MS);
       return;
     }
     await sleep(250);
@@ -59,7 +61,7 @@ async function tapLabeledButton(
     });
     await tapProbeHit(device, hit);
   }
-  await sleep(600);
+  await sleep(ANDROID_POST_TAP_MS);
 }
 
 async function confirmChooserIfNeeded(device: DeviceSession): Promise<void> {
@@ -105,7 +107,7 @@ async function pickShareTarget(
     );
   }
   await confirmChooserIfNeeded(device);
-  await sleep(1_000);
+  await sleep(450);
 }
 
 /** Android native Activity primary is "Save"; iOS catalog may say "Save to App". */
@@ -196,7 +198,7 @@ async function openHostShareSheet(
     throw new Error("catalog missing openShareSheet testID");
   }
   await tapId(device, entry.testIds.openShareSheet, 8_000);
-  await sleep(1_000);
+  await sleep(450);
 }
 
 /**
@@ -254,7 +256,7 @@ export async function runAndroidShareJourney(
 
     await tapSave(device, entry);
     checklist.push(C1.completeAppex);
-    await sleep(800);
+    await sleep(400);
     // Host may already be under the sheet — relaunch/refresh for payload.
     await refreshHostPayload(device, entry);
     steps.push("assert-text-payload");
@@ -274,7 +276,7 @@ export async function runAndroidShareJourney(
       await pickShareTarget(device, entry);
       await waitForShareChrome(device);
       await tapLabeledButton(device, "Open main app", 8_000);
-      await sleep(1_200);
+      await sleep(ANDROID_SETTINGS_SETTLE_MS);
       await waitForHostMain(device, entry);
       steps.push("open-main-ok");
 
@@ -284,7 +286,7 @@ export async function runAndroidShareJourney(
       await device.pressButton({ button: "HOME" });
       await sleep(400);
       await device.openShareText(entry.payloadMarker);
-      await sleep(800);
+      await sleep(400);
       try {
         await pickShareTarget(device, entry);
         await waitForShareChrome(device, 6_000);

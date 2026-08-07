@@ -61,6 +61,10 @@ bun run examples:devicewright:file-provider:android
 bun run examples:devicewright:android:matrix
 # or:
 bun examples/.devicewright/cli.ts matrix --ids=share --platform=android --device=emulator-5554 --live-through=1
+
+# Human summary + live stderr progress (default). Machine JSON:
+bun examples/.devicewright/cli.ts matrix --platform=android --device=emulator-5554 --live-through=5 --no-fail-fast --json
+# Always written: artifactDir/events.jsonl + matrix-result.json (prefer these over redirecting stdout)
 ```
 
 Android Master Locked P strings live in `ANDROID_LOCKED_P` ([touchpoints.ts](./touchpoints.ts)). Must-green / must-remain-green ids must exit `green` only; other closed-set ids may exit `green` ∪ Android `os-limit` with matching CLAIMS.

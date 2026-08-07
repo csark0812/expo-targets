@@ -5,7 +5,8 @@
  */
 import type { DeviceSession } from "@csark0812/devicewright";
 import { claimForId } from "../claims";
-import { hostLaunchId, TARGET_CATALOG } from "../catalog";
+import { hostLaunchId,
+  TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
   assertPayloadContains,
@@ -19,6 +20,9 @@ import {
   tapProbeHit,
   waitForId,
   waitForNamed,
+  ANDROID_POST_TAP_MS,
+  ANDROID_SETTINGS_SETTLE_MS,
+  tapNamedAndroid,
 } from "./helpers";
 
 const DOCUMENTS_UI = "com.google.android.documentsui";
@@ -40,31 +44,7 @@ function labelsHit(labels: string[], needles: readonly string[]): boolean {
   );
 }
 
-async function tapNamed(
-  device: DeviceSession,
-  names: string[],
-  timeoutMs = 3_500,
-): Promise<boolean> {
-  try {
-    await tapCenter(device, await waitForNamed(device, names, timeoutMs));
-    await sleep(700);
-    return true;
-  } catch {
-    try {
-      const hit = await findNamedViaPointProbe(device, names, {
-        timeoutMs: Math.min(timeoutMs, 3_000),
-        match: "includes",
-        yStartRatio: 0.0,
-        yEndRatio: 0.95,
-      });
-      await tapProbeHit(device, hit);
-      await sleep(700);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-}
+const tapNamed = tapNamedAndroid;
 
 async function waitForMarkers(
   device: DeviceSession,
@@ -87,7 +67,7 @@ async function openDocumentsAndPickFile(
 ): Promise<void> {
   await device.launchApp(DOCUMENTS_UI, { terminateRunning: true });
   steps.push("launch-documentsui");
-  await sleep(1_400);
+  await sleep(550);
   await dismissSystemAlerts(device);
 
   if (await tapNamed(device, ["Show roots", "Files", "Downloads"], 4_000)) {
@@ -104,7 +84,7 @@ async function openDocumentsAndPickFile(
   ]) {
     if (await tapNamed(device, [name], 2_500)) {
       steps.push(`documents-open:${name}`);
-      await sleep(900);
+      await sleep(ANDROID_POST_TAP_MS);
       break;
     }
   }

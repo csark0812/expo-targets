@@ -13,8 +13,11 @@ bun examples/.devicewright/cli.ts matrix --ids=<id1>,<id2> --live-through=5 --no
 ```
 
 2. Attach to the PR (comment or artifact upload):
-   - The CLI JSON output (`artifactDir`, `claimState`, `results`), **or**
+   - `examples/.devicewright/artifacts/…/matrix-result.json` (preferred), **or**
+   - CLI stdout from `matrix … --json`, **or**
    - Path under `examples/.devicewright/artifacts/…` for that run
+
+   Default `matrix` prints a human summary (not JSON). Use `--json` or the artifact file for proof attach. Live progress is on stderr when TTY; `events.jsonl` is always written under the artifact dir.
 
 3. Confirm each new/changed id is `green` **or** `os-limit` with a matching row in [`claims.ts`](./claims.ts) (same PR).
 

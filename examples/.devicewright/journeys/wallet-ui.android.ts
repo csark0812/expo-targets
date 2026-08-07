@@ -4,7 +4,8 @@
  */
 import type { DeviceSession } from "@csark0812/devicewright";
 import { claimForId } from "../claims";
-import { hostLaunchId, TARGET_CATALOG } from "../catalog";
+import { hostLaunchId,
+  TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
   dismissSystemAlerts,
@@ -13,6 +14,8 @@ import {
   sleep,
   tapId,
   waitForId,
+  ANDROID_POST_TAP_MS,
+  ANDROID_SETTINGS_SETTLE_MS,
 } from "./helpers";
 
 const ISSUER_MARKERS = [
@@ -50,7 +53,7 @@ export async function runAndroidWalletUiJourney(
 
     await tapId(device, "btn-open-issuer-activity", 8_000);
     steps.push("open-issuer-activity");
-    await sleep(1_500);
+    await sleep(600);
     await dismissSystemAlerts(device);
 
     steps.push("issuer-chrome-attempt");

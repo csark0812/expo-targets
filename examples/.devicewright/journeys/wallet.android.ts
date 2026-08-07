@@ -5,7 +5,8 @@
  */
 import type { DeviceSession } from "@csark0812/devicewright";
 import { claimForId } from "../claims";
-import { hostLaunchId, TARGET_CATALOG } from "../catalog";
+import { hostLaunchId,
+  TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
   dismissSystemAlerts,
@@ -18,6 +19,9 @@ import {
   tapProbeHit,
   waitForId,
   waitForNamed,
+  ANDROID_POST_TAP_MS,
+  ANDROID_SETTINGS_SETTLE_MS,
+  tapNamedAndroid,
 } from "./helpers";
 
 const WALLET_PKGS = [
@@ -40,31 +44,7 @@ function labelsHit(labels: string[], needles: readonly string[]): boolean {
   );
 }
 
-async function tapNamed(
-  device: DeviceSession,
-  names: string[],
-  timeoutMs = 4_000,
-): Promise<boolean> {
-  try {
-    await tapCenter(device, await waitForNamed(device, names, timeoutMs));
-    await sleep(700);
-    return true;
-  } catch {
-    try {
-      const hit = await findNamedViaPointProbe(device, names, {
-        timeoutMs: Math.min(timeoutMs, 3_500),
-        match: "includes",
-        yStartRatio: 0.05,
-        yEndRatio: 0.95,
-      });
-      await tapProbeHit(device, hit);
-      await sleep(700);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-}
+const tapNamed = tapNamedAndroid;
 
 export async function runAndroidWalletJourney(
   device: DeviceSession,
@@ -94,7 +74,7 @@ export async function runAndroidWalletJourney(
 
     await tapId(device, "btn-open-wallet", 8_000);
     steps.push("open-wallet-cta");
-    await sleep(1_200);
+    await sleep(ANDROID_SETTINGS_SETTLE_MS);
     await dismissSystemAlerts(device);
 
     // Honest provision: try launching Google Wallet packages on Play image.
@@ -104,7 +84,7 @@ export async function runAndroidWalletJourney(
         await device.launchApp(walletPkg, { terminateRunning: false });
         steps.push(`wallet-pkg:${walletPkg.split(".").pop()}`);
         walletLaunched = true;
-        await sleep(1_500);
+        await sleep(600);
         await dismissSystemAlerts(device);
         break;
       } catch (e) {

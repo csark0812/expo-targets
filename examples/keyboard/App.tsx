@@ -39,7 +39,7 @@ export default function App() {
       <Text testID="text-bundle-suffix">com.expotargets.example.keyboard</Text>
       <Text style={styles.hint} testID="text-platform-note">
         {Platform.OS === 'android'
-          ? 'Enable ET Keyboard under Settings → Language & input (leftover if picker cannot be automated).'
+          ? 'Enable + select ET Keyboard (Settings → Language & input), then tap the ET key.'
           : 'Type with ET Keyboard (Settings → Keyboards) or system keyboard.'}
       </Text>
       <TextInput
@@ -66,6 +66,17 @@ export default function App() {
           {Platform.OS === 'android' ? 'Open IME settings' : 'Open Settings'}
         </Text>
       </TouchableOpacity>
+      {Platform.OS === 'android' ? (
+        <TouchableOpacity
+          testID="btn-show-ime-picker"
+          style={styles.button}
+          onPress={() => {
+            void Linking.openURL('etkeyboard://ime-picker');
+          }}
+        >
+          <Text style={styles.buttonText}>Choose keyboard</Text>
+        </TouchableOpacity>
+      ) : null}
       <TouchableOpacity
         testID="btn-clear-payload"
         style={styles.button}

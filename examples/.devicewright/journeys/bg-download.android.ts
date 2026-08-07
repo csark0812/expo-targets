@@ -4,7 +4,8 @@
  */
 import type { DeviceSession } from "@csark0812/devicewright";
 import { claimForId } from "../claims";
-import { hostLaunchId, TARGET_CATALOG } from "../catalog";
+import { hostLaunchId,
+  TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
   assertPayloadContains,
@@ -13,6 +14,8 @@ import {
   sleep,
   tapId,
   waitForId,
+  ANDROID_POST_TAP_MS,
+  ANDROID_SETTINGS_SETTLE_MS,
 } from "./helpers";
 
 export async function runAndroidBgDownloadJourney(
@@ -42,7 +45,7 @@ export async function runAndroidBgDownloadJourney(
 
     await tapId(device, "btn-enqueue-download", 8_000);
     steps.push("enqueue-download");
-    await sleep(1_000);
+    await sleep(450);
 
     steps.push("download-completion-attempt");
     let complete = false;
@@ -77,7 +80,7 @@ export async function runAndroidBgDownloadJourney(
           /* poll */
         }
       }
-      await sleep(800);
+      await sleep(400);
     }
 
     if (complete) {

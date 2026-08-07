@@ -4,7 +4,8 @@
  */
 import type { DeviceSession } from "@csark0812/devicewright";
 import { claimForId } from "../claims";
-import { hostLaunchId, TARGET_CATALOG } from "../catalog";
+import { hostLaunchId,
+  TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
   assertPayloadContains,
@@ -13,6 +14,8 @@ import {
   sleep,
   tapId,
   waitForId,
+  ANDROID_POST_TAP_MS,
+  ANDROID_SETTINGS_SETTLE_MS,
 } from "./helpers";
 
 const REGISTRATION_TEST_ID = "text-registration-status";
@@ -37,7 +40,7 @@ export async function runAndroidSpotlightDelegateJourney(
 
     await tapId(device, "btn-refresh-registration", 8_000);
     steps.push("refresh-registration");
-    await sleep(800);
+    await sleep(400);
 
     steps.push("registration-status-attempt");
     try {

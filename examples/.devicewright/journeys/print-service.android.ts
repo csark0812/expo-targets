@@ -5,7 +5,8 @@
  */
 import type { DeviceSession } from "@csark0812/devicewright";
 import { claimForId } from "../claims";
-import { hostLaunchId, TARGET_CATALOG } from "../catalog";
+import { hostLaunchId,
+  TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
   dismissSystemAlerts,
@@ -18,6 +19,9 @@ import {
   tapProbeHit,
   waitForId,
   waitForNamed,
+  ANDROID_POST_TAP_MS,
+  ANDROID_SETTINGS_SETTLE_MS,
+  tapNamedAndroid,
 } from "./helpers";
 
 const SERVICE_MARKERS = [
@@ -34,31 +38,7 @@ function labelsHit(labels: string[], needles: readonly string[]): boolean {
   );
 }
 
-async function tapNamed(
-  device: DeviceSession,
-  names: string[],
-  timeoutMs = 4_000,
-): Promise<boolean> {
-  try {
-    await tapCenter(device, await waitForNamed(device, names, timeoutMs));
-    await sleep(700);
-    return true;
-  } catch {
-    try {
-      const hit = await findNamedViaPointProbe(device, names, {
-        timeoutMs: Math.min(timeoutMs, 3_500),
-        match: "includes",
-        yStartRatio: 0.05,
-        yEndRatio: 0.95,
-      });
-      await tapProbeHit(device, hit);
-      await sleep(700);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-}
+const tapNamed = tapNamedAndroid;
 
 async function waitForServiceListed(
   device: DeviceSession,
@@ -107,7 +87,7 @@ export async function runAndroidPrintServiceJourney(
 
     await tapId(device, "btn-open-print-settings", 8_000);
     steps.push("open-print-settings");
-    await sleep(1_200);
+    await sleep(ANDROID_SETTINGS_SETTLE_MS);
     await dismissSystemAlerts(device);
 
     for (const label of [

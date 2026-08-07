@@ -5,7 +5,8 @@
  */
 import type { DeviceSession } from "@csark0812/devicewright";
 import { claimForId } from "../claims";
-import { hostLaunchId, TARGET_CATALOG } from "../catalog";
+import { hostLaunchId,
+  TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
   assertPayloadContains,
@@ -15,6 +16,8 @@ import {
   sleep,
   tapId,
   waitForId,
+  ANDROID_POST_TAP_MS,
+  ANDROID_SETTINGS_SETTLE_MS,
 } from "./helpers";
 
 const CONSENT_MARKERS = [
@@ -100,7 +103,7 @@ export async function runAndroidNetworkPacketTunnelJourney(
 
     await tapId(device, "btn-vpn-prepare", 8_000);
     steps.push("vpn-prepare-attempt");
-    await sleep(1_200);
+    await sleep(ANDROID_SETTINGS_SETTLE_MS);
     await dismissSystemAlerts(device);
 
     try {

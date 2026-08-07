@@ -4,7 +4,8 @@
  */
 import type { DeviceSession } from "@csark0812/devicewright";
 import { claimForId } from "../claims";
-import { hostLaunchId, TARGET_CATALOG } from "../catalog";
+import { hostLaunchId,
+  TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
   assertPayloadContains,
@@ -14,6 +15,8 @@ import {
   sleep,
   tapId,
   waitForId,
+  ANDROID_POST_TAP_MS,
+  ANDROID_SETTINGS_SETTLE_MS,
 } from "./helpers";
 
 const ET_MARKERS = [
@@ -56,11 +59,11 @@ export async function runAndroidSpotlightJourney(
 
     await tapId(device, "btn-seed-appsearch", 8_000);
     steps.push("seed-appsearch");
-    await sleep(800);
+    await sleep(400);
 
     await tapId(device, "btn-query-appsearch", 8_000);
     steps.push("query-appsearch");
-    await sleep(1_200);
+    await sleep(ANDROID_SETTINGS_SETTLE_MS);
 
     steps.push("appsearch-hit-attempt");
     let hit = false;
@@ -90,7 +93,7 @@ export async function runAndroidSpotlightJourney(
         steps.push("appsearch-ax-hit");
         break;
       }
-      await sleep(700);
+      await sleep(ANDROID_POST_TAP_MS);
     }
 
     if (hit) {
