@@ -1,0 +1,550 @@
+{
+  "artifactDir": "/Users/christophersarkissian/Repositories/expo-targets/examples/.devicewright/artifacts/targets-1786076735014",
+  "claimState": {
+    "surviving": [
+      "share",
+      "action",
+      "widgets",
+      "file-provider",
+      "keyboard"
+    ],
+    "cut": [
+      "native-share",
+      "native-action",
+      "file-provider-ui",
+      "credentials-provider",
+      "call-directory",
+      "print-service",
+      "network-packet-tunnel",
+      "watch",
+      "watch-widget",
+      "notification-service",
+      "notification-content",
+      "native-notification-content",
+      "app-intent",
+      "wallet",
+      "wallet-ui",
+      "photo-editing",
+      "spotlight",
+      "spotlight-delegate",
+      "bg-download",
+      "message-filter",
+      "unwanted-communication"
+    ],
+    "stub": [],
+    "osLimit": [],
+    "rows": [
+      {
+        "id": "share",
+        "status": "green"
+      },
+      {
+        "id": "action",
+        "status": "green"
+      },
+      {
+        "id": "widgets",
+        "status": "green"
+      },
+      {
+        "id": "file-provider",
+        "status": "green"
+      },
+      {
+        "id": "keyboard",
+        "status": "green"
+      },
+      {
+        "id": "native-share",
+        "status": "red",
+        "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.native.share -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.native.share, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.native.share\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.native.share\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+        "failureKind": "product"
+      },
+      {
+        "id": "native-action",
+        "status": "red",
+        "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.native.action -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.native.action, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.native.action\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.native.action\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+        "failureKind": "product"
+      },
+      {
+        "id": "file-provider-ui",
+        "status": "red",
+        "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.fileproviderui -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.fileproviderui, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.fileproviderui\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.fileproviderui\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+        "failureKind": "product"
+      },
+      {
+        "id": "credentials-provider",
+        "status": "red",
+        "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.credentialsprovider -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.credentialsprovider, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.credentialsprovider\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.credentialsprovider\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+        "failureKind": "product"
+      },
+      {
+        "id": "call-directory",
+        "status": "red",
+        "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.calldirectory -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.calldirectory, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.calldirectory\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.calldirectory\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+        "failureKind": "product"
+      },
+      {
+        "id": "print-service",
+        "status": "red",
+        "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.printservice -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.printservice, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.printservice\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.printservice\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+        "failureKind": "product"
+      },
+      {
+        "id": "network-packet-tunnel",
+        "status": "red",
+        "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.networkpackettunnel -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.networkpackettunnel, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.networkpackettunnel\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.networkpackettunnel\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+        "failureKind": "product"
+      },
+      {
+        "id": "watch",
+        "status": "red",
+        "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.watch -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.watch, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.watch\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.watch\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+        "failureKind": "product"
+      },
+      {
+        "id": "watch-widget",
+        "status": "red",
+        "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.watchwidget -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.watchwidget, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.watchwidget\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.watchwidget\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+        "failureKind": "product"
+      },
+      {
+        "id": "notification-service",
+        "status": "red",
+        "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.notificationservice -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.notificationservice, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.notificationservice\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.notificationservice\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+        "failureKind": "product"
+      },
+      {
+        "id": "notification-content",
+        "status": "red",
+        "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.notificationcontent -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.notificationcontent, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.notificationcontent\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.notificationcontent\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+        "failureKind": "product"
+      },
+      {
+        "id": "native-notification-content",
+        "status": "red",
+        "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.native.notificationcontent -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.native.notificationcontent, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.native.notificationcontent\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.native.notificationcontent\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+        "failureKind": "product"
+      },
+      {
+        "id": "app-intent",
+        "status": "red",
+        "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.appintent -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.appintent, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.appintent\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.appintent\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+        "failureKind": "product"
+      },
+      {
+        "id": "wallet",
+        "status": "red",
+        "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.wallet -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.wallet, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.wallet\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.wallet\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+        "failureKind": "product"
+      },
+      {
+        "id": "wallet-ui",
+        "status": "red",
+        "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.wallet -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.wallet, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.wallet\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.wallet\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+        "failureKind": "product"
+      },
+      {
+        "id": "photo-editing",
+        "status": "red",
+        "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.photoediting -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.photoediting, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.photoediting\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.photoediting\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+        "failureKind": "product"
+      },
+      {
+        "id": "spotlight",
+        "status": "red",
+        "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.spotlight -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.spotlight, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.spotlight\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.spotlight\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+        "failureKind": "product"
+      },
+      {
+        "id": "spotlight-delegate",
+        "status": "red",
+        "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.spotlightdelegate -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.spotlightdelegate, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.spotlightdelegate\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.spotlightdelegate\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+        "failureKind": "product"
+      },
+      {
+        "id": "bg-download",
+        "status": "red",
+        "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.bgdownload -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.bgdownload, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.bgdownload\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.bgdownload\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+        "failureKind": "product"
+      },
+      {
+        "id": "message-filter",
+        "status": "red",
+        "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.messagefilter -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.messagefilter, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.messagefilter\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.messagefilter\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+        "failureKind": "product"
+      },
+      {
+        "id": "unwanted-communication",
+        "status": "red",
+        "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.unwantedcommunication -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.unwantedcommunication, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.unwantedcommunication\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.unwantedcommunication\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+        "failureKind": "product"
+      }
+    ]
+  },
+  "results": [
+    {
+      "id": "share",
+      "path": "examples/share",
+      "phase": 1,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "clear-payload",
+        "host-sheet-primary",
+        "share-chrome-ok",
+        "assert-text-payload",
+        "host-sheet-ok",
+        "open-main-app",
+        "open-main-ok",
+        "system-share-text-smoke",
+        "system-share-text-ok"
+      ],
+      "checklist": [
+        "c1-1-trigger-from-host",
+        "c1-2-find-extension-row",
+        "c1-3-complete-appex",
+        "c1-4-assert-host-marker"
+      ]
+    },
+    {
+      "id": "action",
+      "path": "examples/action",
+      "phase": 1,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "clear-payload",
+        "host-sheet-primary",
+        "action-chrome-ok",
+        "assert-action-marker",
+        "host-sheet-ok",
+        "system-share-text-smoke",
+        "system-share-text-auto-dismiss"
+      ],
+      "checklist": [
+        "c1-1-trigger-from-host",
+        "c1-2-find-extension-row",
+        "c1-3-complete-appex",
+        "c1-4-assert-host-marker"
+      ]
+    },
+    {
+      "id": "widgets",
+      "path": "examples/widgets",
+      "phase": 3,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "seed-payload",
+        "host-contract-ok",
+        "launcher-home",
+        "find-widget-tile",
+        "widget-already-present",
+        "widget-tile-marker-ok",
+        "find-host-icon",
+        "host-icon-ok"
+      ]
+    },
+    {
+      "id": "file-provider",
+      "path": "examples/file-provider",
+      "phase": 5,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "clear-payload",
+        "seed-android-docs",
+        "host-marker-ok",
+        "documents-surface",
+        "launch-documentsui",
+        "documents-show-roots",
+        "documents-root-listed",
+        "documents-root-opened",
+        "documents-seed-visible",
+        "host-marker-reassert",
+        "fp-android-deepen-ok"
+      ]
+    },
+    {
+      "id": "keyboard",
+      "path": "examples/keyboard",
+      "phase": 5,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "open-ime-settings",
+        "settings-drill:On-screen keyboard",
+        "ime-listed",
+        "ime-row-opened",
+        "ime-et-key-miss",
+        "keyboard-android-ime-list-ok"
+      ]
+    },
+    {
+      "id": "native-share",
+      "path": "examples/native/share",
+      "phase": 1,
+      "ok": false,
+      "status": "red",
+      "steps": [
+        "android-launch-host"
+      ],
+      "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.native.share -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.native.share, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.native.share\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.native.share\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+      "failureKind": "product",
+      "checklist": []
+    },
+    {
+      "id": "native-action",
+      "path": "examples/native/action",
+      "phase": 1,
+      "ok": false,
+      "status": "red",
+      "steps": [
+        "android-launch-host"
+      ],
+      "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.native.action -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.native.action, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.native.action\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.native.action\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+      "failureKind": "product",
+      "checklist": []
+    },
+    {
+      "id": "file-provider-ui",
+      "path": "examples/file-provider-ui",
+      "phase": 5,
+      "ok": false,
+      "status": "red",
+      "steps": [
+        "android-launch-host"
+      ],
+      "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.fileproviderui -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.fileproviderui, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.fileproviderui\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.fileproviderui\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+      "failureKind": "product"
+    },
+    {
+      "id": "credentials-provider",
+      "path": "examples/credentials-provider",
+      "phase": 5,
+      "ok": false,
+      "status": "red",
+      "steps": [
+        "android-launch-host"
+      ],
+      "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.credentialsprovider -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.credentialsprovider, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.credentialsprovider\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.credentialsprovider\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+      "failureKind": "product"
+    },
+    {
+      "id": "call-directory",
+      "path": "examples/call-directory",
+      "phase": 5,
+      "ok": false,
+      "status": "red",
+      "steps": [
+        "android-launch-host"
+      ],
+      "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.calldirectory -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.calldirectory, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.calldirectory\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.calldirectory\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+      "failureKind": "product"
+    },
+    {
+      "id": "print-service",
+      "path": "examples/print-service",
+      "phase": 5,
+      "ok": false,
+      "status": "red",
+      "steps": [
+        "android-launch-host"
+      ],
+      "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.printservice -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.printservice, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.printservice\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.printservice\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+      "failureKind": "product"
+    },
+    {
+      "id": "network-packet-tunnel",
+      "path": "examples/network-packet-tunnel",
+      "phase": 5,
+      "ok": false,
+      "status": "red",
+      "steps": [
+        "android-launch-host"
+      ],
+      "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.networkpackettunnel -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.networkpackettunnel, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.networkpackettunnel\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.networkpackettunnel\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+      "failureKind": "product"
+    },
+    {
+      "id": "watch",
+      "path": "examples/watch",
+      "phase": 5,
+      "ok": false,
+      "status": "red",
+      "steps": [
+        "android-launch-host"
+      ],
+      "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.watch -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.watch, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.watch\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.watch\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+      "failureKind": "product"
+    },
+    {
+      "id": "watch-widget",
+      "path": "examples/watch-widget",
+      "phase": 5,
+      "ok": false,
+      "status": "red",
+      "steps": [
+        "android-launch-host"
+      ],
+      "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.watchwidget -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.watchwidget, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.watchwidget\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.watchwidget\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+      "failureKind": "product"
+    },
+    {
+      "id": "notification-service",
+      "path": "examples/notification-service",
+      "phase": 4,
+      "ok": false,
+      "status": "red",
+      "steps": [
+        "android-launch-host"
+      ],
+      "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.notificationservice -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.notificationservice, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.notificationservice\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.notificationservice\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+      "failureKind": "product"
+    },
+    {
+      "id": "notification-content",
+      "path": "examples/notification-content",
+      "phase": 4,
+      "ok": false,
+      "status": "red",
+      "steps": [
+        "android-launch-host"
+      ],
+      "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.notificationcontent -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.notificationcontent, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.notificationcontent\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.notificationcontent\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+      "failureKind": "product"
+    },
+    {
+      "id": "native-notification-content",
+      "path": "examples/native/notification-content",
+      "phase": 4,
+      "ok": false,
+      "status": "red",
+      "steps": [
+        "android-launch-host"
+      ],
+      "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.native.notificationcontent -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.native.notificationcontent, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.native.notificationcontent\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.native.notificationcontent\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+      "failureKind": "product"
+    },
+    {
+      "id": "app-intent",
+      "path": "examples/app-intent",
+      "phase": 5,
+      "ok": false,
+      "status": "red",
+      "steps": [
+        "android-launch-host"
+      ],
+      "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.appintent -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.appintent, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.appintent\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.appintent\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+      "failureKind": "product"
+    },
+    {
+      "id": "wallet",
+      "path": "examples/wallet",
+      "phase": 4,
+      "ok": false,
+      "status": "red",
+      "steps": [
+        "android-launch-host"
+      ],
+      "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.wallet -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.wallet, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.wallet\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.wallet\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+      "failureKind": "product"
+    },
+    {
+      "id": "wallet-ui",
+      "path": "examples/wallet",
+      "phase": 4,
+      "ok": false,
+      "status": "red",
+      "steps": [
+        "android-launch-host"
+      ],
+      "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.wallet -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.wallet, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.wallet\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.wallet\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+      "failureKind": "product"
+    },
+    {
+      "id": "photo-editing",
+      "path": "examples/photo-editing",
+      "phase": 5,
+      "ok": false,
+      "status": "red",
+      "steps": [
+        "add-media",
+        "android-launch-host"
+      ],
+      "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.photoediting -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.photoediting, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.photoediting\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.photoediting\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+      "failureKind": "product"
+    },
+    {
+      "id": "spotlight",
+      "path": "examples/spotlight",
+      "phase": 5,
+      "ok": false,
+      "status": "red",
+      "steps": [
+        "android-launch-host"
+      ],
+      "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.spotlight -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.spotlight, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.spotlight\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.spotlight\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+      "failureKind": "product"
+    },
+    {
+      "id": "spotlight-delegate",
+      "path": "examples/spotlight-delegate",
+      "phase": 5,
+      "ok": false,
+      "status": "red",
+      "steps": [
+        "android-launch-host"
+      ],
+      "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.spotlightdelegate -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.spotlightdelegate, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.spotlightdelegate\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.spotlightdelegate\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+      "failureKind": "product"
+    },
+    {
+      "id": "bg-download",
+      "path": "examples/bg-download",
+      "phase": 5,
+      "ok": false,
+      "status": "red",
+      "steps": [
+        "android-launch-host"
+      ],
+      "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.bgdownload -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.bgdownload, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.bgdownload\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.bgdownload\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+      "failureKind": "product"
+    },
+    {
+      "id": "message-filter",
+      "path": "examples/message-filter",
+      "phase": 5,
+      "ok": false,
+      "status": "red",
+      "steps": [
+        "android-launch-host"
+      ],
+      "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.messagefilter -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.messagefilter, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.messagefilter\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.messagefilter\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+      "failureKind": "product"
+    },
+    {
+      "id": "unwanted-communication",
+      "path": "examples/unwanted-communication",
+      "phase": 5,
+      "ok": false,
+      "status": "red",
+      "steps": [
+        "android-launch-host"
+      ],
+      "error": "Error: /Users/christophersarkissian/Library/Android/sdk/platform-tools/adb -s emulator-5554 shell monkey -p com.expotargets.example.unwantedcommunication -c android.intent.category.LAUNCHER 1 failed (252): args: [-p, com.expotargets.example.unwantedcommunication, -c, android.intent.category.LAUNCHER, 1]\n arg: \"-p\"\n arg: \"com.expotargets.example.unwantedcommunication\"\n arg: \"-c\"\n arg: \"android.intent.category.LAUNCHER\"\n arg: \"1\"\ndata=\"com.expotargets.example.unwantedcommunication\"\ndata=\"android.intent.category.LAUNCHER\"\n",
+      "failureKind": "product"
+    }
+  ]
+}
