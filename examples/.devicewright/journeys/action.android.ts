@@ -16,7 +16,7 @@ import {
   waitForNamed,
 } from "./helpers";
 
-const ANDROID_SHARE_IDS = new Set(["share"]);
+const ANDROID_ACTION_IDS = new Set(["action"]);
 
 async function tapLabeledButton(
   device: DeviceSession,
@@ -66,7 +66,7 @@ async function confirmChooserIfNeeded(device: DeviceSession): Promise<void> {
   }
 }
 
-async function pickShareTarget(
+async function pickActionTarget(
   device: DeviceSession,
   entry: TargetCatalogEntry,
 ): Promise<void> {
@@ -74,8 +74,8 @@ async function pickShareTarget(
     entry.extensionName,
     entry.hostDisplayName,
     ...entry.extensionAliases,
-  ].filter((n) => n && n !== "Share");
-  const ordered = [...new Set(["Example Share", "ET Share", ...names])];
+  ].filter(Boolean);
+  const ordered = [...new Set(["Example Action", "ET Action", ...names])];
   let tapped = false;
   for (const name of ordered) {
     try {
@@ -88,55 +88,53 @@ async function pickShareTarget(
   }
   if (!tapped) {
     throw new Error(
-      `android share chooser missing target; tried=${ordered.join(",")}`,
+      `android action chooser missing target; tried=${ordered.join(",")}`,
     );
   }
   await confirmChooserIfNeeded(device);
   await sleep(1_000);
 }
 
+/** Flat AX text for Process|Save|Action chrome (no dumpsys). */
 async function treeFlat(device: DeviceSession): Promise<string> {
   return (await device.accessibilityTree())
     .map((n) => nodeVisibleText(n) || String(n.label ?? n.value ?? ""))
     .join("\n");
 }
 
-async function assertShareActivityUi(device: DeviceSession): Promise<void> {
-  const flat = await treeFlat(device);
-  if (!/Open main app/i.test(flat)) {
-    throw new Error(
-      `expected Share Activity (Open main app); got=${flat.slice(0, 400)}`,
-    );
-  }
-  if (!/Save/i.test(flat)) {
-    throw new Error(`expected Save on Share Activity; got=${flat.slice(0, 400)}`);
-  }
-}
-
-async function waitForShareChrome(
+async function waitForActionChrome(
   device: DeviceSession,
-  timeoutMs = 8_000,
-): Promise<void> {
+  timeoutMs = 4_000,
+): Promise<"visible" | "auto-dismissed"> {
   const deadline = Date.now() + timeoutMs;
-  let last = "";
   while (Date.now() < deadline) {
-    last = await treeFlat(device);
-    if (/Open main app/i.test(last) && /Save/i.test(last)) {
-      return;
+    const flat = await treeFlat(device);
+    if (/Process|Save|kind:image|Images:/i.test(flat)) {
+      return "visible";
     }
-    await sleep(250);
+    // Host ready again = ActionActivity already closed (auto-Process).
+    if (/status-target-ready|btn-open-share-sheet|btn-clear-payload/i.test(flat)) {
+      return "auto-dismissed";
+    }
+    await sleep(200);
   }
-  throw new Error(
-    `Share Activity chrome not visible; got=${last.slice(0, 400)}`,
-  );
+  return "auto-dismissed";
 }
 
-async function waitForHostMain(
+async function completeAction(
   device: DeviceSession,
   entry: TargetCatalogEntry,
-  timeoutMs = 12_000,
 ): Promise<void> {
-  await waitForId(device, hostReadyTestId(entry.testIds), timeoutMs);
+  const label = entry.completeButton || "Process";
+  try {
+    await tapLabeledButton(device, label, 3_000);
+  } catch {
+    try {
+      await tapLabeledButton(device, "Save", 1_500);
+    } catch {
+      await sleep(500);
+    }
+  }
 }
 
 async function refreshHostPayload(
@@ -144,7 +142,7 @@ async function refreshHostPayload(
   entry: TargetCatalogEntry,
 ): Promise<void> {
   await device.launchApp(entry.hostBundleId, { terminateRunning: false });
-  await waitForHostMain(device, entry);
+  await waitForId(device, hostReadyTestId(entry.testIds), 12_000);
   if (entry.testIds.refresh) {
     try {
       await tapId(device, entry.testIds.refresh, 3_000);
@@ -166,16 +164,15 @@ async function openHostShareSheet(
 }
 
 /**
- * Android dual of share C1 — host Share sheet required; Devicewright session only.
- * No raw adb: HOME/BACK/terminate/openShareText are DW 0.1.15+ session APIs.
- * (EXTRA_STREAM image cold-start has no DW peer yet — not required for green.)
+ * Android dual of action C1 — host Share sheet required; Devicewright session only.
+ * ActionExtension auto-Processes ~350ms; green is host marker `grayscale`.
  */
-export async function runAndroidShareJourney(
+export async function runAndroidActionJourney(
   device: DeviceSession,
   id: keyof typeof TARGET_CATALOG,
 ): Promise<TargetJourneyResult> {
   const entry = TARGET_CATALOG[id];
-  if (!entry || !ANDROID_SHARE_IDS.has(String(id))) {
+  if (!entry || !ANDROID_ACTION_IDS.has(String(id))) {
     return {
       id: String(id),
       path: entry?.path ?? String(id),
@@ -183,7 +180,7 @@ export async function runAndroidShareJourney(
       ok: false,
       status: "stub",
       steps: ["android-unsupported"],
-      error: `android share journey not wired for ${String(id)}`,
+      error: `android action journey not wired for ${String(id)}`,
       failureKind: "stub",
     };
   }
@@ -195,7 +192,7 @@ export async function runAndroidShareJourney(
     steps.push("android-launch-host");
     await device.launchApp(entry.hostBundleId, { terminateRunning: true });
     await dismissSystemAlerts(device);
-    await waitForHostMain(device, entry, 15_000);
+    await waitForId(device, hostReadyTestId(entry.testIds), 15_000);
     steps.push("host-ready");
 
     try {
@@ -205,22 +202,24 @@ export async function runAndroidShareJourney(
       steps.push("clear-payload-skip");
     }
 
-    // --- Authoritative: host Share sheet → chooser → Save → host marker ---
     steps.push("host-sheet-primary");
     await openHostShareSheet(device, entry);
     checklist.push(C1.triggerFromHost);
-    await pickShareTarget(device, entry);
+    await pickActionTarget(device, entry);
     checklist.push(C1.findExtensionRow);
-    await waitForShareChrome(device);
-    await assertShareActivityUi(device);
-    steps.push("share-chrome-ok");
 
-    await tapLabeledButton(device, "Save", 8_000);
+    const chrome = await waitForActionChrome(device);
+    if (chrome === "visible") {
+      steps.push("action-chrome-ok");
+      await completeAction(device, entry);
+    } else {
+      steps.push("action-auto-dismissed");
+    }
     checklist.push(C1.completeAppex);
-    await sleep(800);
-    // Host may already be under the sheet — relaunch/refresh for payload.
+    await sleep(600);
+
     await refreshHostPayload(device, entry);
-    steps.push("assert-text-payload");
+    steps.push("assert-action-marker");
     await assertPayloadContains(
       device,
       entry.testIds.lastPayload,
@@ -230,32 +229,31 @@ export async function runAndroidShareJourney(
     checklist.push(C1.assertHostMarker);
     steps.push("host-sheet-ok");
 
-    // --- Open main app (DW session only) ---
-    steps.push("open-main-app");
-    await openHostShareSheet(device, entry);
-    await pickShareTarget(device, entry);
-    await waitForShareChrome(device);
-    await tapLabeledButton(device, "Open main app", 8_000);
-    await sleep(1_200);
-    await waitForHostMain(device, entry);
-    steps.push("open-main-ok");
-
     // Soft smoke: DW openShareText. OEM choosers often omit our target — never fail green.
     steps.push("system-share-text-smoke");
+    try {
+      await tapId(device, entry.testIds.clearPayload, 3_000);
+    } catch {
+      // optional
+    }
     await device.terminateApp(entry.hostBundleId);
     await device.pressButton({ button: "HOME" });
     await sleep(400);
-    await device.openShareText(entry.payloadMarker);
+    await device.openShareText("expo-targets action process-text sample");
     await sleep(800);
     try {
-      await pickShareTarget(device, entry);
-      await waitForShareChrome(device, 6_000);
-      try {
-        await tapLabeledButton(device, "Cancel", 5_000);
-      } catch {
-        await device.pressButton({ button: "BACK" });
+      await pickActionTarget(device, entry);
+      const smokeChrome = await waitForActionChrome(device, 3_000);
+      if (smokeChrome === "visible") {
+        try {
+          await tapLabeledButton(device, "Cancel", 2_000);
+        } catch {
+          await device.pressButton({ button: "BACK" });
+        }
+        steps.push("system-share-text-ok");
+      } else {
+        steps.push("system-share-text-auto-dismiss");
       }
-      steps.push("system-share-text-ok");
     } catch {
       await device.pressButton({ button: "BACK" }).catch(() => undefined);
       steps.push("system-share-text-chooser-skip");

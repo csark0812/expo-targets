@@ -18,6 +18,7 @@ import {
   waitForId,
 } from "./helpers";
 import { runAndroidShareJourney } from "./share.android";
+import { runAndroidActionJourney } from "./action.android";
 
 async function dismissShareSheet(device: DeviceSession): Promise<void> {
   for (const label of ["Close", "Cancel"]) {
@@ -220,6 +221,9 @@ export async function runShareActionJourney(
   id: keyof typeof TARGET_CATALOG,
 ): Promise<TargetJourneyResult> {
   if (device.platform === "android") {
+    if (id === "action") {
+      return runAndroidActionJourney(device, id);
+    }
     return runAndroidShareJourney(device, id);
   }
 
