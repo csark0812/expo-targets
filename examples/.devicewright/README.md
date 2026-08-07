@@ -51,8 +51,10 @@ Live matrix:
 # iOS
 bun run examples:devicewright:share
 
-# Android — Share Activity ≠ MainActivity; Save; Open main app
+# Android — host Share sheet required (chooser → Save → host marker)
 bun run examples:devicewright:share:android
+# Android — launcher widget tile must show seeded marker
+bun run examples:devicewright:widgets:android
 # or:
 bun examples/.devicewright/cli.ts matrix --ids=share --platform=android --device=emulator-5554 --live-through=1
 ```

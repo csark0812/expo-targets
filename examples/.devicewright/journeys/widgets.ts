@@ -14,6 +14,7 @@ import {
   waitForId,
   waitForNamed,
 } from "./helpers";
+import { runAndroidWidgetsJourney } from "./widgets.android";
 
 function walk(
   nodes: AccessibilityNode[],
@@ -57,6 +58,10 @@ async function findSpringBoardHost(
 export async function runWidgetsJourney(
   device: DeviceSession,
 ): Promise<TargetJourneyResult> {
+  if (device.platform === "android") {
+    return runAndroidWidgetsJourney(device);
+  }
+
   const entry = TARGET_CATALOG.widgets;
   const hostNames = [entry.hostDisplayName, "ET Widgets"].filter(
     (v, i, a) => a.indexOf(v) === i,
