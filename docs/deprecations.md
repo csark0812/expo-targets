@@ -2,7 +2,7 @@
 
 **Source of truth for** deprecation policy and negative-space roadmap constraints.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-05 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-06 -->
 
 ## Widgets / Live Activities
 
@@ -13,7 +13,7 @@ Native WidgetKit + ActivityKit are **first-class** in expo-targets (not soft-dep
 | **Now**             | Widget + Live Activity scaffolds and examples are supported                                 |
 | **Dual engines**    | Still unsupported: do not run expo-widgets and expo-targets WidgetKit generators in one app |
 | **Android widgets** | **First-class** Glance/Compose or RemoteViews deepen (not bridge-grade). Same DoD as iOS: registry + scaffold + example + Devicewright (or leftover). One generator per app if official `expo-widgets` Android lands. |
-| **Android dual**    | API-ceiling program (~40% of types). Ledger in `TYPE_CHARACTERISTICS` (`androidBucket` / `androidComponent`). W0–W3 shipped (through system services). W4 partials next. No orphan Android stubs for unshipped waves. |
+| **Android dual**    | API-ceiling program (~40% of types). Ledger in `TYPE_CHARACTERISTICS` (`androidBucket` / `androidComponent`). W0–W3 shipped (through system services). Ceiling includes W4-in-1.0 partials + Wear strong — no separate W5 Wear wave. No orphan Android stubs outside the ceiling. |
 
 ## New extension types (no orphan stubs)
 

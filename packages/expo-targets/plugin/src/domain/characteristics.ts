@@ -143,8 +143,8 @@ const ANDROID_PARTIAL_NOTES: Partial<Record<ExtensionType, string>> = {
   spotlight: 'AppSearch helpers',
   'spotlight-delegate': 'AppSearch helpers',
   'bg-download': 'DownloadManager / WorkManager facade',
-  'message-filter': 'Optional W4; Call Screening / SMS role',
-  'unwanted-communication': 'Optional W4; Call Screening extras',
+  'message-filter': 'Call Screening / SMS role',
+  'unwanted-communication': 'Call Screening extras',
 };
 
 function androidBucketFor(type: ExtensionType): AndroidBucket {
