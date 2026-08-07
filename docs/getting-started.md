@@ -149,7 +149,7 @@ await order.start({
 });
 ```
 
-`generate` also ensures `tsconfig.json` includes `.expo/types/**/*.ts` when missing (alongside Router’s include if present).
+Apps that only extend `expo/tsconfig.base` (no `include`) already load `.expo/types/*.d.ts` — `generate` does **not** invent an `include`. If `include` is already set (e.g. Expo Router), it appends `.expo/types/**/*.ts` when missing.
 
 Regenerate without a full prebuild: `npx expo-targets generate` (also runs with `npx expo-targets doctor --fix`).
 

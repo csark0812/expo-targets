@@ -10,7 +10,7 @@ import {
   writeTargetsTypesFile,
 } from './typedTargets';
 
-describe('formatTargetsTypesFile', () => {
+describe('formatTargetsTypesFile names', () => {
   test('emits ambient KnownTargets keyed by config.name', () => {
     const content = formatTargetsTypesFile([
       { name: 'MyShare' },
@@ -34,7 +34,9 @@ describe('formatTargetsTypesFile', () => {
     expect(content.indexOf('"Alpha"')).toBeLessThan(content.indexOf('"Zeta"'));
     expect(content.match(/"Zeta"/g)?.length).toBe(1);
   });
+});
 
+describe('formatTargetsTypesFile live activity', () => {
   test('emits KnownLiveActivityAttributes when attributesName is set', () => {
     const content = formatTargetsTypesFile([
       {
@@ -96,8 +98,30 @@ describe('writeTargetsTypesFile', () => {
       fs.rmSync(root, { recursive: true, force: true });
     }
   });
+});
 
-  test('ensureTsconfigExpoTypesInclude is idempotent', () => {
+describe('ensureTsconfigExpoTypesInclude', () => {
+  test('does not invent include when tsconfig has none', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'typed-no-include-'));
+    try {
+      fs.writeFileSync(
+        path.join(root, 'tsconfig.json'),
+        JSON.stringify({
+          extends: 'expo/tsconfig.base',
+          compilerOptions: { strict: true },
+        })
+      );
+      expect(ensureTsconfigExpoTypesInclude(root)).toBe(false);
+      const tsconfig = JSON.parse(
+        fs.readFileSync(path.join(root, 'tsconfig.json'), 'utf8')
+      ) as { include?: string[] };
+      expect(tsconfig.include).toBeUndefined();
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test('is idempotent when glob already present', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'typed-tsconfig-'));
     try {
       fs.writeFileSync(
