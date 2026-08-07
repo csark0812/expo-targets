@@ -26,6 +26,7 @@ import {
   tapProbeHit,
   waitForNamed,
 } from "./helpers";
+import { runAndroidKeyboardJourney } from "./keyboard.android";
 import {
   navigatePath,
   scrollUntilVisible,
@@ -390,6 +391,9 @@ async function ensureFullAccessOn(
 export async function runKeyboardJourney(
   device: DeviceSession,
 ): Promise<TargetJourneyResult> {
+  if (device.platform === "android") {
+    return runAndroidKeyboardJourney(device);
+  }
   const entry = TARGET_CATALOG.keyboard;
   const path = entry?.path ?? "examples/keyboard";
   const steps: string[] = [];
