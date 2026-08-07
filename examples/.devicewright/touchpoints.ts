@@ -408,7 +408,7 @@ export const ANDROID_LOCKED_P: Readonly<Record<string, string>> = {
   "file-provider":
     "DocumentsUI Show roots → root titled Expo Targets listed",
   keyboard:
-    "IME settings enable + select ET Keyboard + soft keyboard + ET key → typed:ET (not device.type)",
+    "DW IME enable+select (setInputMethod) + soft keyboard + ET key → typed:ET (not device.type)",
   "native-share": "Host sheet → chooser → native Save → host marker",
   "native-action": "Host sheet → chooser → native Process/Save → host marker",
   "file-provider-ui":

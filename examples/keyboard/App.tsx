@@ -66,17 +66,6 @@ export default function App() {
           {Platform.OS === 'android' ? 'Open IME settings' : 'Open Settings'}
         </Text>
       </TouchableOpacity>
-      {Platform.OS === 'android' ? (
-        <TouchableOpacity
-          testID="btn-show-ime-picker"
-          style={styles.button}
-          onPress={() => {
-            void Linking.openURL('etkeyboard://ime-picker');
-          }}
-        >
-          <Text style={styles.buttonText}>Choose keyboard</Text>
-        </TouchableOpacity>
-      ) : null}
       <TouchableOpacity
         testID="btn-clear-payload"
         style={styles.button}
