@@ -36,7 +36,8 @@
     "examples:devicewright:messages": "bun examples/.devicewright/cli.ts matrix --ids=messages",
     "examples:devicewright:stickers": "bun examples/.devicewright/cli.ts matrix --ids=stickers",
     "examples:devicewright:clip": "bun examples/.devicewright/cli.ts matrix --ids=clip",
-    "examples:devicewright:widgets": "bun examples/.devicewright/cli.ts matrix --ids=widgets"
+    "examples:devicewright:widgets": "bun examples/.devicewright/cli.ts matrix --ids=widgets",
+    "examples:devicewright:widgets:android": "bun examples/.devicewright/cli.ts matrix --ids=widgets --platform=android --device=emulator-5554 --live-through=3"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.6",

@@ -32,14 +32,34 @@ async function adb(
   });
 }
 
-async function forceStopPackage(serial: string, packageName: string): Promise<void> {
-  await adb(serial, ["shell", "am", "force-stop", packageName]);
+async function terminateHost(
+  device: DeviceSession,
+  packageName: string,
+): Promise<void> {
+  if (device.terminateApp) {
+    await device.terminateApp(packageName);
+  } else {
+    await adb(device.deviceId, ["shell", "am", "force-stop", packageName]);
+  }
   await sleep(400);
 }
 
-async function pressHome(serial: string): Promise<void> {
-  await adb(serial, ["shell", "input", "keyevent", "KEYCODE_HOME"]);
+async function pressHome(device: DeviceSession): Promise<void> {
+  if (device.pressButton) {
+    await device.pressButton({ button: "HOME" });
+  } else {
+    await adb(device.deviceId, ["shell", "input", "keyevent", "KEYCODE_HOME"]);
+  }
   await sleep(400);
+}
+
+async function pressBack(device: DeviceSession): Promise<void> {
+  if (device.pressButton) {
+    await device.pressButton({ button: "BACK" });
+  } else {
+    await adb(device.deviceId, ["shell", "input", "keyevent", "KEYCODE_BACK"]);
+  }
+  await sleep(500);
 }
 
 async function topResumedActivity(serial: string): Promise<string> {
@@ -53,19 +73,7 @@ async function topResumedActivity(serial: string): Promise<string> {
   return line?.trim() ?? "";
 }
 
-async function launchShareActivityWithText(
-  serial: string,
-  text: string,
-): Promise<void> {
-  // adb shell concatenates argv with spaces and re-parses — quote EXTRA_TEXT.
-  const quoted = `'${text.replace(/'/g, `'\\''`)}'`;
-  await adb(serial, [
-    "shell",
-    `am start -a android.intent.action.SEND -t text/plain --es android.intent.extra.TEXT ${quoted} -n com.expotargets.example.share/com.expotargets.example.share.target.share.ShareShareActivity`,
-  ]);
-  await sleep(1_200);
-}
-
+/** Image EXTRA_STREAM still needs a MediaStore URI — keep raw adb for that path. */
 async function launchShareActivityWithImage(serial: string): Promise<void> {
   await adb(serial, [
     "shell",
@@ -109,7 +117,6 @@ async function tapLabeledButton(
     }
     await sleep(250);
   }
-  // Last-resort iOS-style probe (usually unnecessary on Android dumps).
   try {
     const node = await waitForNamed(device, [label], Math.min(timeoutMs, 2_000));
     await tapCenter(device, node);
@@ -192,9 +199,20 @@ async function refreshHostPayload(
   }
 }
 
+async function openHostShareSheet(
+  device: DeviceSession,
+  entry: TargetCatalogEntry,
+): Promise<void> {
+  if (!entry.testIds.openShareSheet) {
+    throw new Error("catalog missing openShareSheet testID");
+  }
+  await tapId(device, entry.testIds.openShareSheet, 8_000);
+  await sleep(1_000);
+}
+
 /**
- * Android dual of share C1 (matches emulator smoke):
- * ShareActivity ≠ MainActivity; Save ≠ open host; Open main app → MainActivity.
+ * Android dual of share C1 — user-facing bar requires host Share sheet.
+ * Cold `am start` / MediaStore image remain secondary coverage only.
  */
 export async function runAndroidShareJourney(
   device: DeviceSession,
@@ -232,20 +250,18 @@ export async function runAndroidShareJourney(
       steps.push("clear-payload-skip");
     }
 
-    // --- Cold text share (authoritative EXTRA_TEXT) ---
-    steps.push("cold-text-share");
-    await forceStopPackage(serial, entry.hostBundleId);
-    await pressHome(serial);
-    await sleep(500);
-    await launchShareActivityWithText(serial, entry.payloadMarker);
+    // --- Authoritative: host Share sheet → chooser → Save → host marker ---
+    steps.push("host-sheet-primary");
+    await openHostShareSheet(device, entry);
+    checklist.push(C1.triggerFromHost);
+    await pickShareTarget(device, entry);
+    checklist.push(C1.findExtensionRow);
     await assertShareActivityUi(device);
     let top = await topResumedActivity(serial);
     if (!/(ShareShareActivity|ExpoTargets(React)?ShareActivity)/.test(top)) {
-      throw new Error(`expected ShareActivity; got ${top}`);
+      throw new Error(`expected ShareActivity after host sheet; got ${top}`);
     }
     steps.push("top=ShareActivity");
-    checklist.push(C1.triggerFromHost);
-    checklist.push(C1.findExtensionRow);
 
     await tapLabeledButton(device, "Save", 8_000);
     checklist.push(C1.completeAppex);
@@ -254,7 +270,7 @@ export async function runAndroidShareJourney(
     if (/MainActivity/.test(top)) {
       throw new Error(`Save must not open MainActivity; top=${top}`);
     }
-    steps.push("cold-save-not-main");
+    steps.push("host-sheet-save-not-main");
 
     await refreshHostPayload(device, entry);
     steps.push("assert-text-payload");
@@ -265,16 +281,17 @@ export async function runAndroidShareJourney(
       12_000,
     );
     checklist.push(C1.assertHostMarker);
+    steps.push("host-sheet-ok");
 
-    // --- Image via system Intent (MediaStore) ---
+    // --- Secondary: image via system Intent (MediaStore) ---
     steps.push("cold-image-share");
     try {
       await tapId(device, entry.testIds.clearPayload, 3_000);
     } catch {
-      // optional — keep text history if clear fails
+      // optional
     }
-    await forceStopPackage(serial, entry.hostBundleId);
-    await pressHome(serial);
+    await terminateHost(device, entry.hostBundleId);
+    await pressHome(device);
     await sleep(400);
     await launchShareActivityWithImage(serial);
     await assertShareActivityUi(device);
@@ -282,7 +299,9 @@ export async function runAndroidShareJourney(
       .map((n) => nodeVisibleText(n) || String(n.label ?? ""))
       .join(" ");
     if (!/Images:\s*1/i.test(imageFlat)) {
-      throw new Error(`expected Images: 1 on Share Activity; got=${imageFlat.slice(0, 300)}`);
+      throw new Error(
+        `expected Images: 1 on Share Activity; got=${imageFlat.slice(0, 300)}`,
+      );
     }
     await tapLabeledButton(device, "Save", 8_000);
     await refreshHostPayload(device, entry);
@@ -294,27 +313,10 @@ export async function runAndroidShareJourney(
     );
     steps.push("image-path-ok");
 
-    // --- Host sheet still resolves Example Share (chooser wiring) ---
-    steps.push("host-sheet-smoke");
-    await tapId(device, entry.testIds.openShareSheet!, 8_000);
-    await sleep(1_000);
-    await pickShareTarget(device, entry);
-    await assertShareActivityUi(device);
-    try {
-      await tapLabeledButton(device, "Cancel", 5_000);
-    } catch {
-      // Dialog Cancel missing — BACK dismisses Share Activity.
-      await adb(serial, ["shell", "input", "keyevent", "KEYCODE_BACK"]);
-      await sleep(500);
-    }
-    steps.push("host-sheet-ok");
-
-    // --- Open main app ---
+    // --- Open main app (from Share Activity after host sheet) ---
     steps.push("open-main-app");
-    await forceStopPackage(serial, entry.hostBundleId);
-    await pressHome(serial);
-    await sleep(400);
-    await launchShareActivityWithText(serial, entry.payloadMarker);
+    await openHostShareSheet(device, entry);
+    await pickShareTarget(device, entry);
     await assertShareActivityUi(device);
     await tapLabeledButton(device, "Open main app", 8_000);
     await sleep(1_200);
@@ -324,6 +326,23 @@ export async function runAndroidShareJourney(
     }
     await waitForId(device, hostReadyTestId(entry.testIds), 12_000);
     steps.push("open-main-ok");
+
+    // Optional: system ACTION_SEND chooser smoke (DW 0.1.15)
+    if (device.openShareText) {
+      steps.push("system-share-text-smoke");
+      await terminateHost(device, entry.hostBundleId);
+      await pressHome(device);
+      await device.openShareText(entry.payloadMarker);
+      await sleep(800);
+      await pickShareTarget(device, entry);
+      await assertShareActivityUi(device);
+      try {
+        await tapLabeledButton(device, "Cancel", 5_000);
+      } catch {
+        await pressBack(device);
+      }
+      steps.push("system-share-text-ok");
+    }
 
     return {
       id: entry.id,
