@@ -141,6 +141,62 @@ export const REQUIRED_V2: readonly RequiredTargetRow[] = [
   ...REQUIRED_V2_PHASE5,
 ] as const;
 
+/** Android closed-set matrix ids (API-ceiling duals + Wear). */
+export const REQUIRED_ANDROID_IDS = [
+  "share",
+  "action",
+  "widgets",
+  "file-provider",
+  "keyboard",
+  "native-share",
+  "native-action",
+  "file-provider-ui",
+  "credentials-provider",
+  "call-directory",
+  "print-service",
+  "network-packet-tunnel",
+  "watch",
+  "watch-widget",
+  "notification-service",
+  "notification-content",
+  "native-notification-content",
+  "app-intent",
+  "wallet",
+  "wallet-ui",
+  "photo-editing",
+  "spotlight",
+  "spotlight-delegate",
+  "bg-download",
+  "message-filter",
+  "unwanted-communication",
+] as const;
+
+export type RequiredAndroidId = (typeof REQUIRED_ANDROID_IDS)[number];
+
+export const REQUIRED_ANDROID: readonly RequiredTargetRow[] =
+  REQUIRED_ANDROID_IDS.map((id) => {
+    const row = REQUIRED_V2.find((r) => r.id === id);
+    if (!row) throw new Error(`REQUIRED_ANDROID id missing from REQUIRED_V2: ${id}`);
+    return row;
+  });
+
+/** Must green at 1.0 — no Android os-limit escape. */
+export const MUST_GREEN_ANDROID = [
+  "native-share",
+  "native-action",
+  "notification-content",
+  "native-notification-content",
+] as const;
+
+/** Already-green duals that must remain green at 1.0. */
+export const MUST_REMAIN_GREEN_ANDROID = [
+  "share",
+  "action",
+  "widgets",
+  "file-provider",
+  "keyboard",
+] as const;
+
 export function requiredRowById(id: string): RequiredTargetRow | undefined {
   return REQUIRED_V2.find((r) => r.id === id);
 }

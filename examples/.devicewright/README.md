@@ -2,11 +2,11 @@
 
 **Source of truth for** Devicewright operator journeys for `examples/*`.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-05 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-06 -->
 
-Owns REQUIRED_V2 journeys for public `examples/*`. Devicewright (`@csark0812/devicewright`) is the private npm library that runs them.
+Owns REQUIRED_V2 journeys for public `examples/*`, plus the Android closed set `REQUIRED_ANDROID` (26 ids). Devicewright (`@csark0812/devicewright`) is the private npm library that runs them.
 
-See [PR_PROOF.md](./PR_PROOF.md) for operator pre-merge checklist, [claims.ts](./claims.ts) for approved `os-limit` rows, and [touchpoints.ts](./touchpoints.ts) for live-touchpoint definitions.
+See [PR_PROOF.md](./PR_PROOF.md) for operator pre-merge checklist, [claims.ts](./claims.ts) for approved `os-limit` rows (including `platforms: ["android"]` drafts), [touchpoints.ts](./touchpoints.ts) / `ANDROID_LOCKED_P` for live-touchpoint definitions, and [required.ts](./required.ts) for `REQUIRED_ANDROID`.
 
 ## Full-demo green (notification-service Phase 1)
 
@@ -57,10 +57,17 @@ bun run examples:devicewright:share:android
 bun run examples:devicewright:widgets:android
 # Android — DocumentsUI lists Expo Targets root + host android-docs marker
 bun run examples:devicewright:file-provider:android
+# Android closed matrix (REQUIRED_ANDROID, live-through=5)
+bun run examples:devicewright:android:matrix
 # or:
 bun examples/.devicewright/cli.ts matrix --ids=share --platform=android --device=emulator-5554 --live-through=1
+
+# Human summary + live stderr progress (default). Machine JSON:
+bun examples/.devicewright/cli.ts matrix --platform=android --device=emulator-5554 --live-through=5 --no-fail-fast --json
+# Always written: artifactDir/events.jsonl + matrix-result.json (prefer these over redirecting stdout)
 ```
 
+Android Master Locked P strings live in `ANDROID_LOCKED_P` ([touchpoints.ts](./touchpoints.ts)). Must-green / must-remain-green ids must exit `green` only; other closed-set ids may exit `green` ∪ Android `os-limit` with matching CLAIMS.
 
 Debug binaries are an **operator** fail. For each REQUIRED_V2 example:
 

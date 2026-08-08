@@ -10,12 +10,6 @@ import {
 
 const STUB_SPECS: readonly PluginkitOsLimitSpec[] = [
   {
-    id: "credentials-provider",
-    phase: 5,
-    extensionPointPattern: /authentication-services-credential-provider-ui/i,
-    stepLabel: "pluginkit-credentials-provider",
-  },
-  {
     id: "account-auth",
     phase: 5,
     extensionPointPattern:
@@ -45,12 +39,6 @@ const STUB_SPECS: readonly PluginkitOsLimitSpec[] = [
     phase: 5,
     extensionPointPattern: /ManagedSettingsUI\.shield-configuration-service/i,
     stepLabel: "pluginkit-shield-config",
-  },
-  {
-    id: "network-packet-tunnel",
-    phase: 5,
-    extensionPointPattern: /networkextension\.packet-tunnel/i,
-    stepLabel: "pluginkit-network-packet-tunnel",
   },
   {
     id: "network-app-proxy",

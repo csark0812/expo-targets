@@ -2,7 +2,7 @@
 
 **Source of truth for** `expo-target.config` options and extension types.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-05 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-06 -->
 
 > **Orphan-stub freeze:** do not add new `ExtensionType` values without registry + scaffold + example + Devicewright row. See [deprecations.md](./deprecations.md). Widgets policy: [widgets.md](./widgets.md).
 
@@ -953,14 +953,14 @@ Types with a production example + Devicewright row are marked ✅. Entitlement-g
 | `device-activity-monitor`                                                                   | ✅ iOS 15+ (Family Controls os-limit)    | —                   | Device activity monitor     |
 | `shield-action` / `shield-config`                                                           | ✅ iOS 15+ (Family Controls os-limit)    | —                   | Screen Time shields         |
 | `matter`                                                                                    | ✅ iOS 16.1+                             | —                   | Matter extensions           |
-| `watch` / `watch-widget`                                                                    | ✅ watchOS (paired sim DoD)              | 🔜 W5               | Watch / Wear tiles          |
+| `watch` / `watch-widget`                                                                    | ✅ watchOS (paired sim DoD)              | ✅ Wear strong      | Watch / Wear tiles          |
 | `keyboard`                                                                                  | ✅ iOS 8+                                | ✅ W3b (IME; Settings leftover) | Custom keyboard / IME       |
 | `photo-editing`                                                                             | ✅ iOS 8+                                | 🔜 W4 partial       | Photo Editing / ACTION_EDIT |
 | `file-provider` / `file-provider-ui`                                                        | ✅ iOS 11+                               | ✅ W3a (DocumentsProvider + UI Activity) | File Provider / Documents   |
 | `broadcast-upload` / `broadcast-setup-ui`                                                   | ✅ iOS 10+                               | —                   | ReplayKit broadcast         |
 | `call-directory`                                                                            | ✅ iOS 10+                               | ✅ W3b (CallScreening; role leftover) | Call Directory / Screening  |
-| `message-filter`                                                                            | ✅ iOS 11+                               | 🔜 W4 optional      | SMS/MMS filter              |
-| `unwanted-communication`                                                                    | ✅ iOS 12+                               | 🔜 W4 optional      | Unwanted communication UI   |
+| `message-filter`                                                                            | ✅ iOS 11+                               | 🔜 W4 partial       | SMS/MMS filter              |
+| `unwanted-communication`                                                                    | ✅ iOS 12+                               | 🔜 W4 partial       | Unwanted communication UI   |
 | `network-packet-tunnel`                                                                     | ✅ (NE entitlement os-limit)             | ✅ W3c (VpnService fail-closed; consent leftover) | VPN / packet tunnel         |
 | `network-app-proxy` / `network-dns-proxy` / `network-filter-data`                           | ✅ (NE entitlement os-limit)             | — (use tunnel)      | Other NE types              |
 | `classkit-context`                                                                          | ✅ iOS 11.4+                             | —                   | ClassKit context provider   |
@@ -970,7 +970,7 @@ Types with a production example + Devicewright row are marked ✅. Entitlement-g
 
 **Legend:** ✅ Production with example + Devicewright · 🔜 Android wave planned · — Not applicable (Apple-only)
 
-> **Android API-ceiling:** ~12 strong + ~8 partial groups. SSOT flags: `TYPE_CHARACTERISTICS.androidBucket` / `androidComponent`. Waves 0–3: foundation through system services (DocumentsProvider, Autofill, IME, CallScreening, Print, VpnService). Settings/Play leftovers for IME/VPN/call/credentials (and print when non-automatable). ActivityKit / Dynamic Island / StandBy remain iOS-only.
+> **Android API-ceiling:** ~12 strong + ~8 partial groups. SSOT flags: `TYPE_CHARACTERISTICS.androidBucket` / `androidComponent`. Waves 0–3 shipped (DocumentsProvider, Autofill, IME, CallScreening, Print, VpnService). Ceiling for 1.0 also includes **W4-in-1.0 partials** and **Wear strong** (`watch` / `watch-widget`) — no separate W5 Wear wave; `message-filter` / `unwanted-communication` are in-ceiling partials (not optional). Settings/Play leftovers for IME/VPN/call/credentials (and print when non-automatable). ActivityKit / Dynamic Island / StandBy remain iOS-only.
 
 > **Combined targets:** For `wallet` and `intent` types, you can use the `ios.wallet.ui` or `ios.intents.ui` config options to generate both the main extension and its UI companion from a single config file. The CLI generates combined wallet extensions by default. See [Wallet Extension](#wallet-extension) and [Intent UI Extension](#intent-ui-extension) sections for details.
 

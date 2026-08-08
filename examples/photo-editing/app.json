@@ -42,7 +42,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.expotargets.example.photo-editing"
+      "package": "com.expotargets.example.photoediting"
     }
   }
 }

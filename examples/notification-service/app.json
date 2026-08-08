@@ -43,7 +43,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.expotargets.example.notification-service"
+      "package": "com.expotargets.example.notificationservice"
     }
   }
 }

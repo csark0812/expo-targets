@@ -221,7 +221,7 @@ export async function runShareActionJourney(
   id: keyof typeof TARGET_CATALOG,
 ): Promise<TargetJourneyResult> {
   if (device.platform === "android") {
-    if (id === "action") {
+    if (id === "action" || id === "native-action") {
       return runAndroidActionJourney(device, id);
     }
     return runAndroidShareJourney(device, id);

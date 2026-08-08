@@ -17,9 +17,11 @@ type ShareActionProps = TargetConfig & { directory: string };
 function resolveActivationRules(
   props: ShareActionProps
 ): ShareExtensionActivationRule[] | undefined {
-  const iosRules = props.ios?.activationRules;
-  if (iosRules?.length) return iosRules;
-  return props.android?.activationRules;
+  // Android CNG: prefer android.activationRules so host Share.share (SEND)
+  // is not dropped when ios rules differ. Fall back to ios for dual configs.
+  const androidRules = props.android?.activationRules;
+  if (androidRules?.length) return androidRules;
+  return props.ios?.activationRules;
 }
 
 function resolveActivityClassName(
@@ -66,7 +68,9 @@ function buildIntentFilters(
   rules: ShareExtensionActivationRule[] | undefined
 ): any[] {
   if (type === 'action') {
-    return [
+    // PROCESS_TEXT = selection toolbar; SEND = host Share.share / DW openShareText
+    // Locked P (host sheet → chooser → Activity). MIME from activationRules.
+    const filters: any[] = [
       {
         action: [
           { $: { 'android:name': 'android.intent.action.PROCESS_TEXT' } },
@@ -77,6 +81,19 @@ function buildIntentFilters(
         data: [{ $: { 'android:mimeType': 'text/plain' } }],
       },
     ];
+    const plan = mimePlanFromActivationRules(rules);
+    if (plan.singleMimes.length) {
+      filters.push({
+        action: [{ $: { 'android:name': 'android.intent.action.SEND' } }],
+        category: [
+          { $: { 'android:name': 'android.intent.category.DEFAULT' } },
+        ],
+        data: plan.singleMimes.map((mime) => ({
+          $: { 'android:mimeType': mime },
+        })),
+      });
+    }
+    return filters;
   }
 
   const plan = mimePlanFromActivationRules(rules);

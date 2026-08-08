@@ -1,9 +1,100 @@
 import { StatusBar } from 'expo-status-bar';
 import { AppGroupStorage } from 'expo-targets';
 import { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Linking,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 const storage = new AppGroupStorage('group.com.expotargets.example.app-intent');
+
+async function openAppActionsSettings() {
+  if (Platform.OS === 'android') {
+    try {
+      await Linking.sendIntent('android.settings.VOICE_INPUT_SETTINGS');
+      return;
+    } catch {
+      // fall through
+    }
+  }
+  await Linking.openSettings();
+}
+
+function seedShortcut(setPayload: (v: string) => void) {
+  storage.set('ai:marker', 'ET Greet');
+  setPayload(JSON.stringify({ marker: 'ET Greet', seeded: true }));
+}
+
+function clearAiPayload(setPayload: (v: string) => void) {
+  storage.remove('ai:marker');
+  storage.remove('ai:result');
+  storage.remove('ai:lastAt');
+  setPayload('none');
+}
+
+function AppIntentActions({
+  payload,
+  refresh,
+  setPayload,
+}: {
+  payload: string;
+  refresh: () => void;
+  setPayload: (v: string) => void;
+}) {
+  return (
+    <>
+      {Platform.OS === 'android' ? (
+        <>
+          <TouchableOpacity
+            testID="btn-seed-shortcut"
+            accessibilityLabel="Seed shortcut"
+            style={styles.button}
+            onPress={() => seedShortcut(setPayload)}
+          >
+            <Text style={styles.buttonText}>Seed shortcut</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            testID="btn-open-app-actions"
+            accessibilityLabel="Open App Actions"
+            style={styles.button}
+            onPress={() => {
+              void openAppActionsSettings();
+            }}
+          >
+            <Text style={styles.buttonText}>Open App Actions</Text>
+          </TouchableOpacity>
+        </>
+      ) : (
+        <Text accessibilityLabel="ai-shortcuts-hint">
+          Shortcuts → ET Greet run writes App Group
+        </Text>
+      )}
+      <TouchableOpacity
+        testID="btn-refresh"
+        accessibilityLabel="Refresh"
+        style={styles.button}
+        onPress={refresh}
+      >
+        <Text style={styles.buttonText}>Refresh</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        testID="btn-clear-payload"
+        accessibilityLabel="Clear"
+        style={styles.button}
+        onPress={() => clearAiPayload(setPayload)}
+      >
+        <Text style={styles.buttonText}>Clear</Text>
+      </TouchableOpacity>
+      <Text testID="text-last-payload" style={styles.payload}>
+        {payload}
+      </Text>
+    </>
+  );
+}
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -35,33 +126,16 @@ export default function App() {
       <Text testID="text-bundle-suffix">
         com.expotargets.example.app-intent
       </Text>
-      <Text accessibilityLabel="ai-shortcuts-hint">
-        Shortcuts → ET Greet run writes App Group
+      <Text style={styles.hint} testID="text-platform-note">
+        {Platform.OS === 'android'
+          ? 'Android: App Actions/shortcuts list should show ET Greet.'
+          : 'Shortcuts → ET Greet run writes App Group'}
       </Text>
-      <TouchableOpacity
-        testID="btn-refresh"
-        accessibilityLabel="Refresh"
-        style={styles.button}
-        onPress={refresh}
-      >
-        <Text style={styles.buttonText}>Refresh</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        testID="btn-clear-payload"
-        accessibilityLabel="Clear"
-        style={styles.button}
-        onPress={() => {
-          storage.remove('ai:marker');
-          storage.remove('ai:result');
-          storage.remove('ai:lastAt');
-          setPayload('none');
-        }}
-      >
-        <Text style={styles.buttonText}>Clear</Text>
-      </TouchableOpacity>
-      <Text testID="text-last-payload" style={styles.payload}>
-        {payload}
-      </Text>
+      <AppIntentActions
+        payload={payload}
+        refresh={refresh}
+        setPayload={setPayload}
+      />
     </View>
   );
 }
@@ -75,6 +149,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   title: { fontSize: 20, fontWeight: '600', marginBottom: 12 },
+  hint: { color: '#666', fontSize: 13, textAlign: 'center' },
   button: {
     backgroundColor: '#007AFF',
     paddingHorizontal: 16,

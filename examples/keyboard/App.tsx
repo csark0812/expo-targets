@@ -39,7 +39,7 @@ export default function App() {
       <Text testID="text-bundle-suffix">com.expotargets.example.keyboard</Text>
       <Text style={styles.hint} testID="text-platform-note">
         {Platform.OS === 'android'
-          ? 'Enable ET Keyboard under Settings → Language & input (leftover if picker cannot be automated).'
+          ? 'Enable + select ET Keyboard (Settings → Language & input), then tap the ET key.'
           : 'Type with ET Keyboard (Settings → Keyboards) or system keyboard.'}
       </Text>
       <TextInput

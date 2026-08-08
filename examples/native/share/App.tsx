@@ -4,6 +4,7 @@ import { AppGroupStorage } from 'expo-targets';
 import { useCallback, useEffect, useState } from 'react';
 import {
   AppState,
+  Platform,
   Share,
   StyleSheet,
   Text,
@@ -11,10 +12,19 @@ import {
   View,
 } from 'react-native';
 
-const storage = new AppGroupStorage(
-  'group.com.expotargets.example.native.share'
-);
-const STORAGE_KEY = 'nativeShare:items';
+const APP_GROUP = 'group.com.expotargets.example.native.share';
+/** Matches expo-target.config.json `name` / Android TARGET_NAME meta. */
+const ANDROID_TARGET_NAME = 'NativeShare';
+const IOS_STORAGE_KEY = 'nativeShare:items';
+
+const storage =
+  Platform.OS === 'android'
+    ? new AppGroupStorage(APP_GROUP, ANDROID_TARGET_NAME)
+    : new AppGroupStorage(APP_GROUP);
+
+function storageKey(): string {
+  return Platform.OS === 'android' ? 'items' : IOS_STORAGE_KEY;
+}
 
 /** Marker string asserted by ShareSheetSmoke after Save to App. */
 export const UITEST_NATIVE_SHARE_MARKER = 'expo-targets uitest share payload';
@@ -79,7 +89,7 @@ function formatStoredList(
 
 function seedNativeSharePayload(refresh: () => void) {
   storage.set(
-    STORAGE_KEY,
+    storageKey(),
     JSON.stringify([
       {
         type: 'text',
@@ -93,7 +103,7 @@ function seedNativeSharePayload(refresh: () => void) {
 }
 
 function clearNativeSharePayload(refresh: () => void) {
-  storage.remove(STORAGE_KEY);
+  storage.remove(storageKey());
   refresh();
 }
 
@@ -104,7 +114,7 @@ function useNativeShareHost() {
   const refresh = useCallback(() => {
     try {
       setPayload(
-        formatStoredList(storage.get<SharedItem[] | string>(STORAGE_KEY))
+        formatStoredList(storage.get<SharedItem[] | string>(storageKey()))
       );
     } catch {
       setPayload('none');
@@ -138,11 +148,17 @@ function NativeShareHostView({
   ready,
   refresh,
 }: NativeShareHostViewProps) {
+  const android = Platform.OS === 'android';
   return (
     <View style={styles.container} testID="screen-root">
       <StatusBar style="auto" />
       <Text style={styles.title}>Native Share example</Text>
       <Text testID="status-target-ready">{ready ? 'ready' : 'loading'}</Text>
+      {android ? (
+        <Text testID="text-platform-note" style={styles.hint}>
+          Android: share text → Native Share Activity → Save → host marker.
+        </Text>
+      ) : null}
       <HostButton
         testID="btn-seed-payload"
         label="Seed payload"
@@ -155,12 +171,12 @@ function NativeShareHostView({
       />
       <HostButton
         testID="btn-open-share-sheet"
-        label="Open Share Sheet"
+        label={android ? 'Demo: share text → sheet' : 'Open Share Sheet'}
         onPress={openTextShareSheet}
       />
       <HostButton
         testID="btn-open-image-share"
-        label="Open Image Share"
+        label={android ? 'Demo: share image → sheet' : 'Open Image Share'}
         onPress={openImageShareSheetSafe}
       />
       <HostButton testID="btn-refresh" label="Refresh" onPress={refresh} />
@@ -179,6 +195,7 @@ export default function App() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 24, gap: 12, justifyContent: 'center' },
   title: { fontSize: 22, fontWeight: '700' },
+  hint: { color: '#666', fontSize: 13 },
   button: {
     backgroundColor: '#007AFF',
     padding: 12,

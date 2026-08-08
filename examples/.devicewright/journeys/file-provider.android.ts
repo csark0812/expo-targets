@@ -17,6 +17,9 @@ import {
   tapProbeHit,
   waitForId,
   waitForNamed,
+  ANDROID_POST_TAP_MS,
+  ANDROID_SETTINGS_SETTLE_MS,
+  tapNamedAndroid,
 } from "./helpers";
 
 const DOCUMENTS_UI = "com.google.android.documentsui";
@@ -48,7 +51,7 @@ async function tryOpenRoot(device: DeviceSession): Promise<boolean> {
   try {
     const node = await waitForNamed(device, [...ROOT_MARKERS], 3_000);
     await tapCenter(device, node);
-    await sleep(1_000);
+    await sleep(450);
     return true;
   } catch {
     try {
@@ -59,7 +62,7 @@ async function tryOpenRoot(device: DeviceSession): Promise<boolean> {
         yEndRatio: 0.95,
       });
       await tapProbeHit(device, hit);
-      await sleep(1_000);
+      await sleep(450);
       return true;
     } catch {
       return false;
@@ -74,32 +77,7 @@ async function seedVisible(device: DeviceSession): Promise<boolean> {
   );
 }
 
-async function tapNamed(
-  device: DeviceSession,
-  names: string[],
-  timeoutMs = 3_000,
-): Promise<boolean> {
-  try {
-    const node = await waitForNamed(device, names, timeoutMs);
-    await tapCenter(device, node);
-    await sleep(700);
-    return true;
-  } catch {
-    try {
-      const hit = await findNamedViaPointProbe(device, names, {
-        timeoutMs: Math.min(timeoutMs, 3_000),
-        match: "includes",
-        yStartRatio: 0.0,
-        yEndRatio: 0.35,
-      });
-      await tapProbeHit(device, hit);
-      await sleep(700);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-}
+const tapNamed = tapNamedAndroid;
 
 async function openDocumentsSurface(
   device: DeviceSession,
@@ -109,7 +87,7 @@ async function openDocumentsSurface(
   // (DW has no OPEN_DOCUMENT intent peer yet — launchApp is enough.)
   await device.launchApp(DOCUMENTS_UI, { terminateRunning: true });
   steps.push("launch-documentsui");
-  await sleep(1_400);
+  await sleep(550);
   await dismissSystemAlerts(device);
 
   if (await tapNamed(device, ["Show roots"], 4_000)) {

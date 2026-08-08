@@ -105,6 +105,7 @@ object ExpoTargetsNotificationRouter {
         setTextViewText(R.id.expo_targets_notif_title, title)
         setTextViewText(R.id.expo_targets_notif_body, body)
         setTextViewText(R.id.expo_targets_notif_category, category)
+        setTextViewText(R.id.expo_targets_notif_marker, "ET NCE Content")
       }
 
     val builder =

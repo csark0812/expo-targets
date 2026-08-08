@@ -2,7 +2,7 @@
 
 **Source of truth for** lib floor vs Apple/account gates for extension types.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-05 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-06 -->
 
 ## Max Sim-greenable policy
 
@@ -40,6 +40,7 @@ Each open leftover:
 | unwanted-communication | Phone → SMS/Call Reporting lists ET Unwanted Target | CLAIMS | [spikes/unwanted-communication-call-directory-2026-08-04.md](../examples/.devicewright/artifacts/spikes/unwanted-communication-call-directory-2026-08-04.md) | eng |
 | file-provider | Files domain open → seed *file* visible in AX | CLAIMS | [spikes/file-provider-app-intent-2026-08-04.md](../examples/.devicewright/artifacts/spikes/file-provider-app-intent-2026-08-04.md) | eng |
 | app-intent | Shortcuts tap ET Greet → run + App Group `ai:*` | CLAIMS | [spikes/file-provider-app-intent-2026-08-04.md](../examples/.devicewright/artifacts/spikes/file-provider-app-intent-2026-08-04.md) | eng |
+| android-settings-* | Autofill / CallScreening / Print / VPN / IME / message-filter / unwanted-communication Settings lists | limits.md (Android hard-stop) | [leftovers/android-settings-system-services-2026-08-06.md](../examples/.devicewright/artifacts/leftovers/android-settings-system-services-2026-08-06.md) | eng |
 
 Entitlement/Settings items use `home: wont-do` or the hard-stop table below; **revisit** when DW/Sim coverage improves (plan edit + spike re-run).
 
@@ -68,7 +69,7 @@ Deepen already-green ids before adding shallow types: share/action(+native); saf
 | Network Extensions                                                                | Real `NE*Provider` subclasses that fail closed without entitlement | Network Extension entitlement / VPN Personal / MDM |
 | Credentials / SSO / Call Directory / Family Controls / location-push              | Minimal real principals + host contract                            | Entitlement and/or Settings-only enablement        |
 | Watch / watch-widget                                                              | `watch` + `watch-widget`: watchOS SDK/family 4; widget nests under Watch `.app` PlugIns | Device-only Embed Watch Content; Smart Stack needs user-added complication |
-| Android                                                                           | API-ceiling dual through W3: widgets; share/action; notifications + LA ongoing-notif; DocumentsProvider; Autofill; IME; CallScreening; Print; VpnService | Apple-only types stay `—`; FCM leftover; Settings/Play leftovers: IME / Autofill / CallScreening / VPN / print (see `artifacts/leftovers/android-settings-system-services-2026-08-06.md`) |
+| Android                                                                           | API-ceiling dual through W3 + **W4-in-1.0 partials** + **Wear strong**: widgets; share/action; notifications + LA ongoing-notif; DocumentsProvider; Autofill; IME; CallScreening; Print; VpnService; App Actions / Wallet / AppSearch / ACTION_EDIT / bg-download / message-filter / unwanted-communication; Wear companion + tiles | Apple-only types stay `—`; FCM leftover; Settings/Play leftovers: IME / Autofill / CallScreening / VPN / print (see `artifacts/leftovers/android-settings-system-services-2026-08-06.md`) |
 
 Frozen Devicewright `os-limit` allowlist: [`examples/.devicewright/claims.ts`](../examples/.devicewright/claims.ts).
 

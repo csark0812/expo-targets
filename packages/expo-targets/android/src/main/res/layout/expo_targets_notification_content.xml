@@ -26,4 +26,15 @@
         android:layout_marginTop="4dp"
         android:textSize="11sp"
         android:alpha="0.7" />
+
+    <!-- Custom RemoteViews marker for Devicewright Locked P (expand → ET NCE Content). -->
+    <TextView
+        android:id="@+id/expo_targets_notif_marker"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="ET NCE Content"
+        android:contentDescription="ET NCE Content"
+        android:textStyle="bold"
+        android:textSize="12sp" />
 </LinearLayout>

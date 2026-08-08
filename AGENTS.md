@@ -2,13 +2,13 @@
 
 **Source of truth for** agent cold-start in this repo.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-05 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-06 -->
 
 Humans: see [CONTRIBUTING.md](./CONTRIBUTING.md) for install, CI, Biome, and release.
 
 ## Product posture
 
-expo-targets owns **Expo’s negative space**: React Native share/action/clip/messages extensions, App Clips, stickers, wallet, native WidgetKit + Live Activities, and other Apple targets. Android is an **API-ceiling dual** spine (~40% of types): widgets through W3 system services (DocumentsProvider, Autofill, IME, CallScreening, Print, VpnService); W4 partials next.
+expo-targets owns **Expo’s negative space**: React Native share/action/clip/messages extensions, App Clips, stickers, wallet, native WidgetKit + Live Activities, and other Apple targets. Android is an **API-ceiling dual** spine (~40% of types): W0–W3 shipped (widgets through DocumentsProvider, Autofill, IME, CallScreening, Print, VpnService); ceiling includes **W4-in-1.0 partials** + **Wear strong** (`watch` / `watch-widget`).
 
 - **Native iOS widgets + Live Activities** → this library ([docs/widgets.md](docs/widgets.md)). Official `expo-widgets` is an alternative React/Expo-UI path — do not dual-generate WidgetKit in one app (same one-generator rule if Expo ships Android widgets).
 - **Android ledger** → `TYPE_CHARACTERISTICS.androidBucket` / `androidComponent` in the plugin domain.
