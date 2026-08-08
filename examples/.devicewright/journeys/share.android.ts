@@ -73,32 +73,43 @@ async function confirmChooserIfNeeded(device: DeviceSession): Promise<void> {
   }
 }
 
+async function scrollChooser(device: DeviceSession): Promise<void> {
+  // Intent-resolver grids bury ET N Share below the fold once many hosts are installed.
+  await device.swipe({
+    xStart: 540,
+    yStart: 2200,
+    xEnd: 540,
+    yEnd: 1550,
+    duration: 0.35,
+  });
+  await sleep(ANDROID_POST_TAP_MS);
+}
+
 async function pickShareTarget(
   device: DeviceSession,
   entry: TargetCatalogEntry,
 ): Promise<void> {
-  const names = [
-    entry.extensionName,
-    entry.hostDisplayName,
-    ...entry.extensionAliases,
-  ].filter((n) => n && n !== "Share");
+  // Prefer this row's labels first — never tap the sibling dual (RN ↔ native).
   const ordered = [
-    ...new Set([
-      "Example Share",
-      "ET Share",
-      "Native Share",
-      "ET N Share",
-      ...names,
-    ]),
+    ...new Set(
+      [
+        entry.extensionName,
+        entry.hostDisplayName,
+        ...entry.extensionAliases,
+      ].filter((n) => n && n !== "Share"),
+    ),
   ];
   let tapped = false;
-  for (const name of ordered) {
-    try {
-      await tapLabeledButton(device, name, 4_000);
-      tapped = true;
-      break;
-    } catch {
-      // try next
+  for (let pass = 0; pass < 3 && !tapped; pass++) {
+    if (pass > 0) await scrollChooser(device);
+    for (const name of ordered) {
+      try {
+        await tapLabeledButton(device, name, pass === 0 ? 2_500 : 3_500);
+        tapped = true;
+        break;
+      } catch {
+        // try next
+      }
     }
   }
   if (!tapped) {

@@ -17,6 +17,7 @@ import {
   sleep,
   tapCenter,
   tapId,
+  tapNamedAndroid,
   tapProbeHit,
   waitForId,
   waitForNamed,
@@ -111,7 +112,9 @@ async function findNotifRow(
   const cell = tree.find((n) => {
     const t = `${nodeVisibleText(n)} ${n.label ?? ""} ${n.type ?? ""}`;
     return (
-      /rich-|RemoteViews|ET NCE|notificationcontent|ET NCE N/i.test(t) &&
+      /rich-|RemoteViews|ET NCE Content|ET NCE|notificationcontent|ET NCE N|myNotificationCategory/i.test(
+        t,
+      ) &&
       n.frame &&
       n.frame.width > 40 &&
       n.frame.height > 24
@@ -182,6 +185,20 @@ export async function runAndroidNotificationContentJourney(
     steps.push("post-rich-content");
     await tapId(device, "btn-android-rich-notif", 8_000);
     await sleep(ANDROID_SETTINGS_SETTLE_MS);
+    // Confirm presentContent landed (permission / channel failures leave "none").
+    try {
+      const tree = await device.accessibilityTree();
+      const payload = tree.find((n) => n.identifier === entry.testIds.lastPayload);
+      const text = String(payload?.value ?? payload?.label ?? "");
+      if (!/^rich-\d+/i.test(text)) {
+        throw new Error(`NCE post did not update host payload; last=${text || "none"}`);
+      }
+      steps.push("post-rich-payload-ok");
+    } catch (e) {
+      throw e instanceof Error
+        ? e
+        : new Error(`NCE post did not update host payload; ${String(e)}`);
+    }
 
     await device.pressButton({ button: "HOME" });
     await sleep(500);
@@ -189,6 +206,20 @@ export async function runAndroidNotificationContentJourney(
 
     steps.push("shade-open");
     await openNotificationShade(device);
+    // Best-effort clear of prior IME/system rows so the NCE cell is findable.
+    if (await tapNamedAndroid(device, ["Clear all"], 1_200)) {
+      steps.push("shade-cleared");
+      await device.pressButton({ button: "HOME" }).catch(() => undefined);
+      await sleep(300);
+      await device.launchApp(pkg, { terminateRunning: false });
+      await waitForId(device, hostReadyTestId(entry.testIds), 10_000);
+      await tapId(device, "btn-android-rich-notif", 8_000);
+      await sleep(ANDROID_SETTINGS_SETTLE_MS);
+      await device.pressButton({ button: "HOME" });
+      await sleep(400);
+      await openNotificationShade(device);
+      steps.push("post-rich-after-clear");
+    }
 
     let marker = await waitForNceMarker(device, 4_000);
     if (!marker) {

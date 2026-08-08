@@ -17,9 +17,11 @@ type ShareActionProps = TargetConfig & { directory: string };
 function resolveActivationRules(
   props: ShareActionProps
 ): ShareExtensionActivationRule[] | undefined {
-  const iosRules = props.ios?.activationRules;
-  if (iosRules?.length) return iosRules;
-  return props.android?.activationRules;
+  // Android CNG: prefer android.activationRules so host Share.share (SEND)
+  // is not dropped when ios rules differ. Fall back to ios for dual configs.
+  const androidRules = props.android?.activationRules;
+  if (androidRules?.length) return androidRules;
+  return props.ios?.activationRules;
 }
 
 function resolveActivityClassName(

@@ -73,32 +73,43 @@ async function confirmChooserIfNeeded(device: DeviceSession): Promise<void> {
   }
 }
 
+async function scrollChooser(device: DeviceSession): Promise<void> {
+  // Intent-resolver grids bury ET Action / ET N Action below the fold.
+  await device.swipe({
+    xStart: 540,
+    yStart: 2200,
+    xEnd: 540,
+    yEnd: 1550,
+    duration: 0.35,
+  });
+  await sleep(ANDROID_POST_TAP_MS);
+}
+
 async function pickActionTarget(
   device: DeviceSession,
   entry: TargetCatalogEntry,
 ): Promise<void> {
-  const names = [
-    entry.extensionName,
-    entry.hostDisplayName,
-    ...entry.extensionAliases,
-  ].filter(Boolean);
+  // Prefer this row's labels first — never tap the sibling dual (RN ↔ native).
   const ordered = [
-    ...new Set([
-      "Example Action",
-      "ET Action",
-      "Native Action",
-      "ET N Action",
-      ...names,
-    ]),
+    ...new Set(
+      [
+        entry.extensionName,
+        entry.hostDisplayName,
+        ...entry.extensionAliases,
+      ].filter(Boolean),
+    ),
   ];
   let tapped = false;
-  for (const name of ordered) {
-    try {
-      await tapLabeledButton(device, name, 4_000);
-      tapped = true;
-      break;
-    } catch {
-      // try next
+  for (let pass = 0; pass < 3 && !tapped; pass++) {
+    if (pass > 0) await scrollChooser(device);
+    for (const name of ordered) {
+      try {
+        await tapLabeledButton(device, name, pass === 0 ? 2_500 : 3_500);
+        tapped = true;
+        break;
+      } catch {
+        // try next
+      }
     }
   }
   if (!tapped) {
