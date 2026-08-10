@@ -3,13 +3,13 @@ import process from 'node:process';
 import fs from 'fs-extra';
 import prompts from 'prompts';
 import { copyTemplate } from './copyTemplate';
+import { getExpoUiWidgetTemplate } from './expoUiWidgetTemplate';
 import { generateConfig } from './generateConfig';
 import { getTargetPromptQuestions } from './prompts';
 import {
   getReactNativeTemplate,
   isReactNativeCapableType,
 } from './reactNativeTemplate';
-import { getExpoUiWidgetTemplate } from './expoUiWidgetTemplate';
 import { resolveAndroidPackage } from './resolveAndroidPackage';
 import { resolveAppGroup } from './resolveAppGroup';
 import {

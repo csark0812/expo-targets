@@ -19,6 +19,12 @@ export type {
   LiveActivityPayloadRegistry,
   TargetName,
 } from './generatedNames';
+export type {
+  LiveActivityEnvironment,
+  LiveActivityLayout,
+  LiveActivityLayoutComponent,
+} from './liveActivityLayout';
+export { createLiveActivityLayout } from './liveActivityLayout';
 export type { ContentBlockerReloadOpts } from './modules/contentBlocker/index';
 // Content Blocker
 export { ContentBlocker } from './modules/contentBlocker/index';
@@ -111,12 +117,6 @@ export type {
   TimelineEntry,
 } from './Target';
 export { createTarget } from './Target';
-export type {
-  LiveActivityEnvironment,
-  LiveActivityLayout,
-  LiveActivityLayoutComponent,
-} from './liveActivityLayout';
-export { createLiveActivityLayout } from './liveActivityLayout';
 export type {
   PushToStartTokenEvent,
   UserInteractionEvent,

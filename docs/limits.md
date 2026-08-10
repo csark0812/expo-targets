@@ -2,7 +2,7 @@
 
 **Source of truth for** lib floor vs Apple/account gates for extension types.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-06 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-10 -->
 
 ## Max Sim-greenable policy
 

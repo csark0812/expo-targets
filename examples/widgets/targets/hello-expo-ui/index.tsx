@@ -1,9 +1,6 @@
 import { Button, Text, VStack } from '@expo/ui/swift-ui';
 import { font, foregroundStyle } from '@expo/ui/swift-ui/modifiers';
-import {
-  createLiveActivityLayout,
-  createTarget,
-} from 'expo-targets';
+import { createLiveActivityLayout, createTarget } from 'expo-targets';
 
 type HelloExpoUiProps = {
   message?: string;
@@ -23,7 +20,10 @@ type HelloExpoUiEnv = {
  * Button onPress may return next props (timeline merge). Edit Widget
  * `listId` arrives via environment.configuration when ios.configuration is set.
  */
-function HelloExpoUiLayout(props: HelloExpoUiProps, environment: HelloExpoUiEnv) {
+function HelloExpoUiLayout(
+  props: HelloExpoUiProps,
+  environment: HelloExpoUiEnv
+) {
   'widget';
   const taps = props.taps ?? 0;
   const listId = environment.configuration?.listId;
