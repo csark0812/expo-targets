@@ -1,0 +1,162 @@
+{
+  "surviving": [
+    "share",
+    "action",
+    "widgets",
+    "file-provider",
+    "keyboard",
+    "native-share",
+    "native-action",
+    "credentials-provider",
+    "print-service",
+    "watch",
+    "notification-content",
+    "native-notification-content",
+    "wallet-ui",
+    "spotlight",
+    "spotlight-delegate"
+  ],
+  "cut": [],
+  "stub": [],
+  "osLimit": [
+    "file-provider-ui",
+    "call-directory",
+    "network-packet-tunnel",
+    "watch-widget",
+    "notification-service",
+    "app-intent",
+    "wallet",
+    "photo-editing",
+    "bg-download",
+    "message-filter",
+    "unwanted-communication"
+  ],
+  "rows": [
+    {
+      "id": "share",
+      "status": "green"
+    },
+    {
+      "id": "action",
+      "status": "green"
+    },
+    {
+      "id": "widgets",
+      "status": "green"
+    },
+    {
+      "id": "file-provider",
+      "status": "green"
+    },
+    {
+      "id": "keyboard",
+      "status": "green"
+    },
+    {
+      "id": "native-share",
+      "status": "green"
+    },
+    {
+      "id": "native-action",
+      "status": "green"
+    },
+    {
+      "id": "file-provider-ui",
+      "status": "os-limit",
+      "error": "Opening a document may not surface FileProvUI chooser row + Activity chrome after honest DocumentsUI attempt",
+      "failureKind": "os-limit"
+    },
+    {
+      "id": "credentials-provider",
+      "status": "green"
+    },
+    {
+      "id": "call-directory",
+      "status": "os-limit",
+      "error": "Call Screening settings UI may not list this CallScreeningService after honest attempt",
+      "failureKind": "os-limit"
+    },
+    {
+      "id": "print-service",
+      "status": "green"
+    },
+    {
+      "id": "network-packet-tunnel",
+      "status": "os-limit",
+      "error": "System VPN consent/prepare UI may be unavailable or non-AX after honest VpnService prepare attempt",
+      "failureKind": "os-limit"
+    },
+    {
+      "id": "watch",
+      "status": "green"
+    },
+    {
+      "id": "watch-widget",
+      "status": "os-limit",
+      "error": "Wear pair + tile AX miss after honest attempt, or Wear image/hardware unavailable in lab — Wear pair ok but tile/complication AX missing ET marker string",
+      "failureKind": "os-limit"
+    },
+    {
+      "id": "notification-service",
+      "status": "os-limit",
+      "error": "Shade mutation may be unreachable after honest local/pre-display attempt (incl. FCM-transport-only)",
+      "failureKind": "os-limit"
+    },
+    {
+      "id": "notification-content",
+      "status": "green"
+    },
+    {
+      "id": "native-notification-content",
+      "status": "green"
+    },
+    {
+      "id": "app-intent",
+      "status": "os-limit",
+      "error": "App Actions/shortcuts list may not show ET shortcut after honest attempt",
+      "failureKind": "os-limit"
+    },
+    {
+      "id": "wallet",
+      "status": "os-limit",
+      "error": "Google Wallet/pass host surface unavailable after honest attempt on Google APIs+Play image (or Play Store image unavailable in lab)",
+      "failureKind": "os-limit"
+    },
+    {
+      "id": "wallet-ui",
+      "status": "green"
+    },
+    {
+      "id": "photo-editing",
+      "status": "os-limit",
+      "error": "ACTION_EDIT editor→save→host marker may be unreachable after honest attempt",
+      "failureKind": "os-limit"
+    },
+    {
+      "id": "spotlight",
+      "status": "green"
+    },
+    {
+      "id": "spotlight-delegate",
+      "status": "green"
+    },
+    {
+      "id": "bg-download",
+      "status": "os-limit",
+      "error": "Host marker may not update on Download/WorkManager completion after honest enqueue attempt",
+      "failureKind": "os-limit"
+    },
+    {
+      "id": "message-filter",
+      "status": "os-limit",
+      "error": "Filter settings UI may not list this service after honest Settings attempt",
+      "failureKind": "os-limit"
+    },
+    {
+      "id": "unwanted-communication",
+      "status": "os-limit",
+      "error": "Reporting/screening extras UI may not list this service after honest attempt",
+      "failureKind": "os-limit"
+    }
+  ]
+}
