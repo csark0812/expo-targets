@@ -96,44 +96,53 @@ export async function runWidgetsJourney(
     }
     await sleep(500);
 
-    // Require seeded message (App Group → host UI).
-    await assertPayloadContains(
-      device,
-      entry.testIds.lastPayload,
-      "Hello from host",
-      8_000,
-    );
+    // iOS 26: Text testIDs often lack AXUniqueId — assert via visible labels
+    // (same pattern as widgets-expo-ui), with testID path as a fast path.
+    const seedLabels = async () => flattenLabels(await device.accessibilityTree());
+    try {
+      await assertPayloadContains(
+        device,
+        entry.testIds.lastPayload,
+        "Hello from host",
+        2_000,
+      );
+    } catch {
+      const labels = await seedLabels();
+      if (
+        !labels.some((l) => l.includes("Hello from host")) &&
+        !labels.some((l) => l.includes("seed:Hello from host"))
+      ) {
+        throw new Error(
+          `host seed missing; labels=${labels.slice(0, 50).join(", ")}`,
+        );
+      }
+    }
     steps.push("host-contract-ok");
 
-    await assertPayloadContains(device, "text-expo-ui-seed", "seed:expo-ui", 6_000);
+    try {
+      await assertPayloadContains(device, "text-expo-ui-seed", "seed:expo-ui", 2_000);
+    } catch {
+      const labels = await seedLabels();
+      if (!labels.some((l) => l.includes("seed:expo-ui"))) {
+        throw new Error(
+          `expo-ui seed missing; labels=${labels.slice(0, 50).join(", ")}`,
+        );
+      }
+    }
     steps.push("expo-ui-host-contract-ok");
 
     // Family must appear in the seeded payload (not only constant intent-note).
-    const familyOk = async () => {
-      try {
-        await assertPayloadContains(
-          device,
-          "text-seed-family",
-          "seed:family:systemSmall",
-          2_000,
-        );
-        return "seed-family";
-      } catch {
-        /* fall through */
-      }
-      try {
-        await assertPayloadContains(
-          device,
-          entry.testIds.lastPayload,
-          "family:systemSmall",
-          2_000,
-        );
-        return "payload";
-      } catch {
-        return null;
-      }
-    };
-    const familyHow = await familyOk();
+    // Avoid bare "family:systemSmall" — Hero intent note always contains that substring.
+    const labelsAfterSeed = await seedLabels();
+    const familyHow = labelsAfterSeed.some((l) =>
+      l.includes("seed:family:systemSmall"),
+    )
+      ? "seed-family"
+      : labelsAfterSeed.some((l) =>
+            l.includes("Hello from host · family:systemSmall"),
+          )
+        ? "payload"
+        : null;
     if (!familyHow) {
       throw new Error(
         "widgets seed missing family:systemSmall (rebuild host if App.tsx seed changed)",
@@ -141,12 +150,20 @@ export async function runWidgetsJourney(
     }
     steps.push(`marker-ok:family:systemSmall:${familyHow}`);
 
-    await assertPayloadContains(
-      device,
-      "text-widget-families",
-      "systemMedium",
-      4_000,
-    );
+    if (!labelsAfterSeed.some((l) => l.includes("families:systemSmall,systemMedium"))) {
+      try {
+        await assertPayloadContains(
+          device,
+          "text-widget-families",
+          "systemMedium",
+          4_000,
+        );
+      } catch {
+        throw new Error(
+          `widgets families marker missing; labels=${labelsAfterSeed.slice(0, 40).join(", ")}`,
+        );
+      }
+    }
     steps.push("families-medium-ok");
 
     steps.push("springboard-home");

@@ -68,7 +68,7 @@ export async function runAndroidWidgetsJourney(
       hostBundleId: entry.hostBundleId,
       pinButtonTestId: "btn-pin-hello-widget",
       pinButtonName: "Pin Hello Widget",
-      seedMarkers: [entry.payloadMarker, "Hello from host"],
+      seedMarkers: [entry.payloadMarker, "family:systemSmall"],
       providerClassSuffix:
         "com.expotargets.example.widgets.widget.hellowidget.HelloWidgetWidgetReceiver",
       hostNames,

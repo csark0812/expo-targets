@@ -191,11 +191,13 @@ class ExpoTargetsStorageModule : Module() {
       }
       val hosted = awm.getAppWidgetIds(provider)
       if (hosted.isNotEmpty()) {
+        // Still request a pin: dumpsys "hosted" can be a zombie (not on the
+        // current launcher workspace). Skipping the sheet leaves journeys red
+        // when AX cannot see the seeded Glance tile.
         ExpoTargetsLogger.d(
           TAG,
-          "requestPinWidget: already hosted count=${hosted.size} provider=$provider",
+          "requestPinWidget: already hosted count=${hosted.size} provider=$provider; requesting another pin",
         )
-        return@Function "already-hosted"
       }
       val ok = awm.requestPinAppWidget(provider, null, null)
       ExpoTargetsLogger.d(TAG, "requestPinWidget: requested=$ok provider=$provider")
