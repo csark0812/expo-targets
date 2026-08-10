@@ -196,8 +196,8 @@ export function isAppExtension(): boolean {
  */
 export function prepareVpnConsent(): string {
   try {
-    return ExpoTargetsStorageModule.prepareVpn?.() ?? "unavailable";
+    return ExpoTargetsStorageModule.prepareVpn?.() ?? 'unavailable';
   } catch {
-    return "unavailable";
+    return 'unavailable';
   }
 }
