@@ -1,8 +1,18 @@
 #!/usr/bin/env bun
 import process from "node:process";
+import {
+  createMatrixReporter,
+  formatMatrixSummary,
+} from "@csark0812/devicewright/suite";
 import { formatDryPreflight, runDryPreflight } from "./dry-preflight";
 import { runTargetMatrix } from "./matrix";
-import { REQUIRED_V2, type TargetPhase } from "./required";
+import {
+  MUST_GREEN_ANDROID,
+  MUST_REMAIN_GREEN_ANDROID,
+  REQUIRED_ANDROID,
+  REQUIRED_V2,
+  type TargetPhase,
+} from "./required";
 
 function usage(): never {
   console.error(`examples/.devicewright/cli.ts <command>
@@ -10,17 +20,25 @@ function usage(): never {
 Commands:
   dry-preflight [--no-sim] [--android]
   matrix [--ids=a,b] [--stubs-only] [--live-through=1|2|3|4|5] [--no-fail-fast] [--ensure-install]
-         [--platform=ios|android] [--device=<udid-or-serial>]
-  list
+         [--platform=ios|android] [--device=<udid-or-serial>] [--json] [--must=a,b] [--no-acts]
 
   --ensure-install  Release-build + install missing hosts before live journeys
                     (iOS only today; slow on first run). Skips when already installed.
-  --platform=android  Drive journeys on an adb device (share Android dual).
+  --platform=android  Drive REQUIRED_ANDROID closed set on an adb device
+                      (skips Apple-only ids; default device emulator-5554 via npm script).
   --device=            iOS sim UDID or Android serial (default: env / soft-omit).
+  --json               Print machine JSON on stdout (default: human summary).
+  --must=a,b           MUST ids for summary (android default: MUST_GREEN ∪ MUST_REMAIN).
+  --no-acts            Disable live TraceStep act events in events.jsonl (default: on).
+
+  Artifacts (always): artifactDir/events.jsonl, matrix-result.json, claim-state.json
+  Progress: stderr when TTY (spinner + acts). Agents: tail -f artifactDir/events.jsonl
+            (not stderr). Do not redirect human stdout as JSON.
 
 Env:
   DEVICEWRIGHT_IDB_PATH / IOS_SIMULATOR_MCP_IDB_PATH
   DEVICEWRIGHT_UDID / DEVICEWRIGHT_SIM_UDID
+  DEVICEWRIGHT_MATRIX_ACTS=0|off|false  same as --no-acts
   NODE_AUTH_TOKEN (private @csark0812/devicewright install)
 `);
   process.exit(2);
@@ -33,6 +51,20 @@ function cmdDry(rest: string[]): void {
   });
   console.log(formatDryPreflight(report));
   process.exit(report.ok ? 0 : 1);
+}
+
+function resolveMustIds(
+  rest: string[],
+  platform: "ios" | "android" | undefined,
+): string[] | undefined {
+  const mustArg = rest.find((a) => a.startsWith("--must="));
+  if (mustArg) {
+    return mustArg.slice("--must=".length).split(",").filter(Boolean);
+  }
+  if (platform === "android") {
+    return [...MUST_GREEN_ANDROID, ...MUST_REMAIN_GREEN_ANDROID];
+  }
+  return undefined;
 }
 
 async function cmdMatrix(rest: string[]): Promise<void> {
@@ -56,6 +88,13 @@ async function cmdMatrix(rest: string[]): Promise<void> {
     process.env.DEVICEWRIGHT_UDID ||
     process.env.DEVICEWRIGHT_SIM_UDID ||
     undefined;
+  const wantJson = rest.includes("--json");
+  const mustIds = resolveMustIds(rest, platform);
+
+  const reporter = wantJson
+    ? undefined
+    : createMatrixReporter();
+
   const result = await runTargetMatrix({
     ids,
     stubsOnly: rest.includes("--stubs-only"),
@@ -65,19 +104,33 @@ async function cmdMatrix(rest: string[]): Promise<void> {
     platform,
     iosDevice: platform === "android" ? undefined : device,
     androidDevice: platform === "android" ? device : undefined,
+    onEvent: reporter?.onEvent,
+    streamActs: rest.includes("--no-acts") ? false : undefined,
   });
-  console.log(
-    JSON.stringify(
-      {
-        artifactDir: result.artifactDir,
-        aborted: result.aborted,
-        claimState: result.claimState,
-        results: result.results,
-      },
-      null,
-      2,
-    ),
-  );
+
+  const payload = {
+    artifactDir: result.artifactDir,
+    aborted: result.aborted,
+    claimState: result.claimState,
+    results: result.results,
+  };
+
+  if (wantJson) {
+    console.log(JSON.stringify(payload, null, 2));
+  } else {
+    console.log(
+      formatMatrixSummary(
+        {
+          results: result.results,
+          artifactDir: result.artifactDir,
+          aborted: result.aborted,
+          claimState: result.claimState,
+        },
+        { mustIds },
+      ),
+    );
+  }
+
   const hardRed = result.results.some(
     (r) => !r.ok && r.status !== "stub" && r.status !== "os-limit",
   );
@@ -90,7 +143,10 @@ async function main(): Promise<void> {
   if (cmd === "dry-preflight") return cmdDry(rest);
   if (cmd === "matrix") return cmdMatrix(rest);
   if (cmd === "list") {
-    console.log(JSON.stringify(REQUIRED_V2, null, 2));
+    const platformArg = rest.find((a) => a.startsWith("--platform="));
+    const platform = platformArg?.slice("--platform=".length);
+    const rows = platform === "android" ? REQUIRED_ANDROID : REQUIRED_V2;
+    console.log(JSON.stringify(rows, null, 2));
     return;
   }
   usage();

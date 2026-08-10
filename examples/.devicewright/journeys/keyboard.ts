@@ -6,9 +6,11 @@
  * + enable ET Keyboard + host field receives `typed:ET` from the custom key
  * (not Devicewright `device.type`, which uses the system keyboard).
  *
- * GREEN = Settings lists ET Keyboard + software keyboard + ET key → typed:ET.
- * Full Access is optional for textDocumentProxy.insertText (still toggled On
- * when the Settings row exposes it). Pluginkit alone is never green.
+ * GREEN (iOS) = Settings lists ET Keyboard + software keyboard + ET key → typed:ET.
+ * GREEN (Android) = IME settings enable + select ET + soft keyboard + ET key → typed:ET.
+ * Listing / “keyboard opens” alone is never green. Full Access (iOS) is optional
+ * for textDocumentProxy.insertText (still toggled On when the Settings row
+ * exposes it). Pluginkit alone is never green.
  *
  * Note: `App-prefs:…Keyboard` deep links are unreliable on iOS 26 (often land
  * on Siri). Navigate Settings → General → Keyboard instead.

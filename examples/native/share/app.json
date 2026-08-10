@@ -41,7 +41,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.expotargets.example.native.share"
+      "package": "com.expotargets.example.nativeshare"
     }
   }
 }

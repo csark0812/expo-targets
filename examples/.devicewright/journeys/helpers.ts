@@ -115,6 +115,41 @@ export async function tapId(
   return tapIdSuite(device, id, timeoutMs);
 }
 
+/** Android post-tap settle — shorter than legacy 700–1200ms pads (iOS-parity). */
+export const ANDROID_POST_TAP_MS = 350;
+/** Settings / activity transition settle on Android. */
+export const ANDROID_SETTINGS_SETTLE_MS = 500;
+
+/**
+ * Label tap for Android journeys: capped waitForNamed → point-probe, short settle.
+ * Prefer this over per-file tapNamed + sleep(700).
+ */
+export async function tapNamedAndroid(
+  device: DeviceSession,
+  names: string[],
+  timeoutMs = 4_000,
+): Promise<boolean> {
+  try {
+    await tapCenter(device, await waitForNamed(device, names, timeoutMs));
+    await sleep(ANDROID_POST_TAP_MS);
+    return true;
+  } catch {
+    try {
+      const hit = await findNamedViaPointProbe(device, names, {
+        timeoutMs: Math.min(timeoutMs, 3_500),
+        match: "includes",
+        yStartRatio: 0.05,
+        yEndRatio: 0.95,
+      });
+      await tapProbeHit(device, hit);
+      await sleep(ANDROID_POST_TAP_MS);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+
 export function hostReadyTestId(testIds: {
   screenRoot: string;
   openShareSheet?: string;

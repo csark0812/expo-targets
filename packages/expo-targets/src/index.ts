@@ -93,6 +93,7 @@ export {
 export {
   AppGroupStorage,
   clearSharedData,
+  prepareVpnConsent,
   refreshAllTargets,
 } from './modules/storage/index';
 export type {

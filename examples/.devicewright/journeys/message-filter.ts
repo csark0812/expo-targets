@@ -20,6 +20,7 @@ import {
   sleep,
   waitForNamed,
 } from "./helpers";
+import { runAndroidMessageFilterJourney } from "./message-filter.android";
 import {
   openSettingsApps,
   scrollUntilVisible,
@@ -224,6 +225,9 @@ async function tryOpenSmsFiltering(
 export async function runMessageFilterJourney(
   device: DeviceSession,
 ): Promise<TargetJourneyResult> {
+  if (device.platform === "android") {
+    return runAndroidMessageFilterJourney(device);
+  }
   const entry = TARGET_CATALOG["message-filter"];
   const pathStr = entry?.path ?? "examples/message-filter";
   const claim = claimForId("message-filter");

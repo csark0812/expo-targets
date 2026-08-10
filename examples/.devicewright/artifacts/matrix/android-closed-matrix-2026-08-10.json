@@ -1,0 +1,668 @@
+{
+  "artifactDir": "/Users/christophersarkissian/Repositories/expo-targets/examples/.devicewright/artifacts/targets-1786375479493",
+  "claimState": {
+    "surviving": [
+      "share",
+      "action",
+      "widgets",
+      "file-provider",
+      "keyboard",
+      "native-share",
+      "native-action",
+      "credentials-provider",
+      "print-service",
+      "watch",
+      "notification-content",
+      "native-notification-content",
+      "wallet-ui",
+      "spotlight",
+      "spotlight-delegate"
+    ],
+    "cut": [],
+    "stub": [],
+    "osLimit": [
+      "file-provider-ui",
+      "call-directory",
+      "network-packet-tunnel",
+      "watch-widget",
+      "notification-service",
+      "app-intent",
+      "wallet",
+      "photo-editing",
+      "bg-download",
+      "message-filter",
+      "unwanted-communication"
+    ],
+    "rows": [
+      {
+        "id": "share",
+        "status": "green"
+      },
+      {
+        "id": "action",
+        "status": "green"
+      },
+      {
+        "id": "widgets",
+        "status": "green"
+      },
+      {
+        "id": "file-provider",
+        "status": "green"
+      },
+      {
+        "id": "keyboard",
+        "status": "green"
+      },
+      {
+        "id": "native-share",
+        "status": "green"
+      },
+      {
+        "id": "native-action",
+        "status": "green"
+      },
+      {
+        "id": "file-provider-ui",
+        "status": "os-limit",
+        "error": "Opening a document may not surface FileProvUI chooser row + Activity chrome after honest DocumentsUI attempt",
+        "failureKind": "os-limit"
+      },
+      {
+        "id": "credentials-provider",
+        "status": "green"
+      },
+      {
+        "id": "call-directory",
+        "status": "os-limit",
+        "error": "Call Screening settings UI may not list this CallScreeningService after honest attempt",
+        "failureKind": "os-limit"
+      },
+      {
+        "id": "print-service",
+        "status": "green"
+      },
+      {
+        "id": "network-packet-tunnel",
+        "status": "os-limit",
+        "error": "System VPN consent/prepare UI may be unavailable or non-AX after honest VpnService prepare attempt",
+        "failureKind": "os-limit"
+      },
+      {
+        "id": "watch",
+        "status": "green"
+      },
+      {
+        "id": "watch-widget",
+        "status": "os-limit",
+        "error": "Wear pair + tile AX miss after honest attempt, or Wear image/hardware unavailable in lab — Wear pair ok but tile/complication AX missing ET marker string",
+        "failureKind": "os-limit"
+      },
+      {
+        "id": "notification-service",
+        "status": "os-limit",
+        "error": "Shade mutation may be unreachable after honest local/pre-display attempt (incl. FCM-transport-only)",
+        "failureKind": "os-limit"
+      },
+      {
+        "id": "notification-content",
+        "status": "green"
+      },
+      {
+        "id": "native-notification-content",
+        "status": "green"
+      },
+      {
+        "id": "app-intent",
+        "status": "os-limit",
+        "error": "App Actions/shortcuts list may not show ET shortcut after honest attempt",
+        "failureKind": "os-limit"
+      },
+      {
+        "id": "wallet",
+        "status": "os-limit",
+        "error": "Google Wallet/pass host surface unavailable after honest attempt on Google APIs+Play image (or Play Store image unavailable in lab)",
+        "failureKind": "os-limit"
+      },
+      {
+        "id": "wallet-ui",
+        "status": "green"
+      },
+      {
+        "id": "photo-editing",
+        "status": "os-limit",
+        "error": "ACTION_EDIT editor→save→host marker may be unreachable after honest attempt",
+        "failureKind": "os-limit"
+      },
+      {
+        "id": "spotlight",
+        "status": "green"
+      },
+      {
+        "id": "spotlight-delegate",
+        "status": "green"
+      },
+      {
+        "id": "bg-download",
+        "status": "os-limit",
+        "error": "Host marker may not update on Download/WorkManager completion after honest enqueue attempt",
+        "failureKind": "os-limit"
+      },
+      {
+        "id": "message-filter",
+        "status": "os-limit",
+        "error": "Filter settings UI may not list this service after honest Settings attempt",
+        "failureKind": "os-limit"
+      },
+      {
+        "id": "unwanted-communication",
+        "status": "os-limit",
+        "error": "Reporting/screening extras UI may not list this service after honest attempt",
+        "failureKind": "os-limit"
+      }
+    ]
+  },
+  "results": [
+    {
+      "id": "share",
+      "path": "examples/share",
+      "phase": 1,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "clear-payload",
+        "host-sheet-primary",
+        "share-chrome-ok",
+        "assert-text-payload",
+        "host-sheet-ok",
+        "open-main-app",
+        "open-main-ok",
+        "system-share-text-smoke",
+        "system-share-text-chooser-skip"
+      ],
+      "checklist": [
+        "c1-1-trigger-from-host",
+        "c1-2-find-extension-row",
+        "c1-3-complete-appex",
+        "c1-4-assert-host-marker"
+      ]
+    },
+    {
+      "id": "action",
+      "path": "examples/action",
+      "phase": 1,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "clear-payload",
+        "host-sheet-primary",
+        "action-chrome-ok",
+        "assert-action-marker",
+        "host-sheet-ok",
+        "system-share-text-smoke",
+        "system-share-text-auto-dismiss"
+      ],
+      "checklist": [
+        "c1-1-trigger-from-host",
+        "c1-2-find-extension-row",
+        "c1-3-complete-appex",
+        "c1-4-assert-host-marker"
+      ]
+    },
+    {
+      "id": "widgets",
+      "path": "examples/widgets",
+      "phase": 3,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "seed-payload",
+        "host-contract-ok",
+        "launcher-home",
+        "find-widget-tile",
+        "add-widget-picker",
+        "widget-placed",
+        "widget-tile-host-name-ok",
+        "find-host-icon",
+        "host-icon-ok"
+      ]
+    },
+    {
+      "id": "file-provider",
+      "path": "examples/file-provider",
+      "phase": 5,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "clear-payload",
+        "seed-android-docs",
+        "host-marker-ok",
+        "documents-surface",
+        "launch-documentsui",
+        "documents-show-roots",
+        "documents-root-listed",
+        "documents-root-opened",
+        "documents-seed-visible",
+        "host-marker-reassert",
+        "fp-android-deepen-ok"
+      ]
+    },
+    {
+      "id": "keyboard",
+      "path": "examples/keyboard",
+      "phase": 5,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "show-ime-with-hard-keyboard",
+        "ime-listed:com.expotargets.example.keyboard/.target.keyboard.KeyboardInputMethodService",
+        "ime-set",
+        "ime-current-ok",
+        "ime-et-key-coord:443,2320",
+        "ime-et-key:coord",
+        "typed-et-ok",
+        "keyboard-android-deepen-ok"
+      ]
+    },
+    {
+      "id": "native-share",
+      "path": "examples/native/share",
+      "phase": 1,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "clear-payload",
+        "host-sheet-primary",
+        "share-chrome-ok",
+        "assert-text-payload",
+        "host-sheet-ok"
+      ],
+      "checklist": [
+        "c1-1-trigger-from-host",
+        "c1-2-find-extension-row",
+        "c1-3-complete-appex",
+        "c1-4-assert-host-marker"
+      ]
+    },
+    {
+      "id": "native-action",
+      "path": "examples/native/action",
+      "phase": 1,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "clear-payload",
+        "host-sheet-primary",
+        "action-chrome-ok",
+        "assert-action-marker",
+        "host-sheet-ok"
+      ],
+      "checklist": [
+        "c1-1-trigger-from-host",
+        "c1-2-find-extension-row",
+        "c1-3-complete-appex",
+        "c1-4-assert-host-marker"
+      ]
+    },
+    {
+      "id": "file-provider-ui",
+      "path": "examples/file-provider-ui",
+      "phase": 5,
+      "ok": true,
+      "status": "os-limit",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "host-registered-marker",
+        "document-open-attempt",
+        "launch-documentsui",
+        "documents-nav",
+        "documents-open:Downloads",
+        "chooser-fileprovui-miss",
+        "fileprovui-activity-chrome-miss"
+      ],
+      "error": "Opening a document may not surface FileProvUI chooser row + Activity chrome after honest DocumentsUI attempt",
+      "failureKind": "os-limit"
+    },
+    {
+      "id": "credentials-provider",
+      "path": "examples/credentials-provider",
+      "phase": 5,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "open-autofill-settings",
+        "autofill-list-attempt",
+        "autofill-service-listed",
+        "credentials-android-autofill-list-ok"
+      ]
+    },
+    {
+      "id": "call-directory",
+      "path": "examples/call-directory",
+      "phase": 5,
+      "ok": true,
+      "status": "os-limit",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "seed-blocked-numbers",
+        "settings-launch",
+        "call-screening-list-attempt",
+        "call-screening-service-not-listed"
+      ],
+      "error": "Call Screening settings UI may not list this CallScreeningService after honest attempt",
+      "failureKind": "os-limit"
+    },
+    {
+      "id": "print-service",
+      "path": "examples/print-service",
+      "phase": 5,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "open-print-settings",
+        "print-services-list-attempt",
+        "print-service-listed",
+        "print-service-android-list-ok"
+      ]
+    },
+    {
+      "id": "network-packet-tunnel",
+      "path": "examples/network-packet-tunnel",
+      "phase": 5,
+      "ok": true,
+      "status": "os-limit",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "vpn-registered-marker",
+        "vpn-prepare-attempt",
+        "vpn-prepare-host-ack-miss",
+        "vpn-consent-ui-miss"
+      ],
+      "error": "System VPN consent/prepare UI may be unavailable or non-AX after honest VpnService prepare attempt",
+      "failureKind": "os-limit"
+    },
+    {
+      "id": "watch",
+      "path": "examples/watch",
+      "phase": 5,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "show-wear-marker",
+        "wear-avds:1",
+        "wear-unpaired:1",
+        "wear-pairs:0",
+        "wear-pair-attempt",
+        "wear-pair-status:needs_human",
+        "wear-pair-id:wear:emulator-5554:emula",
+        "wear-human:Install/open Pixel Watch companion (com.google.android.apps.",
+        "companion-testid-visible",
+        "companion-ui-et-marker",
+        "watch-android-ok"
+      ]
+    },
+    {
+      "id": "watch-widget",
+      "path": "examples/watch-widget",
+      "phase": 5,
+      "ok": true,
+      "status": "os-limit",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "show-wear-marker",
+        "wear-avds:1",
+        "wear-unpaired:0",
+        "wear-pairs:1",
+        "wear-pair-attempt",
+        "wear-pair-status:needs_human",
+        "wear-pair-id:wear:emulator-5554:emula",
+        "wear-human:Install/open Pixel Watch companion (com.google.android.apps.",
+        "wear-home",
+        "wear-tile-swipe",
+        "wear-ax-labels:5",
+        "wear-tile-miss"
+      ],
+      "error": "Wear pair + tile AX miss after honest attempt, or Wear image/hardware unavailable in lab — Wear pair ok but tile/complication AX missing ET marker string",
+      "failureKind": "os-limit"
+    },
+    {
+      "id": "notification-service",
+      "path": "examples/notification-service",
+      "phase": 4,
+      "ok": true,
+      "status": "os-limit",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "post-local-process",
+        "home-before-shade",
+        "shade-open-attempt",
+        "shade-mutation-miss"
+      ],
+      "error": "Shade mutation may be unreachable after honest local/pre-display attempt (incl. FCM-transport-only)",
+      "failureKind": "os-limit"
+    },
+    {
+      "id": "notification-content",
+      "path": "examples/notification-content",
+      "phase": 4,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "post-rich-content",
+        "post-rich-payload-ok",
+        "home-before-shade",
+        "shade-open",
+        "shade-cleared",
+        "post-rich-after-clear",
+        "nce-marker-pre-expand",
+        "expand-notification",
+        "nce-remoteviews-marker",
+        "notification-content-android-nce-ok"
+      ]
+    },
+    {
+      "id": "native-notification-content",
+      "path": "examples/native/notification-content",
+      "phase": 4,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "post-rich-content",
+        "post-rich-payload-ok",
+        "home-before-shade",
+        "shade-open",
+        "shade-cleared",
+        "post-rich-after-clear",
+        "nce-marker-pre-expand",
+        "expand-notification",
+        "nce-remoteviews-marker",
+        "native-notification-content-android-nce-ok"
+      ]
+    },
+    {
+      "id": "app-intent",
+      "path": "examples/app-intent",
+      "phase": 5,
+      "ok": true,
+      "status": "os-limit",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "seed-shortcut",
+        "open-app-actions",
+        "app-actions-list-attempt",
+        "et-shortcut-not-listed"
+      ],
+      "error": "App Actions/shortcuts list may not show ET shortcut after honest attempt",
+      "failureKind": "os-limit"
+    },
+    {
+      "id": "wallet",
+      "path": "examples/wallet",
+      "phase": 4,
+      "ok": true,
+      "status": "os-limit",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "seed-pass",
+        "open-wallet-cta",
+        "wallet-pkg-miss:walletnfcrel:Error: /Users/christophersarkissian/Libr",
+        "wallet-pkg-miss:gms:Error: /Users/christophersarkissian/Libr",
+        "wallet-play-image-unavailable",
+        "wallet-pass-surface-attempt",
+        "wallet-host-chrome-only",
+        "wallet-pass-surface-miss"
+      ],
+      "error": "Google Wallet/pass host surface unavailable after honest attempt on Google APIs+Play image (or Play Store image unavailable in lab)",
+      "failureKind": "os-limit"
+    },
+    {
+      "id": "wallet-ui",
+      "path": "examples/wallet",
+      "phase": 4,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "open-issuer-activity",
+        "issuer-chrome-attempt",
+        "issuer-chrome-visible",
+        "wallet-ui-android-ok"
+      ]
+    },
+    {
+      "id": "photo-editing",
+      "path": "examples/photo-editing",
+      "phase": 5,
+      "ok": true,
+      "status": "os-limit",
+      "steps": [
+        "add-media",
+        "android-launch-host",
+        "host-ready",
+        "cleared-payload",
+        "launch-action-edit",
+        "editor-surface-attempt",
+        "editor-chrome-miss",
+        "host-marker-miss"
+      ],
+      "error": "ACTION_EDIT editor→save→host marker may be unreachable after honest attempt",
+      "failureKind": "os-limit"
+    },
+    {
+      "id": "spotlight",
+      "path": "examples/spotlight",
+      "phase": 5,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "cleared-payload",
+        "seed-appsearch",
+        "query-appsearch",
+        "appsearch-hit-attempt",
+        "appsearch-ax-hit",
+        "spotlight-android-ok"
+      ]
+    },
+    {
+      "id": "spotlight-delegate",
+      "path": "examples/spotlight-delegate",
+      "phase": 5,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "refresh-registration",
+        "registration-status-attempt",
+        "registration-testid-visible",
+        "registration-status-ok",
+        "spotlight-delegate-android-ok"
+      ]
+    },
+    {
+      "id": "bg-download",
+      "path": "examples/bg-download",
+      "phase": 5,
+      "ok": true,
+      "status": "os-limit",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "cleared-payload",
+        "enqueue-download",
+        "download-completion-attempt",
+        "download-complete-miss"
+      ],
+      "error": "Host marker may not update on Download/WorkManager completion after honest enqueue attempt",
+      "failureKind": "os-limit"
+    },
+    {
+      "id": "message-filter",
+      "path": "examples/message-filter",
+      "phase": 5,
+      "ok": true,
+      "status": "os-limit",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "host-open-filter-settings",
+        "settings-launch",
+        "filter-settings-list-attempt",
+        "message-filter-not-listed"
+      ],
+      "error": "Filter settings UI may not list this service after honest Settings attempt",
+      "failureKind": "os-limit"
+    },
+    {
+      "id": "unwanted-communication",
+      "path": "examples/unwanted-communication",
+      "phase": 5,
+      "ok": true,
+      "status": "os-limit",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "host-open-screening-settings",
+        "settings-launch",
+        "screening-extras-list-attempt",
+        "unwanted-communication-not-listed"
+      ],
+      "error": "Reporting/screening extras UI may not list this service after honest attempt",
+      "failureKind": "os-limit"
+    }
+  ]
+}

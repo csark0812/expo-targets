@@ -13,6 +13,7 @@ import type { DeviceSession } from "@csark0812/devicewright";
 import { claimForId } from "../claims";
 import { TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
+import { runAndroidCallDirectoryJourney } from "./call-directory.android";
 import {
   dismissSystemAlerts,
   flattenLabels,
@@ -168,6 +169,9 @@ async function tryOpenCallBlockingSettings(
 export async function runCallDirectoryJourney(
   device: DeviceSession,
 ): Promise<TargetJourneyResult> {
+  if (device.platform === "android") {
+    return runAndroidCallDirectoryJourney(device);
+  }
   const entry = TARGET_CATALOG["call-directory"];
   const path = entry?.path ?? "examples/call-directory";
   const claim = claimForId("call-directory");

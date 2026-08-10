@@ -9,6 +9,7 @@ import { spawnSync } from "node:child_process";
 import type { DeviceSession } from "@csark0812/devicewright";
 import { TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
+import { runAndroidAppIntentJourney } from "./app-intent.android";
 import {
   assertPayloadContains,
   dismissSystemAlerts,
@@ -222,6 +223,9 @@ async function tryRunEtGreet(
 export async function runAppIntentJourney(
   device: DeviceSession,
 ): Promise<TargetJourneyResult> {
+  if (device.platform === "android") {
+    return runAndroidAppIntentJourney(device);
+  }
   const entry = TARGET_CATALOG["app-intent"];
   const path = entry?.path ?? "examples/app-intent";
   const steps: string[] = [];

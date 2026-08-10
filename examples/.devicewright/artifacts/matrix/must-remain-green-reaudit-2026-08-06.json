@@ -1,0 +1,147 @@
+{
+  "artifactDir": "/Users/christophersarkissian/Repositories/expo-targets/examples/.devicewright/artifacts/targets-1786075715252",
+  "claimState": {
+    "surviving": [
+      "share",
+      "action",
+      "widgets",
+      "file-provider",
+      "keyboard"
+    ],
+    "cut": [],
+    "stub": [],
+    "osLimit": [],
+    "rows": [
+      {
+        "id": "share",
+        "status": "green"
+      },
+      {
+        "id": "action",
+        "status": "green"
+      },
+      {
+        "id": "widgets",
+        "status": "green"
+      },
+      {
+        "id": "file-provider",
+        "status": "green"
+      },
+      {
+        "id": "keyboard",
+        "status": "green"
+      }
+    ]
+  },
+  "results": [
+    {
+      "id": "share",
+      "path": "examples/share",
+      "phase": 1,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "clear-payload",
+        "host-sheet-primary",
+        "share-chrome-ok",
+        "assert-text-payload",
+        "host-sheet-ok",
+        "open-main-app",
+        "open-main-ok",
+        "system-share-text-smoke",
+        "system-share-text-chooser-skip"
+      ],
+      "checklist": [
+        "c1-1-trigger-from-host",
+        "c1-2-find-extension-row",
+        "c1-3-complete-appex",
+        "c1-4-assert-host-marker"
+      ]
+    },
+    {
+      "id": "action",
+      "path": "examples/action",
+      "phase": 1,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "clear-payload",
+        "host-sheet-primary",
+        "action-chrome-ok",
+        "assert-action-marker",
+        "host-sheet-ok",
+        "system-share-text-smoke",
+        "system-share-text-auto-dismiss"
+      ],
+      "checklist": [
+        "c1-1-trigger-from-host",
+        "c1-2-find-extension-row",
+        "c1-3-complete-appex",
+        "c1-4-assert-host-marker"
+      ]
+    },
+    {
+      "id": "widgets",
+      "path": "examples/widgets",
+      "phase": 3,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "seed-payload",
+        "host-contract-ok",
+        "launcher-home",
+        "find-widget-tile",
+        "widget-already-present",
+        "widget-tile-marker-ok",
+        "find-host-icon",
+        "host-icon-ok"
+      ]
+    },
+    {
+      "id": "file-provider",
+      "path": "examples/file-provider",
+      "phase": 5,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "clear-payload",
+        "seed-android-docs",
+        "host-marker-ok",
+        "documents-surface",
+        "launch-documentsui",
+        "documents-show-roots",
+        "documents-root-listed",
+        "documents-root-opened",
+        "documents-seed-visible",
+        "host-marker-reassert",
+        "fp-android-deepen-ok"
+      ]
+    },
+    {
+      "id": "keyboard",
+      "path": "examples/keyboard",
+      "phase": 5,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "open-ime-settings",
+        "settings-drill:On-screen keyboard",
+        "ime-listed",
+        "ime-row-opened",
+        "ime-et-key-miss",
+        "keyboard-android-ime-list-ok"
+      ]
+    }
+  ]
+}

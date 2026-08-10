@@ -19,6 +19,7 @@ import {
   sleep,
   waitForNamed,
 } from "./helpers";
+import { runAndroidPhotoEditingJourney } from "./photo-editing.android";
 import { tapLabelInTree } from "./settings-nav";
 
 const PHOTOS_BUNDLE = "com.apple.mobileslideshow";
@@ -36,6 +37,9 @@ const EXTENSION_LABELS = [
 export async function runPhotoEditingJourney(
   device: DeviceSession,
 ): Promise<TargetJourneyResult> {
+  if (device.platform === "android") {
+    return runAndroidPhotoEditingJourney(device);
+  }
   const entry = TARGET_CATALOG["photo-editing"];
   const pathStr = entry?.path ?? "examples/photo-editing";
   const steps: string[] = [];

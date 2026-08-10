@@ -28,6 +28,8 @@ const ExpoTargetsStorageModule = requireNativeModule('ExpoTargetsStorage') as {
   refreshTarget: (name?: string | null) => void;
   getTargetsConfig: () => unknown[] | null;
   isAppExtension?: () => boolean;
+  /** Android: start VpnService.prepare consent UI when needed. */
+  prepareVpn?: () => string;
 };
 
 export class AppGroupStorage {
@@ -185,5 +187,17 @@ export function isAppExtension(): boolean {
     return ExpoTargetsStorageModule.isAppExtension?.() ?? false;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Android host: show VpnService.prepare consent UI when required.
+ * Returns `consent-shown` | `already-consented` | `unavailable`.
+ */
+export function prepareVpnConsent(): string {
+  try {
+    return ExpoTargetsStorageModule.prepareVpn?.() ?? 'unavailable';
+  } catch {
+    return 'unavailable';
   }
 }

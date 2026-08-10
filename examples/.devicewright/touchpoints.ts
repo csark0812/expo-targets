@@ -397,6 +397,58 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
   },
 ] as const;
 
+/**
+ * Android Master Locked P (verbatim) for REQUIRED_ANDROID ids.
+ * Journey assertions and Phase 6 matrix gate copy these strings — do not diverge.
+ */
+export const ANDROID_LOCKED_P: Readonly<Record<string, string>> = {
+  share: "Host share sheet → chooser → Save → host marker",
+  action: "Host share sheet → chooser → Process/auto → host marker",
+  widgets: "Launcher tile shows seeded marker",
+  "file-provider":
+    "DocumentsUI Show roots → root titled Expo Targets listed",
+  keyboard:
+    "DW IME enable+select (setInputMethod) + soft keyboard + ET key → typed:ET (not device.type)",
+  "native-share": "Host sheet → chooser → native Save → host marker",
+  "native-action": "Host sheet → chooser → native Process/Save → host marker",
+  "file-provider-ui":
+    "Open document → chooser FileProvUI → Activity chrome",
+  "credentials-provider":
+    "Autofill settings lists this AutofillService by label",
+  "call-directory":
+    "Call Screening settings UI lists this CallScreeningService by label",
+  "print-service":
+    "Print services Settings lists this PrintService by label",
+  "network-packet-tunnel":
+    "System VPN consent/prepare UI for this VpnService shown",
+  "notification-service":
+    "Local/pre-display shade shows mutated title/body",
+  "notification-content":
+    "Expand notification → RemoteViews/custom marker",
+  "native-notification-content": "Expand → marker on native host",
+  "app-intent": "App Actions/shortcuts list shows ET shortcut row",
+  "photo-editing":
+    "ACTION_EDIT → editor → save → host `lastPayload`/testID marker",
+  wallet: "Google Wallet/pass host surface (not companion Activity)",
+  "wallet-ui":
+    "Companion/issuer Activity chrome (not wallet list alone)",
+  spotlight: "AppSearch query hit shows ET marker",
+  "spotlight-delegate":
+    "Host screen shows registration status on named testID (not dumpsys/PackageManager alone)",
+  "bg-download":
+    "Host marker updates on Download/WorkManager completion",
+  "message-filter": "Filter settings UI lists this service",
+  "unwanted-communication":
+    "Reporting/screening extras UI lists this service",
+  watch: "Wear pair succeeds + companion UI AX shows ET marker/testID",
+  "watch-widget":
+    "Wear pair succeeds + Wear tile/complication AX shows ET marker string",
+};
+
 export function touchpointForId(id: string): TouchpointDef | undefined {
   return TOUCHPOINTS.find((t) => t.id === id);
+}
+
+export function androidLockedPForId(id: string): string | undefined {
+  return ANDROID_LOCKED_P[id];
 }

@@ -1,5 +1,9 @@
 import type { DeviceSession } from "@csark0812/devicewright";
-import { TARGET_CATALOG, type TargetCatalogEntry } from "../catalog";
+import {
+  hostLaunchId,
+  TARGET_CATALOG,
+  type TargetCatalogEntry,
+  } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
   assertPayloadContains,
@@ -14,9 +18,12 @@ import {
   tapProbeHit,
   waitForId,
   waitForNamed,
+  ANDROID_POST_TAP_MS,
+  ANDROID_SETTINGS_SETTLE_MS,
 } from "./helpers";
 
-const ANDROID_ACTION_IDS = new Set(["action"]);
+/** RN action + native-action (Phase 1a). Locked P: host sheet → chooser → Process/Save → marker. */
+const ANDROID_ACTION_IDS = new Set(["action", "native-action"]);
 
 async function tapLabeledButton(
   device: DeviceSession,
@@ -37,7 +44,7 @@ async function tapLabeledButton(
     });
     if (node?.frame && node.frame.width >= 8 && node.frame.height >= 8) {
       await tapCenter(device, node);
-      await sleep(600);
+      await sleep(ANDROID_POST_TAP_MS);
       return;
     }
     await sleep(250);
@@ -54,7 +61,7 @@ async function tapLabeledButton(
     });
     await tapProbeHit(device, hit);
   }
-  await sleep(600);
+  await sleep(ANDROID_POST_TAP_MS);
 }
 
 async function confirmChooserIfNeeded(device: DeviceSession): Promise<void> {
@@ -66,24 +73,43 @@ async function confirmChooserIfNeeded(device: DeviceSession): Promise<void> {
   }
 }
 
+async function scrollChooser(device: DeviceSession): Promise<void> {
+  // Intent-resolver grids bury ET Action / ET N Action below the fold.
+  await device.swipe({
+    xStart: 540,
+    yStart: 2200,
+    xEnd: 540,
+    yEnd: 1550,
+    duration: 0.35,
+  });
+  await sleep(ANDROID_POST_TAP_MS);
+}
+
 async function pickActionTarget(
   device: DeviceSession,
   entry: TargetCatalogEntry,
 ): Promise<void> {
-  const names = [
-    entry.extensionName,
-    entry.hostDisplayName,
-    ...entry.extensionAliases,
-  ].filter(Boolean);
-  const ordered = [...new Set(["Example Action", "ET Action", ...names])];
+  // Prefer this row's labels first — never tap the sibling dual (RN ↔ native).
+  const ordered = [
+    ...new Set(
+      [
+        entry.extensionName,
+        entry.hostDisplayName,
+        ...entry.extensionAliases,
+      ].filter(Boolean),
+    ),
+  ];
   let tapped = false;
-  for (const name of ordered) {
-    try {
-      await tapLabeledButton(device, name, 4_000);
-      tapped = true;
-      break;
-    } catch {
-      // try next
+  for (let pass = 0; pass < 3 && !tapped; pass++) {
+    if (pass > 0) await scrollChooser(device);
+    for (const name of ordered) {
+      try {
+        await tapLabeledButton(device, name, pass === 0 ? 2_500 : 3_500);
+        tapped = true;
+        break;
+      } catch {
+        // try next
+      }
     }
   }
   if (!tapped) {
@@ -92,7 +118,7 @@ async function pickActionTarget(
     );
   }
   await confirmChooserIfNeeded(device);
-  await sleep(1_000);
+  await sleep(450);
 }
 
 /** Flat AX text for Process|Save|Action chrome (no dumpsys). */
@@ -109,7 +135,7 @@ async function waitForActionChrome(
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const flat = await treeFlat(device);
-    if (/Process|Save|kind:image|Images:/i.test(flat)) {
+    if (/Process|Save|kind:image|kind:text|Images:|Action extension/i.test(flat)) {
       return "visible";
     }
     // Host ready again = ActionActivity already closed (auto-Process).
@@ -125,23 +151,28 @@ async function completeAction(
   device: DeviceSession,
   entry: TargetCatalogEntry,
 ): Promise<void> {
-  const label = entry.completeButton || "Process";
-  try {
-    await tapLabeledButton(device, label, 3_000);
-  } catch {
+  const labels = [
+    ...entry.completeButton.split(",").map((s) => s.trim()).filter(Boolean),
+    "Process",
+    "Save",
+  ];
+  for (const label of [...new Set(labels)]) {
     try {
-      await tapLabeledButton(device, "Save", 1_500);
+      await tapLabeledButton(device, label, 2_500);
+      return;
     } catch {
-      await sleep(500);
+      // try next (native Action Activity uses Save)
     }
   }
+  await sleep(500);
 }
 
 async function refreshHostPayload(
   device: DeviceSession,
   entry: TargetCatalogEntry,
 ): Promise<void> {
-  await device.launchApp(entry.hostBundleId, { terminateRunning: false });
+  const pkg = hostLaunchId(entry, "android");
+  await device.launchApp(pkg, { terminateRunning: false });
   await waitForId(device, hostReadyTestId(entry.testIds), 12_000);
   if (entry.testIds.refresh) {
     try {
@@ -160,12 +191,13 @@ async function openHostShareSheet(
     throw new Error("catalog missing openShareSheet testID");
   }
   await tapId(device, entry.testIds.openShareSheet, 8_000);
-  await sleep(1_000);
+  await sleep(450);
 }
 
 /**
  * Android dual of action C1 — host Share sheet required; Devicewright session only.
- * ActionExtension auto-Processes ~350ms; green is host marker `grayscale`.
+ * RN ActionExtension auto-Processes ~350ms (marker `grayscale`).
+ * native-action Locked P: Save on native Activity → host marker (`Original`).
  */
 export async function runAndroidActionJourney(
   device: DeviceSession,
@@ -187,10 +219,12 @@ export async function runAndroidActionJourney(
 
   const steps: string[] = [];
   const checklist: string[] = [];
+  const pkg = hostLaunchId(entry, "android");
+  const lockedPOnly = String(id) === "native-action";
 
   try {
     steps.push("android-launch-host");
-    await device.launchApp(entry.hostBundleId, { terminateRunning: true });
+    await device.launchApp(pkg, { terminateRunning: true });
     await dismissSystemAlerts(device);
     await waitForId(device, hostReadyTestId(entry.testIds), 15_000);
     steps.push("host-ready");
@@ -216,7 +250,7 @@ export async function runAndroidActionJourney(
       steps.push("action-auto-dismissed");
     }
     checklist.push(C1.completeAppex);
-    await sleep(600);
+    await sleep(ANDROID_POST_TAP_MS);
 
     await refreshHostPayload(device, entry);
     steps.push("assert-action-marker");
@@ -229,34 +263,36 @@ export async function runAndroidActionJourney(
     checklist.push(C1.assertHostMarker);
     steps.push("host-sheet-ok");
 
-    // Soft smoke: DW openShareText. OEM choosers often omit our target — never fail green.
-    steps.push("system-share-text-smoke");
-    try {
-      await tapId(device, entry.testIds.clearPayload, 3_000);
-    } catch {
-      // optional
-    }
-    await device.terminateApp(entry.hostBundleId);
-    await device.pressButton({ button: "HOME" });
-    await sleep(400);
-    await device.openShareText("expo-targets action process-text sample");
-    await sleep(800);
-    try {
-      await pickActionTarget(device, entry);
-      const smokeChrome = await waitForActionChrome(device, 3_000);
-      if (smokeChrome === "visible") {
-        try {
-          await tapLabeledButton(device, "Cancel", 2_000);
-        } catch {
-          await device.pressButton({ button: "BACK" });
-        }
-        steps.push("system-share-text-ok");
-      } else {
-        steps.push("system-share-text-auto-dismiss");
+    if (!lockedPOnly) {
+      // Soft smoke: DW openShareText. OEM choosers often omit our target — never fail green.
+      steps.push("system-share-text-smoke");
+      try {
+        await tapId(device, entry.testIds.clearPayload, 3_000);
+      } catch {
+        // optional
       }
-    } catch {
-      await device.pressButton({ button: "BACK" }).catch(() => undefined);
-      steps.push("system-share-text-chooser-skip");
+      await device.terminateApp(pkg);
+      await device.pressButton({ button: "HOME" });
+      await sleep(400);
+      await device.openShareText("expo-targets action process-text sample");
+      await sleep(400);
+      try {
+        await pickActionTarget(device, entry);
+        const smokeChrome = await waitForActionChrome(device, 3_000);
+        if (smokeChrome === "visible") {
+          try {
+            await tapLabeledButton(device, "Cancel", 2_000);
+          } catch {
+            await device.pressButton({ button: "BACK" });
+          }
+          steps.push("system-share-text-ok");
+        } else {
+          steps.push("system-share-text-auto-dismiss");
+        }
+      } catch {
+        await device.pressButton({ button: "BACK" }).catch(() => undefined);
+        steps.push("system-share-text-chooser-skip");
+      }
     }
 
     return {

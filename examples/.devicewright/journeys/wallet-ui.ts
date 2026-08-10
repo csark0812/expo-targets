@@ -9,6 +9,7 @@ import type { DeviceSession } from "@csark0812/devicewright";
 import { TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import { dismissSystemAlerts, waitForNamed } from "./helpers";
+import { runAndroidWalletUiJourney } from "./wallet-ui.android";
 
 function pluginkitHasWalletUi(udid: string, appexId: string): boolean {
   const r = spawnSync(
@@ -26,6 +27,9 @@ function pluginkitHasWalletUi(udid: string, appexId: string): boolean {
 export async function runWalletUiJourney(
   device: DeviceSession,
 ): Promise<TargetJourneyResult> {
+  if (device.platform === "android") {
+    return runAndroidWalletUiJourney(device);
+  }
   const entry = TARGET_CATALOG["wallet-ui"];
   const path = entry?.path ?? "examples/wallet";
   const steps: string[] = [];

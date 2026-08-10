@@ -1,5 +1,6 @@
 import type { AccessibilityNode, DeviceSession } from "@csark0812/devicewright";
-import { TARGET_CATALOG } from "../catalog";
+import {
+  TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
   assertPayloadContains,
@@ -14,6 +15,8 @@ import {
   tapProbeHit,
   waitForId,
   waitForNamed,
+  ANDROID_POST_TAP_MS,
+  ANDROID_SETTINGS_SETTLE_MS,
 } from "./helpers";
 
 function walk(
@@ -32,7 +35,7 @@ async function pressHome(device: DeviceSession): Promise<void> {
     throw new Error("pressButton(HOME) required for Android widgets journey");
   }
   await device.pressButton({ button: "HOME" });
-  await sleep(800);
+  await sleep(400);
 }
 
 async function findLauncherLabel(
@@ -75,7 +78,7 @@ async function tryAddWidgetFromPicker(
 ): Promise<boolean> {
   // Long-press empty-ish area to open launcher customize / widgets entry.
   await device.tap({ x: 540, y: 1400, duration: 1.1 });
-  await sleep(900);
+  await sleep(ANDROID_POST_TAP_MS);
 
   for (const label of ["Widgets", "widgets", "Widget"]) {
     try {
@@ -85,18 +88,18 @@ async function tryAddWidgetFromPicker(
       // continue
     }
   }
-  await sleep(700);
+  await sleep(ANDROID_POST_TAP_MS);
 
   for (const name of hostNames) {
     try {
       const row = await waitForNamed(device, [name], 3_000);
       await tapCenter(device, row);
-      await sleep(800);
+      await sleep(400);
       // Prefer a small / 2x2 style if the picker exposes sizes.
       for (const size of ["2×2", "2x2", "Small", "Hello"]) {
         try {
           await tapCenter(device, await waitForNamed(device, [size], 1_500));
-          await sleep(1_200);
+          await sleep(ANDROID_SETTINGS_SETTLE_MS);
           return true;
         } catch {
           // try next size label
@@ -117,7 +120,7 @@ async function tryAddWidgetFromPicker(
       yEndRatio: 0.9,
     });
     await tapProbeHit(device, hit);
-    await sleep(1_200);
+    await sleep(ANDROID_SETTINGS_SETTLE_MS);
     return true;
   } catch {
     return false;

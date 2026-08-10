@@ -40,7 +40,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.expotargets.example.watch-widget"
+      "package": "com.expotargets.example.watchwidget"
     }
   }
 }
