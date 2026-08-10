@@ -21,4 +21,18 @@
         android:text="No message yet"
         android:textSize="13sp"
         android:textColor="#FF3C3C43" />
+    <TextView
+        android:id="@+id/widget_helloremoteviews_taps"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="taps:0"
+        android:textSize="12sp"
+        android:textColor="#FF8E8E93" />
+    <Button
+        android:id="@+id/widget_helloremoteviews_bump"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Bump" />
 </LinearLayout>

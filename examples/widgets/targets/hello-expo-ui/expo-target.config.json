@@ -5,9 +5,25 @@
   "platforms": ["ios", "android"],
   "appGroup": "group.com.expotargets.example.widgets",
   "entry": "./targets/hello-expo-ui/index.tsx",
+  "liveActivity": {
+    "attributesName": "HelloExpoUiAttributes",
+    "static": { "title": "string" },
+    "contentState": { "status": "string" },
+    "pushType": "token"
+  },
   "ios": {
     "bundleIdentifier": "com.expotargets.example.widgets.helloexpoui",
     "displayName": "Hello Expo UI",
+    "configuration": {
+      "title": "Hello Expo UI Configuration",
+      "parameters": {
+        "listId": {
+          "title": "List",
+          "type": "string",
+          "default": "default"
+        }
+      }
+    },
     "colors": {
       "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" },
       "BackgroundColor": { "light": "#F2F2F7", "dark": "#1C1C1E" },

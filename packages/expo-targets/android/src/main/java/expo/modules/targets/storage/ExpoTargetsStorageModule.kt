@@ -9,18 +9,52 @@ import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import expo.modules.targets.ExpoTargetsLogger
 import expo.modules.targets.ExpoTargetsReceiver
+import java.lang.ref.WeakReference
 
 class ExpoTargetsStorageModule : Module() {
   companion object {
     private const val TAG = "Storage"
     const val TARGETS_CONFIG_ASSET = "expo_targets_config.json"
+
+    @Volatile
+    private var moduleRef: WeakReference<ExpoTargetsStorageModule>? = null
+
+    /** Emit from widget process / BroadcastReceiver when host JS is alive. */
+    fun emitUserInteraction(source: String, target: String) {
+      val module = moduleRef?.get() ?: run {
+        ExpoTargetsLogger.d(TAG, "emitUserInteraction: no module (host not ready)")
+        return
+      }
+      try {
+        module.sendEvent(
+          "onUserInteraction",
+          mapOf(
+            "source" to source,
+            "target" to target,
+            "timestamp" to System.currentTimeMillis().toDouble(),
+            "type" to "ExpoWidgetsUserInteraction",
+          ),
+        )
+      } catch (e: Exception) {
+        ExpoTargetsLogger.w(TAG, "emitUserInteraction failed: ${e.message}")
+      }
+    }
   }
 
   override fun definition() = ModuleDefinition {
     Name("ExpoTargetsStorage")
 
+    Events("onUserInteraction")
+
     OnCreate {
       appContext.reactContext?.let { ExpoTargetsLogger.init(it) }
+      moduleRef = WeakReference(this@ExpoTargetsStorageModule)
+    }
+
+    OnDestroy {
+      if (moduleRef?.get() === this@ExpoTargetsStorageModule) {
+        moduleRef = null
+      }
     }
 
     Function("setInt") { key: String, value: Int, suite: String?, targetName: String? ->
@@ -191,11 +225,13 @@ class ExpoTargetsStorageModule : Module() {
       }
       val hosted = awm.getAppWidgetIds(provider)
       if (hosted.isNotEmpty()) {
+        // Still request a pin: dumpsys "hosted" can be a zombie (not on the
+        // current launcher workspace). Skipping the sheet leaves journeys red
+        // when AX cannot see the seeded Glance tile.
         ExpoTargetsLogger.d(
           TAG,
-          "requestPinWidget: already hosted count=${hosted.size} provider=$provider",
+          "requestPinWidget: already hosted count=${hosted.size} provider=$provider; requesting another pin",
         )
-        return@Function "already-hosted"
       }
       val ok = awm.requestPinAppWidget(provider, null, null)
       ExpoTargetsLogger.d(TAG, "requestPinWidget: requested=$ok provider=$provider")

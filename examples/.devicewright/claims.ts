@@ -30,7 +30,7 @@ export const OS_LIMIT_CLAIMS: readonly ClaimsEntry[] = [
   {
     id: "live-activity",
     reason:
-      "Lock Screen chrome may be idb-opaque after Always Allow; Watch Smart Stack only when pair is connected (not merely booted). DI / ActivityKit push / StandBy remain non-Sim-faithful. Host start+update+end alone is not green.",
+      "Lock Screen chrome may be idb-opaque after Always Allow; Watch Smart Stack only when pair is connected (not merely booted). DI / ActivityKit push / StandBy / push-to-start tokens remain non-Sim-faithful. Host start+update+end alone is not green.",
   },
   {
     id: "intent",

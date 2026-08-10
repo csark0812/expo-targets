@@ -332,13 +332,72 @@ interface BaseIosTargetConfig {
    * App Shortcuts provider entries (type='app-intent'). Generated into main app on prebuild.
    */
   appShortcuts?: AppShortcutConfig[];
+
+  /**
+   * Expo-ui Edit Widget (AppIntentConfiguration, iOS 17+).
+   * Parameters land in Layout `environment.configuration`.
+   */
+  configuration?: WidgetConfiguration;
+  /** WidgetKit families for expo-ui Static/AppIntentConfiguration. */
+  supportedFamilies?: WidgetFamily[];
+  /** Disable default WidgetKit content margins (expo-ui). */
+  contentMarginsDisabled?: boolean;
 }
+
+/** WidgetKit family names (expo-ui supportedFamilies). */
+export type WidgetFamily =
+  | 'systemSmall'
+  | 'systemMedium'
+  | 'systemLarge'
+  | 'systemExtraLarge'
+  | 'accessoryCircular'
+  | 'accessoryRectangular'
+  | 'accessoryInline';
+
+export type WidgetParameterString = {
+  title: string;
+  type: 'string';
+  default: string;
+};
+export type WidgetParameterNumber = {
+  title: string;
+  type: 'number';
+  default: number;
+};
+export type WidgetParameterBoolean = {
+  title: string;
+  type: 'boolean';
+  default: boolean;
+};
+export type WidgetParameterEnum = {
+  title: string;
+  type: 'enum';
+  values: { name: string; value: string }[];
+  default: string;
+};
+export type WidgetParameter =
+  | WidgetParameterString
+  | WidgetParameterNumber
+  | WidgetParameterBoolean
+  | WidgetParameterEnum;
+
+/** Expo-ui configurable Edit Widget schema (maps to AppIntentConfiguration). */
+export type WidgetConfiguration = {
+  title?: string;
+  description?: string;
+  parameters: Record<string, WidgetParameter>;
+};
 
 /** Live Activity field schema for CNG codegen */
 export interface LiveActivityConfig {
   attributesName: string;
   static?: Record<string, 'string' | 'double' | 'int' | 'bool'>;
   contentState: Record<string, 'string' | 'double' | 'int' | 'bool'>;
+  /**
+   * When `'token'`, ActivityKit requests a push token (APNs updates / push-to-start).
+   * Simulator cannot prove remote push — Devicewright stays CLAIMS for DI/push/StandBy.
+   */
+  pushType?: 'token' | null;
 }
 
 export interface AppIntentHostConfig {

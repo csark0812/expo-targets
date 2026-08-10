@@ -1,5 +1,9 @@
 import { StatusBar } from 'expo-status-bar';
-import { LiveActivity, requestPinWidget } from 'expo-targets';
+import {
+  addUserInteractionListener,
+  LiveActivity,
+  requestPinWidget,
+} from 'expo-targets';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import {
   Platform,
@@ -12,6 +16,7 @@ import {
 import {
   getExpoUiMessage,
   helloExpoUi,
+  helloExpoUiLiveActivity,
   updateExpoUiMessage,
 } from './targets/hello-expo-ui';
 import {
@@ -20,6 +25,9 @@ import {
   updateRemoteViewsMessage,
 } from './targets/hello-remoteviews';
 import { getMessage, helloWidget, updateMessage } from './targets/hello-widget';
+
+// Keep layout registration reachable (tree-shake guard).
+void helloExpoUiLiveActivity;
 
 /** Seeded host markers for Devicewright (avoid `|` — can confuse AX splits). */
 export const UITEST_WIDGET_SEED = 'Hello from host · family:systemSmall';
@@ -106,55 +114,78 @@ function PayloadLine({
   );
 }
 
-function useWidgetsHostState() {
+function useLivePair() {
+  const [liveId, setLiveId] = useState<string | null>(null);
+  const [liveStatus, setLiveStatus] = useState('idle');
+  return { liveId, setLiveId, liveStatus, setLiveStatus };
+}
+
+function usePayloadState() {
   const [payload, setPayload] = useState('none');
   const [expoUiPayload, setExpoUiPayload] = useState('none');
   const [remoteViewsPayload, setRemoteViewsPayload] = useState('none');
-  const [ready, setReady] = useState(false);
-  const [liveId, setLiveId] = useState<string | null>(null);
-  const [liveStatus, setLiveStatus] = useState('idle');
-  const [pinStatus, setPinStatus] = useState('idle');
-
-  const refresh = useCallback(() => {
+  const refreshPayloads = useCallback(() => {
     setPayload(getMessage() ?? 'none');
     setExpoUiPayload(getExpoUiMessage() ?? 'none');
     setRemoteViewsPayload(getRemoteViewsMessage() ?? 'none');
-    setReady(true);
   }, []);
+  return { payload, expoUiPayload, remoteViewsPayload, refreshPayloads };
+}
+
+function seedAllPayloads(refresh: () => void) {
+  updateMessage(UITEST_WIDGET_SEED);
+  updateExpoUiMessage(UITEST_EXPO_UI_SEED);
+  updateRemoteViewsMessage(UITEST_REMOTEVIEWS_SEED);
+  refresh();
+}
+
+function clearAllPayloads(refresh: () => void) {
+  helloWidget.setData({ message: '' });
+  helloWidget.refresh();
+  helloExpoUi.setData({ message: '' }, { refresh: true });
+  helloRemoteViews.setData({ message: '' });
+  helloRemoteViews.refresh();
+  refresh();
+}
+
+function useWidgetsHostState() {
+  const payloads = usePayloadState();
+  const [ready, setReady] = useState(false);
+  const nativeLive = useLivePair();
+  const expoUiLive = useLivePair();
+  const [pinStatus, setPinStatus] = useState('idle');
+  const [interaction, setInteraction] = useState('none');
+  const refresh = useCallback(() => {
+    payloads.refreshPayloads();
+    setReady(true);
+  }, [payloads.refreshPayloads]);
 
   useEffect(() => {
     refresh();
   }, [refresh]);
-
-  const seedAll = () => {
-    updateMessage(UITEST_WIDGET_SEED);
-    updateExpoUiMessage(UITEST_EXPO_UI_SEED);
-    updateRemoteViewsMessage(UITEST_REMOTEVIEWS_SEED);
-    refresh();
-  };
-
-  const clearAll = () => {
-    helloWidget.setData({ message: '' });
-    helloWidget.refresh();
-    helloExpoUi.setData({ message: '' }, { refresh: true });
-    helloRemoteViews.setData({ message: '' });
-    helloRemoteViews.refresh();
-    refresh();
-  };
+  useEffect(() => {
+    const sub = addUserInteractionListener((event) => {
+      setInteraction(`${event.source}:${event.target}`);
+      refresh();
+    });
+    return () => sub.remove();
+  }, [refresh]);
 
   return {
-    payload,
-    expoUiPayload,
-    remoteViewsPayload,
+    payload: payloads.payload,
+    expoUiPayload: payloads.expoUiPayload,
+    remoteViewsPayload: payloads.remoteViewsPayload,
     ready,
-    liveId,
-    setLiveId,
-    liveStatus,
-    setLiveStatus,
+    ...nativeLive,
+    expoUiLiveId: expoUiLive.liveId,
+    setExpoUiLiveId: expoUiLive.setLiveId,
+    expoUiLiveStatus: expoUiLive.liveStatus,
+    setExpoUiLiveStatus: expoUiLive.setLiveStatus,
     pinStatus,
     setPinStatus,
-    seedAll,
-    clearAll,
+    interaction,
+    seedAll: () => seedAllPayloads(refresh),
+    clearAll: () => clearAllPayloads(refresh),
   };
 }
 
@@ -186,70 +217,102 @@ function Hero({ ready }: { ready: boolean }) {
   );
 }
 
-function Diagnostics({
-  payload,
-  expoUiPayload,
-  remoteViewsPayload,
-  pinStatus,
-}: {
+function seedLabel(opts: {
+  value: string;
+  needle: string;
+  ok: string;
+  miss: string;
+}) {
+  return opts.value.includes(opts.needle)
+    ? opts.ok
+    : `${opts.miss}:${opts.value}`;
+}
+
+function diagnosticRows(props: {
+  payload: string;
+  expoUiPayload: string;
+  remoteViewsPayload: string;
+  interaction: string;
+}) {
+  return [
+    { testID: 'text-last-payload', value: props.payload, a11y: props.payload },
+    {
+      testID: 'text-seed-message',
+      value: seedLabel({
+        value: props.payload,
+        needle: 'Hello from host',
+        ok: 'seed:Hello from host',
+        miss: 'seed-miss',
+      }),
+    },
+    {
+      testID: 'text-seed-family',
+      value: seedLabel({
+        value: props.payload,
+        needle: 'family:systemSmall',
+        ok: 'seed:family:systemSmall',
+        miss: 'family-miss',
+      }),
+    },
+    {
+      testID: 'text-expo-ui-payload',
+      value: props.expoUiPayload,
+      a11y: props.expoUiPayload,
+    },
+    {
+      testID: 'text-expo-ui-seed',
+      value: seedLabel({
+        value: props.expoUiPayload,
+        needle: 'expo-ui',
+        ok: 'seed:expo-ui',
+        miss: 'expo-ui-miss',
+      }),
+    },
+    {
+      testID: 'text-expo-ui-interaction',
+      value:
+        props.interaction === 'none'
+          ? 'interaction:none'
+          : `interaction:${props.interaction}`,
+    },
+    {
+      testID: 'text-remoteviews-payload',
+      value: props.remoteViewsPayload,
+      a11y: props.remoteViewsPayload,
+    },
+    {
+      testID: 'text-remoteviews-seed',
+      value: seedLabel({
+        value: props.remoteViewsPayload,
+        needle: 'remoteviews',
+        ok: 'seed:remoteviews',
+        miss: 'remoteviews-miss',
+      }),
+    },
+  ];
+}
+
+function Diagnostics(props: {
   payload: string;
   expoUiPayload: string;
   remoteViewsPayload: string;
   pinStatus: string;
+  interaction: string;
 }) {
   return (
     <View style={styles.diagnostics}>
       <Text style={styles.eyebrow}>Diagnostics</Text>
       <Text style={styles.sectionTitle}>Payloads</Text>
-      <PayloadLine
-        testID="text-last-payload"
-        value={payload}
-        accessibilityLabel={payload}
-      />
-      <PayloadLine
-        testID="text-seed-message"
-        value={
-          payload.includes('Hello from host')
-            ? 'seed:Hello from host'
-            : `seed-miss:${payload}`
-        }
-      />
-      <PayloadLine
-        testID="text-seed-family"
-        value={
-          payload.includes('family:systemSmall')
-            ? 'seed:family:systemSmall'
-            : `family-miss:${payload}`
-        }
-      />
-      <PayloadLine
-        testID="text-expo-ui-payload"
-        value={expoUiPayload}
-        accessibilityLabel={expoUiPayload}
-      />
-      <PayloadLine
-        testID="text-expo-ui-seed"
-        value={
-          expoUiPayload.includes('expo-ui')
-            ? 'seed:expo-ui'
-            : `expo-ui-miss:${expoUiPayload}`
-        }
-      />
-      <PayloadLine
-        testID="text-remoteviews-payload"
-        value={remoteViewsPayload}
-        accessibilityLabel={remoteViewsPayload}
-      />
-      <PayloadLine
-        testID="text-remoteviews-seed"
-        value={
-          remoteViewsPayload.includes('remoteviews')
-            ? 'seed:remoteviews'
-            : `remoteviews-miss:${remoteViewsPayload}`
-        }
-      />
+      {diagnosticRows(props).map((row) => (
+        <PayloadLine
+          key={row.testID}
+          testID={row.testID}
+          value={row.value}
+          accessibilityLabel={row.a11y}
+        />
+      ))}
       <Text testID="text-pin-status" style={styles.mono}>
-        {pinStatus}
+        {props.pinStatus}
       </Text>
     </View>
   );
@@ -370,7 +433,24 @@ async function endLiveActivity(
   setLiveStatus('ended');
 }
 
-function LiveActivitySection({
+async function startExpoUiLiveActivity(
+  setLiveId: (id: string | null) => void,
+  setLiveStatus: (status: string) => void
+) {
+  if (!(await LiveActivity.areActivitiesEnabled())) {
+    setLiveStatus('disabled');
+    return;
+  }
+  const order = LiveActivity.create('HelloExpoUiAttributes');
+  const id = await order.start({
+    attributes: { title: 'Expo UI' },
+    contentState: { status: 'preparing' },
+  });
+  setLiveId(id);
+  setLiveStatus(`expo-ui-started:${id.slice(0, 8)}`);
+}
+
+function NativeLiveActivitySection({
   liveId,
   setLiveId,
   liveStatus,
@@ -389,7 +469,7 @@ function LiveActivitySection({
       body={
         android
           ? 'Android dual for HelloWidgetAttributes via ongoing notification.'
-          : 'ActivityKit order for HelloWidgetAttributes.'
+          : 'ActivityKit order for HelloWidgetAttributes (native deepen).'
       }
     >
       <ActionButton
@@ -421,6 +501,88 @@ function LiveActivitySection({
         {liveStatus}
       </Text>
     </Section>
+  );
+}
+
+function ExpoUiLiveActivitySection({
+  expoUiLiveId,
+  setExpoUiLiveId,
+  expoUiLiveStatus,
+  setExpoUiLiveStatus,
+}: {
+  expoUiLiveId: string | null;
+  setExpoUiLiveId: (id: string | null) => void;
+  expoUiLiveStatus: string;
+  setExpoUiLiveStatus: (status: string) => void;
+}) {
+  if (Platform.OS === 'android') {
+    return null;
+  }
+  return (
+    <Section
+      eyebrow="Expo UI · Live Activity"
+      title="HelloExpoUiAttributes"
+      body="Same entry as home Layout; WidgetLiveActivity multi-slot UI. Push tokens are CLAIMS on Simulator."
+    >
+      <ActionButton
+        testID="btn-expo-ui-live-start"
+        label="Start Expo UI Live Activity"
+        onPress={() => {
+          void startExpoUiLiveActivity(setExpoUiLiveId, setExpoUiLiveStatus);
+        }}
+      />
+      <ActionButton
+        testID="btn-expo-ui-live-update"
+        label="Update Expo UI Live Activity"
+        tone="secondary"
+        onPress={() => {
+          void updateLiveActivity(expoUiLiveId, setExpoUiLiveStatus);
+        }}
+      />
+      <ActionButton
+        testID="btn-expo-ui-live-end"
+        label="End Expo UI Live Activity"
+        tone="danger"
+        onPress={() => {
+          void endLiveActivity(
+            expoUiLiveId,
+            setExpoUiLiveId,
+            setExpoUiLiveStatus
+          );
+        }}
+      />
+      <Text testID="text-expo-ui-live-status" style={styles.mono}>
+        {expoUiLiveStatus}
+      </Text>
+    </Section>
+  );
+}
+
+function LiveActivitySection(props: {
+  liveId: string | null;
+  setLiveId: (id: string | null) => void;
+  liveStatus: string;
+  setLiveStatus: (status: string) => void;
+  expoUiLiveId: string | null;
+  setExpoUiLiveId: (id: string | null) => void;
+  expoUiLiveStatus: string;
+  setExpoUiLiveStatus: (status: string) => void;
+}) {
+  return (
+    <>
+      <NativeLiveActivitySection
+        liveId={props.liveId}
+        setLiveId={props.setLiveId}
+        liveStatus={props.liveStatus}
+        setLiveStatus={props.setLiveStatus}
+      />
+      <ExpoUiLiveActivitySection
+        expoUiLiveId={props.expoUiLiveId}
+        setExpoUiLiveId={props.setExpoUiLiveId}
+        expoUiLiveStatus={props.expoUiLiveStatus}
+        setExpoUiLiveStatus={props.setExpoUiLiveStatus}
+      />
+    </>
   );
 }
 
@@ -457,6 +619,7 @@ export default function App() {
           expoUiPayload={host.expoUiPayload}
           remoteViewsPayload={host.remoteViewsPayload}
           pinStatus={host.pinStatus}
+          interaction={host.interaction}
         />
         <PinSections setPinStatus={host.setPinStatus} />
         <LiveActivitySection
@@ -464,6 +627,10 @@ export default function App() {
           setLiveId={host.setLiveId}
           liveStatus={host.liveStatus}
           setLiveStatus={host.setLiveStatus}
+          expoUiLiveId={host.expoUiLiveId}
+          setExpoUiLiveId={host.setExpoUiLiveId}
+          expoUiLiveStatus={host.expoUiLiveStatus}
+          setExpoUiLiveStatus={host.setExpoUiLiveStatus}
         />
       </ScrollView>
     </View>

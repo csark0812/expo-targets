@@ -1,0 +1,92 @@
+{
+  "artifactDir": "/Users/christophersarkissian/Repositories/expo-targets/examples/.devicewright/artifacts/targets-1786387071411",
+  "aborted": false,
+  "claimState": {
+    "surviving": [
+      "widgets",
+      "widgets-expo-ui"
+    ],
+    "cut": [],
+    "stub": [],
+    "osLimit": [
+      "widgets-remoteviews"
+    ],
+    "rows": [
+      {
+        "id": "widgets",
+        "status": "green"
+      },
+      {
+        "id": "widgets-expo-ui",
+        "status": "green"
+      },
+      {
+        "id": "widgets-remoteviews",
+        "status": "os-limit",
+        "error": "HelloRemoteViews is android-only (RemoteViews AppWidget); no iOS WidgetKit dual",
+        "failureKind": "os-limit"
+      }
+    ]
+  },
+  "results": [
+    {
+      "id": "widgets",
+      "path": "examples/widgets",
+      "phase": 3,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "launch-host",
+        "host-ready",
+        "seed-payload",
+        "host-contract-ok",
+        "expo-ui-host-contract-ok",
+        "marker-ok:family:systemSmall:seed-family",
+        "families-medium-ok",
+        "springboard-home",
+        "find-host-icon",
+        "host-icon-ok",
+        "small-widget-already-present",
+        "assert-widget-tile",
+        "widget-tile-ok"
+      ]
+    },
+    {
+      "id": "widgets-expo-ui",
+      "path": "examples/widgets",
+      "phase": 3,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "launch-host",
+        "host-ready",
+        "mode-marker-ok",
+        "seed-payload",
+        "expo-ui-host-contract-ok",
+        "seed-label-ok",
+        "springboard-home",
+        "find-host-icon",
+        "host-icon-ok",
+        "add-expo-ui-small-widget",
+        "gallery-row-miss-try-small",
+        "add-widget-confirm",
+        "small-widget-added",
+        "widget-tile-host-name-ok",
+        "assert-expo-ui-widget-tile",
+        "expo-ui-widget-tile-ok"
+      ]
+    },
+    {
+      "id": "widgets-remoteviews",
+      "path": "examples/widgets",
+      "phase": 3,
+      "ok": false,
+      "status": "os-limit",
+      "steps": [
+        "ios-no-remoteviews-dual"
+      ],
+      "error": "HelloRemoteViews is android-only (RemoteViews AppWidget); no iOS WidgetKit dual",
+      "failureKind": "os-limit"
+    }
+  ]
+}

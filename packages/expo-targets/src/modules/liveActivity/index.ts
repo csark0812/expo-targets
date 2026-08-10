@@ -8,6 +8,11 @@ import type {
   LiveActivityAttributesName,
   LiveActivityPayloadFor,
 } from '../../generatedNames';
+import {
+  getExpoUiLiveActivityByAttributes,
+  getExpoUiLiveActivityInstance,
+  registerExpoUiLiveActivityAttributes,
+} from '../../liveActivityLayout';
 import { listTargets } from '../targetsConfig';
 
 type NativeLiveActivity = {
@@ -50,7 +55,10 @@ function liveActivityConfigs(): {
     .map((t) => ({ target: t, config: t.liveActivity as LiveActivityConfig }));
 }
 
-function resolveAttributesConfig(attributesName: string): LiveActivityConfig {
+function resolveMatch(attributesName: string): {
+  target: TargetConfig;
+  config: LiveActivityConfig;
+} {
   const matches = liveActivityConfigs().filter(
     (x) => x.config.attributesName === attributesName
   );
@@ -64,7 +72,25 @@ function resolveAttributesConfig(attributesName: string): LiveActivityConfig {
         `Add liveActivity.attributesName to the widget expo-target.config.json.`
     );
   }
-  return matches[0].config;
+  return matches[0];
+}
+
+function resolveAttributesConfig(attributesName: string): LiveActivityConfig {
+  return resolveMatch(attributesName).config;
+}
+
+function ensureExpoUiAttributesLink(attributesName: string): void {
+  const { target } = resolveMatch(attributesName);
+  if (target.entry) {
+    registerExpoUiLiveActivityAttributes(attributesName, target.name);
+  }
+}
+
+function mergeExpoUiProps(options: {
+  attributes: Record<string, unknown>;
+  contentState: Record<string, unknown>;
+}): Record<string, unknown> {
+  return { ...options.attributes, ...options.contentState };
 }
 
 /** Typed helpers keyed by configured attributesName (widgets-like paved path). */
@@ -72,6 +98,7 @@ export function createLiveActivity<N extends LiveActivityAttributesName>(
   attributesName: N
 ) {
   resolveAttributesConfig(attributesName);
+  ensureExpoUiAttributesLink(attributesName);
   type Payload = LiveActivityPayloadFor<N>;
   return {
     attributesName,
@@ -95,7 +122,25 @@ export const LiveActivity = {
       contentState: LiveActivityPayloadFor<N>['contentState'];
     }
   ): Promise<string> {
-    resolveAttributesConfig(attributesName);
+    const { target } = resolveMatch(attributesName);
+    if (target.entry) {
+      ensureExpoUiAttributesLink(attributesName);
+      const factory = getExpoUiLiveActivityByAttributes(attributesName);
+      if (!factory) {
+        throw new Error(
+          `[expo-targets] LiveActivity.start("${attributesName}") for expo-ui widget ` +
+            `"${target.name}" requires createLiveActivityLayout('${target.name}', Layout) ` +
+            `in the widget entry (same file as createTarget).`
+        );
+      }
+      const instance = factory.start(
+        mergeExpoUiProps({
+          attributes: (options.attributes ?? {}) as Record<string, unknown>,
+          contentState: (options.contentState ?? {}) as Record<string, unknown>,
+        })
+      );
+      return instance.id;
+    }
     return getNative().start(
       attributesName,
       JSON.stringify(options.attributes ?? {}),
@@ -107,10 +152,22 @@ export const LiveActivity = {
     activityId: string,
     contentState: LiveActivityPayloadFor<N>['contentState']
   ): Promise<boolean> {
+    const expoUi = getExpoUiLiveActivityInstance(activityId);
+    if (expoUi) {
+      await expoUi.update(
+        (contentState ?? {}) as unknown as Record<string, unknown>
+      );
+      return true;
+    }
     return getNative().update(activityId, JSON.stringify(contentState ?? {}));
   },
 
   async end(activityId: string): Promise<void> {
+    const expoUi = getExpoUiLiveActivityInstance(activityId);
+    if (expoUi) {
+      await expoUi.end();
+      return;
+    }
     return getNative().end(activityId);
   },
 

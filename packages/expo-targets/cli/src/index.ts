@@ -38,18 +38,38 @@ program
   .argument('[name]', 'Target folder name (kebab-case, e.g. my-share)')
   .option('--no-wire', 'Scaffold only; skip host wiring')
   .option('--no-rn', 'Do not use React Native UI (when type supports it)')
+  .option(
+    '--ui <mode>',
+    'Widget UI mode: native (default) or expo-ui',
+    'native'
+  )
+  .option('--configurable', 'Widget: AppIntentConfiguration (Edit Widget)')
+  .option('--live-activity', 'Widget: include Live Activity bootstrap')
   .action(
     async (
       type: string | undefined,
       name: string | undefined,
-      options: { wire?: boolean; rn?: boolean }
+      options: {
+        wire?: boolean;
+        rn?: boolean;
+        ui?: string;
+        configurable?: boolean;
+        liveActivity?: boolean;
+      }
     ) => {
+      const widgetUi =
+        options.ui === 'expo-ui' || options.ui === 'native'
+          ? options.ui
+          : undefined;
       const code = await scaffoldTarget({
         type,
         name,
         nonInteractive: Boolean(type && name),
         noWire: options.wire === false,
         useReactNative: options.rn === false ? false : undefined,
+        widgetUi,
+        configurableWidget: options.configurable,
+        includeLiveActivity: options.liveActivity,
       });
       if (code === 0 && !(options.wire === false)) {
         try {

@@ -182,8 +182,22 @@ export async function pinAndAssertSeededWidget(
   grantAppWidgetBind(serial, hostBundleId);
 
   const markerVisible = async (): Promise<boolean> => {
-    const labels = flattenLabels(await device.accessibilityTree());
-    return seedMarkers.some((m) => labels.some((l) => l.includes(m)));
+    // Glance tiles can land on a non-current launcher page after pin.
+    for (let page = 0; page < 5; page++) {
+      const labels = flattenLabels(await device.accessibilityTree());
+      if (seedMarkers.some((m) => labels.some((l) => l.includes(m)))) {
+        return true;
+      }
+      await device.swipe({
+        xStart: 900,
+        yStart: 900,
+        xEnd: 120,
+        yEnd: 900,
+        duration: 0.35,
+      });
+      await sleep(400);
+    }
+    return false;
   };
 
   steps.push("launcher-home-check");
@@ -253,21 +267,37 @@ export async function pinAndAssertSeededWidget(
   steps.push("assert-seeded-tile");
   let visible = await markerVisible();
   if (!visible) {
-    // One retry: reopen host, seed again (refresh Glance), return home.
+    // One retry: cold-launch host (reset ScrollView), seed again, return home.
     steps.push("reseed-and-retry");
-    await device.launchApp(hostBundleId, { terminateRunning: false });
+    await device.launchApp(hostBundleId, { terminateRunning: true });
+    await sleep(800);
+    // Prefer the top of the host scroll (seed controls sit above pin sections).
+    for (let up = 0; up < 3; up++) {
+      await device.swipe({
+        xStart: 540,
+        yStart: 500,
+        xEnd: 540,
+        yEnd: 1600,
+        duration: 0.3,
+      });
+      await sleep(250);
+    }
     try {
       await tapId(device, "btn-seed-payload", 6_000);
     } catch {
       const seed = await findNamedViaPointProbe(device, ["Seed payload"], {
         timeoutMs: 4_000,
         match: "exact",
-        yStartRatio: 0.2,
-        yEndRatio: 0.85,
+        yStartRatio: 0.05,
+        yEndRatio: 0.7,
+        hotspots: [
+          { x: 210, y: 450 },
+          { x: 210, y: 520 },
+        ],
       });
       await tapProbeHit(device, seed);
     }
-    await sleep(600);
+    await sleep(900);
     await pressHome(device);
     await sleep(800);
     visible = await markerVisible();

@@ -55,6 +55,10 @@ function pushLiveActivityPlans(
   if (!(target.type === 'widget' && target.liveActivity?.attributesName)) {
     return;
   }
+  // expo-ui widgets use WidgetLiveActivity blob attrs — skip typed CNG.
+  if (target.entry) {
+    return;
+  }
   const la = target.liveActivity as LiveActivityConfig;
   plans.push({
     fileName: `${la.attributesName}.swift`,

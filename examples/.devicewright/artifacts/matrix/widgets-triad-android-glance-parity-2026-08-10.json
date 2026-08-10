@@ -1,0 +1,111 @@
+{
+  "artifactDir": "/Users/christophersarkissian/Repositories/expo-targets/examples/.devicewright/artifacts/targets-1786387640775",
+  "claimState": {
+    "surviving": [
+      "widgets",
+      "widgets-expo-ui",
+      "widgets-remoteviews"
+    ],
+    "cut": [],
+    "stub": [],
+    "osLimit": [],
+    "rows": [
+      {
+        "id": "widgets",
+        "status": "green"
+      },
+      {
+        "id": "widgets-expo-ui",
+        "status": "green"
+      },
+      {
+        "id": "widgets-remoteviews",
+        "status": "green"
+      }
+    ]
+  },
+  "results": [
+    {
+      "id": "widgets",
+      "path": "examples/widgets",
+      "phase": 3,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "seed-payload",
+        "host-contract-ok",
+        "expo-ui-host-contract-ok",
+        "grant-appwidget-bind",
+        "launcher-home-check",
+        "launch-host-for-pin",
+        "request-pin-sheet",
+        "confirm-pin-sheet",
+        "pin-confirmed",
+        "assert-seeded-tile",
+        "widget-tile-marker-ok",
+        "assert-dumpsys-hosted",
+        "dumpsys-hosted-ok",
+        "find-host-icon",
+        "host-icon-ok"
+      ]
+    },
+    {
+      "id": "widgets-expo-ui",
+      "path": "examples/widgets",
+      "phase": 3,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "mode-marker-ok",
+        "seed-payload",
+        "expo-ui-host-contract-ok",
+        "seed-label-ok",
+        "grant-appwidget-bind",
+        "launcher-home-check",
+        "launch-host-for-pin",
+        "request-pin-sheet",
+        "confirm-pin-sheet",
+        "pin-confirmed",
+        "assert-seeded-tile",
+        "widget-tile-marker-ok",
+        "assert-dumpsys-hosted",
+        "dumpsys-hosted-ok",
+        "find-host-icon",
+        "host-icon-ok",
+        "assert-bump-control",
+        "bump-control-ok"
+      ]
+    },
+    {
+      "id": "widgets-remoteviews",
+      "path": "examples/widgets",
+      "phase": 3,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "mode-marker-ok",
+        "seed-payload",
+        "remoteviews-host-contract-ok",
+        "seed-label-ok",
+        "grant-appwidget-bind",
+        "launcher-home-check",
+        "launch-host-for-pin",
+        "request-pin-sheet",
+        "confirm-pin-sheet",
+        "pin-confirmed",
+        "assert-seeded-tile",
+        "widget-tile-marker-ok",
+        "assert-dumpsys-hosted",
+        "dumpsys-hosted-ok",
+        "find-host-icon",
+        "host-icon-ok"
+      ]
+    }
+  ]
+}

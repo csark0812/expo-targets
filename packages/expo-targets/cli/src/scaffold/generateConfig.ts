@@ -4,6 +4,9 @@ export type GenerateConfigOptions = {
   pascalName: string;
   platforms: string[];
   useReactNative?: boolean;
+  /** Widget authoring: native deepen or expo-ui Layout entry. */
+  widgetUi?: 'native' | 'expo-ui';
+  configurableWidget?: boolean;
   includeIntentUi?: boolean;
   appGroup?: string;
   includeLiveActivity?: boolean;
@@ -24,6 +27,34 @@ function applyReactNativeConfig(
   if (options.platforms.includes('ios') && options.useReactNative) {
     config.entry = `./targets/${options.kebabName}/index.tsx`;
   }
+}
+
+function applyExpoUiWidgetConfig(
+  config: Record<string, unknown>,
+  options: GenerateConfigOptions
+): void {
+  if (options.type !== 'widget' || options.widgetUi !== 'expo-ui') {
+    return;
+  }
+  config.entry = `./targets/${options.kebabName}/index.tsx`;
+  if (!options.configurableWidget) {
+    return;
+  }
+  const ios =
+    typeof config.ios === 'object' && config.ios
+      ? (config.ios as Record<string, unknown>)
+      : {};
+  ios.configuration = {
+    title: `${formatDisplayName(options.kebabName)} Configuration`,
+    parameters: {
+      listId: {
+        title: 'List',
+        type: 'string',
+        default: 'default',
+      },
+    },
+  };
+  config.ios = ios;
 }
 
 function applyIntentIosConfig(
@@ -214,6 +245,7 @@ export function generateConfig(options: GenerateConfigOptions): string {
   }
 
   applyReactNativeConfig(config, options);
+  applyExpoUiWidgetConfig(config, options);
   applyIntentIosConfig(config, options);
   applyWalletIosConfig(config, options);
   applyLiveActivityConfig(config, options);

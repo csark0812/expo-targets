@@ -3,6 +3,7 @@ import process from 'node:process';
 import fs from 'fs-extra';
 import prompts from 'prompts';
 import { copyTemplate } from './copyTemplate';
+import { getExpoUiWidgetTemplate } from './expoUiWidgetTemplate';
 import { generateConfig } from './generateConfig';
 import { getTargetPromptQuestions } from './prompts';
 import {
@@ -35,6 +36,8 @@ export type ScaffoldOptions = {
   includeIntentUI?: boolean;
   includeLiveActivity?: boolean;
   configurableWidget?: boolean;
+  /** Widget UI: native (default) or expo-ui Layout sandbox. */
+  widgetUi?: 'native' | 'expo-ui';
   noWire?: boolean;
   /** When true, skip prompts and require type + name. */
   nonInteractive?: boolean;
@@ -48,6 +51,7 @@ type TargetPromptResponse = {
   includeIntentUI?: boolean;
   includeLiveActivity?: boolean;
   configurableWidget?: boolean;
+  widgetUi?: 'native' | 'expo-ui';
 };
 
 function writeHostHelper(targetDir: string, pascalName: string): void {
@@ -71,6 +75,8 @@ function writeIosFiles(options: {
 
   const attributesName = `${pascalName}Attributes`;
   const appIntentHookName = `${pascalName}IntentPerform`;
+  const expoUiWidget =
+    response.type === 'widget' && response.widgetUi === 'expo-ui';
 
   copyTemplate({
     type: response.type ?? '',
@@ -84,7 +90,16 @@ function writeIosFiles(options: {
     appIntentHookName,
     appIntentTitle: pascalName,
     configurableWidget: response.configurableWidget,
+    expoUiWidget,
   });
+
+  if (expoUiWidget) {
+    fs.writeFileSync(
+      path.join(targetDir, 'index.tsx'),
+      getExpoUiWidgetTemplate(pascalName)
+    );
+    return;
+  }
 
   if (response.useReactNative) {
     const entryFile = path.join(targetDir, 'index.tsx');
@@ -297,31 +312,40 @@ function writeAndroidFiles(options: {
   writeWidgetAndroid(targetDir, { pascalName, packageName, appGroup });
 }
 
+function resolveNonInteractive(
+  options: ScaffoldOptions
+): TargetPromptResponse | null {
+  const type = options.type;
+  const name = options.name;
+  if (!(type && name)) {
+    console.error(
+      'Usage: npx expo-targets add <type> <name>\n' +
+        'Omit args for interactive mode: npx expo-targets add'
+    );
+    return null;
+  }
+  const platforms = options.platforms?.length ? options.platforms : ['ios'];
+  const useReactNative =
+    options.useReactNative ?? isReactNativeCapableType(type);
+  const widgetUi =
+    type === 'widget' ? (options.widgetUi ?? 'native') : undefined;
+  return {
+    type,
+    name,
+    platforms,
+    useReactNative,
+    includeIntentUI: options.includeIntentUI,
+    includeLiveActivity: options.includeLiveActivity,
+    configurableWidget: options.configurableWidget,
+    widgetUi,
+  };
+}
+
 async function resolveResponse(
   options: ScaffoldOptions
 ): Promise<TargetPromptResponse | null> {
   if (options.nonInteractive || (options.type && options.name)) {
-    const type = options.type;
-    const name = options.name;
-    if (!(type && name)) {
-      console.error(
-        'Usage: npx expo-targets add <type> <name>\n' +
-          'Omit args for interactive mode: npx expo-targets add'
-      );
-      return null;
-    }
-    const platforms = options.platforms?.length ? options.platforms : ['ios'];
-    const useReactNative =
-      options.useReactNative ?? isReactNativeCapableType(type);
-    return {
-      type,
-      name,
-      platforms,
-      useReactNative,
-      includeIntentUI: options.includeIntentUI,
-      includeLiveActivity: options.includeLiveActivity,
-      configurableWidget: options.configurableWidget,
-    };
+    return resolveNonInteractive(options);
   }
 
   return (await prompts(getTargetPromptQuestions(), {
@@ -345,6 +369,8 @@ function writeScaffoldedTarget(
     pascalName,
     platforms: response.platforms,
     useReactNative: response.useReactNative,
+    widgetUi: response.widgetUi,
+    configurableWidget: response.configurableWidget,
     includeIntentUi: response.includeIntentUI,
     appGroup,
     includeLiveActivity: response.includeLiveActivity,
@@ -361,7 +387,9 @@ function writeScaffoldedTarget(
     packageName,
   });
 
-  if (!response.useReactNative) {
+  const expoUiWidget =
+    response.type === 'widget' && response.widgetUi === 'expo-ui';
+  if (!(response.useReactNative || expoUiWidget)) {
     writeHostHelper(targetDir, pascalName);
   }
 

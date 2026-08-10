@@ -25,6 +25,8 @@ export type CopyTemplateOptions = {
   appIntentHookName?: string;
   appIntentTitle?: string;
   configurableWidget?: boolean;
+  /** When true, skip native Widget.swift — CNG emits ExpoUi templates. */
+  expoUiWidget?: boolean;
 };
 
 function getGenericStub(type: string, pascalName: string): string {
@@ -127,8 +129,10 @@ function writeLiveActivityFiles(options: CopyTemplateOptions): void {
   if (
     options.type !== 'widget' ||
     options.platform !== 'ios' ||
-    !options.includeLiveActivity
+    !options.includeLiveActivity ||
+    options.expoUiWidget
   ) {
+    // expo-ui: sealed CNG / WidgetLiveActivity() — no native LiveActivity.swift deepen
     return;
   }
   const platformDir = path.join(options.targetDir, options.platform);
@@ -157,7 +161,8 @@ export function copyTemplate(options: CopyTemplateOptions): void {
   fs.mkdirSync(platformDir, { recursive: true });
 
   // app-intent uses dedicated extension + perform-hook files (no generic Main.swift)
-  if (options.type !== 'app-intent') {
+  // expo-ui widgets: plugin generates ExpoUiWidget.swift + Bundle (no native deepen)
+  if (options.type !== 'app-intent' && !options.expoUiWidget) {
     const widgetOptions: WidgetTemplateOptions | undefined =
       options.type === 'widget'
         ? {

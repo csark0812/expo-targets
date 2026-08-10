@@ -20,6 +20,8 @@ export interface IOSTargetProps extends IOSTargetConfigWithReactNative {
   appGroup?: string;
   /** Baked into RN VC for App Group sideload matching (optional). */
   runtimeVersion?: string;
+  /** When set on expo-ui widgets, Bundle includes WidgetLiveActivity(). */
+  liveActivity?: import('../../config').LiveActivityConfig;
   directory: string;
   configPath: string;
   logger: Logger;
@@ -84,11 +86,18 @@ export type SwiftTemplatePlan =
         name: string;
         displayName?: string;
         description?: string;
+        supportedFamilies?: string[];
+        contentMarginsDisabled?: boolean;
+        configuration?: import('../../config').WidgetConfiguration;
       };
     }
   | {
       template: 'expoUiWidgetBundle';
-      options: { name: string };
+      options: {
+        name: string;
+        includeLiveActivity?: boolean;
+        configurable?: boolean;
+      };
     };
 
 /** One Swift file that should end up in the target's Sources phase. */

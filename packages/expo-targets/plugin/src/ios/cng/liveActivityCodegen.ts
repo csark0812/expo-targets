@@ -121,7 +121,7 @@ private final class ${name}BridgeRegistration {
           let activity = try Activity.request(
             attributes: attributes,
             content: .init(state: state, staleDate: nil),
-            pushType: nil
+            pushType: ${config.pushType === 'token' ? '.token' : 'nil'}
           )
           return activity.id
         },

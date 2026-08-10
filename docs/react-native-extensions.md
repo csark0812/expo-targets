@@ -18,7 +18,7 @@ Build share extensions, action extensions, App Clips, iMessage apps, rich notifi
 | `messages`             | ✅ Full support      | iMessage app with RN UI                                            |
 | `notification-content` | ✅ Supported         | Rich notification UI (RN host)                                     |
 | `safari`               | ✅ Supported         | Popup via RN Web + `expo export` packaging — [configuration](./configuration.md#example-safari-extension) |
-| `widget`               | Native or **expo-ui** (sandbox) | `entry` ⇒ expo-ui layout (Phase 2 absorb); no full RN |
+| `widget`               | Native or **expo-ui** (sandbox) | `entry` ⇒ expo-ui layout; no full RN |
 | `stickers`             | ❌ Native only       | Static image assets                                                |
 
 ## UI modes (`ui` / `entry`)
@@ -57,7 +57,7 @@ Stable across **share**, **action**, **clip**, and **messages** (messages adds A
 
 1. Declare `entry` in `expo-target.config` (path relative to project root).
 2. Wrap Metro with `withTargets` so the extension host can resolve that entry.
-3. Call `createTarget(name, Component)` in the entry file. The `name` must match config `name` exactly. Share-class registers with `AppRegistry`; expo-ui widgets register the `'widget'` layout via `expo-widgets` (not AppRegistry).
+3. Call `createTarget(name, Component)` in the entry file. The `name` must match config `name` exactly. Share-class registers with `AppRegistry`; expo-ui widgets register the `'widget'` layout via `expo-widgets` (not AppRegistry). For Live Activity slots on the same widget target, also call `createLiveActivityLayout(name, slots)`.
 4. Rebuild native (`npx expo prebuild`, or `npx expo-targets sync` on bare RN) so the extension target embeds expo-targets and loads the RN host.
 
 For expo-ui widgets, prefer `setData(props, { refresh: true })` (snapshot) or `setTimeline([{ date, props }, …])` / `getTimeline()` / `refresh()` — see [widgets.md](./widgets.md).
