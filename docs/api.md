@@ -484,7 +484,7 @@ See [widgets.md](./widgets.md).
 
 ## AndroidNotification
 
-Android-only local path for `notification-service` and `notification-content` (Wave 2). This is not a substitute for iOS NSE/NCE process isolation. FCM remote push is leftover when credentials are unavailable.
+Android-only local path for `notification-service` and `notification-content` (Wave 2). This is not a substitute for iOS NSE/NCE process isolation. FCM remote push uses `ExpoTargetsFcmMessagingService` when Firebase Messaging is on the classpath; operator matrix needs `FCM_*` + `google-services.json`.
 
 ```typescript
 import { AndroidNotification } from "expo-targets";
@@ -743,8 +743,8 @@ interface NonExtensionTarget extends BaseTarget {
 | `clip`     | ✅ iOS 14+ | —                              |
 | `stickers` | ✅ iOS 10+ | —                              |
 | `messages` | ✅ iOS 10+ | —                              |
-| `share`    | ✅ iOS 8+  | ✅ W1 dedicated Activity (native; RN provisional) |
-| `action`   | ✅ iOS 8+  | ✅ W1 `PROCESS_TEXT` Activity (native; RN provisional) |
+| `share`    | ✅ iOS 8+  | ✅ W1 dedicated Activity + RN `entry` host |
+| `action`   | ✅ iOS 8+  | ✅ W1 `PROCESS_TEXT` Activity + RN `entry` host |
 | `notification-service` | ✅ iOS 10+ | ✅ W2 partial (local NotificationCompat; FCM leftover) |
 | `notification-content` | ✅ iOS 10+ | ✅ W2 partial (RemoteViews / A12 clamp) |
 | `file-provider` | ✅ iOS 11+ | ✅ W3a DocumentsProvider |
@@ -761,11 +761,11 @@ interface NonExtensionTarget extends BaseTarget {
 - **Widget refresh** triggers through BroadcastReceiver.
 - **Extension JS APIs** (`getSharedData`, `openHostApp`, `close`) need a target Activity (`ExpoTargetsHarnessActivity` or Share/Action Activities).
 - **Share/action** register dedicated Activities (not MainActivity) with MIME filters from `android.activationRules` or `ios.activationRules`.
-- **Notifications** register a host-process Service and channels. Use `AndroidNotification.*` for the local path. There is no sealed NSE process. You route only the notifications you control. FCM push is leftover without credentials.
+- **Notifications** register a host-process Service and channels plus `ExpoTargetsFcmMessagingService` for FCM data payloads. Use `AndroidNotification.*` for the local path. There is no sealed NSE process. Operator FCM shade green needs `FCM_SERVICE_ACCOUNT_PATH` + `FCM_PROJECT_ID` and app `google-services.json` ([AUTH.md](../examples/.devicewright/AUTH.md)).
 - **LiveActivity on Android** posts ongoing notifications (partial vs ActivityKit).
 - **System services (W3):** DocumentsProvider, AutofillService, InputMethodService, CallScreeningService, PrintService, VpnService (fail-closed). Settings and Play leftovers are documented in [limits.md](./limits.md).
 - **getTargetsConfig** reads `assets/expo_targets_config.json` written at prebuild.
-- **RN on Android share:** provisional. The native Activity is the default path until Expo RN Activity TTI is measured (spike `android-rn-host-2026-08-05.md`).
+- **RN on Android share/action:** `ExpoTargetsReactTargetActivity` when `entry` is set. Cold-start TTI on mid-tier emulator is under the ~2s falsifier (spike `android-rn-host-tti-2026-08-10.md`). Native Activities remain available without `entry`.
 - Full type matrix: [configuration.md](./configuration.md).
 
 ---

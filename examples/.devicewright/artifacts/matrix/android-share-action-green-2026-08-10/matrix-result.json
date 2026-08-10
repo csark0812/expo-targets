@@ -1,0 +1,74 @@
+{
+  "artifactDir": "/Users/christophersarkissian/Repositories/expo-targets/examples/.devicewright/artifacts/targets-1786393466489",
+  "claimState": {
+    "surviving": [
+      "share",
+      "action"
+    ],
+    "cut": [],
+    "stub": [],
+    "osLimit": [],
+    "rows": [
+      {
+        "id": "share",
+        "status": "green"
+      },
+      {
+        "id": "action",
+        "status": "green"
+      }
+    ]
+  },
+  "results": [
+    {
+      "id": "share",
+      "path": "examples/share",
+      "phase": 1,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "clear-payload",
+        "host-sheet-primary",
+        "share-chrome-ok",
+        "assert-text-payload",
+        "host-sheet-ok",
+        "open-main-app",
+        "open-main-ok",
+        "system-share-text-smoke",
+        "system-share-text-ok"
+      ],
+      "checklist": [
+        "c1-1-trigger-from-host",
+        "c1-2-find-extension-row",
+        "c1-3-complete-appex",
+        "c1-4-assert-host-marker"
+      ]
+    },
+    {
+      "id": "action",
+      "path": "examples/action",
+      "phase": 1,
+      "ok": true,
+      "status": "green",
+      "steps": [
+        "android-launch-host",
+        "host-ready",
+        "clear-payload",
+        "host-sheet-primary",
+        "action-chrome-ok",
+        "assert-action-marker",
+        "host-sheet-ok",
+        "system-share-text-smoke",
+        "system-share-text-chooser-skip"
+      ],
+      "checklist": [
+        "c1-1-trigger-from-host",
+        "c1-2-find-extension-row",
+        "c1-3-complete-appex",
+        "c1-4-assert-host-marker"
+      ]
+    }
+  ]
+}

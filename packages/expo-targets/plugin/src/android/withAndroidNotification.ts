@@ -173,6 +173,47 @@ function registerNotificationService(opts: {
   }
 }
 
+const FCM_MESSAGING_SERVICE =
+  'expo.modules.targets.notification.ExpoTargetsFcmMessagingService';
+
+/**
+ * Registers [ExpoTargetsFcmMessagingService] so data/notification FCM payloads
+ * route into NotificationCompat (same markers as the local path).
+ * Host must ship Firebase Messaging at runtime (expo-notifications + google-services).
+ */
+function registerFcmMessagingService(opts: {
+  mainApplication: any;
+  metaData: ReturnType<typeof buildNotificationMetaData>;
+}): void {
+  const serviceConfig = {
+    $: {
+      'android:name': FCM_MESSAGING_SERVICE,
+      'android:exported': 'false' as const,
+    },
+    'meta-data': opts.metaData,
+    'intent-filter': [
+      {
+        action: [
+          {
+            $: {
+              'android:name': 'com.google.firebase.MESSAGING_EVENT',
+            },
+          },
+        ],
+      },
+    ],
+  };
+
+  const existing = opts.mainApplication.service.find(
+    (s: any) => s.$['android:name'] === FCM_MESSAGING_SERVICE
+  );
+  if (existing) {
+    Object.assign(existing, serviceConfig);
+  } else {
+    opts.mainApplication.service.push(serviceConfig as any);
+  }
+}
+
 function applyNotificationManifest(
   cfg: Parameters<Parameters<typeof withAndroidManifest>[1]>[0],
   props: NotificationProps
@@ -218,13 +259,15 @@ function applyNotificationManifest(
   });
 
   registerNotificationService({ mainApplication, className, metaData });
+  registerFcmMessagingService({ mainApplication, metaData });
   upsertAppMeta(mainApplication, props, channelId);
   return cfg;
 }
 
 /**
  * Registers notification-service / notification-content Android components.
- * Local NotificationCompat path is required; FCM push is leftover (no creds).
+ * Local NotificationCompat path is required. FCM receive registers
+ * ExpoTargetsFcmMessagingService; operator matrix needs FCM_* + google-services.
  */
 export const withAndroidNotification: ConfigPlugin<NotificationProps> = (
   config,

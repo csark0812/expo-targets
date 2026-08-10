@@ -32,3 +32,19 @@ bun link @csark0812/devicewright
 ```
 
 Publish / CI: device-plane `packages/devicewright/PUBLISH.md` + workflow `publish-devicewright`.
+
+## FCM (Android notification shade green)
+
+Operator-only. Mirror APNs — never commit service-account JSON or `google-services.json` with secrets.
+
+```bash
+# root .env
+FCM_SERVICE_ACCOUNT_PATH=/absolute/path/to/firebase-adminsdk.json
+FCM_PROJECT_ID=your-firebase-project-id
+```
+
+Devicewright also accepts `GOOGLE_APPLICATION_CREDENTIALS` as an alias for the service-account path.
+
+Examples `notification-service` / `notification-content` need Firebase Messaging at runtime (`expo-notifications` + app `google-services.json`) so the host can show an FCM registration token on AX (`text-device-push-token`). Missing `FCM_*` → journeys fall back to the local NotificationCompat path; README `§` stays until FCM + shade greens.
+
+**Manifest note:** `expo-targets` registers `ExpoTargetsFcmMessagingService` for `com.google.firebase.MESSAGING_EVENT`. Android delivers FCM to one MessagingService. If `expo-notifications` also registers a service, confirm the merged manifest routes data payloads to `ExpoTargetsFcmMessagingService` (or deepen a single service that calls `ExpoTargetsNotificationRouter`). Data-only FCM payloads with `title` / `body` / `expo_targets_kind` are the supported shape.

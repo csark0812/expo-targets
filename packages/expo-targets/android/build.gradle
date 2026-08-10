@@ -22,5 +22,7 @@ dependencies {
   implementation "androidx.core:core-ktx:1.15.0"
   // RN Share/Action host (ReactActivity) — resolved from the app's RN classpath
   compileOnly 'com.facebook.react:react-android'
+  // FCM receive path — resolved from the app (expo-notifications / google-services)
+  compileOnly 'com.google.firebase:firebase-messaging:24.1.0'
 }
 

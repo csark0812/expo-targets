@@ -17,14 +17,13 @@ import org.json.JSONObject
 /**
  * Base dedicated Activity for share/action targets (Wave 1).
  * Attaches [ExpoTargetsActivityHolder] so JS getSharedData/close/openHostApp work.
- * Native UI is the default; RN hosting is Wave 1 follow-up when USE_RN meta is set
- * (provisional GO — measure TTI before requiring entry on Android).
+ * Native UI when the target has no `entry`. With `entry`, the plugin registers
+ * [ExpoTargetsReactTargetActivity] instead (TTI GO — see spike android-rn-host-tti-2026-08-10).
  */
 abstract class ExpoTargetsTargetActivity : Activity() {
   protected var targetName: String = "Target"
   protected var appGroup: String = ""
   protected var moduleName: String = "Target"
-  protected var useRn: Boolean = false
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -58,7 +57,6 @@ abstract class ExpoTargetsTargetActivity : Activity() {
       appGroup =
         meta?.getString("expo.targets.APP_GROUP")
           ?: "group.$packageName"
-      useRn = meta?.getString("expo.targets.USE_RN") == "true"
     } catch (_: Exception) {
       appGroup = "group.$packageName"
     }
