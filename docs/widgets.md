@@ -20,8 +20,8 @@ expo-targets may still depend on `expo-widgets` **as a private library** for the
 
 | Mode | Config | iOS | Android |
 | --- | --- | --- | --- |
-| **native** | no `entry` | SwiftUI deepen under `targets/<name>/ios/` | Glance / RemoteViews deepen under `targets/<name>/android/` |
-| **expo-ui** | `entry` + `createTarget(name, Layout)` with `'widget'` directive | expo-widgets layout sandbox (`WidgetsEntryView`) | Same `setData` props → Glance deepen (no JS sandbox in App Widget process) |
+| **native** | no `entry` | SwiftUI deepen under `targets/<name>/ios/` | Glance / RemoteViews deepen under `targets/<name>/android/` (chrome + Bump) |
+| **expo-ui** | `entry` + `createTarget(name, Layout)` with `'widget'` directive | expo-widgets layout sandbox (`WidgetsEntryView`) | Same `setData` props → Glance deepen with chrome + Bump (no JS sandbox in App Widget process) |
 
 `type: 'widget' | 'watch-widget'` + `entry` **infers** `expo-ui` (full React Native Views are illegal in WidgetKit).
 
@@ -166,13 +166,23 @@ Use the same `appGroup` as `expo-target.config.json`.
 
 ### Buttons + push
 
-- `addUserInteractionListener` — widget Button presses (AppIntent → host).
+- `addUserInteractionListener` — widget Button presses (iOS AppIntent → host; Android Glance/RemoteViews Bump → `ExpoTargetsStorage` `onUserInteraction` with the same event shape).
 - `createLiveActivityLayout(name, slots)` — multi-slot LA UI in the same entry as the home Layout; `LiveActivity.create(attributesName)` still starts/updates/ends.
 - `liveActivity.pushType: 'token'` — native CNG requests ActivityKit push tokens; `addPushToStartTokenListener` for push-to-start. Simulator cannot prove APNs — Devicewright CLAIMS for DI / push / StandBy.
 
 ## Android widgets
 
-Android home-screen widgets (Glance / RemoteViews) are **first-class** in expo-targets (Kotlin Compose deepen under `targets/<name>/android/`). Same DoD as iOS when Devicewright-green. One generator per app if official `expo-widgets` Android lands. ActivityKit / Dynamic Island / StandBy remain iOS-only; `LiveActivity.*` on Android maps to an **ongoing-notification helper** (same JS API; see `examples/widgets`). See [limits.md](./limits.md) and [configuration.md](./configuration.md) Android matrix.
+Android home-screen widgets (Glance / RemoteViews) are **first-class** in expo-targets (Kotlin Compose deepen under `targets/<name>/android/`). Same Devicewright DoD as iOS when green.
+
+**Parity with iOS expo-ui is Glance deepen, not a JS sandbox.** App Widget cannot run the `'widget'` layout. The demo contract is:
+
+- Opaque chrome (white background)
+- Seeded `message` + `taps` from host `setData`
+- `Bump` button → increments taps, refreshes the tile, emits `addUserInteractionListener` (`source` / `target`)
+
+See `examples/widgets` (`HelloExpoUi`, `HelloWidget`, `HelloRemoteViews`). Scaffolded Glance targets get the same chrome + Bump stub.
+
+One generator per app if official `expo-widgets` Android lands. ActivityKit / Dynamic Island / StandBy remain iOS-only; `LiveActivity.*` on Android maps to an **ongoing-notification helper** (same JS API; see `examples/widgets`). See [limits.md](./limits.md) and [configuration.md](./configuration.md) Android matrix.
 
 ## Related
 

@@ -30,6 +30,14 @@ open class ExpoTargetsReceiver : BroadcastReceiver() {
         ExpoTargetsLogger.init(context)
         ExpoTargetsLogger.d(TAG, "onReceive: action=${intent?.action}, extras=${intent?.extras?.keySet()?.toList()}")
 
+        if (intent?.action == ExpoTargetsWidgetInteraction.ACTION_BUMP) {
+            val prefsName = intent.getStringExtra("prefsName") ?: return
+            val targetName = intent.getStringExtra("targetName") ?: return
+            val source = intent.getStringExtra("source") ?: "Bump"
+            ExpoTargetsWidgetInteraction.bump(context, prefsName, targetName, source)
+            return
+        }
+
         val pendingIntent = goAsync()
         thread {
             try {

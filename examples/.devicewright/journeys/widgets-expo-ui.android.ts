@@ -6,6 +6,7 @@ import {
   assertPayloadContains,
   dismissSystemAlerts,
   findNamedViaPointProbe,
+  flattenLabels,
   hostReadyTestId,
   sleep,
   tapId,
@@ -76,6 +77,32 @@ export async function runAndroidWidgetsExpoUiJourney(
         "com.expotargets.example.widgets.widget.helloexpoui.HelloExpoUiWidgetReceiver",
       hostNames,
     });
+
+    // Glance deepen parity: Bump must be on the seeded tile (not host-only).
+    steps.push("assert-bump-control");
+    const bumpLabels = flattenLabels(await device.accessibilityTree());
+    if (!bumpLabels.some((l) => /\bBump\b/i.test(l))) {
+      // Glance Button may sit on another launcher page after pin.
+      let found = false;
+      for (let page = 0; page < 4 && !found; page++) {
+        await device.swipe({
+          xStart: 900,
+          yStart: 900,
+          xEnd: 120,
+          yEnd: 900,
+          duration: 0.35,
+        });
+        await sleep(400);
+        const labels = flattenLabels(await device.accessibilityTree());
+        found = labels.some((l) => /\bBump\b/i.test(l));
+      }
+      if (!found) {
+        throw new Error(
+          `expo-ui Glance Bump missing on launcher; labels=${bumpLabels.slice(0, 50).join(", ")}`,
+        );
+      }
+    }
+    steps.push("bump-control-ok");
 
     return {
       id: entry.id,

@@ -2,8 +2,12 @@
  * Thin re-exports from private `expo-widgets` for expo-ui widget interactions
  * and push-to-start tokens. Prefer expo-targets verbs elsewhere
  * (`createTarget`, `setData`, `LiveActivity.*`).
+ *
+ * Android Glance / RemoteViews Bump taps emit via ExpoTargetsStorage
+ * `onUserInteraction` (same event shape as expo-widgets on iOS).
  */
 import type { EventSubscription } from 'expo-modules-core';
+import { Platform, requireNativeModule } from 'expo-modules-core';
 
 type ExpoWidgetsModule = {
   addUserInteractionListener: (
@@ -11,6 +15,13 @@ type ExpoWidgetsModule = {
   ) => EventSubscription;
   addPushToStartTokenListener: (
     listener: (event: PushToStartTokenEvent) => void
+  ) => EventSubscription;
+};
+
+type ExpoTargetsStorageNative = {
+  addListener: (
+    eventName: 'onUserInteraction',
+    listener: (event: UserInteractionEvent) => void
   ) => EventSubscription;
 };
 
@@ -36,10 +47,16 @@ function loadExpoWidgets(): ExpoWidgetsModule {
   }
 }
 
-/** Listen for expo-ui widget Button / toggle presses (AppIntent → host). */
+/** Listen for widget Button / toggle presses (iOS AppIntent or Android Glance/RemoteViews). */
 export function addUserInteractionListener(
   listener: (event: UserInteractionEvent) => void
 ): EventSubscription {
+  if (Platform.OS === 'android') {
+    const storage = requireNativeModule(
+      'ExpoTargetsStorage'
+    ) as ExpoTargetsStorageNative;
+    return storage.addListener('onUserInteraction', listener);
+  }
   return loadExpoWidgets().addUserInteractionListener(listener);
 }
 
@@ -50,5 +67,8 @@ export function addUserInteractionListener(
 export function addPushToStartTokenListener(
   listener: (event: PushToStartTokenEvent) => void
 ): EventSubscription {
+  if (Platform.OS === 'android') {
+    return { remove: () => {} };
+  }
   return loadExpoWidgets().addPushToStartTokenListener(listener);
 }

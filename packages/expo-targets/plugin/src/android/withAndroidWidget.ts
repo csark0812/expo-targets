@@ -187,36 +187,64 @@ function applyComposePlugin(buildGradleConfig: any) {
   }
 }
 
+const EXPO_TARGETS_RECEIVER = 'expo.modules.targets.ExpoTargetsReceiver';
+const WIDGET_EVENT_ACTION = 'expo.modules.targets.WIDGET_EVENT';
+const WIDGET_BUMP_ACTION = 'expo.modules.targets.WIDGET_BUMP';
+
+function asArray<T>(value: T | T[] | undefined | null): T[] {
+  if (Array.isArray(value)) return value;
+  return value ? [value] : [];
+}
+
+function collectIntentActionNames(receiver: any): Set<string> {
+  const actions = new Set<string>();
+  for (const f of asArray(receiver['intent-filter'])) {
+    for (const a of asArray(f.action)) {
+      const name = a?.$?.['android:name'];
+      if (name) actions.add(name);
+    }
+  }
+  return actions;
+}
+
+function setReceiverActions(receiver: any, actionNames: string[]) {
+  receiver['intent-filter'] = [
+    {
+      action: actionNames.map((name) => ({
+        $: { 'android:name': name },
+      })),
+    },
+  ];
+}
+
 function addExpoTargetsReceiver(mainApplication: any, config: any) {
-  const packageName = config.android?.package;
-  if (!packageName) {
+  if (!config.android?.package) {
     throw new Error('Android package name not found in app.json');
   }
 
   mainApplication.receiver = mainApplication.receiver || [];
-
-  const receiverName = 'expo.modules.targets.ExpoTargetsReceiver';
-  const alreadyAdded = mainApplication.receiver.some(
-    (r: any) => r.$['android:name'] === receiverName
+  const existing = mainApplication.receiver.find(
+    (r: any) => r.$['android:name'] === EXPO_TARGETS_RECEIVER
   );
 
-  if (alreadyAdded) {
+  if (existing) {
+    const actions = collectIntentActionNames(existing);
+    actions.add(WIDGET_EVENT_ACTION);
+    actions.add(WIDGET_BUMP_ACTION);
+    setReceiverActions(existing, [...actions]);
     return;
   }
 
   mainApplication.receiver.push({
     $: {
-      'android:name': receiverName,
+      'android:name': EXPO_TARGETS_RECEIVER,
       'android:exported': 'false',
     },
-    'intent-filter': [
-      {
-        action: [
-          { $: { 'android:name': 'expo.modules.targets.WIDGET_EVENT' } },
-        ],
-      },
-    ],
   });
+  setReceiverActions(mainApplication.receiver.at(-1), [
+    WIDGET_EVENT_ACTION,
+    WIDGET_BUMP_ACTION,
+  ]);
 }
 
 function enableComposeFeatures(buildGradleConfig: any) {
