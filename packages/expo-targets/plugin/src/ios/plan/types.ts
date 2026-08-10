@@ -13,7 +13,9 @@ import type { TargetWorkspace } from '../observe/workspace';
 export interface IOSTargetProps extends IOSTargetConfigWithReactNative {
   type: ExtensionType;
   name: string;
+  displayName?: string;
   entry?: string;
+  ui?: 'native' | 'expo-ui' | 'react-native';
   excludedPackages?: string[];
   appGroup?: string;
   /** Baked into RN VC for App Group sideload matching (optional). */
@@ -75,6 +77,18 @@ export type SwiftTemplatePlan =
   | {
       template: 'safariWebExtensionHandler';
       options: { targetName: string };
+    }
+  | {
+      template: 'expoUiWidget';
+      options: {
+        name: string;
+        displayName?: string;
+        description?: string;
+      };
+    }
+  | {
+      template: 'expoUiWidgetBundle';
+      options: { name: string };
     };
 
 /** One Swift file that should end up in the target's Sources phase. */
@@ -197,6 +211,8 @@ export interface PodfilePlan {
   deploymentTarget: string;
   extensionType: ExtensionType;
   standalone: boolean;
+  /** Link ExpoWidgets sandbox via use_expo_modules_widgets! */
+  expoUiWidget?: boolean;
   excludedPackages?: string[];
   podsRbContent?: string;
 }

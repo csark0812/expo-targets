@@ -76,7 +76,9 @@
     "fs-extra": "^11.2.0",
     "glob": "^10.4.2",
     "prompts": "^2.4.2",
-    "xcode": "3.0.1"
+    "xcode": "3.0.1",
+    "expo-widgets": "~57.0.9",
+    "@expo/ui": "~57.0.10"
   },
   "devDependencies": {
     "@react-native-community/cli": "^16.0.0",

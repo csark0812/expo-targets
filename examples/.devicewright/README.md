@@ -4,7 +4,7 @@
 
 <!-- doc-meta: owner=eng | last-reviewed=2026-08-06 -->
 
-Owns REQUIRED_V2 journeys for public `examples/*`, plus the Android closed set `REQUIRED_ANDROID` (26 ids). Devicewright (`@csark0812/devicewright`) is the private npm library that runs them.
+Owns REQUIRED_V2 journeys for public `examples/*`, plus the Android closed set `REQUIRED_ANDROID` (28 ids). Devicewright (`@csark0812/devicewright`) is the private npm library that runs them.
 
 See [PR_PROOF.md](./PR_PROOF.md) for operator pre-merge checklist, [claims.ts](./claims.ts) for approved `os-limit` rows (including `platforms: ["android"]` drafts), [touchpoints.ts](./touchpoints.ts) / `ANDROID_LOCKED_P` for live-touchpoint definitions, and [required.ts](./required.ts) for `REQUIRED_ANDROID`.
 

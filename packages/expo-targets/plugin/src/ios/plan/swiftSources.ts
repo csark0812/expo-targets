@@ -1,5 +1,6 @@
 import path from 'node:path';
 
+import { resolveUiMode } from '../../domain/uiMode';
 import type { TargetWorkspace } from '../observe/workspace';
 import type {
   IOSTargetProps,
@@ -15,6 +16,17 @@ const REACT_NATIVE_VIEW_CONTROLLER = 'ReactNativeViewController.swift';
 const REACT_NATIVE_CLIP_APP = 'ReactNativeClipApp.swift';
 const MESSAGES_VIEW_CONTROLLER = 'MessagesViewController.swift';
 const SAFARI_HANDLER = 'SafariWebExtensionHandler.swift';
+
+function isExpoUiWidget(props: IOSTargetProps): boolean {
+  return (
+    resolveUiMode({
+      type: props.type,
+      entry: props.entry,
+      ui: props.ui,
+    }) === 'expo-ui' &&
+    (props.type === 'widget' || props.type === 'watch-widget')
+  );
+}
 
 /** Match a well-known file name at the root or nested in a subdirectory. */
 function isNamed(file: string, fileName: string): boolean {
@@ -48,6 +60,9 @@ function ensureNamed(files: string[], name: string): void {
 }
 
 function resolveEntryOnlySwiftFiles(props: IOSTargetProps): string[] {
+  if (isExpoUiWidget(props)) {
+    return [`${props.name}.swift`, `${props.name}Bundle.swift`];
+  }
   if (props.type === 'messages') {
     return [MESSAGES_VIEW_CONTROLLER, REACT_NATIVE_VIEW_CONTROLLER];
   }
@@ -167,6 +182,56 @@ function planUserFile({
   return { file, sourcePath };
 }
 
+function planExpoUiWidgetSwiftFile({
+  file,
+  workspace,
+  props,
+}: {
+  file: string;
+  workspace: TargetWorkspace;
+  props: IOSTargetProps;
+}): UnresolvedSwiftFilePlan | undefined {
+  if (!(isExpoUiWidget(props) && props.entry)) {
+    return;
+  }
+
+  if (isNamed(file, `${props.name}.swift`)) {
+    return planGeneratedFile({
+      file,
+      fileName: `${props.name}.swift`,
+      hasUserFile: workspace.swiftFiles.some((f) =>
+        isNamed(f, `${props.name}.swift`)
+      ),
+      workspace,
+      template: {
+        template: 'expoUiWidget',
+        options: {
+          name: props.name,
+          displayName: props.displayName,
+          description: props.displayName
+            ? `${props.displayName} (expo-ui)`
+            : undefined,
+        },
+      },
+    });
+  }
+
+  if (isNamed(file, `${props.name}Bundle.swift`)) {
+    return planGeneratedFile({
+      file,
+      fileName: `${props.name}Bundle.swift`,
+      hasUserFile: workspace.swiftFiles.some((f) =>
+        isNamed(f, `${props.name}Bundle.swift`)
+      ),
+      workspace,
+      template: {
+        template: 'expoUiWidgetBundle',
+        options: { name: props.name },
+      },
+    });
+  }
+}
+
 function planSwiftFile({
   file,
   workspace,
@@ -178,6 +243,11 @@ function planSwiftFile({
   props: IOSTargetProps;
   identity: TargetIdentity;
 }): UnresolvedSwiftFilePlan | undefined {
+  const expoUiPlan = planExpoUiWidgetSwiftFile({ file, workspace, props });
+  if (expoUiPlan) {
+    return expoUiPlan;
+  }
+
   if (
     props.entry &&
     props.type === 'messages' &&

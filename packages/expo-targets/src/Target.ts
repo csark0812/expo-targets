@@ -1,10 +1,11 @@
 import Constants from 'expo-constants';
-import { AppRegistry } from 'react-native';
+import { AppRegistry, Platform } from 'react-native';
 import type {
   ExtensionType,
   ReactNativeCompatibleType,
   TargetConfig,
 } from '../plugin/src/config';
+import { resolveUiMode } from '../plugin/src/domain/uiMode';
 import type { TargetName } from './generatedNames';
 import { Extension, type SharedData } from './modules/extension/index';
 import {
@@ -30,6 +31,22 @@ export type SetDataOptions = {
   refresh?: boolean;
 };
 
+/** Dated timeline entry for expo-ui widgets (maps to expo-widgets updateTimeline). */
+export type TimelineEntry<T extends Record<string, any> = Record<string, any>> =
+  {
+    date: Date;
+    props: T;
+  };
+
+type ExpoUiWidgetHandle = {
+  updateSnapshot: (props: Record<string, any>) => void;
+  updateTimeline: (entries: TimelineEntry[]) => void;
+  getTimeline: () => Promise<TimelineEntry[]>;
+  reload: () => void;
+};
+
+const expoUiWidgets = new Map<string, ExpoUiWidgetHandle>();
+
 export interface BaseTarget {
   name: string;
   type: ExtensionType;
@@ -39,6 +56,12 @@ export interface BaseTarget {
   setData: (data: Record<string, any>, options?: SetDataOptions) => void;
   getData: <T extends Record<string, any>>() => T;
   refresh: () => void;
+  /** Schedule dated props for an expo-ui widget (iOS sandbox). */
+  setTimeline: (entries: TimelineEntry[]) => void;
+  /** Read back the expo-ui widget timeline (iOS). */
+  getTimeline: <
+    T extends Record<string, any> = Record<string, any>,
+  >() => Promise<TimelineEntry<T>[]>;
 }
 
 export interface ExtensionTarget extends BaseTarget {
@@ -163,9 +186,16 @@ function createBaseTarget(
     storage,
     config,
     setData(data: Record<string, any>, options?: SetDataOptions) {
+      // Always mirror into App Group storage (Android Glance + native deepen).
       storage.setData(data);
+      const widget = expoUiWidgets.get(targetName);
+      if (widget && Platform.OS === 'ios') {
+        // One-entry timeline blob (= expo-widgets updateSnapshot).
+        widget.updateSnapshot(data);
+      }
       if (options?.refresh) {
         storage.refresh(targetName);
+        widget?.reload();
       }
     },
     getData<T extends Record<string, any>>(): T {
@@ -173,6 +203,26 @@ function createBaseTarget(
     },
     refresh() {
       storage.refresh(targetName);
+      expoUiWidgets.get(targetName)?.reload();
+    },
+    setTimeline(entries: TimelineEntry[]) {
+      const widget = expoUiWidgets.get(targetName);
+      if (widget && Platform.OS === 'ios') {
+        widget.updateTimeline(entries);
+      }
+      const latest = [...entries]
+        .sort((a, b) => a.date.getTime() - b.date.getTime())
+        .at(-1);
+      if (latest) {
+        storage.setData(latest.props);
+      }
+    },
+    async getTimeline<T extends Record<string, any> = Record<string, any>>() {
+      const widget = expoUiWidgets.get(targetName);
+      if (!(widget && Platform.OS === 'ios')) {
+        return [];
+      }
+      return (await widget.getTimeline()) as TimelineEntry<T>[];
     },
   };
 }
@@ -254,6 +304,30 @@ function wrapWithDevToolsIfNeeded(
   }
 }
 
+function registerExpoUiWidget(
+  targetName: string,
+  layout: React.ComponentType<any> | ((...args: any[]) => any)
+): void {
+  try {
+    // Private dep — layout must use the `'widget'` directive (babel → layout string).
+    const { createWidget } = require('expo-widgets') as {
+      createWidget: (
+        name: string,
+        layout: unknown,
+        initialProps?: Record<string, any>
+      ) => ExpoUiWidgetHandle;
+    };
+    const widget = createWidget(targetName, layout);
+    expoUiWidgets.set(targetName, widget);
+  } catch (error) {
+    throw new Error(
+      `[expo-targets] createTarget("${targetName}", Layout) for expo-ui widgets requires ` +
+        `expo-widgets (private dependency). Ensure the Layout uses the 'widget' directive. ` +
+        `Underlying error: ${error}`
+    );
+  }
+}
+
 function registerTargetComponent(
   targetName: string,
   componentFunc: React.ComponentType<any>,
@@ -266,6 +340,20 @@ function registerTargetComponent(
         'expo-target.config pointing at the RN entry file (relative to project root). ' +
         'See docs/react-native-extensions.md'
     );
+  }
+
+  const uiMode = resolveUiMode({
+    type: config.type,
+    entry: config.entry,
+    ui: (config as { ui?: 'native' | 'expo-ui' | 'react-native' }).ui,
+  });
+
+  if (
+    uiMode === 'expo-ui' &&
+    (config.type === 'widget' || config.type === 'watch-widget')
+  ) {
+    registerExpoUiWidget(targetName, componentFunc);
+    return;
   }
 
   const WrappedComponent = (props: any) => {
@@ -399,6 +487,8 @@ function createSafariTarget(
     setData: webStorage.setData as any,
     getData: webStorage.getData,
     refresh: webStorage.refresh,
+    setTimeline: () => {},
+    getTimeline: async () => [],
     closePopup,
     openTab,
     copyToClipboard,
@@ -423,6 +513,8 @@ function createSafariTargetFromConfig(
     setData: webStorage.setData as any,
     getData: webStorage.getData,
     refresh: webStorage.refresh,
+    setTimeline: () => {},
+    getTimeline: async () => [],
     closePopup,
     openTab,
     copyToClipboard,

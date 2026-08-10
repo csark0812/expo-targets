@@ -2,10 +2,12 @@ import type { Logger } from '../../../logger';
 import type { PodfilePlan } from '../../plan/types';
 import {
   ensureExcludedPackagesPostIntegrate,
+  ensureExpoWidgetsPostInstall,
   ensureExtensionDeploymentTargets,
   ensureMainTargetUsesFrameworks,
   ensureReactNativeExtensionFrameworkPaths,
   ensureResourceBundleCodeSigning,
+  generateExpoUiWidgetTargetBlock,
   generateReactNativeTargetBlock,
   generateStandaloneTargetBlock,
   hasTargetBlock,
@@ -31,6 +33,14 @@ function targetBlockFor(
   plan: PodfilePlan,
   mainTargetName: string
 ): string {
+  if (plan.expoUiWidget) {
+    return generateExpoUiWidgetTargetBlock({
+      targetName: plan.targetName,
+      deploymentTarget: plan.deploymentTarget,
+      podsRbContent: plan.podsRbContent,
+    });
+  }
+
   if (!plan.standalone) {
     return generateReactNativeTargetBlock({
       targetName: plan.targetName,
@@ -132,8 +142,12 @@ export function applyPodfilePlan(
     logger,
   });
 
+  if (plan.expoUiWidget) {
+    next = ensureExpoWidgetsPostInstall(next);
+  }
+
   logger.log(
-    `Updated Podfile for ${plan.standalone ? 'standalone' : 'React Native'} target: ${plan.targetName}`
+    `Updated Podfile for ${plan.standalone ? 'standalone' : 'React Native'} target: ${plan.targetName}${plan.expoUiWidget ? ' (expo-ui widget)' : ''}`
   );
 
   return plan.standalone

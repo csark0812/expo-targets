@@ -30,6 +30,10 @@ const ExpoTargetsStorageModule = requireNativeModule('ExpoTargetsStorage') as {
   isAppExtension?: () => boolean;
   /** Android: start VpnService.prepare consent UI when needed. */
   prepareVpn?: () => string;
+  /** Android: show system pin sheet for a Glance widget target. */
+  requestPinWidget?: (targetName: string) => string;
+  /** Android: count of live App Widget instances for a target. */
+  getHostedWidgetCount?: (targetName: string) => number;
 };
 
 export class AppGroupStorage {
@@ -199,5 +203,29 @@ export function prepareVpnConsent(): string {
     return ExpoTargetsStorageModule.prepareVpn?.() ?? 'unavailable';
   } catch {
     return 'unavailable';
+  }
+}
+
+/**
+ * Android host: request the launcher pin sheet for a Glance widget target.
+ * Returns `requested` | `already-hosted` | `unsupported` | `unknown-target` |
+ * `no-activity` | `failed`.
+ */
+export function requestPinWidget(targetName: string): string {
+  try {
+    return (
+      ExpoTargetsStorageModule.requestPinWidget?.(targetName) ?? 'unsupported'
+    );
+  } catch {
+    return 'unavailable';
+  }
+}
+
+/** Android: live App Widget instance count for a target (0 on iOS). */
+export function getHostedWidgetCount(targetName: string): number {
+  try {
+    return ExpoTargetsStorageModule.getHostedWidgetCount?.(targetName) ?? 0;
+  } catch {
+    return 0;
   }
 }

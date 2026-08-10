@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#FFFFFFFF">
+    <TextView
+        android:id="@+id/widget_helloremoteviews_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Hello RemoteViews"
+        android:textStyle="bold"
+        android:textSize="15sp"
+        android:textColor="#FF000000" />
+    <TextView
+        android:id="@+id/widget_helloremoteviews_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="No message yet"
+        android:textSize="13sp"
+        android:textColor="#FF3C3C43" />
+</LinearLayout>

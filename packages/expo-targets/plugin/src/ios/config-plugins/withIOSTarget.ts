@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import process from 'node:process';
 import type { ConfigPlugin } from '@expo/config-plugins';
-import { withDangerousMod } from '@expo/config-plugins';
+import { withDangerousMod, withInfoPlist } from '@expo/config-plugins';
 import {
   type ExtensionType,
   type IOSTargetConfigWithReactNative,
@@ -18,6 +18,7 @@ import {
   isReactNativeWeb,
   REACT_NATIVE_COMPATIBLE_TYPES,
   requiresAppGroup,
+  resolveUiMode,
   shouldUseAppGroups,
   TYPE_CHARACTERISTICS,
 } from '../../domain';
@@ -35,6 +36,7 @@ interface IosTargetProps extends IOSTargetConfigWithReactNative {
   displayName?: string;
   appGroup?: string;
   entry?: string;
+  ui?: 'native' | 'expo-ui' | 'react-native';
   excludedPackages?: string[];
   directory: string;
   configPath: string;
@@ -48,10 +50,19 @@ interface IosTargetProps extends IOSTargetConfigWithReactNative {
 
 function validateEntry(props: IosTargetProps, projectRoot: string): void {
   if (props.entry) {
-    if (!isReactNativeCompatible(props.type)) {
+    const uiMode = resolveUiMode({
+      type: props.type,
+      entry: props.entry,
+      ui: props.ui,
+    });
+    const allowExpoUiWidget =
+      uiMode === 'expo-ui' &&
+      (props.type === 'widget' || props.type === 'watch-widget');
+    if (!(isReactNativeCompatible(props.type) || allowExpoUiWidget)) {
       throw new Error(
-        `Target '${props.name}' (type: ${props.type}) does not support React Native. ` +
-          `'entry' can only be used with: ${REACT_NATIVE_COMPATIBLE_TYPES.join(', ')}`
+        `Target '${props.name}' (type: ${props.type}) does not support an entry. ` +
+          `'entry' can be used with: ${REACT_NATIVE_COMPATIBLE_TYPES.join(', ')}, ` +
+          `or widget/watch-widget for expo-ui layouts.`
       );
     }
 
@@ -249,13 +260,22 @@ const withTargetPods: ConfigPlugin<{
   }
 
   const isWebBasedEntry = Boolean(props.entry) && isReactNativeWeb(props.type);
+  const uiMode = resolveUiMode({
+    type: props.type,
+    entry: props.entry,
+    ui: props.ui,
+  });
+  // watch-widget returns earlier (no Podfile). Remaining expo-ui widget targets
+  // stay sibling/standalone (not nested RN share-class).
+  const isExpoUiWidget = uiMode === 'expo-ui' && props.type === 'widget';
 
   return withTargetPodfile(config, {
     targetName: targetProductName, // Use sanitized name to match Xcode target
     deploymentTarget,
     extensionType: props.type,
     excludedPackages: props.excludedPackages,
-    standalone: !props.entry || isWebBasedEntry,
+    standalone: !props.entry || isWebBasedEntry || isExpoUiWidget,
+    expoUiWidget: isExpoUiWidget,
     targetDirectory: props.directory, // For pods.rb file detection
     logger: props.logger,
   });
@@ -370,6 +390,38 @@ const withTargetEASCredentials: ConfigPlugin<{
   });
 };
 
+/**
+ * Bake ExpoWidgetsAppGroupIdentifier into the widget appex + host Info.plist
+ * so WidgetsStorage / TimelineProvider share the same App Group suite.
+ */
+function withExpoWidgetsAppGroupKeys(
+  config: Parameters<typeof withInfoPlist>[0],
+  props: IosTargetProps
+) {
+  const uiMode = resolveUiMode({
+    type: props.type,
+    entry: props.entry,
+    ui: props.ui,
+  });
+  if (
+    uiMode !== 'expo-ui' ||
+    !(props.type === 'widget' || props.type === 'watch-widget') ||
+    !props.appGroup
+  ) {
+    return config;
+  }
+
+  props.infoPlist = {
+    ...(props.infoPlist || {}),
+    ExpoWidgetsAppGroupIdentifier: props.appGroup,
+  };
+
+  return withInfoPlist(config, (cfg) => {
+    cfg.modResults.ExpoWidgetsAppGroupIdentifier = props.appGroup!;
+    return cfg;
+  });
+}
+
 export const withIOSTarget: ConfigPlugin<IosTargetProps> = (config, props) => {
   const targetName = props.displayName || props.name;
   props.logger.log(`Configuring iOS target: ${targetName} (${props.type})`);
@@ -387,8 +439,10 @@ export const withIOSTarget: ConfigPlugin<IosTargetProps> = (config, props) => {
   const colors = resolveColors(props, (config.ios as any)?.accentColor);
   const targetProductName = Paths.sanitizeTargetName(targetName);
 
+  let next = withExpoWidgetsAppGroupKeys(config, props);
+
   // Pass resolved values to withXcodeChanges
-  let next = withXcodeChanges(config, {
+  next = withXcodeChanges(next, {
     ...props,
     deploymentTarget,
     colors: Object.keys(colors).length > 0 ? colors : undefined,

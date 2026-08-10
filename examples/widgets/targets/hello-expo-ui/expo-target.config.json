@@ -1,0 +1,21 @@
+{
+  "type": "widget",
+  "name": "HelloExpoUi",
+  "displayName": "Hello Expo UI",
+  "platforms": ["ios", "android"],
+  "appGroup": "group.com.expotargets.example.widgets",
+  "entry": "./targets/hello-expo-ui/index.tsx",
+  "ios": {
+    "bundleIdentifier": "com.expotargets.example.widgets.helloexpoui",
+    "displayName": "Hello Expo UI",
+    "colors": {
+      "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" },
+      "BackgroundColor": { "light": "#F2F2F7", "dark": "#1C1C1E" },
+      "TextPrimary": { "light": "#000000", "dark": "#FFFFFF" }
+    }
+  },
+  "android": {
+    "widgetType": "glance",
+    "description": "ET Widgets Hello Expo UI (Glance props + iOS sandbox)"
+  }
+}

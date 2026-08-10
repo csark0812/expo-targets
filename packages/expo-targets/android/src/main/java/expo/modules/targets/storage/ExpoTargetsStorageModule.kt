@@ -1,5 +1,7 @@
 package expo.modules.targets.storage
 
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.SharedPreferences
 import android.net.VpnService
@@ -165,6 +167,94 @@ class ExpoTargetsStorageModule : Module() {
         "already-consented"
       }
     }
+
+    /**
+     * Host helper for Devicewright Android widget journeys.
+     * Shows the system "Add to Home screen?" pin sheet for a widget target.
+     * @return "requested" | "already-hosted" | "unsupported" | "unknown-target" | "no-activity" | "failed"
+     */
+    Function("requestPinWidget") { targetName: String ->
+      val activity = appContext.currentActivity
+      if (activity == null) {
+        ExpoTargetsLogger.w(TAG, "requestPinWidget: no foreground Activity")
+        return@Function "no-activity"
+      }
+      val awm = AppWidgetManager.getInstance(activity)
+      if (!awm.isRequestPinAppWidgetSupported) {
+        ExpoTargetsLogger.w(TAG, "requestPinWidget: launcher does not support pin")
+        return@Function "unsupported"
+      }
+      val provider = resolveWidgetProvider(activity, targetName)
+      if (provider == null) {
+        ExpoTargetsLogger.w(TAG, "requestPinWidget: no provider for '$targetName'")
+        return@Function "unknown-target"
+      }
+      val hosted = awm.getAppWidgetIds(provider)
+      if (hosted.isNotEmpty()) {
+        ExpoTargetsLogger.d(
+          TAG,
+          "requestPinWidget: already hosted count=${hosted.size} provider=$provider",
+        )
+        return@Function "already-hosted"
+      }
+      val ok = awm.requestPinAppWidget(provider, null, null)
+      ExpoTargetsLogger.d(TAG, "requestPinWidget: requested=$ok provider=$provider")
+      if (ok) "requested" else "failed"
+    }
+
+    /** Count of live App Widget instances for a target's Glance receiver. */
+    Function("getHostedWidgetCount") { targetName: String ->
+      val context = appContext.reactContext
+      if (context == null) {
+        ExpoTargetsLogger.w(TAG, "getHostedWidgetCount: React context is null")
+        return@Function 0
+      }
+      val provider = resolveWidgetProvider(context, targetName) ?: return@Function 0
+      AppWidgetManager.getInstance(context).getAppWidgetIds(provider).size
+    }
+  }
+
+  /**
+   * Resolve AppWidget ComponentName for a target name.
+   * Matches withAndroidWidget FQCNs:
+   * - Glance: `{package}.widget.{sanitized}.{Pascal}WidgetReceiver`
+   * - RemoteViews: `{package}.widget.{sanitized}.{Pascal}Provider`
+   */
+  private fun resolveWidgetProvider(context: Context, targetName: String): ComponentName? {
+    val pkg = context.packageName
+    val segment = targetName.lowercase().replace(Regex("[^a-z0-9_]"), "_")
+    val segmentAlt = targetName.replace(Regex("[^a-zA-Z0-9]"), "").lowercase()
+    val pascal =
+      targetName.replaceFirstChar { it.uppercaseChar() }.replace(Regex("[-_]([a-z])")) {
+        it.groupValues[1].uppercase()
+      }
+    val candidates =
+      linkedSetOf(
+        "$pkg.widget.$segment.${pascal}WidgetReceiver",
+        "$pkg.widget.$segmentAlt.${pascal}WidgetReceiver",
+        "$pkg.widget.$segment.${pascal}Provider",
+        "$pkg.widget.$segmentAlt.${pascal}Provider",
+      )
+
+    val awm = AppWidgetManager.getInstance(context)
+    for (info in awm.installedProviders) {
+      if (info.provider.packageName != pkg) continue
+      val className = info.provider.className
+      if (candidates.contains(className)) return info.provider
+      val lower = className.lowercase()
+      if (
+        lower.contains(".$segment.") ||
+          lower.contains(".$segmentAlt.") ||
+          lower.endsWith("${pascal.lowercase()}widgetreceiver") ||
+          lower.endsWith("${pascal.lowercase()}provider")
+      ) {
+        return info.provider
+      }
+    }
+
+    // Fall back to constructed Glance FQCN even if not yet in installedProviders.
+    val constructed = candidates.firstOrNull() ?: return null
+    return ComponentName(pkg, constructed)
   }
 
   private fun resolveKey(key: String, targetName: String?): String {

@@ -12,6 +12,7 @@ export type {
   LiveActivityConfig,
   TargetConfig,
   TargetConfigFunction,
+  UiMode,
 } from './config';
 
 const withExpoTargets: ConfigPlugin<{

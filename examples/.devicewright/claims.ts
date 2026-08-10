@@ -22,6 +22,12 @@ export type ClaimsEntry = {
 
 export const OS_LIMIT_CLAIMS: readonly ClaimsEntry[] = [
   {
+    id: "widgets-remoteviews",
+    reason:
+      "HelloRemoteViews is android-only (RemoteViews AppWidget); no iOS WidgetKit dual",
+    platforms: ["ios"],
+  },
+  {
     id: "live-activity",
     reason:
       "Lock Screen chrome may be idb-opaque after Always Allow; Watch Smart Stack only when pair is connected (not merely booted). DI / ActivityKit push / StandBy remain non-Sim-faithful. Host start+update+end alone is not green.",

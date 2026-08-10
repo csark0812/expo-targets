@@ -8,7 +8,9 @@ export type {
   IOSTargetConfig,
   ReactNativeCompatibleType,
   TargetConfig,
+  UiMode,
 } from '../plugin/src/config';
+export { isIllegalUiMode, resolveUiMode } from '../plugin/src/domain/uiMode';
 export type {
   KnownLiveActivityAttributes,
   KnownTargets,
@@ -93,8 +95,10 @@ export {
 export {
   AppGroupStorage,
   clearSharedData,
+  getHostedWidgetCount,
   prepareVpnConsent,
   refreshAllTargets,
+  requestPinWidget,
 } from './modules/storage/index';
 export type {
   BaseTarget,
@@ -102,7 +106,9 @@ export type {
   MessagesExtensionTarget,
   NonExtensionTarget,
   SafariExtensionTarget,
+  SetDataOptions,
   Target,
+  TimelineEntry,
 } from './Target';
 export { createTarget } from './Target';
 

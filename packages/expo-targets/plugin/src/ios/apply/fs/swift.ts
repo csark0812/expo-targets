@@ -3,6 +3,7 @@ import path from 'node:path';
 import { warnIfSealedHandEdited } from '../../../codegen/warnIfSealedHandEdited';
 import type { Logger } from '../../../logger';
 import type { SwiftFilePlan, SwiftTemplatePlan } from '../../plan/types';
+import * as ExpoUiWidgetSwift from '../../utils/expoUiWidgetSwift';
 import * as File from '../../utils/file';
 import * as ReactNativeSwift from '../../utils/reactNativeSwift';
 import * as Safari from '../../utils/safari';
@@ -15,6 +16,10 @@ function renderSwiftTemplate(plan: SwiftTemplatePlan): string {
       return ReactNativeSwift.generateReactNativeClipApp();
     case 'safariWebExtensionHandler':
       return Safari.generateSafariSwiftHandler(plan.options.targetName);
+    case 'expoUiWidget':
+      return ExpoUiWidgetSwift.generateExpoUiWidgetSwift(plan.options);
+    case 'expoUiWidgetBundle':
+      return ExpoUiWidgetSwift.generateExpoUiWidgetBundleSwift(plan.options);
     default:
       return ReactNativeSwift.generateReactNativeViewController(plan.options);
   }

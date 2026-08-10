@@ -4,8 +4,10 @@ import * as path from 'node:path';
 import { normalizePodfile } from '../../../../test-utils/normalizePodfile';
 import {
   ensureExcludedPackagesPostIntegrate,
+  ensureExpoWidgetsPostInstall,
   ensureMainTargetUsesFrameworks,
   ensureReactNativeExtensionFrameworkPaths,
+  generateExpoUiWidgetTargetBlock,
   generateReactNativeTargetBlock,
   generateStandaloneTargetBlock,
   hasTargetBlock,
@@ -190,5 +192,29 @@ describe('ensureReactNativeExtensionFrameworkPaths', () => {
     expect(result).toContain(
       String.raw`.gsub(/\s*"\$\{PODS_CONFIGURATION_BUILD_DIR\}\/EXUpdates"/, '')`
     );
+  });
+});
+
+describe('generateExpoUiWidgetTargetBlock', () => {
+  test('links use_expo_modules_widgets!', () => {
+    const block = generateExpoUiWidgetTargetBlock({
+      targetName: 'HelloExpoUi',
+      deploymentTarget: '16.4',
+    });
+    expect(block).toContain("target 'HelloExpoUi' do");
+    expect(block).toContain('use_expo_modules_widgets!');
+    expect(block).toContain('expo-widgets/package.json');
+  });
+});
+
+describe('ensureExpoWidgetsPostInstall', () => {
+  test('injects expo_widgets_post_install into existing post_install', () => {
+    const next = ensureExpoWidgetsPostInstall(`
+post_install do |installer|
+  react_native_post_install(installer)
+end
+`);
+    expect(next).toContain('expo_widgets_post_install(installer)');
+    expect(next).toContain('react_native_post_install(installer)');
   });
 });

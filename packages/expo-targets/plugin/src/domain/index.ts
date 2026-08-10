@@ -45,3 +45,5 @@ export {
   REACT_NATIVE_WEB_TYPES,
 } from './rnCompat';
 export type { ExtensionType } from './types';
+export type { UiMode } from './uiMode';
+export { isIllegalUiMode, resolveUiMode } from './uiMode';

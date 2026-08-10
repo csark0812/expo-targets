@@ -9,6 +9,7 @@
     "android": "expo run:android"
   },
   "dependencies": {
+    "@expo/ui": "~57.0.10",
     "expo": "~57.0.9",
     "expo-asset": "~57.0.8",
     "expo-status-bar": "~57.0.1",

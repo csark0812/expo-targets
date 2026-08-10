@@ -14,6 +14,7 @@ export interface TargetConfig {
   displayName?: string;
   platforms?: string[];
   entry?: string;
+  ui?: 'native' | 'expo-ui' | 'react-native';
   appGroup?: string;
   excludedPackages?: string[];
   liveActivity?: { attributesName?: string };

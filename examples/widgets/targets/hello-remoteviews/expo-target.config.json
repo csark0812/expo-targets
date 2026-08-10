@@ -1,0 +1,11 @@
+{
+  "type": "widget",
+  "name": "HelloRemoteViews",
+  "displayName": "Hello RemoteViews",
+  "platforms": ["android"],
+  "appGroup": "group.com.expotargets.example.widgets",
+  "android": {
+    "widgetType": "remoteviews",
+    "description": "ET Widgets Hello RemoteViews (XML layout + SharedPreferences)"
+  }
+}
