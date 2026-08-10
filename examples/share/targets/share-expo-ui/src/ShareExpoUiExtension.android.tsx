@@ -12,7 +12,8 @@ type Props = {
  */
 export default function ShareExpoUiExtension({ target, text, url }: Props) {
   const shared = target.getSharedData?.() ?? null;
-  const resolvedText = text ?? shared?.text ?? shared?.url ?? url ?? 'No content';
+  const resolvedText =
+    text ?? shared?.text ?? shared?.url ?? url ?? 'No content';
 
   const save = () => {
     const existing = target.getData<{ items: unknown[] }>() || { items: [] };

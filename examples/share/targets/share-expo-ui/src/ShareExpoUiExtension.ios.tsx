@@ -1,4 +1,4 @@
-import { Host, Button, Text, VStack } from '@expo/ui/swift-ui';
+import { Button, Host, Text, VStack } from '@expo/ui/swift-ui';
 import type { ExtensionTarget } from 'expo-targets';
 
 type Props = {
@@ -12,7 +12,8 @@ type Props = {
  */
 export default function ShareExpoUiExtension({ target, text, url }: Props) {
   const shared = target.getSharedData?.() ?? null;
-  const resolvedText = text ?? shared?.text ?? shared?.url ?? url ?? 'No content';
+  const resolvedText =
+    text ?? shared?.text ?? shared?.url ?? url ?? 'No content';
 
   const save = () => {
     const existing = target.getData<{ items: unknown[] }>() || { items: [] };

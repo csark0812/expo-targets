@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { LiveActivity, requestPinWidget } from 'expo-targets';
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import {
   Platform,
   Pressable,
@@ -329,7 +329,7 @@ function PinSections({
 
 async function startLiveActivity(
   setLiveId: (id: string | null) => void,
-  setLiveStatus: (status: string) => void,
+  setLiveStatus: (status: string) => void
 ) {
   if (!(await LiveActivity.areActivitiesEnabled())) {
     setLiveStatus('disabled');
@@ -346,7 +346,7 @@ async function startLiveActivity(
 
 async function updateLiveActivity(
   liveId: string | null,
-  setLiveStatus: (status: string) => void,
+  setLiveStatus: (status: string) => void
 ) {
   if (!liveId) {
     setLiveStatus('no-id');
@@ -359,7 +359,7 @@ async function updateLiveActivity(
 async function endLiveActivity(
   liveId: string | null,
   setLiveId: (id: string | null) => void,
-  setLiveStatus: (status: string) => void,
+  setLiveStatus: (status: string) => void
 ) {
   if (liveId) {
     await LiveActivity.end(liveId);

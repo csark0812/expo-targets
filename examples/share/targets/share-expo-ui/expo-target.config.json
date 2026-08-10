@@ -9,15 +9,9 @@
   "ios": {
     "bundleIdentifier": "com.expotargets.example.share.shareexpoui",
     "displayName": "ET Share Expo UI",
-    "activationRules": [
-      { "type": "text" },
-      { "type": "url" }
-    ]
+    "activationRules": [{ "type": "text" }, { "type": "url" }]
   },
   "android": {
-    "activationRules": [
-      { "type": "text" },
-      { "type": "url" }
-    ]
+    "activationRules": [{ "type": "text" }, { "type": "url" }]
   }
 }

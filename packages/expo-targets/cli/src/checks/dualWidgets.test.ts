@@ -6,9 +6,7 @@ describe('warnDualWidgets', () => {
   test('fails when expo-widgets plugin and widget targets coexist', () => {
     const results = warnDualWidgets({
       plugins: ['expo-widgets'],
-      targets: [
-        { config: { type: 'widget', name: 'W', platforms: ['ios'] } },
-      ],
+      targets: [{ config: { type: 'widget', name: 'W', platforms: ['ios'] } }],
     } as any);
     expect(results).toHaveLength(1);
     expect(results[0].level).toBe('error');

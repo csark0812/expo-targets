@@ -33,9 +33,9 @@ describe('resolveUiMode', () => {
   });
 
   test('watch-widget + entry infers expo-ui', () => {
-    expect(
-      resolveUiMode({ type: 'watch-widget', entry: './w.tsx' })
-    ).toBe('expo-ui');
+    expect(resolveUiMode({ type: 'watch-widget', entry: './w.tsx' })).toBe(
+      'expo-ui'
+    );
   });
 });
 
@@ -59,8 +59,6 @@ describe('isIllegalUiMode', () => {
   });
 
   test('allows widget entry (expo-ui)', () => {
-    expect(
-      isIllegalUiMode({ type: 'widget', entry: './x.tsx' })
-    ).toBeNull();
+    expect(isIllegalUiMode({ type: 'widget', entry: './x.tsx' })).toBeNull();
   });
 });

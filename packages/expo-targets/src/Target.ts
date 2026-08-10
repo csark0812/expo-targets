@@ -59,9 +59,9 @@ export interface BaseTarget {
   /** Schedule dated props for an expo-ui widget (iOS sandbox). */
   setTimeline: (entries: TimelineEntry[]) => void;
   /** Read back the expo-ui widget timeline (iOS). */
-  getTimeline: <T extends Record<string, any> = Record<string, any>>() => Promise<
-    TimelineEntry<T>[]
-  >;
+  getTimeline: <
+    T extends Record<string, any> = Record<string, any>,
+  >() => Promise<TimelineEntry<T>[]>;
 }
 
 export interface ExtensionTarget extends BaseTarget {
@@ -210,9 +210,9 @@ function createBaseTarget(
       if (widget && Platform.OS === 'ios') {
         widget.updateTimeline(entries);
       }
-      const latest = [...entries].sort(
-        (a, b) => a.date.getTime() - b.date.getTime()
-      ).at(-1);
+      const latest = [...entries]
+        .sort((a, b) => a.date.getTime() - b.date.getTime())
+        .at(-1);
       if (latest) {
         storage.setData(latest.props);
       }
