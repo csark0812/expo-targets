@@ -2,7 +2,7 @@
 
 **Source of truth for** repo-root maintenance scripts under `scripts/`.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-05 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-10 -->
 
 | Script | Purpose |
 | --- | --- |

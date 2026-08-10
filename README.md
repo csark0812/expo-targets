@@ -2,13 +2,13 @@
 
 **Source of truth for** package overview.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-05 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-10 -->
 
-Add **share extensions**, **action extensions**, **App Clips**, **iMessage apps**, **stickers**, **wallet extensions**, and other Apple targets Expo does not ship — including React Native UIs where supported.
+Add **share extensions**, **action extensions**, **App Clips**, **iMessage apps**, **stickers**, **wallet extensions**, and other Apple targets that Expo does not ship. React Native UIs are supported where the platform allows them.
 
-> **Widgets:** Native WidgetKit + Live Activities are first-class in this library. Official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) is an alternative React/Expo-UI path — do not dual-generate WidgetKit in one app. Android widgets are first-class Glance/Compose; `LiveActivity.*` on Android is an ongoing-notification helper. See [widgets.md](./docs/widgets.md) and [limits.md](./docs/limits.md).
+> **Widgets:** Native WidgetKit and Live Activities are first-class in this library. Official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) is an alternate React / Expo-UI path. Do not run both WidgetKit generators in one app. Android widgets are first-class Glance / Compose. `LiveActivity.*` on Android is an ongoing-notification helper. See [widgets.md](./docs/widgets.md) and [limits.md](./docs/limits.md).
 
-> **Important:** Requires development builds (`npx expo run:ios`). Does not work with Expo Go.
+> **Important:** You must use a development build (`npx expo run:ios`). Expo Go is not supported.
 >
 > **Prerequisites:** macOS, Xcode 14+, iOS 14+. **Tested on Expo SDK 57.** [Full requirements →](./docs/getting-started.md#prerequisites)
 
@@ -27,13 +27,13 @@ npx expo-targets add
 # interactive — or: npx expo-targets add share my-share
 ```
 
-`expo-targets add` scaffolds the target and wires the host by default (`package.json`, config plugin, App Groups, `metro.config.js`). Install dependencies if wiring added `expo-targets` to `package.json`.
+`expo-targets add` scaffolds the target and wires the host by default (`package.json`, config plugin, App Groups, `metro.config.js`). If wiring added `expo-targets` to `package.json`, install dependencies.
 
 ### 3. Manual host config (advanced)
 
-If you use `--no-wire` or `app.config.js`, add the plugin and App Groups yourself:
+If you use `--no-wire` or a dynamic `app.config.js`, add the plugin and App Groups yourself.
 
-After `npx expo prebuild`, sealed build artifacts land in `ios/<App>/ExpoTargetsGenerated/<Product>/` (gitignored). Deepen Swift under `targets/*/ios/` — never edit `ExpoTargetsGenerated/`.
+After `npx expo prebuild`, sealed build artifacts land in `ios/<App>/ExpoTargetsGenerated/<Product>/` (gitignored). Deepen Swift under `targets/*/ios/`. Never edit `ExpoTargetsGenerated/`.
 
 ```json
 {
@@ -51,7 +51,7 @@ After `npx expo prebuild`, sealed build artifacts land in `ios/<App>/ExpoTargets
 }
 ```
 
-> **Why App Groups?** App Groups enable data sharing between your main app and extensions. The ID must start with `group.` — convention is `group.{your.bundle.identifier}`.
+> **Why App Groups?** App Groups share data between your app and extensions. The ID must start with `group.`. Convention: `group.{your.bundle.identifier}`.
 
 ### 4. Configure Metro
 
@@ -65,7 +65,7 @@ module.exports = withTargets(getDefaultConfig(__dirname));
 
 See [React Native Extensions](./docs/react-native-extensions.md). (`withTargetsMetro` is a deprecated alias.)
 
-### 5. Build & Run
+### 5. Build and run
 
 ```bash
 npx expo-targets doctor
@@ -87,7 +87,7 @@ close(); // Dismiss the extension
 
 ## Supported Extensions
 
-Showcase subset (common adoption path). **Full type set + maturity (~47 types):** [configuration.md](./docs/configuration.md).
+Showcase subset (common adoption path). **Full type set and maturity (~47 types):** [configuration.md](./docs/configuration.md).
 
 | Type       | iOS  | Android | Description                          |
 | ---------- | ---- | ------- | ------------------------------------ |
@@ -110,7 +110,7 @@ Showcase subset (common adoption path). **Full type set + maturity (~47 types):*
 
 ## How It Works
 
-expo-targets uses **App Groups** to share data between your app and extensions, and (for RN extensions) a Metro + native host path to load your React tree inside the extension process.
+expo-targets uses **App Groups** to share data between your app and extensions. For RN extensions, Metro plus a native host loads your React tree inside the extension process.
 
 ```
 ┌─────────────────┐        ┌─────────────────┐
@@ -176,7 +176,7 @@ npx expo-targets sync
 cd ios && pod install
 ```
 
-Use `npx expo-targets sync --dry-run` to preview. Managed Expo + `npx expo prebuild` remains the recommended path for new projects.
+Use `npx expo-targets sync --dry-run` to preview. For new projects, use managed Expo and `npx expo prebuild`.
 
 ---
 
@@ -206,7 +206,7 @@ target.refresh();
 
 ## Contributing
 
-Contributions welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) (humans) and [AGENTS.md](./AGENTS.md) (agent posture).
+See [CONTRIBUTING.md](./CONTRIBUTING.md) (humans) and [AGENTS.md](./AGENTS.md) (agent posture).
 
 ## License
 
@@ -214,4 +214,4 @@ MIT
 
 ## Credits
 
-Builds on community Apple-target / share-extension patterns and Expo’s official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) (React/Expo-UI alternative for widgets).
+Builds on community Apple-target / share-extension patterns and Expo’s official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) (React/Expo-UI alternate for widgets).

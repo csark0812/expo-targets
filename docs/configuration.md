@@ -2,11 +2,11 @@
 
 **Source of truth for** `expo-target.config` options and extension types.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-06 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-10 -->
 
-> **Orphan-stub freeze:** do not add new `ExtensionType` values without registry + scaffold + example + Devicewright row. See [deprecations.md](./deprecations.md). Widgets policy: [widgets.md](./widgets.md).
+> **Orphan-stub freeze:** do not add new `ExtensionType` values without registry, scaffold, example, and Devicewright row. See [deprecations.md](./deprecations.md). Widgets policy: [widgets.md](./widgets.md).
 
-Every target is configured with an `expo-target.config.json` file in its directory.
+Each target uses an `expo-target.config.json` file in its directory.
 
 ## Basic Structure
 
@@ -62,11 +62,11 @@ targets/my-widget/
 
 | Field              | Default     | Description                                                                                                                                                      |
 | ------------------ | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `displayName`      | `name`      | Human-readable name (`CFBundleDisplayName` / `CFBundleName` on iOS; widget picker label)                                                                          |
-| `appGroup`         | _inherited_ | App Group ID. If not specified, automatically inherited from your main app's `app.json` entitlements (see [App Group Inheritance](#app-group-inheritance) below) |
-| `liveActivity`     | —           | Widget-only ActivityKit schema (`attributesName`, `static`, `contentState`) — CNG into `ExpoTargetsGenerated/` (see [widgets.md](./widgets.md))                  |
-| `entry`            | —           | React Native entry point for share/action/clip/messages (see [Entry Field](#entry-field) below)                                                                  |
-| `excludedPackages` | auto for RN `entry` | Extra packages to omit from the nested `ExpoModulesProvider` (`post_integrate`). `expo-updates` + `expo-dev-client` are always merged for RN-native `entry` targets; list only extras (e.g. reanimated) |
+| `displayName`      | `name`      | Human-readable name (`CFBundleDisplayName` or `CFBundleName` on iOS; widget picker label)                                                                          |
+| `appGroup`         | _inherited_ | App Group ID. When omitted, inherits from your main app's `app.json` entitlements (see [App Group Inheritance](#app-group-inheritance) below) |
+| `liveActivity`     | —           | Widget-only ActivityKit schema (`attributesName`, `static`, `contentState`). CNG into `ExpoTargetsGenerated/` (see [widgets.md](./widgets.md))                  |
+| `entry`            | —           | React Native entry point for share, action, clip, and messages (see [Entry Field](#entry-field) below)                                                                  |
+| `excludedPackages` | auto for RN `entry` | Extra packages to omit from the nested `ExpoModulesProvider` (`post_integrate`). `expo-updates` and `expo-dev-client` are always merged for RN-native `entry` targets. List only extras (for example reanimated) |
 
 ### Entry Field
 
@@ -80,9 +80,9 @@ The `entry` field specifies the React Native entry point for extensions that use
 
 **Path resolution:**
 
-- Paths are **relative to your project root** (where `package.json` is)
-- Must start with `./`
-- Points to the file containing `createTarget()` with your component
+- Paths are **relative to your project root** (where `package.json` is).
+- Each path must start with `./`.
+- Each path points to the file that contains `createTarget()` with your component.
 
 **Example project structure:**
 
@@ -101,9 +101,9 @@ my-app/
 
 ## App Group Inheritance
 
-> **⚠️ Important:** If you don't configure App Groups correctly, data sharing between your app and extensions will fail silently.
+> **⚠️ Important:** When App Groups are wrong, data sharing between your app and extensions fails silently.
 
-If you don't specify `appGroup` in your target config, it's automatically inherited from your main app's entitlements in `app.json`:
+When you omit `appGroup` in your target config, it inherits automatically from your main app's entitlements in `app.json`:
 
 ```json
 // app.json
@@ -118,9 +118,9 @@ If you don't specify `appGroup` in your target config, it's automatically inheri
 }
 ```
 
-The first App Group in the array is used. If no App Group is configured in `app.json`, you **must** specify `appGroup` in each target config.
+The first App Group in the array is used. When no App Group is configured in `app.json`, you **must** specify `appGroup` in each target config.
 
-**Best practice:** Always use the same App Group ID everywhere:
+**Best practice:** Use the same App Group ID everywhere:
 
 - If your bundle ID is `com.yourcompany.myapp`
 - Use `group.com.yourcompany.myapp` as your App Group
@@ -185,7 +185,7 @@ Add iOS-specific options under the `ios` key:
 
 ### CocoaPods Dependencies (pods.rb)
 
-Add a `pods.rb` file in your target's `ios/` directory to include custom CocoaPods dependencies. This is useful for adding third-party SDKs like Firebase to your extension targets.
+Add a `pods.rb` file in your target's `ios/` directory to include custom CocoaPods dependencies. This is useful for third-party SDKs like Firebase in extension targets.
 
 **File structure:**
 
@@ -249,7 +249,7 @@ use_react_native!(
 )
 ```
 
-> **Note:** The `pods.rb` file is evaluated inside the target's `do...end` block. Global CocoaPods properties are available via the `podfile_properties` variable.
+> **Note:** The `pods.rb` file is evaluated inside the target's `do...end` block. Global CocoaPods properties are available through the `podfile_properties` variable.
 
 ### Colors
 
@@ -312,7 +312,7 @@ Image("Logo")
 
 ## Android Configuration
 
-Android widgets are supported using either **Glance** (Jetpack Compose) or **RemoteViews** (traditional XML).
+Android widgets are supported with **Glance** (Jetpack Compose) or **RemoteViews** (traditional XML).
 
 ```json
 {
@@ -350,25 +350,25 @@ Choose between two Android widget rendering approaches:
 
 **Glance (Recommended)**
 
-- Modern Jetpack Compose-based widgets using Google's Glance API
+- Modern Jetpack Compose widgets with Google's Glance API
 - Full Material 3 support with modern UI components
 - Requires Android 13+ (API 33+) for best results
 - Larger bundle size (~3-5MB Compose dependencies)
-- Best for: New projects, Material Design 3, modern Android features
+- Best for new projects, Material Design 3, and modern Android features
 
 **RemoteViews**
 
-- Traditional XML layout-based widgets using Android's RemoteViews API
+- Traditional XML layout widgets with Android's RemoteViews API
 - Works on Android 8+ (API 26+)
 - Minimal dependencies (~200KB)
 - Limited UI (no LazyColumn, basic views only)
-- Best for: Smaller apps, broader device support, simple layouts
+- Best for smaller apps, broader device support, and simple layouts
 
 ---
 
 ## Android Quick Start
 
-> **Note:** Android widget support is production-ready but requires more manual setup than iOS.
+> **Note:** Android widget support is production-ready but needs more manual setup than iOS.
 
 ### 1. Configure for Android
 
@@ -514,7 +514,7 @@ widget.setData(
 }
 ```
 
-`liveActivity` drives sealed CNG (`ActivityAttributes` + host bridge) under `ios/<App>/ExpoTargetsGenerated/`, and ambient TypeScript payload types in `.expo/types/expo-targets.d.ts` (`static` / `contentState` → `LiveActivity.create().start`). Keep `ActivityConfiguration` UI in `targets/<widget>/ios/`. Host JS: `LiveActivity.create('WeatherAttributes')` — see [api.md](./api.md) and [widgets.md](./widgets.md).
+`liveActivity` drives sealed CNG (`ActivityAttributes` and host bridge) under `ios/<App>/ExpoTargetsGenerated/`. It also drives ambient TypeScript payload types in `.expo/types/expo-targets.d.ts` (`static` and `contentState` map to `LiveActivity.create().start`). Keep `ActivityConfiguration` UI in `targets/<widget>/ios/`. Host JS: `LiveActivity.create('WeatherAttributes')`. See [api.md](./api.md) and [widgets.md](./widgets.md).
 
 ### File Provider domain (iOS)
 
@@ -532,11 +532,11 @@ widget.setData(
 }
 ```
 
-Identity is strict CNG for `FileProviderDomain.register()` / `unregister()`.
+Identity is strict CNG for `FileProviderDomain.register()` and `unregister()`.
 
 ### Content Blocker reload (iOS)
 
-Host JS calls `ContentBlocker.reload()` / `reload({ targetName })` using the plugin-derived bundle id. No extra config keys beyond a normal `content-blocker` target.
+Host JS calls `ContentBlocker.reload()` and `reload({ targetName })` with the plugin-derived bundle id. No extra config keys are needed beyond a normal `content-blocker` target.
 
 ### Widget (Android)
 
@@ -599,7 +599,7 @@ Host JS calls `ContentBlocker.reload()` / `reload({ targetName })` using the plu
 
 ### Activation Rules
 
-Control what content types your share/action extension accepts:
+Control what content types your share or action extension accepts:
 
 | Type      | Description                              | Supports maxCount |
 | --------- | ---------------------------------------- | ----------------- |
@@ -640,7 +640,7 @@ Control what content types your share/action extension accepts:
 }
 ```
 
-The `targetIcon` for action extensions can be an SF Symbol name (e.g., `"photo.fill"`) or an image asset name.
+The `targetIcon` for action extensions can be an SF Symbol name (for example `"photo.fill"`) or an image asset name.
 
 ### Share Extension with React Native
 
@@ -688,7 +688,7 @@ var ExtensionPreprocessingJS = {
 };
 ```
 
-Access via `getSharedData().preprocessedData` in your extension.
+Access through `getSharedData().preprocessedData` in your extension.
 
 ### iMessage Stickers
 
@@ -717,7 +717,7 @@ Access via `getSharedData().preprocessedData` in your extension.
 
 Declare packs with `ios.stickerPacks`. Asset paths and `targetIcon` are relative to the **target directory** (where `expo-target.config.json` lives), not the app root.
 
-The plugin currently hardcodes sticker pack **grid size to `regular`**. Provide @3x PNGs sized for that grid (Apple’s Messages sticker sizes):
+The plugin hardcodes sticker pack **grid size to `regular`**. Provide @3x PNGs sized for that grid (Apple's Messages sticker sizes):
 
 | Grid (Messages)                  | Points  | Pixels (@3x) |
 | -------------------------------- | ------- | ------------ |
@@ -727,7 +727,7 @@ The plugin currently hardcodes sticker pack **grid size to `regular`**. Provide 
 
 Until `grid-size` is configurable, use **408×408** source stickers. Keep each sticker file under 500 KB.
 
-**⚠️ iOS Limitation:** You cannot have both a `stickers` target and a `messages` target in the same app. iOS only allows one message payload provider extension per app. Both types use the same extension point identifier (`com.apple.message-payload-provider`). Choose either stickers OR a messages app, but not both.
+**⚠️ iOS Limitation:** You cannot have both a `stickers` target and a `messages` target in the same app. iOS allows only one message payload provider extension per app. Both types use the same extension point identifier (`com.apple.message-payload-provider`). Choose stickers OR a messages app, but not both.
 
 ### Messages App
 
@@ -741,17 +741,17 @@ Until `grid-size` is configurable, use **408×408** source stickers. Keep each s
 }
 ```
 
-**⚠️ iOS Limitation:** You cannot have both a `messages` target and a `stickers` target in the same app. iOS only allows one message payload provider extension per app. Both types use the same extension point identifier (`com.apple.message-payload-provider`). Choose either a messages app OR stickers, but not both.
+**⚠️ iOS Limitation:** You cannot have both a `messages` target and a `stickers` target in the same app. iOS allows only one message payload provider extension per app. Both types use the same extension point identifier (`com.apple.message-payload-provider`). Choose a messages app OR stickers, but not both.
 
 ### Wallet Extension
 
-Wallet extensions enable in-app payment pass provisioning via Apple Wallet.
+Wallet extensions enable in-app payment pass provisioning through Apple Wallet.
 
-> **Note:** `npx expo-targets add` generates combined wallet extensions (with UI) by default, which is the recommended setup for most implementations.
+> **Note:** `npx expo-targets add` generates combined wallet extensions (with UI) by default. This is the recommended setup for most implementations.
 
 **Combined configuration (with authentication UI):**
 
-Most wallet implementations require both a Non-UI extension (background provisioning) and a UI extension (user authentication). Use the `wallet.ui` option to generate both from a single config:
+Most wallet implementations need both a Non-UI extension (background provisioning) and a UI extension (user authentication). Use the `wallet.ui` option to generate both from a single config:
 
 ```json
 {
@@ -790,7 +790,7 @@ For custom UI target naming:
 
 **Basic configuration (without UI):**
 
-For rare cases where you only need background provisioning without user authentication:
+For rare cases where you need only background provisioning without user authentication:
 
 ```json
 {
@@ -879,7 +879,7 @@ class PassProvider: PKIssuerProvisioningExtensionHandler {
 
 ## Dynamic Configuration
 
-Use `.js` or `.ts` for dynamic configs that need to access your Expo app configuration:
+Use `.js` or `.ts` for dynamic configs that need access to your Expo app configuration:
 
 ```typescript
 // expo-target.config.ts
@@ -911,20 +911,20 @@ export default function (config: ExpoConfig) {
 - Conditional configuration based on build variants
 - Reusing values from your main app config
 
-**The `config` parameter** contains the fully resolved Expo configuration from your `app.json` or `app.config.js`, including all plugin modifications. You can access:
+**The `config` parameter** contains the fully resolved Expo configuration from your `app.json` or `app.config.js`. This includes all plugin modifications. You can access:
 
 - `config.ios?.bundleIdentifier` — Your app's bundle ID
 - `config.ios?.deploymentTarget` — Your app's iOS deployment target
 - `config.android?.package` — Your app's Android package name
 - Any other fields from your Expo config
 
-**Note:** Dynamic configs (`.ts`/`.js`) are processed by expo-targets during prebuild. TypeScript is supported without additional configuration — the plugin handles transpilation.
+**Note:** Dynamic configs (`.ts` or `.js`) are processed by expo-targets during prebuild. TypeScript is supported without extra configuration. The plugin handles transpilation.
 
 ---
 
 ## Extension Types Reference
 
-Types with a production example + Devicewright row are marked ✅. Entitlement-gated flows may still claim `os-limit` after the live-touchpoint floor — see `examples/.devicewright/claims.ts`.
+Types with a production example and Devicewright row are marked ✅. Entitlement-gated flows can still claim `os-limit` after the live-touchpoint floor. See `examples/.devicewright/claims.ts`.
 
 | Type                                                                                        | iOS                                      | Android             | Description                 |
 | ------------------------------------------------------------------------------------------- | ---------------------------------------- | ------------------- | --------------------------- |
@@ -934,7 +934,7 @@ Types with a production example + Devicewright row are marked ✅. Entitlement-g
 | `messages`                                                                                  | ✅ iOS 10+                               | —                   | iMessage apps               |
 | `share`                                                                                     | ✅ iOS 8+                                | ✅ W1 dedicated Activity + RN `entry` host | Share (same TS entry)       |
 | `action`                                                                                    | ✅ iOS 8+                                | ✅ W1 native Activity (RN host provisional) | Action (`PROCESS_TEXT`)     |
-| `wallet` / `wallet-ui`                                                                      | ✅ iOS 14+ (issuer may os-limit)         | 🔜 W4 partial       | Wallet / Google Wallet      |
+| `wallet` / `wallet-ui`                                                                      | ✅ iOS 14+ (issuer can os-limit)         | 🔜 W4 partial       | Wallet / Google Wallet      |
 | `safari`                                                                                    | ✅ iOS 15+                               | —                   | Safari web extensions       |
 | `content-blocker`                                                                           | ✅ iOS 11+                               | —                   | Safari content blocker      |
 | `notification-content`                                                                      | ✅ iOS 10+                               | ✅ W2 partial (RemoteViews / A12 clamp) | Rich notification UI        |
@@ -964,23 +964,23 @@ Types with a production example + Devicewright row are marked ✅. Entitlement-g
 | `network-packet-tunnel`                                                                     | ✅ (NE entitlement os-limit)             | ✅ W3c (VpnService fail-closed; consent leftover) | VPN / packet tunnel         |
 | `network-app-proxy` / `network-dns-proxy` / `network-filter-data`                           | ✅ (NE entitlement os-limit)             | — (use tunnel)      | Other NE types              |
 | `classkit-context`                                                                          | ✅ iOS 11.4+                             | —                   | ClassKit context provider   |
-| `print-service`                                                                             | ✅ iOS 14+                               | ✅ W3c (PrintService; Settings may leftover) | Print discovery             |
+| `print-service`                                                                             | ✅ iOS 14+                               | ✅ W3c (PrintService; Settings can leftover) | Print discovery             |
 | `smart-card`                                                                                | ✅ iOS 10+                               | —                   | CryptoTokenKit              |
 | `virtual-conference`                                                                        | ✅ iOS 15+                               | —                   | Calendar virtual conference |
 
 **Legend:** ✅ Production with example + Devicewright · 🔜 Android wave planned · — Not applicable (Apple-only)
 
-> **Android API-ceiling:** ~12 strong + ~8 partial groups. SSOT flags: `TYPE_CHARACTERISTICS.androidBucket` / `androidComponent`. Waves 0–3 shipped (DocumentsProvider, Autofill, IME, CallScreening, Print, VpnService). Ceiling for 1.0 also includes **W4-in-1.0 partials** and **Wear strong** (`watch` / `watch-widget`) — no separate W5 Wear wave; `message-filter` / `unwanted-communication` are in-ceiling partials (not optional). Settings/Play leftovers for IME/VPN/call/credentials (and print when non-automatable). ActivityKit / Dynamic Island / StandBy remain iOS-only.
+> **Android API-ceiling:** ~12 strong and ~8 partial groups. SSOT flags: `TYPE_CHARACTERISTICS.androidBucket` and `androidComponent`. Waves 0–3 shipped (DocumentsProvider, Autofill, IME, CallScreening, Print, VpnService). The 1.0 ceiling also includes **W4-in-1.0 partials** and **Wear strong** (`watch` and `watch-widget`). There is no separate W5 Wear wave. `message-filter` and `unwanted-communication` are in-ceiling partials (not optional). Settings and Play leftovers exist for IME, VPN, call, credentials (and print when non-automatable). ActivityKit, Dynamic Island, and StandBy remain iOS-only.
 
-> **Combined targets:** For `wallet` and `intent` types, you can use the `ios.wallet.ui` or `ios.intents.ui` config options to generate both the main extension and its UI companion from a single config file. The CLI generates combined wallet extensions by default. See [Wallet Extension](#wallet-extension) and [Intent UI Extension](#intent-ui-extension) sections for details.
+> **Combined targets:** For `wallet` and `intent` types, you can use `ios.wallet.ui` or `ios.intents.ui` to generate both the main extension and its UI companion from a single config file. The CLI generates combined wallet extensions by default. See [Wallet Extension](#wallet-extension) and [Intent UI Extension](#intent-ui-extension).
 
-> **New types:** A type joins `ExtensionType` only with registry + scaffold + example + Devicewright in the same PR. See [deprecations.md](./deprecations.md).
+> **New types:** A type joins `ExtensionType` only with registry, scaffold, example, and Devicewright in the same PR. See [deprecations.md](./deprecations.md).
 
 ### iOS Limitations
 
 **Message Payload Provider Extension Limit**
 
-iOS only allows **one message payload provider extension** per app. This means you cannot have both a `stickers` target and a `messages` target in the same app, as both use the extension point identifier `com.apple.message-payload-provider`.
+iOS allows only **one message payload provider extension** per app. You cannot have both a `stickers` target and a `messages` target in the same app. Both use the extension point identifier `com.apple.message-payload-provider`.
 
 **Error if violated:**
 
@@ -988,7 +988,7 @@ iOS only allows **one message payload provider extension** per app. This means y
 Multiple message payload provider extensions found in app but only one is allowed
 ```
 
-**Solution:** Choose either:
+**Solution:** Choose one of:
 
 - A `stickers` target (static sticker packs), OR
 - A `messages` target (interactive iMessage app)
@@ -1002,7 +1002,7 @@ You cannot use both in the same app. If you need both features, consider:
 
 ### Scaffold maturity
 
-Older docs used a 📋 “config-only” maturity label. Prefer **scaffold + example**: the plugin wires the Xcode target and `examples/` hosts ship a starting principal. New types must include an example + Devicewright journey (see [deprecations.md](./deprecations.md)). Deepen stubs to full Apple API conformance as needed for production apps — [limits.md](./limits.md).
+Older docs used a 📋 “config-only” maturity label. Prefer **scaffold + example**. The plugin wires the Xcode target and `examples/` hosts ship a starting principal. New types must include an example and a Devicewright journey (see [deprecations.md](./deprecations.md)). Deepen stubs to full Apple API conformance as needed for production apps. See [limits.md](./limits.md).
 
 **What expo-targets provides:**
 
@@ -1020,11 +1020,11 @@ Older docs used a 📋 “config-only” maturity label. Prefer **scaffold + exa
 
 ## Example: Safari Extension
 
-Safari extensions support two modes: **React Native Web** (write React components) or **Native** (manual HTML/JS/CSS).
+Safari extensions support two modes: **React Native Web** (React components) or **Native** (manual HTML, JS, and CSS).
 
 ### Mode 1: React Native Web (Recommended)
 
-Write your Safari extension popup using React Native components. The same `createTarget` API used for share/action extensions works here.
+Write your Safari extension popup with React Native components. The same `createTarget` API used for share and action extensions works here.
 
 **What prebuild generates vs what you ship:**
 
@@ -1089,11 +1089,11 @@ const styles = StyleSheet.create({
 export default createTarget("MySafariExt", SafariPopup);
 ```
 
-Safari hooks (`useBrowserTab`, `useBrowserStorage`, `openTab`, `closePopup`, …) are documented under [API → Safari extension runtime](./api.md#safari-extension-runtime).
+Safari hooks (`useBrowserTab`, `useBrowserStorage`, `openTab`, `closePopup`, and others) are documented under [API → Safari extension runtime](./api.md#safari-extension-runtime).
 
 **Building and deploying the popup bundle:**
 
-1. `npx expo prebuild` — creates the sealed Safari Resources shell and wires an **Export Safari Web Bundle** Xcode build phase for targets with `entry`.
+1. `npx expo prebuild` creates the sealed Safari Resources shell and wires an **Export Safari Web Bundle** Xcode build phase for targets with `entry`.
 2. Build from Xcode (or `npx expo run:ios`). The build phase exports your RN Web entry into sealed `Resources/popup.js` before the appex is packaged.
 
 **CLI (optional):** export all Safari targets with `entry` without a full native build:
@@ -1102,11 +1102,12 @@ Safari hooks (`useBrowserTab`, `useBrowserStorage`, `openTab`, `closePopup`, …
 npx expo-targets export-safari
 ```
 
-**Skip export:** set `SKIP_SAFARI_EXPORT=1` to leave the placeholder `popup.js` in place (useful for CI that does not need a fresh web bundle).
+**Skip export:** set `SKIP_SAFARI_EXPORT=1` to leave the placeholder `popup.js` in place. This is useful for CI that does not need a fresh web bundle.
 
-The export step uses `expo export:embed` for the target `entry`, falling back to `expo export --platform web` when needed. Intermediate output lands under `ios/build/safari-resources/<Product>/`. Re-run export whenever the popup UI changes.
+The export step uses `expo export:embed` for the target `entry`. It falls back to `expo export --platform web` when needed. Intermediate output lands under `ios/build/safari-resources/<Product>/`. Re-run export whenever the popup UI changes.
 
-After upgrading from older expo-targets that wrote `targets/*/ios/build/`, re-run prebuild once. Update any scripts that copied into the legacy `targets/*/ios/build/` path — that directory is deleted on apply when the sealed path is written.
+After you upgrade from older expo-targets that wrote `targets/*/ios/build/`, re-run prebuild once. Update any scripts that copied into the legacy `targets/*/ios/build/` path. That directory is deleted on apply when the sealed path is written.
+
 ### Mode 2: Native/Manual
 
 For full control, provide your own web resources without an `entry` field. The Swift handler is still auto-generated.
@@ -1189,9 +1190,9 @@ targets/my-safari/
 }
 ```
 
-> **Note:** The `SafariWebExtensionHandler.swift` file is auto-generated during prebuild. If you need to customize native message handling, you can create your own at `ios/SafariWebExtensionHandler.swift` and it won't be overwritten.
+> **Note:** The `SafariWebExtensionHandler.swift` file is auto-generated during prebuild. To customize native message handling, create your own at `ios/SafariWebExtensionHandler.swift`. It will not be overwritten.
 
-> Safari web extensions use standard Web Extension APIs. See [Apple's Safari Web Extensions documentation](https://developer.apple.com/documentation/safariservices/safari_web_extensions) for details.
+> Safari web extensions use standard Web Extension APIs. See [Apple's Safari Web Extensions documentation](https://developer.apple.com/documentation/safariservices/safari_web_extensions).
 
 **Example: Notification Service Extension**
 
@@ -1211,7 +1212,7 @@ targets/my-safari/
 }
 ```
 
-Android: host-process Service + `AndroidNotification.processAndPresent` (local). Not a sealed NSE; FCM remote push may be leftover — see [limits.md](./limits.md).
+Android: host-process Service and `AndroidNotification.processAndPresent` (local). This is not a sealed NSE. FCM remote push can be leftover. See [limits.md](./limits.md).
 
 Create `ios/NotificationService.swift`:
 
@@ -1271,7 +1272,7 @@ class NotificationService: UNNotificationServiceExtension {
 }
 ```
 
-Android: `AndroidNotification.presentContent` uses RemoteViews / `DecoratedCustomViewStyle` (A12 system chrome clamp).
+Android: `AndroidNotification.presentContent` uses RemoteViews and `DecoratedCustomViewStyle` (A12 system chrome clamp).
 
 Create `ios/NotificationViewController.swift`:
 
@@ -1450,9 +1451,9 @@ class IntentViewController: UIViewController, INUIHostedViewControlling {
 
 App Intents are the modern replacement for legacy INIntent-based intents. They provide better Shortcuts integration, Focus Filters, and Spotlight suggestions.
 
-**Host vs empty appex:** Shortcuts-listable intents and the `AppShortcutsProvider` must live in the **main app** (CNG into `ios/<App>/ExpoTargetsGenerated/`). The `type: "app-intent"` target still emits an **empty** `AppIntentsExtension` appex — that keeps the `appintents-extension` pluginkit proof and room for future out-of-process intents. Do **not** duplicate Shortcuts intents in the appex (Sim often shows “Unable to run”).
+**Host vs empty appex:** Shortcuts-listable intents and the `AppShortcutsProvider` must live in the **main app** (CNG into `ios/<App>/ExpoTargetsGenerated/`). The `type: "app-intent"` target still emits an **empty** `AppIntentsExtension` appex. That keeps the `appintents-extension` pluginkit proof and room for future out-of-process intents. Do **not** duplicate Shortcuts intents in the appex (Sim often shows “Unable to run”).
 
-Declare host intents + shortcuts in config; put `perform` logic in a user-owned hook under `targets/<name>/ios/` (never overwritten on prebuild; main-app membership):
+Declare host intents and shortcuts in config. Put `perform` logic in a user-owned hook under `targets/<name>/ios/` (never overwritten on prebuild; main-app membership):
 
 ```json
 {
@@ -1497,7 +1498,7 @@ import AppIntents
 struct MyAppIntentExtension: AppIntentsExtension {}
 ```
 
-**Filesystem zones:** host shells/provider → flat under `ios/*/ExpoTargetsGenerated/` (gitignored); per-target sealed build → `ExpoTargetsGenerated/<Product>/`; perform hooks + empty `@main` extension → `targets/*/ios/` (committed). See [widgets.md](./widgets.md) for the same zone rule on Live Activities.
+**Filesystem zones:** host shells and provider go flat under `ios/*/ExpoTargetsGenerated/` (gitignored). Per-target sealed build goes under `ExpoTargetsGenerated/<Product>/`. Perform hooks and empty `@main` extension go under `targets/*/ios/` (committed). See [widgets.md](./widgets.md) for the same zone rule on Live Activities.
 
 **When to use App Intents vs legacy Intent:**
 
@@ -1510,7 +1511,7 @@ struct MyAppIntentExtension: AppIntentsExtension {}
 | Widget configuration    | ✅                    | ❌                      |
 | Backwards compatibility | iOS 16+ only          | iOS 12+                 |
 
-> **Recommendation:** Use App Intents for new projects targeting iOS 16+. Use legacy Intent extensions for broader device support.
+> **Recommendation:** Use App Intents for new projects that target iOS 16+. Use legacy Intent extensions for broader device support.
 
 **Required protocols by type:**
 
@@ -1558,7 +1559,7 @@ struct MyAppIntentExtension: AppIntentsExtension {}
 
 **Solutions:**
 
-- Ensure file is named `expo-target.config.json` (or `.js`/`.ts`)
+- Name the file `expo-target.config.json` (or `.js` or `.ts`)
 - Check JSON syntax (validate at jsonlint.com)
 - Re-run `npx expo prebuild --clean`
 
@@ -1595,4 +1596,4 @@ grep -r "appGroup" targets/*/expo-target.config.json
 grep -r "suiteName" targets/*/ios/*.swift
 ```
 
-All three should show the identical App Group ID.
+All three locations must show the identical App Group ID.

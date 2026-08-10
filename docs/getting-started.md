@@ -2,11 +2,11 @@
 
 **Source of truth for** first-run setup (React Native share extension).
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-05 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-10 -->
 
 Build a React Native **share extension** with expo-targets.
 
-> **Looking for widgets?** Native WidgetKit + Live Activities are first-class here — see [widgets.md](./widgets.md). Official `expo-widgets` is an alternative React/Expo-UI path (do not dual-generate).
+> **Looking for widgets?** Native WidgetKit and Live Activities are first-class here — see [widgets.md](./widgets.md). Official `expo-widgets` is an alternate React / Expo-UI path. Do not dual-generate.
 
 ## Prerequisites
 
@@ -14,15 +14,15 @@ Build a React Native **share extension** with expo-targets.
 - **Tested on Expo SDK 57** (development builds; not Expo Go)
 - iOS Simulator or device running iOS 14+
 
-> **Device Testing Requirements**
+> **Device testing**
 >
-> For testing on physical devices (not simulator):
+> For physical devices (not Simulator):
 >
 > - Apple Developer account (free or paid)
-> - App Groups capability must be enabled in your provisioning profile
+> - App Groups capability enabled in your provisioning profile
 > - Configure in Xcode: **Signing & Capabilities** → Add **App Groups**
 >
-> Simulator testing works without these requirements, but real devices require proper provisioning.
+> Simulator testing does not need these. Real devices require proper provisioning.
 
 ## Step 1: Install
 
@@ -44,7 +44,7 @@ Choose (interactive):
 - **Name:** my-share
 - **Use React Native:** Yes
 
-`expo-targets add` scaffolds `targets/my-share/` and wires the host by default: adds `expo-targets` to `package.json`, registers the config plugin, ensures App Group entitlements, and patches `metro.config.js` with `withTargets`. Use `--no-wire` to scaffold only. Dynamic `app.config.ts`/`js` cannot be auto-patched — you get a snippet warning; finish with `npx expo-targets doctor`.
+`expo-targets add` scaffolds `targets/my-share/` and wires the host by default: adds `expo-targets` to `package.json`, registers the config plugin, ensures App Group entitlements, and patches `metro.config.js` with `withTargets`. Use `--no-wire` to scaffold only. Dynamic `app.config.ts` / `js` cannot be auto-patched — you get a snippet warning; finish with `npx expo-targets doctor`.
 
 If wiring added `expo-targets` to `package.json`, install dependencies before prebuild.
 
@@ -57,11 +57,11 @@ targets/my-share/
 └── ios/                      # User deepen (committed)
 ```
 
-After `npx expo prebuild`, sealed artifacts land in `ios/<App>/ExpoTargetsGenerated/<Product>/` (gitignored). Never edit that tree — deepen under `targets/*/ios/`.
+After `npx expo prebuild`, sealed artifacts land in `ios/<App>/ExpoTargetsGenerated/<Product>/` (gitignored). Never edit that tree. Deepen under `targets/*/ios/`.
 
 ### Manual host setup (advanced)
 
-If you scaffold with `--no-wire` or use a dynamic `app.config.js`, configure the host yourself:
+If you scaffold with `--no-wire` or use a dynamic `app.config.js`, configure the host yourself.
 
 Add the plugin and App Groups to your `app.json`:
 
@@ -81,9 +81,9 @@ Add the plugin and App Groups to your `app.json`:
 }
 ```
 
-> **App Groups are Critical**
+> **App Groups are critical**
 >
-> App Groups enable data sharing between your app and extensions. IDs must match exactly or sharing fails.
+> App Groups share data between your app and extensions. IDs must match exactly or sharing fails.
 >
 > - Must start with `group.`
 > - Convention: `group.{your.bundle.identifier}`
@@ -107,11 +107,11 @@ Add the plugin and App Groups to your `app.json`:
 
 Update the placeholder `appGroup` to match your `app.json`.
 
-For RN `entry` targets, the plugin **always** strips `expo-updates` and `expo-dev-client` from the nested `ExpoModulesProvider` (they crash appex processes). Add `excludedPackages` only for **extra** packages (e.g. reanimated). `npx expo-targets doctor` warns when heavy host deps look unused by the entry.
+For RN `entry` targets, the plugin **always** strips `expo-updates` and `expo-dev-client` from the nested `ExpoModulesProvider` (they crash appex processes). Add `excludedPackages` only for **extra** packages (for example reanimated). `npx expo-targets doctor` warns when heavy host deps look unused by the entry.
 
 Extension JS can still OTA without linking Updates in the appex: the host runs `eas update`, then sideloads Hermes bundles into the App Group. Set a string `expo.runtimeVersion`, run `npx expo-targets export-extension-bundles` before each update, and use a **Release** build to verify the share sheet. Full flow: [Extension bundle sideload](./react-native-extensions.md#extension-bundle-sideload-with-expo-updates).
 
-### Naming Conventions
+### Naming conventions
 
 | Location            | Format     | Example                        | Notes                     |
 | ------------------- | ---------- | ------------------------------ | ------------------------- |
@@ -149,11 +149,11 @@ await order.start({
 });
 ```
 
-Apps that only extend `expo/tsconfig.base` (no `include`) already load `.expo/types/*.d.ts` — `generate` does **not** invent an `include`. If `include` is already set (e.g. Expo Router), it appends `.expo/types/**/*.ts` when missing.
+Apps that only extend `expo/tsconfig.base` (no `include`) already load `.expo/types/*.d.ts` — `generate` does **not** invent an `include`. If `include` is already set (for example Expo Router), it appends `.expo/types/**/*.ts` when missing.
 
 Regenerate without a full prebuild: `npx expo-targets generate` (also runs with `npx expo-targets doctor --fix`).
 
-## Step 5: Build & Run
+## Step 5: Build and run
 
 ```bash
 npx expo-targets doctor   # validate host wiring
@@ -195,11 +195,11 @@ npx expo-targets doctor
 
 ### `Target 'X' not found`
 
-Ensure `createTarget('X')` matches the config `name` field exactly (case-sensitive). `npx expo-targets doctor` reports name mismatches.
+Make sure `createTarget('X')` matches the config `name` field exactly (case-sensitive). `npx expo-targets doctor` reports name mismatches.
 
 ### Bundle / Metro errors for the extension entry
 
-Ensure `metro.config.js` wraps with `withTargets` (or legacy `withTargetsMetro`) and `entry` points at a real file relative to the project root. `npx expo-targets doctor` validates both.
+Make sure `metro.config.js` wraps with `withTargets` (or legacy `withTargetsMetro`) and `entry` points at a real file relative to the project root. `npx expo-targets doctor` validates both.
 
 ### App Group / data issues
 
@@ -207,7 +207,7 @@ Match App Group IDs in `app.json`, `expo-target.config.json`, and any native sui
 
 ### Upgrading from expo-targets &lt; 0.2.8 (sealed path)
 
-Pre-0.2.8 docs referred to generated hosts under paths that are no longer the sealed zone. **CNG output is now** `ios/<App>/ExpoTargetsGenerated/<Product>/` (gitignored). Move any hand-edits you made under the old generated tree into `targets/<name>/ios/`, then `npx expo prebuild` again. Never commit or edit `ExpoTargetsGenerated/`.
+Pre-0.2.8 docs referred to generated hosts under paths that are no longer the sealed zone. **CNG output is now** `ios/<App>/ExpoTargetsGenerated/<Product>/` (gitignored). Move any hand-edits you made under the old generated tree into `targets/<name>/ios/`, then run `npx expo prebuild` again. Never commit or edit `ExpoTargetsGenerated/`.
 
 ---
 

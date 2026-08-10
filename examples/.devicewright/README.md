@@ -2,17 +2,17 @@
 
 **Source of truth for** Devicewright operator journeys for `examples/*`.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-06 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-10 -->
 
 Owns REQUIRED_V2 journeys for public `examples/*`, plus the Android closed set `REQUIRED_ANDROID` (28 ids). Devicewright (`@csark0812/devicewright`) is the private npm library that runs them.
 
-See [PR_PROOF.md](./PR_PROOF.md) for operator pre-merge checklist, [claims.ts](./claims.ts) for approved `os-limit` rows (including `platforms: ["android"]` drafts), [touchpoints.ts](./touchpoints.ts) / `ANDROID_LOCKED_P` for live-touchpoint definitions, and [required.ts](./required.ts) for `REQUIRED_ANDROID`.
+See [PR_PROOF.md](./PR_PROOF.md) for the operator pre-merge checklist, [claims.ts](./claims.ts) for approved `os-limit` rows (including `platforms: ["android"]` drafts), [touchpoints.ts](./touchpoints.ts) / `ANDROID_LOCKED_P` for live-touchpoint definitions, and [required.ts](./required.ts) for `REQUIRED_ANDROID`.
 
 ## Full-demo green (notification-service Phase 1)
 
-`green` for `notification-service` means the **user-visible lock-screen demo** completed and asserted **and** App Group corroboration — dual-AND on this run’s title nonce + `[expo-targets]`. App Group / pluginkit alone is never green. HTTP `200` from Devicewright `pushRemoteNotification` (`@csark0812/devicewright@^0.1.9`) is transport only, not delivery/NSE proof. Missing `APNS_*` AuthKey → `operator` (do not merge on operator — attach a local green matrix artifact).
+`green` for `notification-service` means the **user-visible lock-screen demo** completed and asserted **and** App Group corroboration — dual-AND on this run’s title nonce + `[expo-targets]`. App Group / pluginkit alone is never green. HTTP `200` from Devicewright `pushRemoteNotification` is transport only, not delivery / NSE proof. Missing `APNS_*` AuthKey → `operator` (do not merge on operator — attach a local green matrix artifact).
 
-Phase 2 (same suite): keyboard / live-activity / stickers / watch(+widget) also require visible OS demos; Sim ceilings exit `os-limit` + CLAIMS, not soft host/pluginkit greens.
+Phase 2 (same suite): keyboard / live-activity / stickers / watch(+widget) also require visible OS demos. Sim ceilings exit `os-limit` + CLAIMS, not soft host / pluginkit greens.
 
 ## Layout
 
@@ -67,7 +67,7 @@ bun examples/.devicewright/cli.ts matrix --platform=android --device=emulator-55
 # Always written: artifactDir/events.jsonl + matrix-result.json (prefer these over redirecting stdout)
 ```
 
-Android Master Locked P strings live in `ANDROID_LOCKED_P` ([touchpoints.ts](./touchpoints.ts)). Must-green / must-remain-green ids must exit `green` only; other closed-set ids may exit `green` ∪ Android `os-limit` with matching CLAIMS.
+Android Master Locked P strings live in `ANDROID_LOCKED_P` ([touchpoints.ts](./touchpoints.ts)). Must-green / must-remain-green ids must exit `green` only. Other closed-set ids can exit `green` ∪ Android `os-limit` with matching CLAIMS.
 
 Debug binaries are an **operator** fail. For each REQUIRED_V2 example:
 
@@ -80,27 +80,24 @@ npx expo prebuild --platform ios
 npx expo run:ios --configuration Release --device <UDID> --no-bundler
 ```
 
-Do **not** pipe `expo run:ios` through `tail` (e.g. `| tee log | tail -40`) — `tail`
-waits for EOF, so a Metro hang looks like “no output / stuck” in agent terminals.
+Do **not** pipe `expo run:ios` through `tail` (for example `| tee log | tail -40`). `tail` waits for EOF, so a Metro hang looks like “no output / stuck” in agent terminals.
 
-`--ensure-install` already passes `--no-bundler`, but it **skips when the host is
-already on the sim**. Stale binaries need an explicit rebuild (uninstall or re-run
-the Release command above) — ensure-install alone will not refresh them.
+`--ensure-install` already passes `--no-bundler`, but it **skips when the host is already on the sim**. Stale binaries need an explicit rebuild (uninstall or re-run the Release command above). ensure-install alone will not refresh them.
 
 ### Opt-in ensure-install
 
-Pass `--ensure-install` so the matrix Release-builds any missing host before its journey (skips when already on the sim). First full run can take a long time (minutes × up to 8 apps).
+Pass `--ensure-install` so the matrix Release-builds any missing host before its journey (skips when already on the sim). The first full run can take a long time (minutes × up to 8 apps).
 
 ```bash
 bun examples/.devicewright/cli.ts matrix --ids=share --ensure-install --no-fail-fast
 bun run examples:devicewright:matrix:ensure   # live-through=3, all rows, --no-fail-fast
 ```
 
-Without the flag, missing hosts stay an operator/infra fail (no builds).
+Without the flag, missing hosts stay an operator / infra fail (no builds).
 
 ### iOS 26.5+ accessibility
 
-`@csark0812/devicewright@^0.1.3` sets `IgnoreAXServerEntitlements` in `doctor` / `devices.launch`. Empty `Application {0×0}` from idb usually means an older DW or a sim that needs a SpringBoard refresh — run dry-preflight / relaunch.
+Pinned Devicewright sets `IgnoreAXServerEntitlements` in `doctor` / `devices.launch`. Empty `Application {0×0}` from idb usually means an older DW or a sim that needs a SpringBoard refresh — run dry-preflight / relaunch.
 
 ## dry-preflight + matrix
 
@@ -110,7 +107,7 @@ bun examples/.devicewright/cli.ts matrix --stubs-only
 bun examples/.devicewright/cli.ts matrix --live-through=1
 ```
 
-Or root scripts: `bun run examples:devicewright:dry-preflight`, `examples:devicewright:matrix`, etc.
+Or root scripts: `bun run examples:devicewright:dry-preflight`, `examples:devicewright:matrix`, and related scripts.
 
 ## Artifacts
 

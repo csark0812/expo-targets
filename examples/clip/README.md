@@ -1,18 +1,16 @@
 # Clip
 
-Thin expo-targets example host for `clip`.
+React Native App Clip example. The host shows clip payload fields (item name, price) from App Group storage. Devicewright can launch the clip bundle id for invocation proof.
 
-Suite how-to (install, Devicewright, icons): [../README.md](../README.md).
-
-Type / maturity SSOT: [../../docs/configuration.md](../../docs/configuration.md).
+Suite how-to: [../README.md](../README.md). Getting started: [../../docs/getting-started.md](../../docs/getting-started.md). Type maturity: [../../docs/configuration.md](../../docs/configuration.md).
 
 ```bash
-# From repo root
-bun install
-cd examples/clip
+npm install
 npx expo prebuild --platform ios
 npx expo run:ios
 ```
+
+From the monorepo root, run `bun install` once before `npm install` in this folder.
 
 Devicewright (operator, after Release install on a booted sim):
 
@@ -20,4 +18,4 @@ Devicewright (operator, after Release install on a booted sim):
 bun run examples:devicewright:matrix --ids=clip
 ```
 
-Do not commit generated `ios/` / `android/`. Never edit `ExpoTargetsGenerated/`.
+Do not commit generated `ios/`. Never edit `ExpoTargetsGenerated/`.

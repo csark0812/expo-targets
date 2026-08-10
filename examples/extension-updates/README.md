@@ -13,7 +13,7 @@ Suite how-to: [../README.md](../README.md). Feature docs: [../../docs/react-nati
 | Host + share | `env: spike-env-v1` (`EXPO_PUBLIC_SPIKE_TAG` from `.env`) |
 | Share | Orange `spike.png` + `font: Menlo (system)` |
 
-Bump `OTA_LABEL`, publish an update, fetch on device — both OTA labels should change without a store rebuild.
+Bump `OTA_LABEL`, publish an update, fetch on device — both OTA labels will change without a store rebuild.
 
 ### Spike: fonts / images / env across targets + OTA
 
@@ -73,7 +73,7 @@ Or: `bun run update` (same two steps).
 
 1. Open **ET Ext Updates** (Release).
 2. Tap **Fetch + sync App Group + reload** (or Check → Fetch).
-3. Host label should show `ota-v2`.
+3. Host label will show `ota-v2`.
 4. Tap **Open Share Sheet** → choose **Updates Share** → sheet shows `OTA: ota-v2`.
 
 If the sheet still shows the old label: confirm Release (not Debug), `runtimeVersion` matches, and sync logged `installed>=1`.

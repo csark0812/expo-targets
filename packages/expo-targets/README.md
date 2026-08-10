@@ -2,17 +2,17 @@
 
 **Source of truth for** the published package overview (monorepo canonical story lives in the root README).
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-05 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-10 -->
 
-Expo config plugin and runtime for Apple app extensions Expo does not ship — share, action, App Clips, messages, stickers, wallet, and more. React Native UIs are supported for share/action/clip/messages/notification-content/safari (popup).
+Expo config plugin and runtime for Apple app extensions Expo does not ship. The library covers share, action, App Clips, messages, stickers, wallet, and more. React Native UIs work for share, action, clip, messages, notification-content, and safari (popup).
 
 > **Part of the expo-targets monorepo**. Full docs: [https://github.com/csark0812/expo-targets](https://github.com/csark0812/expo-targets).
 >
-> **Tested on Expo SDK 57** (development builds; not Expo Go).
+> **Tested on Expo SDK 57** (development builds; Expo Go is not supported).
 >
-> **Widgets:** Native WidgetKit + Live Activities are first-class. See [widgets](https://github.com/csark0812/expo-targets/blob/main/docs/widgets.md). Android widgets are bridge-grade.
+> **Widgets:** Native WidgetKit and Live Activities are first-class on iOS. Android widgets are first-class (Glance and RemoteViews). See [widgets](https://github.com/csark0812/expo-targets/blob/main/docs/widgets.md). Do not use the `expo-widgets` config plugin and expo-targets `widget` targets in the same app.
 >
-> **Bare RN:** use `npx expo-targets sync` against an existing `ios/` tree, then `pod install`. Prefer managed Expo + `npx expo prebuild` for new projects.
+> **Bare RN:** Run `npx expo-targets sync` against an existing `ios/` tree, then `pod install`. For new projects, use managed Expo and `npx expo prebuild`.
 
 ## Quick Start
 

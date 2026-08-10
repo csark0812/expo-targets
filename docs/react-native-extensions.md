@@ -4,9 +4,9 @@
 
 <!-- doc-meta: owner=eng | last-reviewed=2026-08-10 -->
 
-Build share extensions, action extensions, App Clips, iMessage apps, rich notification UI, and Safari popups using React Native instead of native Swift/Kotlin.
+Build share extensions, action extensions, App Clips, iMessage apps, rich notification UI, and Safari popups with React Native instead of native Swift or Kotlin.
 
-> **Status:** Backbone v1 covers the cross-type [runtime contract](#runtime-contract) and hardened `withTargets` Metro packaging. Prefer these patterns; type-specific polish continues on top. (`withTargetsMetro` is a deprecated alias.)
+> **Status:** Backbone v1 covers the cross-type [runtime contract](#runtime-contract) and hardened `withTargets` Metro packaging. Prefer these patterns. Type-specific polish continues on top. (`withTargetsMetro` is a deprecated alias.)
 
 ## Supported Types
 
@@ -43,24 +43,24 @@ import { Host, Text, VStack } from '@expo/ui/swift-ui';
 // Host tree inside createTarget('Share', ShareExtension) — same registration as RN.
 ```
 
-Doctor errors on illegal combos (e.g. `ui: 'react-native'` on `widget`). See `resolveUiMode` in the plugin domain.
+Doctor errors on illegal combos (for example `ui: 'react-native'` on `widget`). See `resolveUiMode` in the plugin domain.
 
-Sealed RN stubs and build artifacts land under `ios/<App>/ExpoTargetsGenerated/<Product>/` (gitignored). Deepen under `targets/*/ios/` — never edit `ExpoTargetsGenerated/`.
+Sealed RN stubs and build artifacts land under `ios/<App>/ExpoTargetsGenerated/<Product>/` (gitignored). Deepen under `targets/*/ios/`. Never edit `ExpoTargetsGenerated/`.
 
 ---
 
 ## Runtime contract
 
-Stable across **share**, **action**, **clip**, and **messages** (messages adds APIs on top).
+Stable across **share**, **action**, **clip**, and **messages**. Messages adds APIs on top.
 
 ### Bootstrap
 
 1. Declare `entry` in `expo-target.config` (path relative to project root).
 2. Wrap Metro with `withTargets` so the extension host can resolve that entry.
-3. Call `createTarget(name, Component)` in the entry file. The `name` must match config `name` exactly. Share-class registers with `AppRegistry`; expo-ui widgets register the `'widget'` layout via `expo-widgets` (not AppRegistry). For Live Activity slots on the same widget target, also call `createLiveActivityLayout(name, slots)`.
-4. Rebuild native (`npx expo prebuild`, or `npx expo-targets sync` on bare RN) so the extension target embeds expo-targets and loads the RN host.
+3. Call `createTarget(name, Component)` in the entry file. The `name` must match config `name` exactly. Share-class registers with `AppRegistry`. expo-ui widgets register the `'widget'` layout through `expo-widgets` (not AppRegistry). For Live Activity slots on the same widget target, also call `createLiveActivityLayout(name, slots)`.
+4. Rebuild native (`npx expo prebuild`, or `npx expo-targets sync` on bare RN). The extension target must embed expo-targets and load the RN host.
 
-For expo-ui widgets, prefer `setData(props, { refresh: true })` (snapshot) or `setTimeline([{ date, props }, …])` / `getTimeline()` / `refresh()` — see [widgets.md](./widgets.md).
+For expo-ui widgets, prefer `setData(props, { refresh: true })` (snapshot) or `setTimeline([{ date, props }, …])`, `getTimeline()`, or `refresh()`. See [widgets.md](./widgets.md).
 
 ### Lifecycle (share / action / clip)
 
@@ -70,7 +70,7 @@ For expo-ui widgets, prefer `setData(props, { refresh: true })` (snapshot) or `s
 | `openHostApp(path?)` | Open the containing app                |
 | `close()`            | Dismiss the extension UI               |
 
-These require the **ExpoTargetsExtension** native module inside the extension process. Calling them from the main app or without a native build throws an actionable error.
+These require the **ExpoTargetsExtension** native module inside the extension process. Calls from the main app or without a native build throw an actionable error.
 
 ### Failure modes
 
@@ -112,7 +112,7 @@ Or manually configure `expo-target.config.json`:
 Key fields:
 
 - `entry`: Path to your React Native entry file **(relative to project root)**
-- `excludedPackages`: Optional **additional** packages to omit from the extension's `ExpoModulesProvider` (via CocoaPods `post_integrate`). `expo-updates` and `expo-dev-client` are **auto-merged** for RN-native `entry` targets — do not list them. Nested `use_expo_modules!(exclude:)` alone does **not** work.
+- `excludedPackages`: Optional **additional** packages to omit from the extension's `ExpoModulesProvider` (through CocoaPods `post_integrate`). `expo-updates` and `expo-dev-client` are **auto-merged** for RN-native `entry` targets. Do not list them. Nested `use_expo_modules!(exclude:)` alone does **not** work.
 
 ### 2. Create the Entry Point
 
@@ -125,7 +125,7 @@ import ShareExtension from "./src/ShareExtension";
 export const shareTarget = createTarget("ShareExt", ShareExtension);
 ```
 
-The second parameter to `createTarget` automatically calls `AppRegistry.registerComponent()` for you. The name must match the `name` field in your config exactly.
+The second parameter to `createTarget` calls `AppRegistry.registerComponent()` for you. The name must match the `name` field in your config exactly.
 
 ### 3. Build Your Component
 
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
 
 ### 4. Configure Metro
 
-**Required for all React Native extensions.** This enables Metro to bundle your extension's entry point separately from the main app.
+**Required for all React Native extensions.** Metro must bundle your extension entry point separately from the main app.
 
 ```javascript
 // metro.config.js
@@ -191,11 +191,11 @@ module.exports = withTargets(getDefaultConfig(__dirname));
 The Metro wrapper:
 
 - Discovers targets with an `entry` field in their config
-- Validates that each `entry` file exists (warns otherwise)
-- Maps Metro `bundleRoot` (entry path without extension) to the absolute entry file — this must match the native host `jsBundleURL(forBundleRoot:)`
+- Validates that each `entry` file exists (warns when missing)
+- Maps Metro `bundleRoot` (entry path without extension) to the absolute entry file. This must match the native host `jsBundleURL(forBundleRoot:)`
 - Chains any existing `resolveRequest` so other Metro plugins keep working
 
-> **Note:** Pure Swift/SwiftUI extensions (like widgets) do NOT need Metro configuration.
+> **Note:** Pure Swift or SwiftUI extensions (like widgets) do NOT need Metro configuration.
 
 ### 5. Build and Run
 
@@ -215,14 +215,14 @@ npx expo run:ios --configuration Release
 
 ## Naming Conventions
 
-**All names must match exactly** — this is the most common source of bugs:
+**All names must match exactly.** This is the most common source of bugs:
 
 | Location                  | Value          | Example      |
 | ------------------------- | -------------- | ------------ |
 | Config `name` field       | PascalCase     | `"ShareExt"` |
 | `createTarget()` argument | Same as config | `'ShareExt'` |
 
-**If these don't match**, the extension will crash on launch with no useful error message.
+**If these do not match**, the extension crashes on launch with no useful error message.
 
 ```typescript
 // expo-target.config.json
@@ -311,7 +311,7 @@ function handleOpenInApp() {
 }
 ```
 
-**No additional setup required** — expo-targets automatically uses your bundle identifier as the URL scheme.
+**No extra setup is required.** expo-targets uses your bundle identifier as the URL scheme automatically.
 
 In your main app, handle the deep link:
 
@@ -351,19 +351,19 @@ iOS extensions have **strict memory limits**. Exceeding them causes iOS to termi
 | App Clip           | ~150MB        | More lenient, but still limited |
 | Messages Extension | ~120MB        | Similar to share extensions     |
 
-**Important:** These are approximate limits. iOS may terminate extensions using less memory under system pressure. Always test on physical devices.
+**Important:** These are approximate limits. iOS can terminate extensions that use less memory under system pressure. Always test on physical devices.
 
 **Reference:** [Apple's App Extension Programming Guide](https://developer.apple.com/library/archive/documentation/General/Conceptual/ExtensibilityPG/)
 
 ### Excluding Packages
 
 Omit host-only Expo modules from the nested extension's `ExpoModulesProvider`. Nested
-`use_expo_modules!(exclude:)` is a no-op (parent AutolinkingManager); expo-targets
+`use_expo_modules!(exclude:)` is a no-op (parent AutolinkingManager). expo-targets
 strips the listed packages from `expo-configure-project.sh` in a `post_integrate`
 hook and regenerates the provider.
 
 For RN-native targets with `entry`, **`expo-updates` and `expo-dev-client` are always
-union-merged** (no escape hatch) — Updates asserts before the RN factory is ready and
+union-merged** (no escape hatch). Updates asserts before the RN factory is ready and
 blanks the sheet. List only **additional** packages:
 
 ```json
@@ -376,8 +376,8 @@ blanks the sheet. List only **additional** packages:
 ```
 
 `npx expo-targets doctor` **warns** when heavy host dependencies (reanimated, Sentry,
-screens, netinfo, …) are present but not imported from the extension entry and not yet
-excluded — advisory only; it never auto-strips.
+screens, netinfo, and others) are present but not imported from the extension entry and not yet
+excluded. This is advisory only. It never auto-strips.
 
 **Auto-excluded (always):**
 
@@ -403,7 +403,7 @@ excluded — advisory only; it never auto-strips.
 
 ### Extension bundle sideload (with expo-updates)
 
-RN extensions **never** link `expo-updates` (auto-excluded — Updates in an appex crashes the process). Extension JS still OTAs via the **host**:
+RN extensions **never** link `expo-updates` (auto-excluded. Updates in an appex crashes the process). Extension JS still OTAs through the **host**:
 
 | Process | Role |
 | ------- | ---- |
@@ -423,14 +423,14 @@ Layout on disk (App Group container):
 
 #### Requirements
 
-1. **String `expo.runtimeVersion`** in `app.json` / `app.config` (e.g. `"1.0.0"`). Prebuild bakes it into the extension RN host. If it is missing or a policy object, App Group load is skipped forever and Release always uses the embedded bundle.
+1. **String `expo.runtimeVersion`** in `app.json` or `app.config` (for example `"1.0.0"`). Prebuild bakes it into the extension RN host. When it is missing or a policy object, App Group load is skipped forever and Release always uses the embedded bundle.
 2. **Shared App Group** on host + target (`appGroup` / entitlements).
 3. **Host import** of `expo-targets` (auto-enables `ExtensionUpdates`) or an explicit `ExtensionUpdates.enable()`.
 4. **Metro** wrapped with `withTargets` so the publish-time asset module resolves.
 
 #### Publish pipeline
 
-Order matters — host `eas update` must include the freshly exported extension assets:
+Order matters. Host `eas update` must include the freshly exported extension assets:
 
 ```bash
 npx expo-targets export-extension-bundles   # Hermes per RN entry → assets/expo-targets/
@@ -484,7 +484,7 @@ Host `eas update` and `export-extension-bundles` each inline `EXPO_PUBLIC_*` sep
 
 ## Debugging Extensions
 
-Extensions run in a **separate process** with limited debugging capabilities compared to the main app. In **DEBUG** builds, the native host uses `RCTBundleURLProvider` with your target's `bundleRoot` (from `entry` in config). When Metro is running and `withTargets` is configured, the extension can load from the packager — **Fast Refresh / HMR may work for JS-only edits** while the extension is open.
+Extensions run in a **separate process** with limited debugging compared to the main app. In **DEBUG** builds, the native host uses `RCTBundleURLProvider` with your target's `bundleRoot` (from `entry` in config). When Metro is running and `withTargets` is configured, the extension can load from the packager. **Fast Refresh and HMR can work for JS-only edits** while the extension is open.
 
 **Release builds** prefer a valid **App Group sideload** (see [Extension bundle sideload](#extension-bundle-sideload-with-expo-updates)), then the embedded `main.jsbundle` baked into the appex at build time. **DEBUG** never reads the App Group. If Metro is unreachable in DEBUG, the host **falls back to the embedded bundle** instead of showing a blank sheet. If neither Metro nor an embedded bundle is available, you get a clear error alert.
 
@@ -499,7 +499,7 @@ Extensions run in a **separate process** with limited debugging capabilities com
 1. Configure Metro with `withTargets` (see [Configure Metro](#4-configure-metro)).
 2. Start the packager: `npx expo start`
 3. Build and run the extension in DEBUG (`npx expo run:ios` or Xcode scheme for the appex).
-4. Edit JS/TS in the extension entry or its imports — save to trigger HMR when Metro is reachable.
+4. Edit JS or TS in the extension entry or its imports. Save to trigger HMR when Metro is reachable.
 
 If you see the embedded bundle instead of live code, confirm Metro is running, `metro.config.js` uses `withTargets`, and you are on a DEBUG build. Simulator builds default the packager host to `localhost` when no `jsLocation` is set.
 
@@ -570,7 +570,7 @@ Causes:
 Solutions:
   - Verify entry path is relative to project root
   - Check metro.config.js has withTargets wrapper
-  - Ensure component is passed as second arg: createTarget('Name', Component)
+  - Pass the component as second arg: createTarget('Name', Component)
   - Start Metro (`npx expo start`) for DEBUG live reload, or rebuild so main.jsbundle is embedded
 ```
 

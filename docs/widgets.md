@@ -6,15 +6,15 @@
 
 ## Ownership
 
-expo-targets owns **native WidgetKit home-screen widgets** and **ActivityKit Live Activities** as first-class Apple targets (negative-space / shared spine with other extensions).
+expo-targets owns **native WidgetKit home-screen widgets** and **ActivityKit Live Activities** as first-class Apple targets. They share the same config-plugin spine as other extensions.
 
-Official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) remains a valid choice for React/Expo-UI-first widgets on SDK 56+, but it is **not** a soft-deprecate handoff for this library. Prefer this package when you already use expo-targets for share/clip/messages/etc. and want one config-plugin spine.
+Official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) remains a valid choice for React / Expo-UI-first widgets on SDK 56+. It is **not** a soft-deprecate handoff for this library. Prefer this package when you already use expo-targets for share / clip / messages and want one config-plugin spine.
 
 ## Dual engines
 
 Do **not** configure both the `expo-widgets` **config plugin** and expo-targets widget targets in the same app. `expo-targets doctor` **fails** (not warns) when both are present. Pick one generator per app.
 
-expo-targets may still depend on `expo-widgets` **as a private library** for the layout sandbox — that is fine. Do **not** add `"expo-widgets"` to `plugins` when using expo-targets widgets.
+expo-targets can depend on `expo-widgets` **as a private library** for the layout sandbox. That is fine. Do **not** add `"expo-widgets"` to `plugins` when you use expo-targets widgets.
 
 ## UI modes
 
@@ -47,7 +47,7 @@ Example: `examples/widgets/targets/hello-expo-ui`.
 
 Never edit `ExpoTargetsGenerated/`. Host Live Activity **attributes** + **bridge** (and App Shortcuts shells) are **flat** `*.swift` at the ExpoTargetsGenerated root. Per-target sealed artifacts (Info.plist, entitlements, Assets, RN stubs, Safari Resources) live in a **product subdirectory** named with the sanitized Xcode product name. Put `ActivityConfiguration` UI under `targets/<widget>/ios/`.
 
-Host CNG deletes only root-level `*.swift` under `ExpoTargetsGenerated/` — it never recursively wipes product subdirs.
+Host CNG deletes only root-level `*.swift` under `ExpoTargetsGenerated/`. It never recursively wipes product subdirs.
 
 ## Live Activity config
 

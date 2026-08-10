@@ -2,18 +2,18 @@
 
 **Source of truth for** human contributors (install, CI, Biome, release).
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-05 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-10 -->
 
-Agents: start with [AGENTS.md](./AGENTS.md), then this file for install/CI/release detail.
+Agents: start with [AGENTS.md](./AGENTS.md), then this file for install / CI / release detail.
 
 ## Prerequisites
 
 - **Bun** (workspace package manager)
 - **Node ≥ 22** (publish / OIDC tooling)
-- **macOS + Xcode** only when running example hosts / Devicewright
-- **`NODE_AUTH_TOKEN`** — required to install private `@csark0812/devicewright@0.1.14`. See [examples/.devicewright/AUTH.md](./examples/.devicewright/AUTH.md) and root `.env.example`.
+- **macOS + Xcode** only when you run example hosts / Devicewright
+- **`NODE_AUTH_TOKEN`** — required to install private `@csark0812/devicewright` (pinned in root `package.json`). See [examples/.devicewright/AUTH.md](./examples/.devicewright/AUTH.md) and root `.env.example`.
 
-The root `package.json` `"version"` field is vestigial (private workspace); the published version lives on `packages/expo-targets`.
+The root `package.json` `"version"` field is vestigial (private workspace). The published version lives on `packages/expo-targets`.
 
 ## Install → build
 
@@ -75,7 +75,7 @@ bun run validate:changed
 
 ## Pull requests
 
-- Prefer focused PRs; docs truth + fences can ship together when they are one refresh.
+- Prefer focused PRs. Docs truth and fences can ship together when they are one refresh.
 - Labels **`major`** / **`minor`** on the PR drive publish semver on merge to `main` (else **patch**). See Release below.
 
 ## Release
@@ -88,7 +88,7 @@ Publishing is [`.github/workflows/publish.yml`](./.github/workflows/publish.yml)
 - **Does not publish separately:** `@expo-targets/cli` workspace package (dev mirror).
 - Semver from PR labels: `major` → major, `minor` → minor, else patch. Manual dispatch can set version or bump type.
 - Bumps package version, tags `v*`, builds, then `npm publish`.
-- **Legacy `create-expo-target`:** removed from the monorepo. After this lands, publish a one-shot redirect tarball from a throwaway folder (`npx create-expo-target` → print “use `npx expo-targets add`” + exit 1). Not kept in-repo.
+- **Legacy `create-expo-target`:** removed from the monorepo. Publish a one-shot redirect tarball from a throwaway folder when you need it (`npx create-expo-target` → print “use `npx expo-targets add`” + exit 1). Do not keep that package in-repo.
 
 `NODE_AUTH_TOKEN` in CI is still required for **install** of private Devicewright during the publish job’s `bun install`.
 

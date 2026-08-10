@@ -1,21 +1,21 @@
 # Widgets
 
-Thin expo-targets example host for `widgets`.
+WidgetKit and Android widget example. Three targets: native Glance (`HelloWidget`), expo-ui Glance (`HelloExpoUi`), and RemoteViews (`HelloRemoteViews`). The host seeds payloads, pins widgets on Android, and controls Live Activities.
 
-Suite how-to (install, Devicewright, icons): [../README.md](../README.md).
+Full widget docs: [../../docs/widgets.md](../../docs/widgets.md). Suite how-to: [../README.md](../README.md). Type maturity: [../../docs/configuration.md](../../docs/configuration.md).
 
-Type / maturity SSOT: [../../docs/configuration.md](../../docs/configuration.md).
+Do not use the `expo-widgets` config plugin in the same app as expo-targets `widget` targets.
 
 ```bash
-# From repo root
-bun install
-cd examples/widgets
+npm install
 npx expo prebuild --platform ios
 npx expo run:ios
 # Android
 npx expo prebuild --platform android
 npx expo run:android
 ```
+
+From the monorepo root, run `bun install` once before `npm install` in this folder.
 
 Devicewright (operator, after Release install on a booted sim):
 

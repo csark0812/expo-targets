@@ -7,19 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-08-10
+
 ### Added
 
-- **DX Magic Last Mile:** `npx expo-targets add` (interactive or `add <type> <name>`); scaffolder merged into `expo-targets`; RN scaffold emits `createTarget`; ambient LA payload typing via `.expo/types/expo-targets.d.ts` (`LiveActivityPayloadRegistry`); `setData(data, { refresh? })`; doctor EAS/signing co-pilot (mixed severity).
-- **DX Magic Epic (Phase 1–7):** Host wiring (plugin, App Groups, metro `withTargets`, package.json dep; `--no-wire` escape); plugin ensures host App Groups and defaults `excludedPackages` for RN-native `entry`; `npx expo-targets doctor|generate|export-safari|sync`; ambient typed names under `.expo/types/`; sealed overwrite warnings; DEBUG Metro harden + embedded fallback; Safari PBX web-export phase; configurable widget scaffold; bare `sync` via `compileModsAsync`.
+- Phase 2 expo-ui widget parity DoD: `add widget` native | expo-ui scaffold, configurable Edit Widget, Live Activity expo-ui slots (`createLiveActivityLayout`), Button / Bump `addUserInteractionListener`.
+- Android Glance / RemoteViews chrome + Bump interaction parity with iOS host events (`source` / `target`).
+
+### Fixed
+
+- Devicewright widgets triad greens on iOS and Android after Phase 2.
+
+## [1.0.2] - 2026-08-10
+
+### Fixed
+
+- Do not invent a `tsconfig` `include` for ambient `.expo/types` when the app only extends `expo/tsconfig.base` (#77).
+
+## [1.0.1] - 2026-08-10
+
+### Added
+
+- Expo-ui widget triad absorb: private `expo-widgets` layout sandbox, dual-engine doctor **fail**, `hello-expo-ui` example, Android pin greens (#78).
+
+## [1.0.0] - 2026-08-10
+
+### Added
+
+- **DX Magic:** `npx expo-targets add` (interactive or `add <type> <name>`); scaffolder in `expo-targets`; RN scaffold emits `createTarget`; ambient LA payload typing via `.expo/types/expo-targets.d.ts`; `setData(data, { refresh? })`; doctor EAS / signing co-pilot.
+- Host wiring by default (plugin, App Groups, metro `withTargets`, package.json dep; `--no-wire` escape); `doctor` | `generate` | `export-safari` | `sync`; sealed overwrite warnings; DEBUG Metro harden; Safari PBX web-export; configurable widget scaffold; bare `sync` via `compileModsAsync`.
+- App Group extension OTA (`ExtensionUpdates` / `export-extension-bundles`) with Hermes sideload.
+- Android API-ceiling dual through W3 + **W4-in-1.0 partials** + **Wear strong**; Devicewright Android REQUIRED matrix through Wear + Locked P (#76).
 
 ### Changed
 
-- Metro helper renamed: canonical `withTargets`; `withTargetsMetro` kept as deprecated once-per-process alias.
-- Getting-started happy path: install → `npx expo-targets add` → prebuild → run.
-- Soft-fail host wiring when `app.config.js`/`ts` cannot be auto-patched (doctor remains the hard gate).
-- Removed standalone `create-expo-target` package from the monorepo (throwaway npm redirect publish is a release checklist item — see CONTRIBUTING).
-- Removed upstream ExtensionType registry compare scripts / CI gate (`compare:extension-types` and snapshot fixture).
-- Removed `docs/migrate-from-bacons-apple-targets.md`.
+- Metro helper canonical name: `withTargets` (`withTargetsMetro` deprecated alias).
+- Getting-started path: install → `npx expo-targets add` → prebuild → run.
+- Soft-fail host wiring when `app.config.js` / `ts` cannot be auto-patched (doctor remains the hard gate).
+- Product posture: native WidgetKit + Live Activities first-class; do not dual-generate with the `expo-widgets` config plugin. See `docs/widgets.md`.
+
+### Removed
+
+- Standalone `create-expo-target` package from the monorepo (one-shot npm redirect remains a release checklist item — see CONTRIBUTING).
+- Upstream ExtensionType registry compare scripts / CI gate.
+- `docs/migrate-from-bacons-apple-targets.md`.
 
 ## [0.2.8] - 2026-08-05
 
@@ -55,8 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Messages Devicewright journey: describePoint-first sheet ladder (`messages-sheet.ts`) — RN MSMessages chrome is AX-tree-opaque on iOS 26.
 - File Provider example: host `NSFileProviderManager.add` domain module; journey requires Files Browse to list **ET FileProv**.
 - App Intent example: real `SayHelloIntent` + `AppShortcutsProvider`; journey requires Shortcuts action visibility.
-- Thin `examples/*` Maestro-ready suite (SDK 57 hosts: share, action, messages, clip, stickers, widgets, kitchen-sink, native/share, native/action, native/clip) plus Devicewright journeys.
-- ExtensionType snapshot check (`bun run compare:bacon-registry`).
+- Thin `examples/*` suite (SDK 57 hosts) plus Devicewright journeys.
 - Skeleton docs SSOT (`@csark0812/skeleton`), `docs/widgets.md`, `docs/deprecations.md`, `docs/limits.md`.
 - Sharper RN extension runtime errors when `ExpoTargetsExtension` is missing; `getExtensionNativeModule()` helper.
 - `withTargetsMetro` entry validation/logging; `scanTargetsDirectory` export.
@@ -86,8 +116,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - React Native support in share/action/clip extensions
 - `npx create-expo-target` CLI scaffolding tool
 - Metro wrapper for extension entry points
-- 7 comprehensive example apps
-- Full documentation suite
+- Example apps and documentation suite
 
 ### Supported Target Types (iOS)
 
@@ -106,7 +135,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `widget` - Home screen widgets (Glance API or RemoteViews)
 
-[Unreleased]: https://github.com/csark0812/expo-targets/compare/v0.2.8...HEAD
+[Unreleased]: https://github.com/csark0812/expo-targets/compare/v1.0.3...HEAD
+[1.0.3]: https://github.com/csark0812/expo-targets/compare/v1.0.2...v1.0.3
+[1.0.2]: https://github.com/csark0812/expo-targets/compare/v1.0.1...v1.0.2
+[1.0.1]: https://github.com/csark0812/expo-targets/compare/v1.0.0...v1.0.1
+[1.0.0]: https://github.com/csark0812/expo-targets/compare/v0.2.8...v1.0.0
 [0.2.8]: https://github.com/csark0812/expo-targets/compare/v0.2.7...v0.2.8
 [0.2.0]: https://github.com/csark0812/expo-targets/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/csark0812/expo-targets/releases/tag/v0.1.0

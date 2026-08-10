@@ -1,18 +1,16 @@
 # Trick
 
-Thin expo-targets example host for `widget (+ Live Activity)`.
+Live Activity and deepened Apple extension showcase. The host lists capability cards (NSE, NCE, photo editing, Files, keyboard, Safari, blocker, share, action, messages, widgets). Buttons schedule NCE notifications, register a Files domain, and start/update/end a Live Activity.
 
-Suite how-to (install, Devicewright, icons): [../README.md](../README.md).
-
-Type / maturity SSOT: [../../docs/configuration.md](../../docs/configuration.md).
+Widget and Live Activity docs: [../../docs/widgets.md](../../docs/widgets.md). Suite how-to: [../README.md](../README.md). Type maturity: [../../docs/configuration.md](../../docs/configuration.md).
 
 ```bash
-# From repo root
-bun install
-cd examples/trick
+npm install
 npx expo prebuild --platform ios
 npx expo run:ios
 ```
+
+From the monorepo root, run `bun install` once before `npm install` in this folder.
 
 Devicewright (operator, after Release install on a booted sim):
 
@@ -20,4 +18,4 @@ Devicewright (operator, after Release install on a booted sim):
 bun run examples:devicewright:matrix --ids=live-activity
 ```
 
-Do not commit generated `ios/` / `android/`. Never edit `ExpoTargetsGenerated/`.
+Do not commit generated `ios/`. Never edit `ExpoTargetsGenerated/`.

@@ -2,7 +2,7 @@
 
 **Source of truth for** the `expo-targets` CLI (`doctor`, bare-RN `sync`).
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-05 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-10 -->
 
 ## Published entry
 
@@ -13,7 +13,7 @@ npx expo-targets doctor
 npx expo-targets sync
 ```
 
-CLI sources live in `packages/expo-targets/cli/` (built into `cli/build/`). This workspace package (`@expo-targets/cli`) is a development mirror; it is **not published** separately.
+CLI sources live in `packages/expo-targets/cli/` (built into `cli/build/`). This workspace package (`@expo-targets/cli`) is a development mirror. It is **not published** separately.
 
 ## Commands
 
@@ -36,11 +36,11 @@ CLI sources live in `packages/expo-targets/cli/` (built into `cli/build/`). This
 **Warn-only (exit 0 unless other checks fail):**
 
 - Hand-edited or git-tracked files under `ios/*/ExpoTargetsGenerated/`
-- Both `expo-widgets` plugin and expo-targets `widget` targets (dual WidgetKit)
+- Both `expo-widgets` plugin and expo-targets `widget` targets (dual WidgetKit — forbidden)
 
 ## Bare RN `sync`
 
-Applies the same iOS mods as `expo prebuild` against an **existing** `ios/` tree — no full CNG wipe.
+`sync` applies the same iOS mods as `expo prebuild` against an **existing** `ios/` tree. It does not wipe the full CNG tree.
 
 ```bash
 npx expo-targets sync
@@ -52,7 +52,7 @@ npx expo-targets sync --clean   # opt-in: remove orphaned sealed dirs + Podfile 
 
 - Runs the `expo-targets` config plugin via `compileModsAsync` (Xcode project, Podfile, sealed `ios/<App>/ExpoTargetsGenerated/<Product>/`)
 - Reports orphaned sealed products / Podfile / Xcode targets with no matching `targets/*/expo-target.config.*`
-- `--clean` removes sealed product dirs and Podfile target blocks only; Xcode native targets are report-only
+- `--clean` removes sealed product dirs and Podfile target blocks only. Xcode native targets are report-only.
 
 **Recommended path for new projects:** managed Expo + `npx expo prebuild`. Use `sync` when you already have a bare `ios/` tree.
 

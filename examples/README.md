@@ -2,9 +2,9 @@
 
 **Source of truth for** the example host suite (how to run, Devicewright, inventory).
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-05 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-10 -->
 
-Thin Expo SDK 57 hosts for exercising expo-targets. Per-host `README.md` files are stubs that point here and to [configuration.md](../docs/configuration.md). Host contracts use `testID`s consumed by Devicewright journeys under [`examples/.devicewright/`](./.devicewright/).
+Thin Expo SDK 57 hosts for exercising expo-targets. Per-host `README.md` files describe each showcase. Host contracts use `testID`s consumed by Devicewright journeys under [`examples/.devicewright/`](./.devicewright/).
 
 > **Agent constraint:** Humans boot the iOS Simulator and run `expo run:ios` locally. Devicewright matrix greens are operator-proven (not CI-gated) — see [`.devicewright/PR_PROOF.md`](./.devicewright/PR_PROOF.md).
 
@@ -37,7 +37,7 @@ Do not commit generated `ios/` or `android/` folders from example prebuilds. Nev
 | [`messages`](./messages) | React Native messages extension |
 | [`clip`](./clip) | React Native App Clip |
 | [`stickers`](./stickers) | Asset-only sticker pack |
-| [`widgets`](./widgets) | WidgetKit + ActivityKit — [widgets.md](../docs/widgets.md) |
+| [`widgets`](./widgets) | WidgetKit + Glance/RemoteViews — [widgets.md](../docs/widgets.md) |
 | [`trick`](./trick) | Live Activity showcase (`live-activity` Devicewright id) |
 | [`kitchen-sink`](./kitchen-sink) | Multi-target host (optional aggregate) |
 | [`native/share`](./native/share) | Swift share + RN host |
@@ -64,4 +64,4 @@ Operator deep-dive: [`.devicewright/README.md`](./.devicewright/README.md). Auth
 
 ## Widgets + Live Activities
 
-See [`widgets`](./widgets), [`trick`](./trick), [docs/widgets.md](../docs/widgets.md), and [docs/limits.md](../docs/limits.md). Android widgets stay bridge-grade.
+See [`widgets`](./widgets), [`trick`](./trick), [docs/widgets.md](../docs/widgets.md), and [docs/limits.md](../docs/limits.md). Android widgets are first-class (Glance and RemoteViews).

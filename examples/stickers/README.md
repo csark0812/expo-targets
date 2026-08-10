@@ -1,18 +1,16 @@
 # Stickers
 
-Thin expo-targets example host for `stickers`.
+Asset-only iMessage sticker pack example. The host shows the installed pack catalog (`Fun Stickers`). Sticker selection does not write to App Group storage.
 
-Suite how-to (install, Devicewright, icons): [../README.md](../README.md).
-
-Type / maturity SSOT: [../../docs/configuration.md](../../docs/configuration.md).
+Suite how-to: [../README.md](../README.md). Type maturity: [../../docs/configuration.md](../../docs/configuration.md).
 
 ```bash
-# From repo root
-bun install
-cd examples/stickers
+npm install
 npx expo prebuild --platform ios
 npx expo run:ios
 ```
+
+From the monorepo root, run `bun install` once before `npm install` in this folder.
 
 Devicewright (operator, after Release install on a booted sim):
 
@@ -20,4 +18,4 @@ Devicewright (operator, after Release install on a booted sim):
 bun run examples:devicewright:matrix --ids=stickers
 ```
 
-Do not commit generated `ios/` / `android/`. Never edit `ExpoTargetsGenerated/`.
+Do not commit generated `ios/`. Never edit `ExpoTargetsGenerated/`.
