@@ -13,6 +13,6 @@ struct {{NAME}}: Widget {
     }
     .configurationDisplayName({{DISPLAY_NAME}})
     .description({{DESCRIPTION}})
-    .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+    .supportedFamilies([{{SUPPORTED_FAMILIES}}]){{CONTENT_MARGINS}}
   }
 }

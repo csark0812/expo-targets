@@ -85,30 +85,27 @@ await LiveActivity.endAll();
 
 ```bash
 npx expo-targets add
-# choose Widget / Live Activity — or: npx expo-targets add widget my-widget
-# optional: Configurable (Edit Widget)? — AppIntentConfiguration (iOS 17+)
-# optional: Live Activity bootstrap
+# choose Widget / Live Activity — then native | expo-ui
+# or: npx expo-targets add widget my-widget --ui expo-ui
+# optional: --configurable (Edit Widget) · --live-activity
 ```
 
-- **Static (default)** — `StaticConfiguration` + `TimelineProvider` reading
-  App Group `UserDefaults`.
-- **Configurable (Edit Widget)** — scaffolds `AppIntentConfiguration` +
-  `WidgetConfigurationIntent` under `targets/<name>/ios/Widget.swift` (user
-  deepen, not CNG). The provider persists `listId` in the target's App Group
-  suite and falls back to that value when the intent parameter is unset.
-- **Live Activity** — writes `liveActivity` into `expo-target.config.json`, a
-  one-shot `LiveActivity.swift` under `targets/<name>/ios/`, and a
-  `WidgetBundle`. Prebuild emits attributes + host bridge into
-  `ExpoTargetsGenerated/`.
+- **native (default)** — SwiftUI / Glance deepen under `targets/<name>/ios|android/`.
+- **expo-ui** — writes `entry` + `createTarget(name, Layout)` with the `'widget'` directive; CNG emits `ExpoUiWidget` (+ optional AppIntentConfiguration / `WidgetLiveActivity`).
+- **Configurable (Edit Widget)** — native scaffolds `AppIntentConfiguration` under user deepen; expo-ui uses `ios.configuration` → sealed AppIntent + `environment.configuration` in Layout.
+- **Live Activity** — writes `liveActivity` into config. Native: `LiveActivity.swift` deepen + typed CNG attributes. Expo-ui: same entry registers `createLiveActivityLayout` + Bundle includes `WidgetLiveActivity()` (blob attrs; skip typed CNG).
 
 See [`examples/trick`](../examples/trick) for a full host + widget pairing and
-[`examples/widgets`](../examples/widgets) for a static widget example.
+[`examples/widgets`](../examples/widgets) for static, expo-ui, and RemoteViews examples.
 
 ## Configurable widgets (Edit Widget)
 
 iOS "Edit Widget" (long-press → Edit) uses WidgetKit **App Intent**
-configuration (`AppIntentConfiguration`, iOS 17+). The scaffolder can emit this
-for you, or you can deepen manually under `targets/<name>/ios/`.
+configuration (`AppIntentConfiguration`, iOS 17+).
+
+### Native deepen
+
+The scaffolder can emit this under `targets/<name>/ios/` (user deepen, not CNG).
 
 Scaffolded shape (intent name is `<PascalName>ConfigurationIntent`):
 
@@ -140,11 +137,38 @@ widget.refresh();
 // or: widget.setData({ listId: selectedId }, { refresh: true });
 ```
 
-Use the same `appGroup` as `expo-target.config.json` — the scaffold wires it
-into the Swift template's `UserDefaults(suiteName:)`.
+### Expo-ui
 
-React/Expo-UI-first configurable widgets: see official
-[`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) (do not dual-generate).
+Set `ios.configuration` on the target (or `add widget … --ui expo-ui --configurable`). CNG emits AppIntentConfiguration; Layout reads `environment.configuration`:
+
+```json
+{
+  "ios": {
+    "configuration": {
+      "title": "Hello Expo UI Configuration",
+      "parameters": {
+        "listId": { "title": "List", "type": "string", "default": "default" }
+      }
+    }
+  }
+}
+```
+
+```tsx
+function Layout(props, environment) {
+  'widget';
+  const listId = environment.configuration?.listId;
+  return <Text>{listId}</Text>;
+}
+```
+
+Use the same `appGroup` as `expo-target.config.json`.
+
+### Buttons + push
+
+- `addUserInteractionListener` — widget Button presses (AppIntent → host).
+- `createLiveActivityLayout(name, slots)` — multi-slot LA UI in the same entry as the home Layout; `LiveActivity.create(attributesName)` still starts/updates/ends.
+- `liveActivity.pushType: 'token'` — native CNG requests ActivityKit push tokens; `addPushToStartTokenListener` for push-to-start. Simulator cannot prove APNs — Devicewright CLAIMS for DI / push / StandBy.
 
 ## Android widgets
 

@@ -12,7 +12,7 @@ const TYPE_CHOICES = [
   { title: 'Wallet Extension', value: 'wallet' },
   { title: 'Siri Intent', value: 'intent' },
   {
-    title: 'Widget / Live Activity (native WidgetKit)',
+    title: 'Widget / Live Activity (WidgetKit)',
     value: 'widget',
   },
   { title: 'Notification Service', value: 'notification-service' },
@@ -35,6 +35,37 @@ const RN_PROMPT_TYPES = [
   'messages',
   'notification-content',
   'safari',
+];
+
+const WIDGET_PROMPT_QUESTIONS: PromptObject[] = [
+  {
+    type: (_prev, values) => (values.type === 'widget' ? 'select' : null),
+    name: 'widgetUi',
+    message: 'Widget UI mode?',
+    choices: [
+      {
+        title: 'native — SwiftUI / Glance deepen',
+        value: 'native',
+      },
+      {
+        title: 'expo-ui — Layout sandbox (@expo/ui + entry)',
+        value: 'expo-ui',
+      },
+    ],
+    initial: 0,
+  },
+  {
+    type: (_prev, values) => (values.type === 'widget' ? 'confirm' : null),
+    name: 'configurableWidget',
+    message: 'Configurable (Edit Widget)?',
+    initial: false,
+  },
+  {
+    type: (_prev, values) => (values.type === 'widget' ? 'confirm' : null),
+    name: 'includeLiveActivity',
+    message: 'Include Live Activity (ActivityKit) bootstrap?',
+    initial: false,
+  },
 ];
 
 export function getTargetPromptQuestions(): PromptObject[] {
@@ -77,17 +108,6 @@ export function getTargetPromptQuestions(): PromptObject[] {
       message: 'Include custom UI extension? (displays custom visuals in Siri)',
       initial: true,
     },
-    {
-      type: (_prev, values) => (values.type === 'widget' ? 'confirm' : null),
-      name: 'configurableWidget',
-      message: 'Configurable (Edit Widget)?',
-      initial: false,
-    },
-    {
-      type: (_prev, values) => (values.type === 'widget' ? 'confirm' : null),
-      name: 'includeLiveActivity',
-      message: 'Include Live Activity (ActivityKit) bootstrap?',
-      initial: false,
-    },
+    ...WIDGET_PROMPT_QUESTIONS,
   ];
 }

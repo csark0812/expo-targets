@@ -211,6 +211,9 @@ function planExpoUiWidgetSwiftFile({
           description: props.displayName
             ? `${props.displayName} (expo-ui)`
             : undefined,
+          supportedFamilies: props.supportedFamilies,
+          contentMarginsDisabled: props.contentMarginsDisabled,
+          configuration: props.configuration,
         },
       },
     });
@@ -226,7 +229,11 @@ function planExpoUiWidgetSwiftFile({
       workspace,
       template: {
         template: 'expoUiWidgetBundle',
-        options: { name: props.name },
+        options: {
+          name: props.name,
+          includeLiveActivity: Boolean(props.liveActivity),
+          configurable: Boolean(props.configuration),
+        },
       },
     });
   }

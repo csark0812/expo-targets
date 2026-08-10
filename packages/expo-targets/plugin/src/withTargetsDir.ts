@@ -307,6 +307,7 @@ const withTargetIos: ConfigPlugin<{
     appGroup: evaluatedConfig.appGroup,
     entry: evaluatedConfig.entry,
     ui: evaluatedConfig.ui,
+    liveActivity: evaluatedConfig.liveActivity,
     excludedPackages,
     runtimeVersion: runtimeVersion || undefined,
     directory: targetDirectory,

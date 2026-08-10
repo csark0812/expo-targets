@@ -111,6 +111,20 @@ export type {
   TimelineEntry,
 } from './Target';
 export { createTarget } from './Target';
+export type {
+  LiveActivityEnvironment,
+  LiveActivityLayout,
+  LiveActivityLayoutComponent,
+} from './liveActivityLayout';
+export { createLiveActivityLayout } from './liveActivityLayout';
+export type {
+  PushToStartTokenEvent,
+  UserInteractionEvent,
+} from './widgets';
+export {
+  addPushToStartTokenListener,
+  addUserInteractionListener,
+} from './widgets';
 
 // Host default: App Group sync when this package loads (no-op in appex / Node).
 queueMicrotask(() => {

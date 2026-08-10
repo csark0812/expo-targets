@@ -32,7 +32,8 @@ Each open leftover:
 
 | id | feature | home | spike | owner |
 | -- | ------- | ---- | ----- | ----- |
-| live-activity | Dynamic Island / ActivityKit push / StandBy | limits.md (CLAIMS) | — | eng |
+| widgets / widgets-expo-ui | Edit Widget gallery + SpringBoard Button tap AX | CLAIMS (optional operator marker `text-expo-ui-interaction`) | — | eng |
+| live-activity | Dynamic Island / ActivityKit push / StandBy / push-to-start | limits.md (CLAIMS) | — | eng |
 | live-activity | Watch chrome when pair boots without AX | CLAIMS after S3a | TBD on operator miss | eng |
 | message-filter | Messages Unknown Senders / Text Message Filter list / inbound SMS invoke | CLAIMS | [spikes/message-filter-ql-spotlight-2026-08-04.md](../examples/.devicewright/artifacts/spikes/message-filter-ql-spotlight-2026-08-04.md) | eng |
 | spotlight | CSImportExtension indexer → App Group / Spotlight hit | CLAIMS | [spikes/message-filter-ql-spotlight-2026-08-04.md](../examples/.devicewright/artifacts/spikes/message-filter-ql-spotlight-2026-08-04.md) | eng |
