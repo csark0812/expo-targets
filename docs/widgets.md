@@ -2,7 +2,7 @@
 
 **Source of truth for** WidgetKit / ActivityKit ownership in expo-targets.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-05 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-10 -->
 
 ## Ownership
 
@@ -12,7 +12,30 @@ Official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) re
 
 ## Dual engines
 
-Do **not** configure both `expo-widgets` and expo-targets to generate WidgetKit widget targets in the same app. Pick one generator per app.
+Do **not** configure both the `expo-widgets` **config plugin** and expo-targets widget targets in the same app. `expo-targets doctor` **fails** (not warns) when both are present. Pick one generator per app.
+
+expo-targets may still depend on `expo-widgets` **as a private library** for the layout sandbox — that is fine. Do **not** add `"expo-widgets"` to `plugins` when using expo-targets widgets.
+
+## UI modes
+
+| Mode | Config | iOS | Android |
+| --- | --- | --- | --- |
+| **native** | no `entry` | SwiftUI deepen under `targets/<name>/ios/` | Glance / RemoteViews deepen under `targets/<name>/android/` |
+| **expo-ui** | `entry` + `createTarget(name, Layout)` with `'widget'` directive | expo-widgets layout sandbox (`WidgetsEntryView`) | Same `setData` props → Glance deepen (no JS sandbox in App Widget process) |
+
+`type: 'widget' | 'watch-widget'` + `entry` **infers** `expo-ui` (full React Native Views are illegal in WidgetKit).
+
+### Host verbs (expo-widgets → expo-targets)
+
+| expo-widgets | expo-targets |
+| --- | --- |
+| `createWidget(name, Layout)` | `createTarget(name, Layout)` + `entry` |
+| `updateSnapshot(props)` | `setData(props, { refresh: true })` |
+| `updateTimeline(entries)` | `setTimeline(entries)` — `{ date, props }` |
+| `getTimeline()` | `getTimeline()` |
+| `reload()` | `refresh()` |
+
+Example: `examples/widgets/targets/hello-expo-ui`.
 
 ## Two filesystem zones
 

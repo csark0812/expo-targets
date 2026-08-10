@@ -434,6 +434,9 @@ export interface AndroidTargetConfig {
   vpnDisplayName?: string;
 }
 
+/** Authoring mode — see docs/react-native-extensions.md and resolveUiMode(). */
+export type UiMode = 'native' | 'expo-ui' | 'react-native';
+
 // Base config shared by all targets
 interface BaseTargetConfig {
   name: string;
@@ -445,32 +448,34 @@ interface BaseTargetConfig {
    * Live Activity schema (type='widget'). Drives CNG ActivityAttributes + host bridge.
    */
   liveActivity?: LiveActivityConfig;
+  /**
+   * UI authoring mode. Defaults: share-class + `entry` → `react-native`;
+   * `widget`/`watch-widget` + `entry` → `expo-ui`; no `entry` → `native`.
+   * Share-class Host trees set `ui: 'expo-ui'` explicitly.
+   */
+  ui?: UiMode;
+  /**
+   * JS entry for react-native (share-class / safari) or expo-ui layout
+   * (widget sandbox / Host-in-RN). Path relative to project root.
+   */
+  entry?: string;
+  /**
+   * Extra Expo packages to omit from the nested extension's ExpoModulesProvider
+   * (via CocoaPods `post_integrate`). For RN-native / Host targets with `entry`,
+   * `expo-updates` and `expo-dev-client` are **always** union-merged — no escape
+   * hatch. Use this field only for additional packages (e.g. reanimated, Sentry).
+   * @example ['react-native-reanimated', '@sentry/react-native']
+   */
+  excludedPackages?: string[];
 }
 
 // Target config for React Native compatible types
 type TargetConfigReactNativeCompatible = BaseTargetConfig & {
   type: ReactNativeCompatibleType;
-  /**
-   * Entry point for React Native rendering (share, action, clip only)
-   * Path to JavaScript/TypeScript file that exports the extension component
-   * When specified, enables React Native rendering in the extension
-   * @example "./ShareExtension.tsx"
-   * @example "./targets/my-share/ShareExtension.js"
-   */
-  entry?: string;
-  /**
-   * Extra Expo packages to omit from the nested extension's ExpoModulesProvider
-   * (via CocoaPods `post_integrate`). For RN-native targets with `entry`,
-   * `expo-updates` and `expo-dev-client` are **always** union-merged — no escape
-   * hatch. Use this field only for additional packages (e.g. reanimated, Sentry).
-   * Nested `use_expo_modules!(exclude:)` alone is a no-op.
-   * @example ['react-native-reanimated', '@sentry/react-native']
-   */
-  excludedPackages?: string[];
   ios?: IOSTargetConfigWithReactNative;
 };
 
-// Target config for native-only types
+// Target config for native-only types (widget may set `entry` for expo-ui)
 type TargetConfigNativeOnly = BaseTargetConfig & {
   type: NativeOnlyType;
   ios?: IOSTargetConfigNativeOnly;

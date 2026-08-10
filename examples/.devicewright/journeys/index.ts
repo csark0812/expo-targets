@@ -38,6 +38,8 @@ import { runWalletJourney } from "./wallet";
 import { runWalletUiJourney } from "./wallet-ui";
 import { runWatchJourney, runWatchWidgetJourney } from "./watch";
 import { runWidgetsJourney } from "./widgets";
+import { runWidgetsExpoUiJourney } from "./widgets-expo-ui";
+import { runWidgetsRemoteViewsJourney } from "./widgets-remoteviews";
 
 export { runAppIntentJourney } from "./app-intent";
 export { runAppsSettingsJourney } from "./apps-settings";
@@ -95,6 +97,8 @@ export { runWalletJourney } from "./wallet";
 export { runWalletUiJourney } from "./wallet-ui";
 export { runWatchJourney, runWatchWidgetJourney } from "./watch";
 export { runWidgetsJourney } from "./widgets";
+export { runWidgetsExpoUiJourney } from "./widgets-expo-ui";
+export { runWidgetsRemoteViewsJourney } from "./widgets-remoteviews";
 
 export type JourneyRunner = (
   device: DeviceSession,
@@ -118,6 +122,8 @@ const LIVE: Record<string, JourneyRunner> = {
   clip: (d) => runClipJourney(d, "clip"),
   "native-clip": (d) => runClipJourney(d, "native-clip"),
   widgets: (d) => runWidgetsJourney(d),
+  "widgets-expo-ui": (d) => runWidgetsExpoUiJourney(d),
+  "widgets-remoteviews": (d) => runWidgetsRemoteViewsJourney(d),
   "live-activity": (d) => runLiveActivityJourney(d),
   safari: (d) => runSafariJourney(d, "safari"),
   "native-safari": (d) => runSafariJourney(d, "native-safari"),

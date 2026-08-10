@@ -12,6 +12,7 @@ import { checkMetro } from './checks/metro';
 import { checkNameSync } from './checks/nameSync';
 import { checkPlugin } from './checks/plugin';
 import { warnSealedZone } from './checks/sealedZone';
+import { checkUiMode } from './checks/uiMode';
 import { warnExtensionBundleExport } from './checks/updateScript';
 import { loadProject } from './project';
 import type { CheckResult } from './types';
@@ -43,6 +44,7 @@ function collectWarnings(ctx: ReturnType<typeof loadProject>): CheckResult[] {
   return [
     ...warnSealedZone(ctx),
     ...warnDualWidgets(ctx),
+    ...checkUiMode(ctx),
     ...warnHeavyExclusions(ctx),
     ...warnExtensionBundleExport(ctx),
     ...checkEasCredentialWarnings(ctx),

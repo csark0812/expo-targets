@@ -38,6 +38,8 @@ export const REQUIRED_V2_PHASE2: readonly RequiredTargetRow[] = [
 export const REQUIRED_V2_PHASE3: readonly RequiredTargetRow[] = [
   { id: "clip", path: "examples/clip", phase: 3 },
   { id: "widgets", path: "examples/widgets", phase: 3 },
+  { id: "widgets-expo-ui", path: "examples/widgets", phase: 3 },
+  { id: "widgets-remoteviews", path: "examples/widgets", phase: 3 },
   { id: "live-activity", path: "examples/trick", phase: 3 },
 ] as const;
 
@@ -146,6 +148,8 @@ export const REQUIRED_ANDROID_IDS = [
   "share",
   "action",
   "widgets",
+  "widgets-expo-ui",
+  "widgets-remoteviews",
   "file-provider",
   "keyboard",
   "native-share",
@@ -193,6 +197,8 @@ export const MUST_REMAIN_GREEN_ANDROID = [
   "share",
   "action",
   "widgets",
+  "widgets-expo-ui",
+  "widgets-remoteviews",
   "file-provider",
   "keyboard",
 ] as const;

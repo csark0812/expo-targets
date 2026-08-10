@@ -72,9 +72,9 @@ describe("REQUIRED_V2", () => {
 });
 
 describe("REQUIRED_ANDROID", () => {
-  test("has length 26 and equals REQUIRED_ANDROID_IDS membership", () => {
-    expect(REQUIRED_ANDROID).toHaveLength(26);
-    expect(REQUIRED_ANDROID_IDS).toHaveLength(26);
+  test("has length 28 and equals REQUIRED_ANDROID_IDS membership", () => {
+    expect(REQUIRED_ANDROID).toHaveLength(28);
+    expect(REQUIRED_ANDROID_IDS).toHaveLength(28);
     expect(REQUIRED_ANDROID.map((r) => r.id).sort()).toEqual(
       [...REQUIRED_ANDROID_IDS].sort(),
     );

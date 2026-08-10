@@ -23,13 +23,13 @@ export function warnDualWidgets(ctx: ProjectContext): CheckResult[] {
   return [
     {
       ok: false,
-      level: 'warn',
+      level: 'error',
       title: 'Dual widgets',
       message:
         'Both expo-widgets plugin and expo-targets widget targets are configured',
       fix:
-        'Pick one WidgetKit path — expo-targets native widgets OR expo-widgets. ' +
-        'See docs/widgets.md',
+        'Pick one WidgetKit generator — remove the expo-widgets config plugin and use expo-targets (native or expo-ui entry), ' +
+        'or remove expo-targets widget targets. See docs/widgets.md',
     },
   ];
 }

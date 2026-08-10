@@ -13,6 +13,7 @@ export function planPodfile({
   deploymentTarget,
   extensionType,
   standalone,
+  expoUiWidget,
   excludedPackages,
   podsRbContent,
 }: {
@@ -20,6 +21,7 @@ export function planPodfile({
   deploymentTarget: string;
   extensionType: ExtensionType;
   standalone: boolean;
+  expoUiWidget?: boolean;
   excludedPackages?: string[];
   podsRbContent?: string;
 }): PodfilePlan {
@@ -28,6 +30,7 @@ export function planPodfile({
     deploymentTarget,
     extensionType,
     standalone,
+    expoUiWidget,
     excludedPackages,
     podsRbContent,
   };

@@ -133,5 +133,14 @@ public class ExpoTargetsStorageModule: Module {
       }
       return false
     }
+
+    /// Android-only pin helper; iOS WidgetKit has no pin sheet equivalent.
+    Function("requestPinWidget") { (_: String) -> String in
+      "unsupported"
+    }
+
+    Function("getHostedWidgetCount") { (_: String) -> Int in
+      0
+    }
   }
 }

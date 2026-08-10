@@ -2,7 +2,7 @@
 
 **Source of truth for** React Native extensions (runtime contract, Metro, type support).
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-05 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-10 -->
 
 Build share extensions, action extensions, App Clips, iMessage apps, rich notification UI, and Safari popups using React Native instead of native Swift/Kotlin.
 
@@ -18,8 +18,32 @@ Build share extensions, action extensions, App Clips, iMessage apps, rich notifi
 | `messages`             | ✅ Full support      | iMessage app with RN UI                                            |
 | `notification-content` | ✅ Supported         | Rich notification UI (RN host)                                     |
 | `safari`               | ✅ Supported         | Popup via RN Web + `expo export` packaging — [configuration](./configuration.md#example-safari-extension) |
-| `widget`               | ❌ SwiftUI only      | First-class native WidgetKit + Live Activities                     |
+| `widget`               | Native or **expo-ui** (sandbox) | `entry` ⇒ expo-ui layout (Phase 2 absorb); no full RN |
 | `stickers`             | ❌ Native only       | Static image assets                                                |
+
+## UI modes (`ui` / `entry`)
+
+| Mode | When | What runs |
+| --- | --- | --- |
+| `native` | No `entry` | Swift / Kotlin deepen |
+| `react-native` | Share-class + `entry` (default) | Full RN Views in the appex |
+| `expo-ui` | Share-class + `ui: 'expo-ui'` + `entry`; **or** `widget`/`watch-widget` + `entry` (inferred) | `@expo/ui` Host-in-RN (share-class) or layout sandbox (widgets) |
+
+```json
+{
+  "type": "share",
+  "name": "Share",
+  "entry": "./targets/share/index.tsx",
+  "ui": "expo-ui"
+}
+```
+
+```tsx
+import { Host, Text, VStack } from '@expo/ui/swift-ui';
+// Host tree inside createTarget('Share', ShareExtension) — same registration as RN.
+```
+
+Doctor errors on illegal combos (e.g. `ui: 'react-native'` on `widget`). See `resolveUiMode` in the plugin domain.
 
 Sealed RN stubs and build artifacts land under `ios/<App>/ExpoTargetsGenerated/<Product>/` (gitignored). Deepen under `targets/*/ios/` — never edit `ExpoTargetsGenerated/`.
 
@@ -33,8 +57,10 @@ Stable across **share**, **action**, **clip**, and **messages** (messages adds A
 
 1. Declare `entry` in `expo-target.config` (path relative to project root).
 2. Wrap Metro with `withTargets` so the extension host can resolve that entry.
-3. Call `createTarget(name, Component)` in the entry file. The `name` must match config `name` exactly; this registers the component with `AppRegistry`.
+3. Call `createTarget(name, Component)` in the entry file. The `name` must match config `name` exactly. Share-class registers with `AppRegistry`; expo-ui widgets register the `'widget'` layout via `expo-widgets` (not AppRegistry).
 4. Rebuild native (`npx expo prebuild`, or `npx expo-targets sync` on bare RN) so the extension target embeds expo-targets and loads the RN host.
+
+For expo-ui widgets, prefer `setData(props, { refresh: true })` (snapshot) or `setTimeline([{ date, props }, …])` / `getTimeline()` / `refresh()` — see [widgets.md](./widgets.md).
 
 ### Lifecycle (share / action / clip)
 

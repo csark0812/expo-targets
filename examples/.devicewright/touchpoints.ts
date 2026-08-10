@@ -78,6 +78,20 @@ export const TOUCHPOINTS: readonly TouchpointDef[] = [
     status: "concrete",
   },
   {
+    id: "widgets-expo-ui",
+    tranche: "expo-ui",
+    touchpoint:
+      "Seed Hello from host · expo-ui + SpringBoard/launcher Hello Expo UI tile",
+    status: "concrete",
+  },
+  {
+    id: "widgets-remoteviews",
+    tranche: "android-remoteviews",
+    touchpoint:
+      "Seed Hello from host · remoteviews + launcher Hello RemoteViews tile",
+    status: "concrete",
+  },
+  {
     id: "live-activity",
     tranche: "V1/T13",
     touchpoint:
@@ -405,6 +419,10 @@ export const ANDROID_LOCKED_P: Readonly<Record<string, string>> = {
   share: "Host share sheet → chooser → Save → host marker",
   action: "Host share sheet → chooser → Process/auto → host marker",
   widgets: "Launcher tile shows seeded marker",
+  "widgets-expo-ui":
+    "Launcher tile shows expo-ui seeded marker (Hello Expo UI)",
+  "widgets-remoteviews":
+    "Launcher tile shows remoteviews seeded marker (Hello RemoteViews)",
   "file-provider":
     "DocumentsUI Show roots → root titled Expo Targets listed",
   keyboard:

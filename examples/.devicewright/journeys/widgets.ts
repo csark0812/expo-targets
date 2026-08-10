@@ -105,6 +105,9 @@ export async function runWidgetsJourney(
     );
     steps.push("host-contract-ok");
 
+    await assertPayloadContains(device, "text-expo-ui-seed", "seed:expo-ui", 6_000);
+    steps.push("expo-ui-host-contract-ok");
+
     // Family must appear in the seeded payload (not only constant intent-note).
     const familyOk = async () => {
       try {

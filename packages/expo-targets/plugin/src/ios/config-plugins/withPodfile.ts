@@ -24,6 +24,7 @@ export const withTargetPodfile: ConfigPlugin<{
   extensionType: ExtensionType;
   excludedPackages?: string[];
   standalone?: boolean;
+  expoUiWidget?: boolean;
   targetDirectory?: string;
   logger: Logger;
 }> = (config, props) =>
@@ -43,6 +44,7 @@ export const withTargetPodfile: ConfigPlugin<{
         deploymentTarget: props.deploymentTarget,
         extensionType: props.extensionType,
         standalone: Boolean(props.standalone),
+        expoUiWidget: Boolean(props.expoUiWidget),
         excludedPackages: props.excludedPackages,
         podsRbContent: readPodsRb({
           projectRoot,

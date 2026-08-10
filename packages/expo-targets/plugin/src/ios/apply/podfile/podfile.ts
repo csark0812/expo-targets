@@ -255,6 +255,85 @@ ${frameworksLine}    platform :ios, '${deploymentTarget}'${customPods}
 }
 
 /**
+ * Podfile block for expo-ui widgets — mirrors expo-widgets `withPodsLinking`
+ * (`use_expo_modules_widgets!` + thin RN host for the layout sandbox).
+ */
+export function generateExpoUiWidgetTargetBlock({
+  targetName,
+  deploymentTarget,
+  podsRbContent,
+}: {
+  targetName: string;
+  deploymentTarget: string;
+  podsRbContent?: string;
+}): string {
+  const customPods = indentCustomPods(podsRbContent);
+  return `
+require File.join(File.dirname(\`node --print "require.resolve('expo-widgets/package.json')"\`), "scripts/autolinking")
+
+target '${targetName}' do
+    platform :ios, '${deploymentTarget}'
+    use_expo_modules_widgets!
+
+    if ENV['EXPO_USE_COMMUNITY_AUTOLINKING'] == '1'
+      config_command = ['node', '-e', "process.argv=['', '', 'config'];require('@react-native-community/cli').run()"];
+    else
+      config_command = [
+        'node',
+        '--no-warnings',
+        '--eval',
+        "require(require.resolve('expo-modules-autolinking', { paths: [require.resolve('expo/package.json')] }))(process.argv.slice(1))",
+        'react-native-config',
+        '--json',
+        '--platform',
+        'ios'
+      ]
+    end
+
+    config = use_expo_native_module!(config_command)
+
+    use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']
+    use_frameworks! :linkage => ENV['USE_FRAMEWORKS'].to_sym if ENV['USE_FRAMEWORKS']
+
+    use_react_native!(
+      :path => config[:reactNativePath],
+      :hermes_enabled => podfile_properties['expo.jsEngine'] == nil || podfile_properties['expo.jsEngine'] == 'hermes',
+      :app_path => "#{Pod::Config.instance.installation_root}/..",
+      :privacy_file_aggregation_enabled => podfile_properties['apple.privacyManifestAggregationEnabled'] != 'false',
+    )
+${customPods}
+  end
+`;
+}
+
+const EXPO_WIDGETS_POST_INSTALL_MARKER = 'expo_widgets_post_install(installer)';
+
+/**
+ * Ensure `expo_widgets_post_install` runs so ExpoModulesCore / ExpoUI / React
+ * can set APPLICATION_EXTENSION_API_ONLY = No for the widget sandbox.
+ */
+export function ensureExpoWidgetsPostInstall(podfileContent: string): string {
+  if (podfileContent.includes(EXPO_WIDGETS_POST_INSTALL_MARKER)) {
+    return podfileContent;
+  }
+
+  if (!podfileContent.includes('post_install do |installer|')) {
+    return `${podfileContent.trimEnd()}
+
+post_install do |installer|
+  ${EXPO_WIDGETS_POST_INSTALL_MARKER}
+end
+`;
+  }
+
+  return podfileContent.replace(
+    /post_install do \|installer\|/,
+    `post_install do |installer|
+  ${EXPO_WIDGETS_POST_INSTALL_MARKER}`
+  );
+}
+
+/**
  * Standalone targets are inserted as siblings AFTER the main target's closing
  * `end`, which prevents CocoaPods from auto-generating Expo module providers.
  */
