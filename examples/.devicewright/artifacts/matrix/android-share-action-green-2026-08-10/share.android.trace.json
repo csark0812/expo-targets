@@ -1,0 +1,147 @@
+{
+  "result": {
+    "id": "share",
+    "path": "examples/share",
+    "phase": 1,
+    "ok": true,
+    "status": "green",
+    "steps": [
+      "android-launch-host",
+      "host-ready",
+      "clear-payload",
+      "host-sheet-primary",
+      "share-chrome-ok",
+      "assert-text-payload",
+      "host-sheet-ok",
+      "open-main-app",
+      "open-main-ok",
+      "system-share-text-smoke",
+      "system-share-text-ok"
+    ],
+    "checklist": [
+      "c1-1-trigger-from-host",
+      "c1-2-find-extension-row",
+      "c1-3-complete-appex",
+      "c1-4-assert-host-marker"
+    ]
+  },
+  "trace": [
+    {
+      "at": "2026-08-10T20:24:26.989Z",
+      "action": "launchApp",
+      "detail": {
+        "bundleId": "com.expotargets.example.share",
+        "terminateRunning": true
+      }
+    },
+    {
+      "at": "2026-08-10T20:24:33.681Z",
+      "action": "tap",
+      "detail": {
+        "x": 540,
+        "y": 1384
+      }
+    },
+    {
+      "at": "2026-08-10T20:24:35.694Z",
+      "action": "tap",
+      "detail": {
+        "x": 540,
+        "y": 1558
+      }
+    },
+    {
+      "at": "2026-08-10T20:24:38.157Z",
+      "action": "tap",
+      "detail": {
+        "x": 540,
+        "y": 2252
+      }
+    },
+    {
+      "at": "2026-08-10T20:24:46.834Z",
+      "action": "tap",
+      "detail": {
+        "x": 540,
+        "y": 1185
+      }
+    },
+    {
+      "at": "2026-08-10T20:24:47.722Z",
+      "action": "launchApp",
+      "detail": {
+        "bundleId": "com.expotargets.example.share",
+        "terminateRunning": false
+      }
+    },
+    {
+      "at": "2026-08-10T20:24:51.637Z",
+      "action": "tap",
+      "detail": {
+        "x": 540,
+        "y": 1805
+      }
+    },
+    {
+      "at": "2026-08-10T20:24:55.573Z",
+      "action": "tap",
+      "detail": {
+        "x": 540,
+        "y": 1524
+      }
+    },
+    {
+      "at": "2026-08-10T20:24:58.018Z",
+      "action": "tap",
+      "detail": {
+        "x": 324,
+        "y": 2252
+      }
+    },
+    {
+      "at": "2026-08-10T20:25:04.768Z",
+      "action": "tap",
+      "detail": {
+        "x": 540,
+        "y": 1335
+      }
+    },
+    {
+      "at": "2026-08-10T20:25:07.612Z",
+      "action": "terminateApp",
+      "detail": {
+        "bundleId": "com.expotargets.example.share"
+      }
+    },
+    {
+      "at": "2026-08-10T20:25:07.648Z",
+      "action": "pressButton",
+      "detail": {
+        "button": "HOME"
+      }
+    },
+    {
+      "at": "2026-08-10T20:25:08.083Z",
+      "action": "openShareText",
+      "detail": {
+        "textLength": 33
+      }
+    },
+    {
+      "at": "2026-08-10T20:25:10.524Z",
+      "action": "tap",
+      "detail": {
+        "x": 210,
+        "y": 755
+      }
+    },
+    {
+      "at": "2026-08-10T20:25:17.293Z",
+      "action": "tap",
+      "detail": {
+        "x": 540,
+        "y": 1487
+      }
+    }
+  ]
+}

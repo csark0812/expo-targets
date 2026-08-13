@@ -32,28 +32,45 @@ async function requestNotificationPermission(): Promise<string> {
   return asked.status;
 }
 
-async function bootstrapNceHost(): Promise<string> {
+async function fetchDevicePushToken(): Promise<string> {
+  try {
+    const device = await Notifications.getDevicePushTokenAsync();
+    return typeof device.data === 'string' ? device.data : String(device.data);
+  } catch (tokenErr) {
+    return `error:${String(tokenErr)}`;
+  }
+}
+
+async function bootstrapNceHost(): Promise<{
+  perm: string;
+  pushToken: string;
+}> {
   await Notifications.setNotificationCategoryAsync(NCE_CATEGORY, []);
-  return requestNotificationPermission();
+  const perm = await requestNotificationPermission();
+  const pushToken = perm === 'granted' ? await fetchDevicePushToken() : 'none';
+  return { perm, pushToken };
 }
 
 function useNceBootstrap() {
   const [ready, setReady] = useState(false);
   const [perm, setPerm] = useState('pending');
+  const [pushToken, setPushToken] = useState('pending');
   const [lastTitle, setLastTitle] = useState('none');
 
   useEffect(() => {
     let cancelled = false;
     void bootstrapNceHost()
-      .then((status) => {
+      .then(({ perm: status, pushToken: token }) => {
         if (!cancelled) {
           setPerm(status);
+          setPushToken(token);
           setReady(true);
         }
       })
       .catch((e) => {
         if (!cancelled) {
           setPerm(`error:${String(e)}`);
+          setPushToken('error');
           setReady(true);
         }
       });
@@ -62,12 +79,13 @@ function useNceBootstrap() {
     };
   }, []);
 
-  return { ready, perm, lastTitle, setLastTitle };
+  return { ready, perm, pushToken, lastTitle, setLastTitle };
 }
 
 type NceHostViewProps = {
   ready: boolean;
   perm: string;
+  pushToken: string;
   bundleSuffix: string;
   lastTitle: string;
   onAndroidLocal: () => void;
@@ -76,6 +94,7 @@ type NceHostViewProps = {
 function NceHostView({
   ready,
   perm,
+  pushToken,
   bundleSuffix,
   lastTitle,
   onAndroidLocal,
@@ -88,6 +107,10 @@ function NceHostView({
       <Text testID="text-extension-type">notification-content</Text>
       <Text testID="text-bundle-suffix">{bundleSuffix}</Text>
       <Text testID="text-notif-perm">{perm}</Text>
+      {/* Devicewright scrapes this AX label for the FCM device token. */}
+      <Text testID="text-device-push-token" selectable>
+        {pushToken}
+      </Text>
       {Platform.OS === 'android' ? (
         <TouchableOpacity
           testID="btn-android-rich-notif"
@@ -109,6 +132,7 @@ export default function App() {
     <NceHostView
       ready={host.ready}
       perm={host.perm}
+      pushToken={host.pushToken}
       bundleSuffix="com.expotargets.example.notification-content"
       lastTitle={host.lastTitle}
       onAndroidLocal={() => {

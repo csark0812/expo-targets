@@ -32,12 +32,14 @@ Can Wave 1 Share/Action Activities host React Native via an Expo factory mirrori
 - RN `entry` remains iOS-primary; Android shows a fallback note when `USE_RN` meta is true.
 - Full Expo RN Activity host deferred until emulator TTI log exists (or NO-GO stays native-only).
 
+**Superseded 2026-08-10:** TTI + Devicewright green — see [android-rn-host-tti-2026-08-10.md](./android-rn-host-tti-2026-08-10.md). RN `entry` host is production (`ExpoTargetsReactTargetActivity`).
+
 ## Duration
 
 ~45 minutes design + W1 native implementation session.
 
 ## Follow-ups
 
-- Measure cold-start for a future `ExpoTargetsReactActivity` before flipping Android `entry` to live RN.
-- W1 DW: share sheet → Activity → Save → host reads SharedPreferences `items`.
-- If RN NO-GO permanently: document `entry` as iOS-only for share/action.
+- ~~Measure cold-start for a future `ExpoTargetsReactActivity` before flipping Android `entry` to live RN.~~ **Done** (2026-08-10 spike).
+- ~~W1 DW: share sheet → Activity → Save → SharedPreferences / host marker.~~ **Done**.
+- If RN NO-GO permanently: document `entry` as iOS-only for share/action. **N/A — GO.**

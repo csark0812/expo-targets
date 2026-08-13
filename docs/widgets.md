@@ -6,7 +6,7 @@
 
 ## Ownership
 
-expo-targets owns **native WidgetKit home-screen widgets** and **ActivityKit Live Activities** as first-class Apple targets. They share the same config-plugin spine as other extensions.
+expo-targets owns **native WidgetKit home-screen widgets** and **ActivityKit Live Activities** as first-class Apple targets. They share the same config-plugin spine as other extensions. Showcase tables use plain production checkmarks for `widget` on iOS and Android; ownership and Live Activity ceilings live here and in [limits.md](./limits.md), not as README footnotes.
 
 Official [`expo-widgets`](https://docs.expo.dev/versions/latest/sdk/widgets/) remains a valid choice for React / Expo-UI-first widgets on SDK 56+. It is **not** a soft-deprecate handoff for this library. Prefer this package when you already use expo-targets for share / clip / messages and want one config-plugin spine.
 

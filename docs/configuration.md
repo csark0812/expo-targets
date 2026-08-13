@@ -933,7 +933,7 @@ Types with a production example and Devicewright row are marked ✅. Entitlement
 | `stickers`                                                                                  | ✅ iOS 10+                               | —                   | iMessage sticker packs      |
 | `messages`                                                                                  | ✅ iOS 10+                               | —                   | iMessage apps               |
 | `share`                                                                                     | ✅ iOS 8+                                | ✅ W1 dedicated Activity + RN `entry` host | Share (same TS entry)       |
-| `action`                                                                                    | ✅ iOS 8+                                | ✅ W1 native Activity (RN host provisional) | Action (`PROCESS_TEXT`)     |
+| `action`                                                                                    | ✅ iOS 8+                                | ✅ W1 `PROCESS_TEXT` Activity + RN `entry` host | Action (`PROCESS_TEXT`)     |
 | `wallet` / `wallet-ui`                                                                      | ✅ iOS 14+ (issuer can os-limit)         | 🔜 W4 partial       | Wallet / Google Wallet      |
 | `safari`                                                                                    | ✅ iOS 15+                               | —                   | Safari web extensions       |
 | `content-blocker`                                                                           | ✅ iOS 11+                               | —                   | Safari content blocker      |
@@ -1212,7 +1212,7 @@ targets/my-safari/
 }
 ```
 
-Android: host-process Service and `AndroidNotification.processAndPresent` (local). This is not a sealed NSE. FCM remote push can be leftover. See [limits.md](./limits.md).
+Android: host-process Service and `AndroidNotification.processAndPresent` (local), plus `ExpoTargetsFcmMessagingService` for FCM data payloads. This is not a sealed NSE. Operator shade green needs `FCM_*` credentials. See [limits.md](./limits.md).
 
 Create `ios/NotificationService.swift`:
 

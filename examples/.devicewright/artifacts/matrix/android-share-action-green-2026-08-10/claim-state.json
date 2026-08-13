@@ -1,0 +1,19 @@
+{
+  "surviving": [
+    "share",
+    "action"
+  ],
+  "cut": [],
+  "stub": [],
+  "osLimit": [],
+  "rows": [
+    {
+      "id": "share",
+      "status": "green"
+    },
+    {
+      "id": "action",
+      "status": "green"
+    }
+  ]
+}

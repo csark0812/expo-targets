@@ -91,18 +91,18 @@ Showcase subset (common adoption path). **Full type set and maturity (~47 types)
 
 | Type       | iOS  | Android | Description                          |
 | ---------- | ---- | ------- | ------------------------------------ |
-| `share`    | ✅   | ✅‡     | Share extensions (RN on iOS; Android native Activity) |
-| `action`   | ✅   | ✅‡     | Action extensions (RN on iOS; Android native Activity) |
+| `share`    | ✅   | ✅‡     | Share extensions (RN on iOS; Android dedicated Activity) |
+| `action`   | ✅   | ✅‡     | Action extensions (RN on iOS; Android dedicated Activity) |
 | `clip`     | ✅   | —       | App Clips (RN UI supported)          |
 | `messages` | ✅   | —       | iMessage apps (RN UI supported)      |
 | `stickers` | ✅   | —       | iMessage sticker packs (asset-only)  |
-| `widget`   | ✅\* | ✅†     | Home screen widgets + Live Activities |
+| `widget`   | ✅   | ✅      | Home screen widgets + Live Activities |
 | `notification-service` | ✅ | ✅§ | Push mutation (Android: local NotificationCompat; FCM leftover) |
 | `notification-content` | ✅ | ✅§ | Rich UI (Android: RemoteViews / A12 clamp) |
 
 **Legend:** ✅ Production ready · 🔜 Planned · — Not applicable
 
-> \*`widget` (iOS): first-class native WidgetKit + Live Activities. †Android widgets: first-class Glance/Compose; LA → ongoing notif. ‡Android share/action: dedicated Activities (not MainActivity); RN host provisional. §Android notifications: host-process partial. Details: [widgets.md](./docs/widgets.md), [configuration.md](./docs/configuration.md).
+> ‡Android share/action: dedicated Activities + RN `entry` host (TTI + Devicewright green — spike `android-rn-host-tti-2026-08-10.md`). Showcase mark waits on notification FCM close. §Android notifications: host-process; FCM receive wired — shade green with `FCM_*` retires this mark. Widget ownership and Android LA → ongoing-notification: [widgets.md](./docs/widgets.md), [limits.md](./docs/limits.md). Full matrix: [configuration.md](./docs/configuration.md).
 >
 > Wallet, Safari, Network Extension family, file providers, and the rest: [configuration.md](./docs/configuration.md). Lib floor vs Apple gates: [limits.md](./docs/limits.md). **No new orphan stubs** — [deprecations.md](./docs/deprecations.md).
 

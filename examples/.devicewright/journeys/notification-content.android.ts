@@ -3,9 +3,12 @@
  * Own posting via host `btn-android-rich-notif` (no notification-service).
  * Locked P: expand notification → RemoteViews / ET NCE Content marker.
  * MUST-GREEN — miss → red only (no os-limit).
+ *
+ * When FCM_* creds are present (RN host only), also try remote data push via
+ * ExpoTargetsFcmMessagingService before the local button path.
  * DeviceSession only.
  */
-import type { DeviceSession } from "@csark0812/devicewright";
+import { android, type DeviceSession } from "@csark0812/devicewright";
 import { hostLaunchId, TARGET_CATALOG } from "../catalog";
 import type { TargetJourneyResult } from "../types";
 import {
@@ -31,6 +34,7 @@ const ANDROID_NCE_IDS = new Set([
   "notification-content",
   "native-notification-content",
 ]);
+const FCM_BODY_MARKER = "fcm NCE path";
 
 async function acceptNotificationPermission(
   device: DeviceSession,
@@ -112,7 +116,7 @@ async function findNotifRow(
   const cell = tree.find((n) => {
     const t = `${nodeVisibleText(n)} ${n.label ?? ""} ${n.type ?? ""}`;
     return (
-      /rich-|RemoteViews|ET NCE Content|ET NCE|notificationcontent|ET NCE N|myNotificationCategory/i.test(
+      /rich-|RemoteViews|ET NCE Content|ET NCE|notificationcontent|ET NCE N|myNotificationCategory|fcm NCE/i.test(
         t,
       ) &&
       n.frame &&
@@ -121,19 +125,20 @@ async function findNotifRow(
     );
   });
   if (!cell?.frame) return null;
-  const f = cell.frame;
-  return { x: f.x, y: f.y, w: f.width, h: f.height };
+  return {
+    x: cell.frame.x,
+    y: cell.frame.y,
+    w: cell.frame.width,
+    h: cell.frame.height,
+  };
 }
 
 async function expandNotificationRow(
   device: DeviceSession,
   row: { x: number; y: number; w: number; h: number },
 ): Promise<void> {
-  const cx = Math.round(row.x + row.w / 2);
-  const cy = Math.round(row.y + row.h / 2);
-  // Long-press then swipe-down expand (OEM shade chrome varies).
-  await device.tap({ x: cx, y: cy, duration: 1.2 });
-  await sleep(ANDROID_POST_TAP_MS);
+  const cx = row.x + row.w / 2;
+  const cy = row.y + row.h / 2;
   await device.swipe({
     xStart: cx,
     yStart: cy,
@@ -142,6 +147,64 @@ async function expandNotificationRow(
     duration: 0.55,
   });
   await sleep(450);
+}
+
+async function scrapeDevicePushToken(
+  device: DeviceSession,
+): Promise<string | null> {
+  const tree = await device.accessibilityTree();
+  const node = tree.find((n) => n.identifier === "text-device-push-token");
+  const raw = String(node?.value ?? node?.label ?? "").trim();
+  if (!raw || raw === "pending" || raw === "none" || raw.startsWith("error:")) {
+    return null;
+  }
+  if (raw.length < 20) return null;
+  return raw.replace(/\s+/g, "");
+}
+
+async function tryFcmNcePath(
+  device: DeviceSession,
+  steps: string[],
+  creds: NonNullable<ReturnType<typeof android.readFcmCredentialsFromEnv>>,
+): Promise<boolean> {
+  const token = await scrapeDevicePushToken(device);
+  if (!token) {
+    steps.push("fcm-token-missing");
+    return false;
+  }
+  steps.push(`fcm-device-token:${token.slice(0, 8)}…`);
+  const nonce = `rich-fcm-${Date.now().toString(36)}`;
+  const send = await device.pushRemoteNotification({
+    deviceToken: token,
+    fcmCredentials: {
+      serviceAccountPath: creds.serviceAccountPath,
+      projectId: creds.projectId,
+    },
+    payload: {
+      data: {
+        title: nonce,
+        body: FCM_BODY_MARKER,
+        expo_targets_kind: "content",
+        expo_targets_category: "myNotificationCategory",
+      },
+    },
+  });
+  steps.push(`fcm-remote-send:${send.status}`);
+  if (send.status !== 200) return false;
+
+  await device.pressButton({ button: "HOME" });
+  await sleep(800);
+  await openNotificationShade(device);
+  let marker = await waitForNceMarker(device, 4_000);
+  if (!marker) {
+    const row = await findNotifRow(device);
+    if (row) {
+      steps.push("fcm-expand-notification");
+      await expandNotificationRow(device, row);
+      marker = await waitForNceMarker(device, 8_000);
+    }
+  }
+  return marker;
 }
 
 export async function runAndroidNotificationContentJourney(
@@ -181,11 +244,36 @@ export async function runAndroidNotificationContentJourney(
     await waitForId(device, hostReadyTestId(entry.testIds), 15_000);
     steps.push("host-ready");
 
+    // RN host: prefer FCM when operator creds are present (showcase § gate).
+    if (id === "notification-content") {
+      const fcmCreds = android.readFcmCredentialsFromEnv();
+      if (fcmCreds) {
+        steps.push("fcm-credentials-present");
+        await sleep(1_200);
+        if (await tryFcmNcePath(device, steps, fcmCreds)) {
+          steps.push("nce-remoteviews-marker-fcm");
+          await device.pressButton({ button: "HOME" }).catch(() => undefined);
+          return {
+            id: entry.id,
+            path: pathStr,
+            phase: 4,
+            ok: true,
+            status: "green",
+            steps: [...steps, `${id}-android-nce-fcm-ok`],
+          };
+        }
+        steps.push("fcm-nce-miss-fallback-local");
+        await device.launchApp(pkg, { terminateRunning: false });
+        await waitForId(device, hostReadyTestId(entry.testIds), 10_000);
+      } else {
+        steps.push("fcm-credentials-missing-local-fallback");
+      }
+    }
+
     // Own posting — must not depend on notification-service.
     steps.push("post-rich-content");
     await tapId(device, "btn-android-rich-notif", 8_000);
     await sleep(ANDROID_SETTINGS_SETTLE_MS);
-    // Confirm presentContent landed (permission / channel failures leave "none").
     try {
       const tree = await device.accessibilityTree();
       const payload = tree.find((n) => n.identifier === entry.testIds.lastPayload);
@@ -206,7 +294,6 @@ export async function runAndroidNotificationContentJourney(
 
     steps.push("shade-open");
     await openNotificationShade(device);
-    // Best-effort clear of prior IME/system rows so the NCE cell is findable.
     if (await tapNamedAndroid(device, ["Clear all"], 1_200)) {
       steps.push("shade-cleared");
       await device.pressButton({ button: "HOME" }).catch(() => undefined);
@@ -225,7 +312,6 @@ export async function runAndroidNotificationContentJourney(
     if (!marker) {
       const row = await findNotifRow(device);
       if (!row) {
-        // Re-open shade once more before failing.
         await device.pressButton({ button: "HOME" }).catch(() => undefined);
         await sleep(300);
         await openNotificationShade(device);
@@ -242,7 +328,6 @@ export async function runAndroidNotificationContentJourney(
       marker = await waitForNceMarker(device, 8_000);
     } else {
       steps.push("nce-marker-pre-expand");
-      // Still attempt expand for Locked P deepen when marker already visible.
       const row = await findNotifRow(device);
       if (row) {
         steps.push("expand-notification");

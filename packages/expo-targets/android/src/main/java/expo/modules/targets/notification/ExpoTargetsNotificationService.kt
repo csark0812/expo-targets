@@ -12,7 +12,8 @@ import android.os.IBinder
  * mutates like iOS NSE, posts NotificationCompat, writes SharedPreferences marker.
  *
  * Not a system NSE — only notifications you route here (local path REQUIRED;
- * FCM leftover when push credentials unavailable).
+ * FCM via [ExpoTargetsFcmMessagingService] when Firebase Messaging is on the
+ * classpath; operator matrix needs FCM_* + google-services).
  */
 open class ExpoTargetsNotificationService : Service() {
   protected var targetName: String = "Notification"
