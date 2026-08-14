@@ -1,6 +1,6 @@
 {
   "name": "expo-targets",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Expo config plugin for Apple targets and Android app extensions",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
