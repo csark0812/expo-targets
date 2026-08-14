@@ -110,7 +110,7 @@ Showcase subset (common adoption path). **Full type set and maturity (~47 types)
 
 ## How It Works
 
-expo-targets uses **App Groups** to share data between your app and extensions. For RN extensions, Metro plus a native host loads your React tree inside the extension process.
+expo-targets uses **App Groups** to share data between your app and extensions. For RN extensions, Metro plus a native host loads your React tree (iOS `.appex` process; Android dedicated Activity).
 
 ```
 ┌─────────────────┐        ┌─────────────────┐
