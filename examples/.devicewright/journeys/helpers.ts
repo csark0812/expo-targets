@@ -254,6 +254,103 @@ export async function dismissSystemAlerts(
   }
 }
 
+function isSpringBoardSpotlight(labels: string[]): boolean {
+  const joined = labels.join(" | ");
+  // iOS 26 home still exposes dewey-search-field for the Search pill — that is
+  // not Spotlight. Real Spotlight has Siri Suggestions / a Spotlight title.
+  return (
+    /Siri Suggestions/i.test(joined) ||
+    /(^|\|)\s*Spotlight\s*(\||$)/i.test(joined)
+  );
+}
+
+/**
+ * iOS 26: HOME from an app can land on Spotlight instead of the icon grid.
+ * The home Search pill is not Spotlight — do not swipe it away.
+ */
+export async function dismissSpringBoardSpotlight(
+  device: DeviceSession,
+): Promise<void> {
+  for (let i = 0; i < 3; i++) {
+    if (!isSpringBoardSpotlight(flattenLabels(await device.accessibilityTree()))) {
+      return;
+    }
+    await device.pressButton({ button: "HOME" }).catch(() => undefined);
+    await sleep(400);
+    if (!isSpringBoardSpotlight(flattenLabels(await device.accessibilityTree()))) {
+      return;
+    }
+    try {
+      const cancel = await waitForNamed(device, ["Cancel"], { timeoutMs: 800 });
+      await tapCenter(device, cancel);
+      await sleep(400);
+      continue;
+    } catch {
+      /* swipe up to close Spotlight, not down (down opens search) */
+    }
+    await device.swipe({
+      xStart: 200,
+      yStart: 720,
+      xEnd: 200,
+      yEnd: 140,
+      duration: 0.28,
+    });
+    await sleep(400);
+  }
+}
+
+/**
+ * SpringBoard app icons are often missing from the AX tree on iOS 26 (only the
+ * Search pill is listed). Probe the grid + dock and synthesize a tap frame.
+ */
+export async function findSpringBoardHostIcon(
+  device: DeviceSession,
+  names: string[],
+): Promise<AccessibilityNode> {
+  await dismissSpringBoardSpotlight(device);
+  for (let page = 0; page < 4; page++) {
+    try {
+      const hit = await findNamedViaPointProbe(device, names, {
+        timeoutMs: 3_500,
+        match: "includes",
+        yStartRatio: 0.05,
+        yEndRatio: 0.99,
+        hotspots: [
+          { x: 48, y: 820 },
+          { x: 72, y: 860 },
+          { x: 96, y: 880 },
+          { x: 120, y: 840 },
+          { x: 200, y: 420 },
+        ],
+      });
+      const node = hit.node;
+      const frame = node.frame;
+      if (!frame || frame.width < 8 || frame.height < 8) {
+        node.frame = {
+          x: hit.probeX - 22,
+          y: hit.probeY - 22,
+          width: 44,
+          height: 44,
+        };
+      }
+      return node;
+    } catch {
+      await device.swipe({
+        xStart: 360,
+        yStart: 400,
+        xEnd: 60,
+        yEnd: 400,
+        duration: 0.3,
+      });
+      await sleep(500);
+    }
+  }
+  const tree = await device.accessibilityTree();
+  throw new Error(
+    `host icon not on SpringBoard; labels=${flattenLabels(tree).slice(0, 60).join(", ")}`,
+  );
+}
+
 /**
  * Visible text for an a11y node. On Android, long JSON in `text=` often leaves
  * `label`/`value` empty while the uiautomator `raw` still carries `text='...'`.

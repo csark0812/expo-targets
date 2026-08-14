@@ -45,14 +45,14 @@ function parseCreateTargetArg(arg: Expression): string | null {
   return null;
 }
 
-function parseCreateTargetName(filePath: string): string | null {
+function parseCreateTargetNames(filePath: string): string[] {
   const source = fs.readFileSync(filePath, 'utf8');
   const ast = parse(source, {
     sourceType: 'module',
     plugins: ['typescript', 'jsx'],
   });
 
-  let found: string | null = null;
+  const found: string[] = [];
   traverse(ast, {
     CallExpression(path) {
       const callee = path.node.callee;
@@ -65,7 +65,7 @@ function parseCreateTargetName(filePath: string): string | null {
       }
       const name = parseCreateTargetArg(arg);
       if (name) {
-        found = name;
+        found.push(name);
       }
     },
   });
@@ -83,51 +83,75 @@ function helperPath(targetDir: string): string | null {
   return null;
 }
 
+function galleryKindNames(target: {
+  config: {
+    ios?: { kinds?: { type?: string; name?: string }[] };
+    name?: string;
+  };
+}): string[] {
+  const kinds = (target.config.ios?.kinds ?? []).filter(
+    (kind) => kind.type !== 'live-activity' && kind.name
+  );
+  if (kinds.length > 0) {
+    return kinds.map((kind) => kind.name as string);
+  }
+  return target.config.name ? [target.config.name] : [];
+}
+
 export function checkNameSync(ctx: ProjectContext): CheckResult[] {
   const failures: CheckResult[] = [];
 
   for (const target of ctx.targets) {
-    const configName = target.config.name;
-    if (!configName) {
-      failures.push({
-        ok: false,
-        level: 'error',
-        title: 'Name sync',
-        message: `targets/${target.dirName}: missing "name" in expo-target.config`,
-        fix: 'Set "name" to match createTarget(\'...\') in the target index file',
-      });
-      continue;
+    const result = checkOneNameSync(target);
+    if (result) {
+      failures.push(result);
     }
-
-    const helper = helperPath(path.dirname(target.configPath));
-    if (!helper) {
-      continue;
-    }
-
-    const createName = parseCreateTargetName(helper);
-    if (!createName) {
-      failures.push({
-        ok: false,
-        level: 'error',
-        title: 'Name sync',
-        message: `targets/${target.dirName}: could not find createTarget('...') in ${path.basename(helper)}`,
-        fix: `Add: export const x = createTarget('${configName}');`,
-      });
-      continue;
-    }
-
-    if (createName === configName) {
-      continue;
-    }
-
-    failures.push({
-      ok: false,
-      level: 'error',
-      title: 'Name sync',
-      message: `targets/${target.dirName}: config name "${configName}" ≠ createTarget('${createName}')`,
-      fix: `Align expo-target.config "name" and createTarget('${configName}')`,
-    });
   }
 
   return failures;
+}
+
+function checkOneNameSync(
+  target: ProjectContext['targets'][number]
+): CheckResult | undefined {
+  const configName = target.config.name;
+  if (!configName) {
+    return {
+      ok: false,
+      level: 'error',
+      title: 'Name sync',
+      message: `targets/${target.dirName}: missing "name" in expo-target.config`,
+      fix: 'Set "name" to match createTarget(\'...\') in the target index file',
+    };
+  }
+
+  const helper = helperPath(path.dirname(target.configPath));
+  if (!helper) {
+    return;
+  }
+
+  const createNames = parseCreateTargetNames(helper);
+  if (createNames.length === 0) {
+    return {
+      ok: false,
+      level: 'error',
+      title: 'Name sync',
+      message: `targets/${target.dirName}: could not find createTarget('...') in ${path.basename(helper)}`,
+      fix: `Add: export const x = createTarget('${configName}');`,
+    };
+  }
+
+  const expected = galleryKindNames(target);
+  const missing = expected.filter((name) => !createNames.includes(name));
+  if (missing.length === 0) {
+    return;
+  }
+
+  return {
+    ok: false,
+    level: 'error',
+    title: 'Name sync',
+    message: `targets/${target.dirName}: ios.kinds / name ${JSON.stringify(missing)} missing createTarget(...) in ${path.basename(helper)} (found ${JSON.stringify(createNames)})`,
+    fix: `Add createTarget('${missing[0]}', Layout) for each gallery kind`,
+  };
 }

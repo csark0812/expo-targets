@@ -5,25 +5,38 @@
   "platforms": ["ios", "android"],
   "appGroup": "group.com.expotargets.example.widgets",
   "entry": "./targets/hello-expo-ui/index.tsx",
-  "liveActivity": {
-    "attributesName": "HelloExpoUiAttributes",
-    "static": { "title": "string" },
-    "contentState": { "status": "string" },
-    "pushType": "token"
-  },
   "ios": {
     "bundleIdentifier": "com.expotargets.example.widgets.helloexpoui",
     "displayName": "Hello Expo UI",
-    "configuration": {
-      "title": "Hello Expo UI Configuration",
-      "parameters": {
-        "listId": {
-          "title": "List",
-          "type": "string",
-          "default": "default"
+    "kinds": [
+      {
+        "name": "HelloExpoUi",
+        "displayName": "Hello Expo UI",
+        "configuration": {
+          "title": "Hello Expo UI Configuration",
+          "parameters": {
+            "listId": {
+              "title": "List",
+              "type": "string",
+              "default": "default"
+            }
+          }
         }
+      },
+      {
+        "name": "HelloExpoUiCompact",
+        "displayName": "Hello Expo UI Compact",
+        "description": "Compact picker row (not a second size of Hello Expo UI)",
+        "supportedFamilies": ["systemSmall"]
+      },
+      {
+        "type": "live-activity",
+        "attributesName": "HelloExpoUiAttributes",
+        "static": { "title": "string" },
+        "contentState": { "status": "string" },
+        "pushType": "token"
       }
-    },
+    ],
     "colors": {
       "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" },
       "BackgroundColor": { "light": "#F2F2F7", "dark": "#1C1C1E" },

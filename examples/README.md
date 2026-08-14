@@ -37,7 +37,7 @@ Do not commit generated `ios/` or `android/` folders from example prebuilds. Nev
 | [`messages`](./messages) | React Native messages extension |
 | [`clip`](./clip) | React Native App Clip |
 | [`stickers`](./stickers) | Asset-only sticker pack |
-| [`widgets`](./widgets) | WidgetKit + Glance/RemoteViews — [widgets.md](../docs/widgets.md) |
+| [`widgets`](./widgets) | WidgetKit + Glance/RemoteViews (incl. `android.providers[]`) — [widgets.md](../docs/widgets.md) |
 | [`trick`](./trick) | Live Activity showcase (`live-activity` Devicewright id) |
 | [`kitchen-sink`](./kitchen-sink) | Multi-target host (optional aggregate) |
 | [`native/share`](./native/share) | Swift share + RN host |

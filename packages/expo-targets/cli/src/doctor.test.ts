@@ -8,6 +8,7 @@ import { checkEntries } from './checks/entries';
 import { checkMetro } from './checks/metro';
 import { checkNameSync } from './checks/nameSync';
 import { checkPlugin } from './checks/plugin';
+import { warnUnusedWidgetBundle } from './checks/unusedWidgetBundle';
 import { loadProject } from './project';
 
 const roots: string[] = [];
@@ -169,7 +170,9 @@ describe('checkNameSync', () => {
         "import { createTarget } from 'expo-targets';\n" +
         "export const share = createTarget('Wrong');\n",
     });
-    expect(checkNameSync(loadProject(root))[0]?.message).toContain('≠');
+    expect(checkNameSync(loadProject(root))[0]?.message).toContain(
+      'missing createTarget'
+    );
   });
 
   test('passes when names match', () => {
@@ -201,5 +204,89 @@ describe('checkNameSync', () => {
         'export const share = createTarget(Targets.Share);\n',
     });
     expect(checkNameSync(loadProject(root))).toHaveLength(0);
+  });
+});
+
+describe('checkNameSync gallery kinds', () => {
+  test('fails when a gallery kind has no createTarget', () => {
+    const root = makeProject({
+      'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
+      'targets/widget/expo-target.config.json': JSON.stringify({
+        type: 'widget',
+        name: 'Home',
+        platforms: ['ios'],
+        entry: './targets/widget/index.tsx',
+        ios: {
+          kinds: [
+            { name: 'Home' },
+            { name: 'Lock' },
+            { type: 'live-activity', attributesName: 'HomeAttributes' },
+          ],
+        },
+      }),
+      'targets/widget/index.tsx':
+        "import { createTarget } from 'expo-targets';\n" +
+        "export const home = createTarget('Home');\n",
+    });
+    expect(checkNameSync(loadProject(root))[0]?.message).toContain('Lock');
+  });
+
+  test('passes when every gallery kind has createTarget', () => {
+    const root = makeProject({
+      'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
+      'targets/widget/expo-target.config.json': JSON.stringify({
+        type: 'widget',
+        name: 'Home',
+        platforms: ['ios'],
+        entry: './targets/widget/index.tsx',
+        ios: {
+          kinds: [
+            { name: 'Home' },
+            { name: 'Lock' },
+            { type: 'live-activity', attributesName: 'HomeAttributes' },
+          ],
+        },
+      }),
+      'targets/widget/index.tsx':
+        "import { createTarget } from 'expo-targets';\n" +
+        "export const home = createTarget('Home');\n" +
+        "export const lock = createTarget('Lock');\n",
+    });
+    expect(checkNameSync(loadProject(root))).toHaveLength(0);
+  });
+});
+
+describe('warnUnusedWidgetBundle', () => {
+  test('warns leftover Bundle.swift when expo-ui lists gallery kinds', () => {
+    const root = makeProject({
+      'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
+      'targets/widget/expo-target.config.json': JSON.stringify({
+        type: 'widget',
+        name: 'Home',
+        platforms: ['ios'],
+        entry: './targets/widget/index.tsx',
+        ios: { kinds: [{ name: 'Home' }, { name: 'Lock' }] },
+      }),
+      'targets/widget/ios/HomeBundle.swift':
+        'import WidgetKit\nstruct HomeBundle: WidgetBundle { var body: some Widget { Home() } }\n',
+    });
+    const warnings = warnUnusedWidgetBundle(loadProject(root));
+    expect(warnings[0]?.message).toContain('HomeBundle.swift');
+  });
+
+  test('skips live-activity-only kinds', () => {
+    const root = makeProject({
+      'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
+      'targets/widget/expo-target.config.json': JSON.stringify({
+        type: 'widget',
+        name: 'Home',
+        platforms: ['ios'],
+        ios: {
+          kinds: [{ type: 'live-activity', attributesName: 'HomeAttributes' }],
+        },
+      }),
+      'targets/widget/ios/HomeBundle.swift': 'struct HomeBundle {}\n',
+    });
+    expect(warnUnusedWidgetBundle(loadProject(root))).toHaveLength(0);
   });
 });

@@ -251,13 +251,25 @@ class ExpoTargetsStorageModule : Module() {
   }
 
   /**
-   * Resolve AppWidget ComponentName for a target name.
+   * Resolve AppWidget ComponentName for a target name, provider name, or FQCN.
    * Matches withAndroidWidget FQCNs:
    * - Glance: `{package}.widget.{sanitized}.{Pascal}WidgetReceiver`
    * - RemoteViews: `{package}.widget.{sanitized}.{Pascal}Provider`
+   * - `android.providers[].className` override (full FQCN)
    */
   private fun resolveWidgetProvider(context: Context, targetName: String): ComponentName? {
     val pkg = context.packageName
+    val awm = AppWidgetManager.getInstance(context)
+
+    if (targetName.contains('.')) {
+      for (info in awm.installedProviders) {
+        if (info.provider.packageName == pkg && info.provider.className == targetName) {
+          return info.provider
+        }
+      }
+      return ComponentName(pkg, targetName)
+    }
+
     val segment = targetName.lowercase().replace(Regex("[^a-z0-9_]"), "_")
     val segmentAlt = targetName.replace(Regex("[^a-zA-Z0-9]"), "").lowercase()
     val pascal =
@@ -272,11 +284,16 @@ class ExpoTargetsStorageModule : Module() {
         "$pkg.widget.$segmentAlt.${pascal}Provider",
       )
 
-    val awm = AppWidgetManager.getInstance(context)
     for (info in awm.installedProviders) {
       if (info.provider.packageName != pkg) continue
       val className = info.provider.className
       if (candidates.contains(className)) return info.provider
+      val simple = className.substringAfterLast('.')
+      if (simple.equals("${pascal}Provider", ignoreCase = true) ||
+          simple.equals("${pascal}WidgetReceiver", ignoreCase = true)
+      ) {
+        return info.provider
+      }
       val lower = className.lowercase()
       if (
         lower.contains(".$segment.") ||

@@ -15,6 +15,7 @@ import {
   warnMissingMetroWrapper,
 } from './ensureHostAppGroups';
 import { withIOSTarget } from './ios/config-plugins/withIOSTarget';
+import { resolveLiveActivityConfig } from './ios/utils/resolveIosKinds';
 import { Logger } from './logger';
 import { resolveExcludedPackages } from './resolveExcludedPackages';
 
@@ -307,7 +308,7 @@ const withTargetIos: ConfigPlugin<{
     appGroup: evaluatedConfig.appGroup,
     entry: evaluatedConfig.entry,
     ui: evaluatedConfig.ui,
-    liveActivity: evaluatedConfig.liveActivity,
+    liveActivity: resolveLiveActivityConfig(evaluatedConfig),
     excludedPackages,
     runtimeVersion: runtimeVersion || undefined,
     directory: targetDirectory,
@@ -373,7 +374,11 @@ const withTarget: ConfigPlugin<{
   }
 
   // Store full config for runtime access (with resolved appGroup)
-  runtimeConfigs.push({ ...evaluatedConfig, appGroup });
+  runtimeConfigs.push({
+    ...evaluatedConfig,
+    appGroup,
+    liveActivity: resolveLiveActivityConfig(evaluatedConfig),
+  });
 
   return next;
 };

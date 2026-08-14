@@ -16,6 +16,7 @@ import {
 import {
   getExpoUiMessage,
   helloExpoUi,
+  helloExpoUiCompact,
   helloExpoUiLiveActivity,
   updateExpoUiMessage,
 } from './targets/hello-expo-ui';
@@ -24,10 +25,12 @@ import {
   helloRemoteViews,
   updateRemoteViewsMessage,
 } from './targets/hello-remoteviews';
+import { helloRemoteViewsBundle } from './targets/hello-remoteviews-bundle';
 import { getMessage, helloWidget, updateMessage } from './targets/hello-widget';
 
 // Keep layout registration reachable (tree-shake guard).
 void helloExpoUiLiveActivity;
+void helloExpoUiCompact;
 
 /** Seeded host markers for Devicewright (avoid `|` — can confuse AX splits). */
 export const UITEST_WIDGET_SEED = 'Hello from host · family:systemSmall';
@@ -136,6 +139,8 @@ function seedAllPayloads(refresh: () => void) {
   updateMessage(UITEST_WIDGET_SEED);
   updateExpoUiMessage(UITEST_EXPO_UI_SEED);
   updateRemoteViewsMessage(UITEST_REMOTEVIEWS_SEED);
+  helloRemoteViewsBundle.setData({ message: UITEST_REMOTEVIEWS_SEED });
+  helloRemoteViewsBundle.refresh();
   refresh();
 }
 
@@ -145,6 +150,8 @@ function clearAllPayloads(refresh: () => void) {
   helloExpoUi.setData({ message: '' }, { refresh: true });
   helloRemoteViews.setData({ message: '' });
   helloRemoteViews.refresh();
+  helloRemoteViewsBundle.setData({ message: '' });
+  helloRemoteViewsBundle.refresh();
   refresh();
 }
 
@@ -343,6 +350,33 @@ function AndroidPinButton({
   );
 }
 
+function RemoteViewsBundlePins({
+  setPinStatus,
+}: {
+  setPinStatus: (status: string) => void;
+}) {
+  return (
+    <Section
+      eyebrow="RemoteViews · providers[]"
+      title="Hello RV Bundle"
+      body="One target, two AppWidgetProvider picker rows (Status layout and Agenda layout)."
+    >
+      <AndroidPinButton
+        testID="btn-pin-hello-status"
+        label="Pin Hello Status"
+        targetName="Status"
+        setPinStatus={setPinStatus}
+      />
+      <AndroidPinButton
+        testID="btn-pin-hello-agenda"
+        label="Pin Hello Agenda"
+        targetName="Agenda"
+        setPinStatus={setPinStatus}
+      />
+    </Section>
+  );
+}
+
 function PinSections({
   setPinStatus,
 }: {
@@ -386,6 +420,7 @@ function PinSections({
           setPinStatus={setPinStatus}
         />
       </Section>
+      <RemoteViewsBundlePins setPinStatus={setPinStatus} />
     </>
   );
 }

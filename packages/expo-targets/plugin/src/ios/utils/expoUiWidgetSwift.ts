@@ -266,34 +266,42 @@ struct ${options.name}: Widget {
 
 export function generateExpoUiWidgetBundleSwift(options: {
   name: string;
+  /** Gallery Widget structs to instantiate (kind names). */
+  widgets?: { name: string; configurable?: boolean }[];
   /** When true, include expo-widgets WidgetLiveActivity() for expo-ui LA slots. */
   includeLiveActivity?: boolean;
   /** Wrap home widget in iOS 17 availability (configurable AppIntent). */
   configurable?: boolean;
 }): string {
+  const widgets =
+    options.widgets && options.widgets.length > 0
+      ? options.widgets
+      : [{ name: options.name, configurable: Boolean(options.configurable) }];
+
+  const widgetLines = widgets
+    .map((widget) => {
+      if (widget.configurable) {
+        return `    if #available(iOS 17.0, *) {
+      ${widget.name}()
+    }`;
+      }
+      return `    ${widget.name}()`;
+    })
+    .join('\n');
+
   const liveLine = options.includeLiveActivity
     ? '\n    WidgetLiveActivity()'
     : '';
 
-  if (options.configurable) {
-    return `import WidgetKit
+  return `import WidgetKit
 import SwiftUI
 internal import ExpoWidgets
 
 @main
 struct ${options.name}Bundle: WidgetBundle {
   var body: some Widget {
-    if #available(iOS 17.0, *) {
-      ${options.name}()
-    }${liveLine}
+${widgetLines}${liveLine}
   }
 }
 `;
-  }
-
-  return loadTemplate('ExpoUiWidgetBundle.swift')
-    .split('{{NAME}}')
-    .join(options.name)
-    .split('{{LIVE_ACTIVITY}}')
-    .join(liveLine);
 }

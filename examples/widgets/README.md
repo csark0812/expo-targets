@@ -1,6 +1,6 @@
 # Widgets
 
-WidgetKit and Android widget example. Three targets: native Glance (`HelloWidget`), expo-ui Glance (`HelloExpoUi`), and RemoteViews (`HelloRemoteViews`). The host seeds payloads, pins widgets on Android, and controls Live Activities.
+WidgetKit and Android widget example. Four targets: native Glance (`HelloWidget`), expo-ui Glance (`HelloExpoUi` — two iOS picker rows plus a live-activity kind), RemoteViews (`HelloRemoteViews`), and a RemoteViews bundle (`HelloRemoteViewsBundle` — two Android picker rows). The host seeds payloads, pins widgets on Android, and controls Live Activities.
 
 Full widget docs: [../../docs/widgets.md](../../docs/widgets.md). Suite how-to: [../README.md](../README.md). Type maturity: [../../docs/configuration.md](../../docs/configuration.md).
 

@@ -1,0 +1,29 @@
+{
+  "type": "widget",
+  "name": "HelloRemoteViewsBundle",
+  "displayName": "Hello RV Bundle",
+  "platforms": ["android"],
+  "appGroup": "group.com.expotargets.example.widgets",
+  "android": {
+    "widgetType": "remoteviews",
+    "providers": [
+      {
+        "name": "Status",
+        "displayName": "Hello Status",
+        "initialLayout": "widget_status",
+        "targetCellWidth": 2,
+        "targetCellHeight": 2,
+        "description": "Status RemoteViews row (compact layout)"
+      },
+      {
+        "name": "Agenda",
+        "displayName": "Hello Agenda",
+        "initialLayout": "widget_agenda",
+        "minWidth": "250dp",
+        "targetCellWidth": 4,
+        "targetCellHeight": 2,
+        "description": "Agenda RemoteViews row (list layout)"
+      }
+    ]
+  }
+}

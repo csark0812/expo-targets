@@ -10,21 +10,19 @@ import {
   withStringsXml,
 } from '@expo/config-plugins';
 import type { AndroidTargetConfig, Color } from '../config';
+import {
+  buildAppWidgetProviderXml,
+  mergeAppWidgetProviderXml,
+  type ResolvedAndroidWidgetProvider,
+  resolveAndroidWidgetProviders,
+  sanitizeWidgetResourceName,
+  toWidgetNamePascal,
+  xmlFieldsFromProvider,
+} from './resolveAndroidWidgetProviders';
 import { addWidgetSourceSets } from './widgetSourceSets';
 
-/**
- * Sanitize widget name for Android resource names.
- * Android resource names can only contain lowercase a-z, 0-9, or underscore.
- */
 function sanitizeResourceName(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9_]/g, '_');
-}
-
-function toWidgetNamePascal(name: string): string {
-  return (
-    name.charAt(0).toUpperCase() +
-    name.slice(1).replace(/[-_]([a-z])/g, (_, letter) => letter.toUpperCase())
-  );
+  return sanitizeWidgetResourceName(name);
 }
 
 interface WidgetProps {
@@ -34,14 +32,6 @@ interface WidgetProps {
   platforms: string[];
   android?: AndroidTargetConfig;
   directory: string;
-}
-
-interface WidgetReceiverContext {
-  mainApplication: any;
-  packageName: string;
-  props: WidgetProps;
-  widgetNameLower: string;
-  widgetNamePascal: string;
 }
 
 function configureGlanceBuild(config: any, props: WidgetProps) {
@@ -82,20 +72,27 @@ function configureWidgetManifest(config: any, props: WidgetProps) {
 
 function configureWidgetDescription(
   config: any,
-  props: WidgetProps,
-  description: string
+  providers: ResolvedAndroidWidgetProvider[]
 ) {
+  const items = providers
+    .filter(
+      (provider) => provider.description && provider.descriptionStringName
+    )
+    .map((provider) => ({
+      $: {
+        name: provider.descriptionStringName as string,
+        translatable: 'false' as const,
+      },
+      _: (provider.description as string).replace(/'/g, "\\'"),
+    }));
+
+  if (items.length === 0) {
+    return config;
+  }
+
   return withStringsXml(config, (stringsConfig) => {
     stringsConfig.modResults = AndroidConfig.Strings.setStringItem(
-      [
-        {
-          $: {
-            name: `widget_${sanitizeResourceName(props.name)}_description`,
-            translatable: 'false',
-          },
-          _: description.replace(/'/g, "\\'"),
-        },
-      ],
+      items,
       stringsConfig.modResults
     );
     return stringsConfig;
@@ -124,6 +121,15 @@ function configureWidgetResources(
 export const withAndroidWidget: ConfigPlugin<WidgetProps> = (config, props) => {
   const androidConfig = props.android || {};
   const widgetType = androidConfig.widgetType || 'glance';
+  const packageName = config.android?.package;
+  const providers = packageName
+    ? resolveAndroidWidgetProviders({
+        packageName,
+        targetName: props.name,
+        displayName: props.displayName,
+        android: androidConfig,
+      })
+    : [];
 
   if (widgetType === 'glance') {
     config = configureGlanceBuild(config, props);
@@ -133,13 +139,7 @@ export const withAndroidWidget: ConfigPlugin<WidgetProps> = (config, props) => {
 
   config = configureWidgetManifest(config, props);
 
-  if (androidConfig?.description) {
-    config = configureWidgetDescription(
-      config,
-      props,
-      androidConfig.description
-    );
-  }
+  config = configureWidgetDescription(config, providers);
 
   config = configureWidgetResources(config, props, androidConfig);
 
@@ -344,40 +344,34 @@ function addWidgetReceiver(
   }
 
   const widgetType = props.android?.widgetType || 'glance';
-  const widgetNameLower = sanitizeResourceName(props.name);
-  const widgetNamePascal = toWidgetNamePascal(props.name);
-  const receiverContext: WidgetReceiverContext = {
-    mainApplication,
+  const providers = resolveAndroidWidgetProviders({
     packageName,
-    props,
-    widgetNameLower,
-    widgetNamePascal,
-  };
+    targetName: props.name,
+    displayName: props.displayName,
+    android: props.android,
+  });
 
   if (widgetType === 'remoteviews') {
-    const providerClassName = `${packageName}.widget.${widgetNameLower}.${widgetNamePascal}Provider`;
-    registerAppWidgetProvider(mainApplication, providerClassName, props);
+    for (const provider of providers) {
+      registerAppWidgetProvider(mainApplication, provider);
+    }
     return;
   }
 
-  registerGlanceReceiver(receiverContext);
-  registerUpdateReceiver(receiverContext);
+  for (const provider of providers) {
+    registerGlanceReceiver(mainApplication, provider);
+  }
+  registerUpdateReceiver(mainApplication, packageName, props);
 }
 
-function registerGlanceReceiver(context: WidgetReceiverContext) {
-  const {
-    mainApplication,
-    packageName,
-    props,
-    widgetNameLower,
-    widgetNamePascal,
-  } = context;
+function registerGlanceReceiver(
+  mainApplication: any,
+  provider: ResolvedAndroidWidgetProvider
+) {
   mainApplication.receiver = mainApplication.receiver || [];
 
-  const widgetClassName = `${packageName}.widget.${widgetNameLower}.${widgetNamePascal}WidgetReceiver`;
-
   const alreadyAdded = mainApplication.receiver.some(
-    (r: any) => r.$['android:name'] === widgetClassName
+    (r: any) => r.$['android:name'] === provider.className
   );
 
   if (alreadyAdded) {
@@ -386,9 +380,9 @@ function registerGlanceReceiver(context: WidgetReceiverContext) {
 
   mainApplication.receiver.push({
     $: {
-      'android:name': widgetClassName,
+      'android:name': provider.className,
       'android:exported': 'true',
-      'android:label': props.displayName || props.name,
+      'android:label': provider.displayName,
     },
     'intent-filter': [
       {
@@ -403,18 +397,22 @@ function registerGlanceReceiver(context: WidgetReceiverContext) {
       {
         $: {
           'android:name': 'android.appwidget.provider',
-          'android:resource': `@xml/widgetprovider_${widgetNameLower}`,
+          'android:resource': `@xml/${provider.xmlName}`,
         },
       },
     ],
   });
 }
 
-function registerUpdateReceiver(context: WidgetReceiverContext) {
-  const { mainApplication, packageName, widgetNameLower, widgetNamePascal } =
-    context;
+function registerUpdateReceiver(
+  mainApplication: any,
+  packageName: string,
+  props: WidgetProps
+) {
   mainApplication.receiver = mainApplication.receiver || [];
 
+  const widgetNameLower = sanitizeResourceName(props.name);
+  const widgetNamePascal = toWidgetNamePascal(props.name);
   const updateReceiverClassName = `${packageName}.widget.${widgetNameLower}.${widgetNamePascal}UpdateReceiver`;
 
   const updateReceiverAdded = mainApplication.receiver.some(
@@ -442,14 +440,12 @@ function registerUpdateReceiver(context: WidgetReceiverContext) {
 
 function registerAppWidgetProvider(
   mainApplication: any,
-  providerClassName: string,
-  props: WidgetProps
+  provider: ResolvedAndroidWidgetProvider
 ) {
   mainApplication.receiver = mainApplication.receiver || [];
 
-  const widgetNameLower = sanitizeResourceName(props.name);
   const alreadyAdded = mainApplication.receiver.some(
-    (r: any) => r.$['android:name'] === providerClassName
+    (r: any) => r.$['android:name'] === provider.className
   );
 
   if (alreadyAdded) {
@@ -458,9 +454,9 @@ function registerAppWidgetProvider(
 
   mainApplication.receiver.push({
     $: {
-      'android:name': providerClassName,
+      'android:name': provider.className,
       'android:exported': 'true',
-      'android:label': props.displayName || props.name,
+      'android:label': provider.displayName,
     },
     'intent-filter': [
       {
@@ -478,104 +474,36 @@ function registerAppWidgetProvider(
       {
         $: {
           'android:name': 'android.appwidget.provider',
-          'android:resource': `@xml/widgetprovider_${widgetNameLower}`,
+          'android:resource': `@xml/${provider.xmlName}`,
         },
       },
     ],
   });
 }
 
-function getPreviewImageAttribute(
-  androidConfig: AndroidTargetConfig,
-  props: WidgetProps
-): string {
-  if (!androidConfig.previewImage) {
-    return '';
-  }
-  const previewImageName =
-    typeof androidConfig.previewImage === 'string'
-      ? androidConfig.previewImage
-      : `${sanitizeResourceName(props.name)}_preview`;
-  return `\n    android:previewImage="@drawable/${previewImageName}"`;
-}
-
-function getDescriptionAttribute(
-  androidConfig: AndroidTargetConfig,
-  props: WidgetProps
-): string {
-  if (!androidConfig.description) {
-    return '';
-  }
-  return `\n    android:description="@string/widget_${sanitizeResourceName(props.name)}_description"`;
-}
-
-function getResizeAttribute(
-  androidConfig: AndroidTargetConfig,
-  attribute: 'maxResizeWidth' | 'maxResizeHeight'
-): string {
-  const value = androidConfig[attribute];
-  if (!value) {
-    return '';
-  }
-  return `\n    android:${attribute}="${value}"`;
-}
-
-function getCellAttribute(
-  androidConfig: AndroidTargetConfig,
-  attribute: 'targetCellWidth' | 'targetCellHeight'
-): string {
-  const value = androidConfig[attribute];
-  if (!value) {
-    return '';
-  }
-  return `\n    android:${attribute}="${value}"`;
-}
-
-function buildWidgetInfoXml(
-  androidConfig: AndroidTargetConfig,
-  props: WidgetProps
-): string {
-  const minWidth = androidConfig.minWidth || '180dp';
-  const minHeight = androidConfig.minHeight || '110dp';
-  const resizeMode = androidConfig.resizeMode || 'horizontal|vertical';
-  const updatePeriodMillis = androidConfig.updatePeriodMillis || 0;
-  const widgetCategory = androidConfig.widgetCategory || 'home_screen';
-  const layoutName =
-    androidConfig.initialLayout || `widget_${sanitizeResourceName(props.name)}`;
-
-  const header = `<?xml version="1.0" encoding="utf-8"?>
-<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:minWidth="${minWidth}"
-    android:minHeight="${minHeight}"
-    android:resizeMode="${resizeMode}"
-    android:updatePeriodMillis="${updatePeriodMillis}"
-    android:widgetCategory="${widgetCategory}"
-    android:initialLayout="@layout/${layoutName}"`;
-
-  const optionalAttributes = [
-    getPreviewImageAttribute(androidConfig, props),
-    getDescriptionAttribute(androidConfig, props),
-    getResizeAttribute(androidConfig, 'maxResizeWidth'),
-    getResizeAttribute(androidConfig, 'maxResizeHeight'),
-    getCellAttribute(androidConfig, 'targetCellWidth'),
-    getCellAttribute(androidConfig, 'targetCellHeight'),
-  ].join('');
-
-  return `${header}${optionalAttributes}>\n</appwidget-provider>`;
-}
-
 function generateWidgetResources(platformRoot: string, props: WidgetProps) {
-  const androidConfig = props.android || {};
   const projectRoot = platformRoot.replace(/\/android$/, '');
   const xmlDir = path.join(projectRoot, props.directory, 'android/res/xml');
   fs.mkdirSync(xmlDir, { recursive: true });
 
-  const widgetInfo = buildWidgetInfoXml(androidConfig, props);
+  const providers = resolveAndroidWidgetProviders({
+    packageName: 'placeholder',
+    targetName: props.name,
+    displayName: props.displayName,
+    android: props.android,
+  });
 
-  fs.writeFileSync(
-    path.join(xmlDir, `widgetprovider_${sanitizeResourceName(props.name)}.xml`),
-    widgetInfo
-  );
+  for (const provider of providers) {
+    const xmlPath = path.join(xmlDir, `${provider.xmlName}.xml`);
+    const existing = fs.existsSync(xmlPath)
+      ? fs.readFileSync(xmlPath, 'utf8')
+      : null;
+    const xml = mergeAppWidgetProviderXml(
+      existing,
+      buildAppWidgetProviderXml(xmlFieldsFromProvider(provider))
+    );
+    fs.writeFileSync(xmlPath, xml);
+  }
 }
 
 function removeConflictingLayout(
@@ -626,25 +554,34 @@ function generateDefaultLayoutIfNeeded(
   props: WidgetProps,
   androidConfig: AndroidTargetConfig
 ) {
-  if (androidConfig.initialLayout) {
-    return;
-  }
-
   const projectRoot = platformRoot.replace(/\/android$/, '');
-  const layoutName = `widget_${sanitizeResourceName(props.name)}`;
-  const userLayoutPath = path.join(
-    projectRoot,
-    props.directory,
-    'android/layouts/layout',
-    `${layoutName}.xml`
-  );
+  const providers = resolveAndroidWidgetProviders({
+    packageName: 'placeholder',
+    targetName: props.name,
+    displayName: props.displayName,
+    android: androidConfig,
+  });
 
-  if (fs.existsSync(userLayoutPath)) {
-    removeConflictingLayout(projectRoot, props, layoutName);
-    return;
+  for (const provider of providers) {
+    if (provider.hasExplicitLayout) {
+      continue;
+    }
+
+    const layoutName = provider.initialLayout;
+    const userLayoutPath = path.join(
+      projectRoot,
+      props.directory,
+      'android/layouts/layout',
+      `${layoutName}.xml`
+    );
+
+    if (fs.existsSync(userLayoutPath)) {
+      removeConflictingLayout(projectRoot, props, layoutName);
+      continue;
+    }
+
+    writeDefaultLayout(projectRoot, props, layoutName);
   }
-
-  writeDefaultLayout(projectRoot, props, layoutName);
 }
 
 interface ColorEntryResult {

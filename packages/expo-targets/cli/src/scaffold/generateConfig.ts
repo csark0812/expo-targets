@@ -101,11 +101,28 @@ function applyLiveActivityConfig(
   }
   const attributesName =
     options.liveActivityAttributesName ?? `${options.pascalName}Attributes`;
-  config.liveActivity = {
+  const ios =
+    typeof config.ios === 'object' && config.ios
+      ? (config.ios as Record<string, unknown>)
+      : {};
+  const kinds = Array.isArray(ios.kinds) ? [...ios.kinds] : [];
+  if (options.widgetUi === 'expo-ui') {
+    const configuration = ios.configuration;
+    delete ios.configuration;
+    kinds.unshift({
+      name: options.pascalName,
+      displayName: formatDisplayName(options.kebabName),
+      ...(configuration ? { configuration } : {}),
+    });
+  }
+  kinds.push({
+    type: 'live-activity',
     attributesName,
     static: { title: 'string' },
     contentState: { status: 'string' },
-  };
+  });
+  ios.kinds = kinds;
+  config.ios = ios;
 }
 
 function applyAppIntentIosConfig(

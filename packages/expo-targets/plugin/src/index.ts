@@ -7,8 +7,10 @@ import { withTargetsDir } from './withTargetsDir';
 export type { ExpoConfig } from '@expo/config-types';
 // Export types for use in config files
 export type {
+  AndroidWidgetProviderConfig,
   AppIntentHostConfig,
   AppShortcutConfig,
+  IosKindConfig,
   LiveActivityConfig,
   TargetConfig,
   TargetConfigFunction,

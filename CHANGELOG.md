@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- One `widget` target can list many iOS WidgetKit picker products in `ios.kinds` (one `.appex`) and many Android `AppWidgetProvider` rows in `android.providers[]`.
+- Live Activity attributes live on an `ios.kinds` `{ "type": "live-activity" }` row (at most one). Top-level `liveActivity` config is removed.
+
 ## [1.0.3] - 2026-08-10
 
 ### Added

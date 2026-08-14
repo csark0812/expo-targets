@@ -2,7 +2,7 @@
 
 **Source of truth for** `expo-target.config` options and extension types.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-10 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-14 -->
 
 > **Orphan-stub freeze:** do not add new `ExtensionType` values without registry, scaffold, example, and Devicewright row. See [deprecations.md](./deprecations.md). Widgets policy: [widgets.md](./widgets.md).
 
@@ -64,7 +64,6 @@ targets/my-widget/
 | ------------------ | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `displayName`      | `name`      | Human-readable name (`CFBundleDisplayName` or `CFBundleName` on iOS; widget picker label)                                                                          |
 | `appGroup`         | _inherited_ | App Group ID. When omitted, inherits from your main app's `app.json` entitlements (see [App Group Inheritance](#app-group-inheritance) below) |
-| `liveActivity`     | —           | Widget-only ActivityKit schema (`attributesName`, `static`, `contentState`). CNG into `ExpoTargetsGenerated/` (see [widgets.md](./widgets.md))                  |
 | `entry`            | —           | React Native entry point for share, action, clip, and messages (see [Entry Field](#entry-field) below)                                                                  |
 | `excludedPackages` | auto for RN `entry` | Extra packages to omit from the nested `ExpoModulesProvider` (`post_integrate`). `expo-updates` and `expo-dev-client` are always merged for RN-native `entry` targets. List only extras (for example reanimated) |
 
@@ -342,7 +341,21 @@ Android widgets are supported with **Glance** (Jetpack Compose) or **RemoteViews
 | `description`        | —                        | Widget description in picker                                        |
 | `targetCellWidth`    | —                        | Target cell width (Material You widgets)                            |
 | `targetCellHeight`   | —                        | Target cell height (Material You widgets)                           |
+| `initialLayout`      | `widget_<name>`          | RemoteViews layout resource (no `@layout/` prefix)                  |
+| `providers`          | —                        | Opt-in list of AppWidgetProvider rows. Empty or omitted = 1:1 path  |
 | `colors`             | `{}`                     | Named colors for Android resources                                  |
+
+When `android.providers` is omitted or empty, the plugin registers one receiver from the scalar fields. The RemoteViews class name stays `{package}.widget.{sanitizedName}.{Pascal}Provider`. The Glance class name stays `{package}.widget.{sanitizedName}.{Pascal}WidgetReceiver`.
+
+When `android.providers` has one or more rows, each row is a widget picker entry with its own FQCN and `widgetprovider_<name>.xml`. This is the Android dual of iOS `supportedFamilies` / WidgetBundle. Each row can set `name`, `displayName`, `className`, `initialLayout`, cell size, preview, and description. Omitted layout fields inherit from the scalar `android.*` object.
+
+Set `className` to a full FQCN when an existing app already bound placed widgets to that class. A simple class name resolves under `{package}.widget.{sanitizedTarget}`. Do not change a shipped FQCN.
+
+The plugin writes each `widgetprovider_*.xml` from the row fields. If the file already exists, the plugin updates those fields and keeps extra attributes that you added.
+
+RemoteViews can use `providers` today. Glance can register more than one receiver the same way. You do not need to rewrite a RemoteViews target as Glance.
+
+See `examples/widgets/targets/hello-remoteviews-bundle` (two layouts, not one layout at two sizes). Hello RemoteViews stays the 1:1 scalar path.
 
 ### Widget Types
 
@@ -500,13 +513,17 @@ widget.setData(
   "displayName": "Weather",
   "platforms": ["ios"],
   "appGroup": "group.com.yourapp",
-  "liveActivity": {
-    "attributesName": "WeatherAttributes",
-    "static": { "location": "string" },
-    "contentState": { "temp": "double", "summary": "string" }
-  },
   "ios": {
     "deploymentTarget": "14.0",
+    "kinds": [
+      { "name": "WeatherWidget", "displayName": "Weather" },
+      {
+        "type": "live-activity",
+        "attributesName": "WeatherAttributes",
+        "static": { "location": "string" },
+        "contentState": { "temp": "double", "summary": "string" }
+      }
+    ],
     "colors": {
       "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" }
     }
@@ -514,7 +531,7 @@ widget.setData(
 }
 ```
 
-`liveActivity` drives sealed CNG (`ActivityAttributes` and host bridge) under `ios/<App>/ExpoTargetsGenerated/`. It also drives ambient TypeScript payload types in `.expo/types/expo-targets.d.ts` (`static` and `contentState` map to `LiveActivity.create().start`). Keep `ActivityConfiguration` UI in `targets/<widget>/ios/`. Host JS: `LiveActivity.create('WeatherAttributes')`. See [api.md](./api.md) and [widgets.md](./widgets.md).
+`ios.kinds` lists WidgetKit picker products (`name` matches `createTarget`). `supportedFamilies` on a kind is sizes of that one picker row, not extra products. A `{ "type": "live-activity" }` row holds `attributesName` / `static` / `contentState` / `pushType` (at most one). That row drives sealed CNG for native widgets and `WidgetLiveActivity()` on expo-ui Bundles. Ambient TypeScript payload types still land in `.expo/types/expo-targets.d.ts`. Host JS: `LiveActivity.create('WeatherAttributes')`. See [api.md](./api.md) and [widgets.md](./widgets.md).
 
 ### File Provider domain (iOS)
 

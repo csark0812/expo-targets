@@ -4,6 +4,7 @@ import type {
   LiveActivityConfig,
   TargetConfig,
 } from '../../../plugin/src/config';
+import { resolveLiveActivityConfig } from '../../../plugin/src/ios/utils/resolveIosKinds';
 import type {
   LiveActivityAttributesName,
   LiveActivityPayloadFor,
@@ -50,9 +51,17 @@ function liveActivityConfigs(): {
   target: TargetConfig;
   config: LiveActivityConfig;
 }[] {
-  return listTargets()
-    .filter((t) => t.type === 'widget' && t.liveActivity?.attributesName)
-    .map((t) => ({ target: t, config: t.liveActivity as LiveActivityConfig }));
+  const rows: { target: TargetConfig; config: LiveActivityConfig }[] = [];
+  for (const target of listTargets()) {
+    if (target.type !== 'widget') {
+      continue;
+    }
+    const config = resolveLiveActivityConfig(target);
+    if (config?.attributesName) {
+      rows.push({ target, config });
+    }
+  }
+  return rows;
 }
 
 function resolveMatch(attributesName: string): {
@@ -69,7 +78,7 @@ function resolveMatch(attributesName: string): {
     throw new Error(
       `[expo-targets] Unknown Live Activity attributesName "${attributesName}". ` +
         `Configured: ${names || '(none)'}. ` +
-        `Add liveActivity.attributesName to the widget expo-target.config.json.`
+        `Add a { "type": "live-activity", "attributesName": "..." } row to ios.kinds.`
     );
   }
   return matches[0];

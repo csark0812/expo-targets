@@ -4,15 +4,18 @@
   "displayName": "ET Trick Widget",
   "platforms": ["ios"],
   "appGroup": "group.com.expotargets.example.trick",
-  "liveActivity": {
-    "attributesName": "TrickActivityAttributes",
-    "static": { "title": "string" },
-    "contentState": { "status": "string" }
-  },
   "ios": {
     "bundleIdentifier": "com.expotargets.example.trick.widgets",
     "displayName": "ET Trick Widget",
     "deploymentTarget": "18.0",
+    "kinds": [
+      {
+        "type": "live-activity",
+        "attributesName": "TrickActivityAttributes",
+        "static": { "title": "string" },
+        "contentState": { "status": "string" }
+      }
+    ],
     "colors": {
       "AccentColor": { "light": "#2F6BFF", "dark": "#5B8CFF" },
       "BackgroundColor": { "light": "#0B1220", "dark": "#0B1220" },

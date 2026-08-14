@@ -9,7 +9,6 @@ import {
 import type {
   AppIntentHostConfig,
   AppShortcutConfig,
-  LiveActivityConfig,
   TargetConfig,
 } from '../../config';
 import {
@@ -20,6 +19,7 @@ import {
   getProjectName,
 } from '../apply/pbx';
 import * as Paths from '../utils/paths';
+import { resolveLiveActivityConfig } from '../utils/resolveIosKinds';
 import {
   generateAppIntentShellSwift,
   generateAppShortcutsProviderSwift,
@@ -52,14 +52,17 @@ function pushLiveActivityPlans(
   plans: GeneratedFilePlan[],
   target: TargetConfig
 ): void {
-  if (!(target.type === 'widget' && target.liveActivity?.attributesName)) {
+  if (!(target.type === 'widget')) {
+    return;
+  }
+  const la = resolveLiveActivityConfig(target);
+  if (!la?.attributesName) {
     return;
   }
   // expo-ui widgets use WidgetLiveActivity blob attrs — skip typed CNG.
   if (target.entry) {
     return;
   }
-  const la = target.liveActivity as LiveActivityConfig;
   plans.push({
     fileName: `${la.attributesName}.swift`,
     contents: generateLiveActivityAttributesSwift(la),

@@ -17,8 +17,8 @@ export interface TargetConfig {
   ui?: 'native' | 'expo-ui' | 'react-native';
   appGroup?: string;
   excludedPackages?: string[];
-  liveActivity?: { attributesName?: string };
   ios?: {
+    kinds?: { type?: string; name?: string }[];
     intents?: { ui?: boolean | { name?: string } };
     wallet?: { ui?: boolean | { name?: string } };
   };
