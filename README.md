@@ -91,8 +91,8 @@ Showcase subset (common adoption path). **Full type set and maturity (~47 types)
 
 | Type       | iOS  | Android | Description                          |
 | ---------- | ---- | ------- | ------------------------------------ |
-| `share`    | ✅   | ✅‡     | Share extensions (RN on iOS; Android dedicated Activity) |
-| `action`   | ✅   | ✅‡     | Action extensions (RN on iOS; Android dedicated Activity) |
+| `share`    | ✅   | ✅‡     | Share extensions (RN with `entry` on both; iOS `.appex`, Android dedicated Activity) |
+| `action`   | ✅   | ✅‡     | Action extensions (RN with `entry` on both; iOS `.appex`, Android dedicated Activity) |
 | `clip`     | ✅   | —       | App Clips (RN UI supported)          |
 | `messages` | ✅   | —       | iMessage apps (RN UI supported)      |
 | `stickers` | ✅   | —       | iMessage sticker packs (asset-only)  |
