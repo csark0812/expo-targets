@@ -134,7 +134,7 @@ module.exports = withTargets(getDefaultConfig(__dirname));
 
 ### Typed target names + Live Activity payloads
 
-After prebuild (or `npx expo-targets generate`), ambient types are written to `.expo/types/expo-targets.d.ts` (gitignored, same layout as Expo Router typed routes). That narrows `createTarget('…')` / `LiveActivity.create('…')` string literals — **no import from `.expo/`**. When `liveActivity.static` / `contentState` are set, `start` / `update` pick up those field types via module augmentation.
+After prebuild (or `npx expo-targets generate`), ambient types are written to `.expo/types/expo-targets.d.ts` (gitignored, same layout as Expo Router typed routes). That narrows `createTarget('…')` / `LiveActivity.create('…')` string literals — **no import from `.expo/`**. When a live-activity kind sets `static` / `contentState`, `start` / `update` pick up those field types via module augmentation.
 
 ```typescript
 import { createTarget, LiveActivity, type TargetName } from "expo-targets";

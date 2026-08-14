@@ -342,6 +342,11 @@ interface BaseIosTargetConfig {
   supportedFamilies?: WidgetFamily[];
   /** Disable default WidgetKit content margins (expo-ui). */
   contentMarginsDisabled?: boolean;
+  /**
+   * WidgetKit picker products plus at most one live-activity row.
+   * When omitted or empty, one widget uses `name` + scalar ios fields.
+   */
+  kinds?: IosKindConfig[];
 }
 
 /** WidgetKit family names (expo-ui supportedFamilies). */
@@ -400,6 +405,24 @@ export interface LiveActivityConfig {
   pushType?: 'token' | null;
 }
 
+/** Gallery WidgetKit picker product (`createTarget` name = Swift struct). */
+export interface IosWidgetKindConfig {
+  type?: 'widget';
+  name: string;
+  displayName?: string;
+  description?: string;
+  supportedFamilies?: WidgetFamily[];
+  contentMarginsDisabled?: boolean;
+  configuration?: WidgetConfiguration;
+}
+
+/** ActivityKit row. Adds `WidgetLiveActivity()` on expo-ui Bundles. At most one. */
+export type IosLiveActivityKindConfig = LiveActivityConfig & {
+  type: 'live-activity';
+};
+
+export type IosKindConfig = IosWidgetKindConfig | IosLiveActivityKindConfig;
+
 export interface AppIntentHostConfig {
   className: string;
   title: string;
@@ -438,6 +461,32 @@ export type IOSTargetConfig =
   | IOSTargetConfigWithReactNative
   | IOSTargetConfigNativeOnly;
 
+/** One AppWidgetProvider / picker row. Scalar `android.*` is the 1:1 default. */
+export interface AndroidWidgetProviderConfig {
+  /** Identity for xml (`widgetprovider_<sanitized>`) and default class names. */
+  name: string;
+  /** Widget picker label. */
+  displayName?: string;
+  /**
+   * AppWidgetProvider FQCN, or a simple class name under
+   * `{package}.widget.{sanitizedTarget}`. Placed widgets bind to FQCN — keep
+   * this stable when you colocate several providers in one target.
+   */
+  className?: string;
+  minWidth?: string;
+  minHeight?: string;
+  resizeMode?: string;
+  updatePeriodMillis?: number;
+  widgetCategory?: string;
+  previewImage?: string;
+  description?: string;
+  maxResizeWidth?: string;
+  maxResizeHeight?: string;
+  targetCellWidth?: number;
+  targetCellHeight?: number;
+  initialLayout?: string;
+}
+
 export interface AndroidTargetConfig {
   resourceName?: string;
   /**
@@ -446,6 +495,11 @@ export interface AndroidTargetConfig {
    * - 'remoteviews': Traditional XML layout-based widgets using RemoteViews
    */
   widgetType?: 'glance' | 'remoteviews';
+  /**
+   * Opt-in list of AppWidgetProvider rows (picker + FQCN). When omitted or
+   * empty, the plugin registers one provider from the scalar fields below.
+   */
+  providers?: AndroidWidgetProviderConfig[];
   // Widget-specific configuration
   minWidth?: string;
   minHeight?: string;
@@ -503,10 +557,6 @@ interface BaseTargetConfig {
   appGroup?: string;
   platforms: string[];
   android?: AndroidTargetConfig;
-  /**
-   * Live Activity schema (type='widget'). Drives CNG ActivityAttributes + host bridge.
-   */
-  liveActivity?: LiveActivityConfig;
   /**
    * UI authoring mode. Defaults: share-class + `entry` → `react-native`;
    * `widget`/`watch-widget` + `entry` → `expo-ui`; no `entry` → `native`.

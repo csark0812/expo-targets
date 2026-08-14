@@ -30,7 +30,7 @@ const ExpoTargetsStorageModule = requireNativeModule('ExpoTargetsStorage') as {
   isAppExtension?: () => boolean;
   /** Android: start VpnService.prepare consent UI when needed. */
   prepareVpn?: () => string;
-  /** Android: show system pin sheet for a Glance widget target. */
+  /** Android: show system pin sheet for a widget target, provider name, or FQCN. */
   requestPinWidget?: (targetName: string) => string;
   /** Android: count of live App Widget instances for a target. */
   getHostedWidgetCount?: (targetName: string) => number;

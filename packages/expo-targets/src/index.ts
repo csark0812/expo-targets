@@ -3,9 +3,13 @@
 // Config types
 export type {
   AndroidTargetConfig,
+  AndroidWidgetProviderConfig,
   Color,
   ExtensionType,
   IOSTargetConfig,
+  IosKindConfig,
+  IosLiveActivityKindConfig,
+  IosWidgetKindConfig,
   ReactNativeCompatibleType,
   TargetConfig,
   UiMode,

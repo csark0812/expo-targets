@@ -92,6 +92,30 @@ function HelloExpoUiLiveActivity(
 
 export const helloExpoUi = createTarget('HelloExpoUi', HelloExpoUiLayout);
 
+function HelloExpoUiCompactLayout(props: HelloExpoUiProps) {
+  'widget';
+  return (
+    <VStack>
+      <Text
+        modifiers={[
+          font({ weight: 'bold', size: 13 }),
+          foregroundStyle('#000000'),
+        ]}
+      >
+        Compact
+      </Text>
+      <Text modifiers={[font({ size: 12 }), foregroundStyle('#3C3C43')]}>
+        {props.message ?? 'Hello Expo UI Compact'}
+      </Text>
+    </VStack>
+  );
+}
+
+export const helloExpoUiCompact = createTarget(
+  'HelloExpoUiCompact',
+  HelloExpoUiCompactLayout
+);
+
 /** Multi-slot expo-ui Live Activity (WidgetLiveActivity blob path). */
 export const helloExpoUiLiveActivity = createLiveActivityLayout(
   'HelloExpoUi',

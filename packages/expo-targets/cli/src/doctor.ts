@@ -13,6 +13,7 @@ import { checkNameSync } from './checks/nameSync';
 import { checkPlugin } from './checks/plugin';
 import { warnSealedZone } from './checks/sealedZone';
 import { checkUiMode } from './checks/uiMode';
+import { warnUnusedWidgetBundle } from './checks/unusedWidgetBundle';
 import { warnExtensionBundleExport } from './checks/updateScript';
 import { loadProject } from './project';
 import type { CheckResult } from './types';
@@ -42,6 +43,7 @@ function collectFailures(ctx: ReturnType<typeof loadProject>): CheckResult[] {
 
 function collectWarnings(ctx: ReturnType<typeof loadProject>): CheckResult[] {
   return [
+    ...warnUnusedWidgetBundle(ctx),
     ...warnSealedZone(ctx),
     ...warnDualWidgets(ctx),
     ...checkUiMode(ctx),

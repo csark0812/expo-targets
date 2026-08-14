@@ -97,6 +97,7 @@ export type SwiftTemplatePlan =
         name: string;
         includeLiveActivity?: boolean;
         configurable?: boolean;
+        widgets?: { name: string; configurable?: boolean }[];
       };
     };
 

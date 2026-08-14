@@ -1,3 +1,5 @@
+import { resolveLiveActivityConfig } from '../ios/utils/resolveIosKinds';
+
 export type LiveActivityFieldType = 'string' | 'double' | 'int' | 'bool';
 
 export interface RuntimeTargetConfig {
@@ -12,6 +14,7 @@ export interface RuntimeTargetConfig {
     contentState?: Record<string, LiveActivityFieldType>;
   };
   ios?: {
+    kinds?: import('../config').IosKindConfig[];
     intents?: { ui?: boolean | { name?: string } };
     wallet?: { ui?: boolean | { name?: string } };
   };
@@ -68,7 +71,12 @@ export function collectRuntimeConfigs(
 
   for (const { config: evaluatedConfig } of targets) {
     const appGroup = resolveAppGroup(evaluatedConfig, expoConfig);
-    const withGroup = { ...evaluatedConfig, appGroup };
+    const liveActivity = resolveLiveActivityConfig(evaluatedConfig);
+    const withGroup = {
+      ...evaluatedConfig,
+      appGroup,
+      liveActivity: liveActivity ?? evaluatedConfig.liveActivity,
+    };
 
     if (evaluatedConfig.type === 'intent') {
       pushCompanionUi({

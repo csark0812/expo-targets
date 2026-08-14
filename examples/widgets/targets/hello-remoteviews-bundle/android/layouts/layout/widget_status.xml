@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="#FFE8F0FE">
+    <TextView
+        android:id="@+id/widget_status_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Hello Status"
+        android:textStyle="bold"
+        android:textSize="15sp"
+        android:textColor="#FF1A73E8" />
+    <TextView
+        android:id="@+id/widget_status_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="No status yet"
+        android:textSize="13sp"
+        android:textColor="#FF3C3C43" />
+</LinearLayout>

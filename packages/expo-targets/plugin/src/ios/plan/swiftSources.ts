@@ -2,6 +2,11 @@ import path from 'node:path';
 
 import { resolveUiMode } from '../../domain/uiMode';
 import type { TargetWorkspace } from '../observe/workspace';
+import {
+  hasExplicitGalleryKinds,
+  resolveGalleryWidgetKinds,
+  resolveLiveActivityConfig,
+} from '../utils/resolveIosKinds';
 import type {
   IOSTargetProps,
   SwiftFilePlan,
@@ -61,7 +66,15 @@ function ensureNamed(files: string[], name: string): void {
 
 function resolveEntryOnlySwiftFiles(props: IOSTargetProps): string[] {
   if (isExpoUiWidget(props)) {
-    return [`${props.name}.swift`, `${props.name}Bundle.swift`];
+    const kinds = resolveGalleryWidgetKinds({
+      targetName: props.name,
+      displayName: props.displayName,
+      ios: props,
+    });
+    return [
+      ...kinds.map((kind) => `${kind.name}.swift`),
+      `${props.name}Bundle.swift`,
+    ];
   }
   if (props.type === 'messages') {
     return [MESSAGES_VIEW_CONTROLLER, REACT_NATIVE_VIEW_CONTROLLER];
@@ -80,6 +93,13 @@ function resolveSwiftFileNames(
 
   if (props.type === 'safari') {
     ensureNamed(files, SAFARI_HANDLER);
+    return files;
+  }
+
+  if (isExpoUiWidget(props) && props.entry) {
+    for (const name of resolveEntryOnlySwiftFiles(props)) {
+      ensureNamed(files, name);
+    }
     return files;
   }
 
@@ -182,6 +202,64 @@ function planUserFile({
   return { file, sourcePath };
 }
 
+function planExpoUiKindFile(
+  file: string,
+  workspace: TargetWorkspace,
+  kind: ReturnType<typeof resolveGalleryWidgetKinds>[number]
+): UnresolvedSwiftFilePlan {
+  return planGeneratedFile({
+    file,
+    fileName: `${kind.name}.swift`,
+    hasUserFile: workspace.swiftFiles.some((f) =>
+      isNamed(f, `${kind.name}.swift`)
+    ),
+    workspace,
+    template: {
+      template: 'expoUiWidget',
+      options: {
+        name: kind.name,
+        displayName: kind.displayName,
+        description:
+          kind.description ??
+          (kind.displayName ? `${kind.displayName} (expo-ui)` : undefined),
+        supportedFamilies: kind.supportedFamilies,
+        contentMarginsDisabled: kind.contentMarginsDisabled,
+        configuration: kind.configuration,
+      },
+    },
+  });
+}
+
+function planExpoUiBundleFile(opts: {
+  file: string;
+  workspace: TargetWorkspace;
+  props: IOSTargetProps;
+  kinds: ReturnType<typeof resolveGalleryWidgetKinds>;
+}): UnresolvedSwiftFilePlan {
+  const { file, workspace, props, kinds } = opts;
+  const forceSealedBundle = hasExplicitGalleryKinds(props);
+  return planGeneratedFile({
+    file,
+    fileName: `${props.name}Bundle.swift`,
+    hasUserFile:
+      !forceSealedBundle &&
+      workspace.swiftFiles.some((f) => isNamed(f, `${props.name}Bundle.swift`)),
+    workspace,
+    template: {
+      template: 'expoUiWidgetBundle',
+      options: {
+        name: props.name,
+        widgets: kinds.map((row) => ({
+          name: row.name,
+          configurable: Boolean(row.configuration),
+        })),
+        includeLiveActivity: Boolean(resolveLiveActivityConfig({ ios: props })),
+        configurable: kinds.some((row) => Boolean(row.configuration)),
+      },
+    },
+  });
+}
+
 function planExpoUiWidgetSwiftFile({
   file,
   workspace,
@@ -195,47 +273,17 @@ function planExpoUiWidgetSwiftFile({
     return;
   }
 
-  if (isNamed(file, `${props.name}.swift`)) {
-    return planGeneratedFile({
-      file,
-      fileName: `${props.name}.swift`,
-      hasUserFile: workspace.swiftFiles.some((f) =>
-        isNamed(f, `${props.name}.swift`)
-      ),
-      workspace,
-      template: {
-        template: 'expoUiWidget',
-        options: {
-          name: props.name,
-          displayName: props.displayName,
-          description: props.displayName
-            ? `${props.displayName} (expo-ui)`
-            : undefined,
-          supportedFamilies: props.supportedFamilies,
-          contentMarginsDisabled: props.contentMarginsDisabled,
-          configuration: props.configuration,
-        },
-      },
-    });
+  const kinds = resolveGalleryWidgetKinds({
+    targetName: props.name,
+    displayName: props.displayName,
+    ios: props,
+  });
+  const kind = kinds.find((row) => isNamed(file, `${row.name}.swift`));
+  if (kind) {
+    return planExpoUiKindFile(file, workspace, kind);
   }
-
   if (isNamed(file, `${props.name}Bundle.swift`)) {
-    return planGeneratedFile({
-      file,
-      fileName: `${props.name}Bundle.swift`,
-      hasUserFile: workspace.swiftFiles.some((f) =>
-        isNamed(f, `${props.name}Bundle.swift`)
-      ),
-      workspace,
-      template: {
-        template: 'expoUiWidgetBundle',
-        options: {
-          name: props.name,
-          includeLiveActivity: Boolean(props.liveActivity),
-          configurable: Boolean(props.configuration),
-        },
-      },
-    });
+    return planExpoUiBundleFile({ file, workspace, props, kinds });
   }
 }
 

@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'bun:test';
 
-import { generateExpoUiWidgetSwift } from './expoUiWidgetSwift';
+import {
+  generateExpoUiWidgetBundleSwift,
+  generateExpoUiWidgetSwift,
+} from './expoUiWidgetSwift';
 
 describe('generateExpoUiWidgetSwift', () => {
   test('static configuration by default', () => {
@@ -28,5 +31,18 @@ describe('generateExpoUiWidgetSwift', () => {
     expect(src).toContain('HelloExpoUiConfigurationAppIntent');
     expect(src).toContain('env["configuration"]');
     expect(src).toContain('"listId"');
+  });
+});
+
+describe('generateExpoUiWidgetBundleSwift', () => {
+  test('lists every gallery kind plus WidgetLiveActivity', () => {
+    const src = generateExpoUiWidgetBundleSwift({
+      name: 'HomescreenWidgets',
+      widgets: [{ name: 'HomescreenWidgets' }, { name: 'LockScreenWidgets' }],
+      includeLiveActivity: true,
+    });
+    expect(src).toContain('HomescreenWidgets()');
+    expect(src).toContain('LockScreenWidgets()');
+    expect(src).toContain('WidgetLiveActivity()');
   });
 });

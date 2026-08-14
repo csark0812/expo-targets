@@ -6,6 +6,7 @@ import {
   dismissSystemAlerts,
   findNamedViaPointProbe,
   flattenLabels,
+  findSpringBoardHostIcon,
   hostReadyTestId,
   sleep,
   tapCenter,
@@ -31,24 +32,7 @@ async function findSpringBoardHost(
   device: DeviceSession,
   names: string[],
 ): Promise<AccessibilityNode> {
-  for (let page = 0; page < 4; page++) {
-    try {
-      return await waitForNamed(device, names, { timeoutMs: 2_500 });
-    } catch {
-      await device.swipe({
-        xStart: 360,
-        yStart: 400,
-        xEnd: 60,
-        yEnd: 400,
-        duration: 0.3,
-      });
-      await sleep(500);
-    }
-  }
-  const tree = await device.accessibilityTree();
-  throw new Error(
-    `host icon not on SpringBoard; labels=${flattenLabels(tree).slice(0, 60).join(", ")}`,
-  );
+  return findSpringBoardHostIcon(device, names);
 }
 
 /**

@@ -4,14 +4,17 @@
   "displayName": "Hello Widget",
   "platforms": ["ios", "android"],
   "appGroup": "group.com.expotargets.example.widgets",
-  "liveActivity": {
-    "attributesName": "HelloWidgetAttributes",
-    "static": { "title": "string" },
-    "contentState": { "status": "string" }
-  },
   "ios": {
     "bundleIdentifier": "com.expotargets.example.widgets.hello",
     "displayName": "Hello Widget",
+    "kinds": [
+      {
+        "type": "live-activity",
+        "attributesName": "HelloWidgetAttributes",
+        "static": { "title": "string" },
+        "contentState": { "status": "string" }
+      }
+    ],
     "colors": {
       "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" },
       "BackgroundColor": { "light": "#F2F2F7", "dark": "#1C1C1E" },
