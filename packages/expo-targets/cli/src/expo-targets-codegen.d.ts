@@ -13,8 +13,12 @@ declare module 'expo-targets/codegen' {
       contentState?: Record<string, LiveActivityFieldType>;
     };
     ios?: {
+      kinds?: Array<{ name?: string }>;
       intents?: { ui?: boolean | { name?: string } };
       wallet?: { ui?: boolean | { name?: string } };
+    };
+    android?: {
+      providers?: Array<{ name?: string }>;
     };
   }
 
@@ -31,6 +35,9 @@ declare module 'expo-targets/codegen' {
     projectRoot: string,
     configs: Array<{
       name: string;
+      type?: string;
+      ios?: RuntimeTargetConfig['ios'];
+      android?: RuntimeTargetConfig['android'];
       widgetKinds?: string[];
       liveActivity?: {
         attributesName?: string;
