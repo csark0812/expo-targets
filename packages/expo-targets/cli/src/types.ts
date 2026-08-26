@@ -19,6 +19,7 @@ export interface TargetConfig {
   excludedPackages?: string[];
   ios?: {
     kinds?: { type?: string; name?: string }[];
+    liveActivity?: { attributesName?: string };
     intents?: { ui?: boolean | { name?: string } };
     wallet?: { ui?: boolean | { name?: string } };
   };

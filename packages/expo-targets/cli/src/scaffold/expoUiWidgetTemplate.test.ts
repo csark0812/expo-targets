@@ -44,8 +44,8 @@ describe('generateConfig expo-ui widget', () => {
   });
 });
 
-describe('generateConfig live-activity kinds', () => {
-  test('live-activity writes kinds and moves expo-ui configuration onto the widget row', () => {
+describe('generateConfig live-activity sibling', () => {
+  test('expo-ui live-activity writes ios.liveActivity and keeps configuration off kinds', () => {
     const json = JSON.parse(
       generateConfig({
         type: 'widget',
@@ -58,34 +58,18 @@ describe('generateConfig live-activity kinds', () => {
         appGroup: 'group.test',
       })
     );
-    expect(json.ios.configuration).toBeUndefined();
-    expect(json.ios.kinds).toEqual([
-      {
-        name: 'MyWidget',
-        displayName: 'My Widget',
-        configuration: {
-          title: 'My Widget Configuration',
-          parameters: {
-            listId: {
-              title: 'List',
-              type: 'string',
-              default: 'default',
-            },
-          },
-        },
-      },
-      {
-        type: 'live-activity',
-        attributesName: 'MyWidgetAttributes',
-        static: { title: 'string' },
-        contentState: { status: 'string' },
-      },
-    ]);
+    expect(json.ios.kinds).toBeUndefined();
+    expect(json.ios.configuration.parameters.listId.type).toBe('string');
+    expect(json.ios.liveActivity).toEqual({
+      attributesName: 'MyWidgetAttributes',
+      static: { title: 'string' },
+      contentState: { status: 'string' },
+    });
   });
 });
 
 describe('generateConfig native live-activity', () => {
-  test('native live-activity kinds omit a gallery widget row', () => {
+  test('native live-activity writes ios.liveActivity without kinds', () => {
     const json = JSON.parse(
       generateConfig({
         type: 'widget',
@@ -97,13 +81,11 @@ describe('generateConfig native live-activity', () => {
         appGroup: 'group.test',
       })
     );
-    expect(json.ios.kinds).toEqual([
-      {
-        type: 'live-activity',
-        attributesName: 'MyWidgetAttributes',
-        static: { title: 'string' },
-        contentState: { status: 'string' },
-      },
-    ]);
+    expect(json.ios.kinds).toBeUndefined();
+    expect(json.ios.liveActivity).toEqual({
+      attributesName: 'MyWidgetAttributes',
+      static: { title: 'string' },
+      contentState: { status: 'string' },
+    });
   });
 });

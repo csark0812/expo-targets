@@ -8,14 +8,11 @@
     "bundleIdentifier": "com.expotargets.example.trick.widgets",
     "displayName": "ET Trick Widget",
     "deploymentTarget": "18.0",
-    "kinds": [
-      {
-        "type": "live-activity",
-        "attributesName": "TrickActivityAttributes",
-        "static": { "title": "string" },
-        "contentState": { "status": "string" }
-      }
-    ],
+    "liveActivity": {
+      "attributesName": "TrickActivityAttributes",
+      "static": { "title": "string" },
+      "contentState": { "status": "string" }
+    },
     "colors": {
       "AccentColor": { "light": "#2F6BFF", "dark": "#5B8CFF" },
       "BackgroundColor": { "light": "#0B1220", "dark": "#0B1220" },

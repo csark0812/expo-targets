@@ -32,4 +32,25 @@ describe('collectRuntimeConfigs', () => {
     );
     expect(configs[0]?.appGroup).toBe('group.com.example.app');
   });
+
+  test('copies ios.liveActivity onto the runtime row', () => {
+    const configs = collectRuntimeConfigs(
+      [
+        {
+          config: {
+            name: 'WeatherWidget',
+            type: 'widget',
+            ios: {
+              liveActivity: {
+                attributesName: 'WeatherAttributes',
+                contentState: { temp: 'double' },
+              },
+            },
+          },
+        },
+      ],
+      {}
+    );
+    expect(configs[0]?.liveActivity?.attributesName).toBe('WeatherAttributes');
+  });
 });

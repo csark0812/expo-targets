@@ -1,5 +1,4 @@
 import type {
-  IosKindConfig,
   IosLiveActivityKindConfig,
   IosWidgetKindConfig,
   LiveActivityConfig,
@@ -7,18 +6,21 @@ import type {
   WidgetFamily,
 } from '../../config';
 
+type KindRow = IosWidgetKindConfig | IosLiveActivityKindConfig;
+
 export function isLiveActivityKind(
-  kind: IosKindConfig
+  kind: KindRow
 ): kind is IosLiveActivityKindConfig {
   return kind.type === 'live-activity';
 }
 
-export function isWidgetKind(kind: IosKindConfig): kind is IosWidgetKindConfig {
+export function isWidgetKind(kind: KindRow): kind is IosWidgetKindConfig {
   return kind.type !== 'live-activity';
 }
 
 type IosKindSource = {
-  kinds?: IosKindConfig[];
+  kinds?: KindRow[];
+  liveActivity?: LiveActivityConfig;
   displayName?: string;
   supportedFamilies?: WidgetFamily[];
   contentMarginsDisabled?: boolean;
@@ -40,7 +42,7 @@ export type ResolvedIosWidgetKind = {
   configuration?: WidgetConfiguration;
 };
 
-function explicitKinds(ios?: IosKindSource): IosKindConfig[] | undefined {
+function explicitKinds(ios?: IosKindSource): KindRow[] | undefined {
   const listed = ios?.kinds;
   if (!listed || listed.length === 0) {
     return;
@@ -48,34 +50,27 @@ function explicitKinds(ios?: IosKindSource): IosKindConfig[] | undefined {
   return listed;
 }
 
+function assertNoLiveActivityKinds(ios?: IosKindSource): void {
+  if ((explicitKinds(ios) ?? []).some(isLiveActivityKind)) {
+    throw new Error(
+      'ios.kinds cannot contain { "type": "live-activity" }. Set ios.liveActivity instead.'
+    );
+  }
+}
+
 export function resolveLiveActivityConfig(input: {
   ios?: IosKindSource;
 }): LiveActivityConfig | undefined {
-  const listed = explicitKinds(input.ios);
-  if (!listed) {
-    return;
+  assertNoLiveActivityKinds(input.ios);
+  const sibling = input.ios?.liveActivity;
+  if (sibling?.attributesName) {
+    return sibling;
   }
-  const live = listed.filter(isLiveActivityKind);
-  if (live.length > 1) {
-    throw new Error(
-      'ios.kinds may contain at most one { "type": "live-activity" } row'
-    );
-  }
-  const row = live[0];
-  if (!row) {
-    return;
-  }
-  return {
-    attributesName: row.attributesName,
-    static: row.static,
-    contentState: row.contentState,
-    pushType: row.pushType,
-  };
 }
 
 function widgetRowsForTarget(
   input: ResolveIosKindsInput,
-  listed: IosKindConfig[] | undefined
+  listed: KindRow[] | undefined
 ): IosWidgetKindConfig[] {
   if (listed) {
     return listed.filter(isWidgetKind);
@@ -92,7 +87,7 @@ function resolveOneGalleryKind(opts: {
   row: IosWidgetKindConfig;
   ios: IosKindSource;
   input: ResolveIosKindsInput;
-  listed: IosKindConfig[] | undefined;
+  listed: KindRow[] | undefined;
 }): ResolvedIosWidgetKind {
   const { row, ios, input, listed } = opts;
   return {
@@ -113,6 +108,7 @@ export function resolveGalleryWidgetKinds(
   input: ResolveIosKindsInput
 ): ResolvedIosWidgetKind[] {
   const ios = input.ios || {};
+  assertNoLiveActivityKinds(ios);
   const listed = explicitKinds(ios);
   const widgetRows = widgetRowsForTarget(input, listed);
   const seen = new Set<string>();

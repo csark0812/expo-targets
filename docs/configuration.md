@@ -516,14 +516,13 @@ widget.setData(
   "ios": {
     "deploymentTarget": "14.0",
     "kinds": [
-      { "name": "WeatherWidget", "displayName": "Weather" },
-      {
-        "type": "live-activity",
-        "attributesName": "WeatherAttributes",
-        "static": { "location": "string" },
-        "contentState": { "temp": "double", "summary": "string" }
-      }
+      { "name": "WeatherWidget", "displayName": "Weather" }
     ],
+    "liveActivity": {
+      "attributesName": "WeatherAttributes",
+      "static": { "location": "string" },
+      "contentState": { "temp": "double", "summary": "string" }
+    },
     "colors": {
       "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" }
     }
@@ -531,7 +530,7 @@ widget.setData(
 }
 ```
 
-`ios.kinds` lists WidgetKit picker products (`name` matches `createTarget`). `supportedFamilies` on a kind is sizes of that one picker row, not extra products. A `{ "type": "live-activity" }` row holds `attributesName` / `static` / `contentState` / `pushType` (at most one). That row drives sealed CNG for native widgets and `WidgetLiveActivity()` on expo-ui Bundles. Ambient TypeScript payload types still land in `.expo/types/expo-targets.d.ts`. Host JS: `LiveActivity.create('WeatherAttributes')`. See [api.md](./api.md) and [widgets.md](./widgets.md).
+`ios.kinds` lists WidgetKit picker products (`name` matches `createTarget`). `supportedFamilies` on a kind is sizes of that one picker row, not extra products. `ios.liveActivity` holds `attributesName` / `static` / `contentState` / `pushType` (at most one per widget target). That object drives sealed CNG for native widgets and `WidgetLiveActivity()` on expo-ui Bundles. Ambient TypeScript payload types still land in `.expo/types/expo-targets.d.ts`. Host JS: `LiveActivity.create('WeatherAttributes')`. See [api.md](./api.md) and [widgets.md](./widgets.md).
 
 ### File Provider domain (iOS)
 
@@ -917,7 +916,7 @@ export default function (config: ExpoConfig) {
       // Inherit deployment target from main app
       deploymentTarget: config.ios?.deploymentTarget || "14.0",
     },
-  };
+  } satisfies import("expo-targets").TargetConfig;
 }
 ```
 
@@ -935,7 +934,7 @@ export default function (config: ExpoConfig) {
 - `config.android?.package` — Your app's Android package name
 - Any other fields from your Expo config
 
-**Note:** Dynamic configs (`.ts` or `.js`) are processed by expo-targets during prebuild. TypeScript is supported without extra configuration. The plugin handles transpilation.
+**Note:** Dynamic configs (`.ts` or `.js`) are processed by expo-targets during prebuild. TypeScript is supported without extra configuration. The plugin handles transpilation. Use `satisfies TargetConfig` (or a typed function return) for editor checks. `expo-target.config.json` is plain JSON. It has no types unless you add a JSON Schema. This package does not ship a schema yet.
 
 ---
 

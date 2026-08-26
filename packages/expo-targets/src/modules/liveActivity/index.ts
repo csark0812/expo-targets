@@ -78,7 +78,7 @@ function resolveMatch(attributesName: string): {
     throw new Error(
       `[expo-targets] Unknown Live Activity attributesName "${attributesName}". ` +
         `Configured: ${names || '(none)'}. ` +
-        `Add a { "type": "live-activity", "attributesName": "..." } row to ios.kinds.`
+        `Set ios.liveActivity.attributesName in expo-target.config.json.`
     );
   }
   return matches[0];

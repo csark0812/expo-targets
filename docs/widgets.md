@@ -57,14 +57,13 @@ Host CNG deletes only root-level `*.swift` under `ExpoTargetsGenerated/`. It nev
   "name": "OrderWidget",
   "ios": {
     "kinds": [
-      { "name": "OrderWidget" },
-      {
-        "type": "live-activity",
-        "attributesName": "OrderAttributes",
-        "static": { "orderId": "string" },
-        "contentState": { "status": "string", "progress": "double" }
-      }
-    ]
+      { "name": "OrderWidget" }
+    ],
+    "liveActivity": {
+      "attributesName": "OrderAttributes",
+      "static": { "orderId": "string" },
+      "contentState": { "status": "string", "progress": "double" }
+    }
   }
 }
 ```
@@ -99,7 +98,7 @@ npx expo-targets add
 - **native (default)** — SwiftUI / Glance deepen under `targets/<name>/ios|android/`.
 - **expo-ui** — writes `entry` + `createTarget(name, Layout)` with the `'widget'` directive; CNG emits `ExpoUiWidget` (+ optional AppIntentConfiguration / `WidgetLiveActivity`).
 - **Configurable (Edit Widget)** — native scaffolds `AppIntentConfiguration` under user deepen; expo-ui uses `ios.configuration` → sealed AppIntent + `environment.configuration` in Layout.
-- **Live Activity** — writes a `{ "type": "live-activity" }` row in `ios.kinds`. Native: `LiveActivity.swift` deepen + typed CNG attributes. Expo-ui: same entry registers `createLiveActivityLayout` + Bundle includes `WidgetLiveActivity()` (blob attrs; skip typed CNG).
+- **Live Activity** — writes `ios.liveActivity`. Native: `LiveActivity.swift` deepen + typed CNG attributes. Expo-ui: same entry registers `createLiveActivityLayout` + Bundle includes `WidgetLiveActivity()` (blob attrs; skip typed CNG).
 
 See [`examples/trick`](../examples/trick) for a full host + widget pairing and
 [`examples/widgets`](../examples/widgets) for static, expo-ui, and RemoteViews examples.
@@ -174,7 +173,7 @@ Use the same `appGroup` as `expo-target.config.json`.
 
 - `addUserInteractionListener` — widget Button presses (iOS AppIntent → host; Android Glance/RemoteViews Bump → `ExpoTargetsStorage` `onUserInteraction` with the same event shape).
 - `createLiveActivityLayout(name, slots)` — multi-slot LA UI in the same entry as the home Layout; `LiveActivity.create(attributesName)` still starts/updates/ends.
-- `ios.kinds` `{ type: "live-activity", pushType: "token" }` — native CNG requests ActivityKit push tokens; `addPushToStartTokenListener` for push-to-start. Simulator cannot prove APNs — Devicewright CLAIMS for DI / push / StandBy.
+- `ios.liveActivity.pushType: "token"` — native CNG requests ActivityKit push tokens; `addPushToStartTokenListener` for push-to-start. Simulator cannot prove APNs — Devicewright CLAIMS for DI / push / StandBy.
 
 ## Android widgets
 
@@ -186,7 +185,7 @@ Android home-screen widgets (Glance / RemoteViews) are **first-class** in expo-t
 - Seeded `message` + `taps` from host `setData`
 - `Bump` button → increments taps, refreshes the tile, emits `addUserInteractionListener` (`source` / `target`)
 
-See `examples/widgets` (`HelloExpoUi` has two expo-ui kinds plus a live-activity row; `HelloRemoteViewsBundle` has two Android providers). Scaffolded Glance targets get the same chrome + Bump stub.
+See `examples/widgets` (`HelloExpoUi` has two expo-ui kinds plus `ios.liveActivity`; `HelloRemoteViewsBundle` has two Android providers). Scaffolded Glance targets get the same chrome + Bump stub.
 
 One `type: widget` folder can list many iOS picker products in `ios.kinds` (one `.appex`) and many Android `AppWidgetProvider` rows in `android.providers[]`. `supportedFamilies` on a kind is sizes of that row, not extra products.
 
@@ -195,7 +194,7 @@ One generator per app if official `expo-widgets` Android lands. ActivityKit / Dy
 ## Related
 
 - [api.md](./api.md) — `LiveActivity` runtime
-- [configuration.md](./configuration.md) — `ios.kinds` schema
+- [configuration.md](./configuration.md) — `ios.kinds` and `ios.liveActivity` schema
 - [limits.md](./limits.md) — lib floor vs Apple gates
 - [deprecations.md](./deprecations.md) — roadmap policy
 - [getting-started.md](./getting-started.md)

@@ -460,7 +460,7 @@ await ContentBlocker.reload({ targetName: "MyBlocker" });
 
 ## LiveActivity
 
-Start, update, or end Live Activities. `attributesName` must match a `{ "type": "live-activity" }` row in `ios.kinds`. Unknown names throw with the configured list. Prefer `LiveActivity.create(name)`. This is a widgets-like factory. Also exported as `createLiveActivity(name)`.
+Start, update, or end Live Activities. `attributesName` must match `ios.liveActivity.attributesName` on a `type: widget` target. Unknown names throw with the configured list. Prefer `LiveActivity.create(name)`. This is a widgets-like factory. Also exported as `createLiveActivity(name)`.
 
 - **iOS:** ActivityKit (16.2+). Attributes and the host bridge are CNG into `ios/*/ExpoTargetsGenerated/` (gitignored). Activity UI stays under `targets/<widget>/ios/`.
 - **Android:** Ongoing `NotificationCompat` helper with the same JS surface. No Dynamic Island, StandBy, or ActivityKit push-to-start.
@@ -610,7 +610,7 @@ npx expo-targets add --no-wire   # scaffold only
 2. **Name:** Target name in kebab-case (e.g., `my-widget`)
 3. **Platforms:** iOS (Android widgets bridge-grade)
 4. **Use React Native?** (share/action/clip/messages/notification-content/safari when applicable)
-5. **Live Activity?** (widget only) — Emits an `ios.kinds` live-activity row + one-shot UI bootstrap
+5. **Live Activity?** (widget only) — Emits `ios.liveActivity` + one-shot UI bootstrap
 
 Wires the host by default (plugin, App Groups, Metro). Dynamic `app.config.ts` or `app.config.js` gets a snippet warning instead of a hard fail. Finish with `npx expo-targets doctor`. After scaffold, `generate` writes `.expo/types/expo-targets.d.ts`.
 
@@ -776,7 +776,7 @@ interface NonExtensionTarget extends BaseTarget {
 | -------------------------- | ---------------------------------- | ------------------------------------------------------------ |
 | `Target "X" not found`     | Target name doesn't match config   | Check `createTarget('X')` matches `"name"` in config exactly |
 | `App Group not configured` | Missing `appGroup` in config       | Add `appGroup` to `expo-target.config.json` or `app.json`    |
-| `Unknown Live Activity attributesName` | Name not in `ios.kinds` live-activity row | Use a configured `attributesName` / `LiveActivity.create` |
+| `Unknown Live Activity attributesName` | Name not in `ios.liveActivity` | Use a configured `attributesName` / `LiveActivity.create` |
 | `fileProviderDomain` missing | FP target lacks domain config      | Add `ios.fileProviderDomain` to the file-provider config     |
 | `No targets config found`  | Running in wrong context           | Run from the app or extension, not a unit test               |
 | `close is not a function`  | Calling `close()` on non-extension | Only share/action/clip targets have `close()`                |

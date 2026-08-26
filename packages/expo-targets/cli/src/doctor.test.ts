@@ -5,6 +5,7 @@ import * as path from 'node:path';
 
 import { checkAppGroups } from './checks/appGroups';
 import { checkEntries } from './checks/entries';
+import { checkLiveActivityKind } from './checks/liveActivityKind';
 import { checkMetro } from './checks/metro';
 import { checkNameSync } from './checks/nameSync';
 import { checkPlugin } from './checks/plugin';
@@ -288,5 +289,42 @@ describe('warnUnusedWidgetBundle', () => {
       'targets/widget/ios/HomeBundle.swift': 'struct HomeBundle {}\n',
     });
     expect(warnUnusedWidgetBundle(loadProject(root))).toHaveLength(0);
+  });
+});
+
+describe('checkLiveActivityKind', () => {
+  test('fails leftover live-activity kinds', () => {
+    const root = makeProject({
+      'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
+      'targets/widget/expo-target.config.json': JSON.stringify({
+        type: 'widget',
+        name: 'Home',
+        platforms: ['ios'],
+        ios: {
+          kinds: [{ type: 'live-activity', attributesName: 'HomeAttributes' }],
+        },
+      }),
+    });
+    const errors = checkLiveActivityKind(loadProject(root));
+    expect(errors[0]?.level).toBe('error');
+    expect(errors[0]?.message).toContain('ios.liveActivity');
+  });
+
+  test('skips when Live Activity is only on ios.liveActivity', () => {
+    const root = makeProject({
+      'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
+      'targets/widget/expo-target.config.json': JSON.stringify({
+        type: 'widget',
+        name: 'Home',
+        platforms: ['ios'],
+        ios: {
+          liveActivity: {
+            attributesName: 'HomeAttributes',
+            contentState: { status: 'string' },
+          },
+        },
+      }),
+    });
+    expect(checkLiveActivityKind(loadProject(root))).toHaveLength(0);
   });
 });
