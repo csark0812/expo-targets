@@ -6,6 +6,8 @@ import androidx.compose.ui.unit.dp
 import androidx.glance.Button
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.Image
+import androidx.glance.ImageProvider
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.provideContent
@@ -15,7 +17,9 @@ import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
+import androidx.glance.layout.size
 import androidx.glance.text.Text
+import com.expotargets.example.widgets.R
 import expo.modules.targets.ExpoTargetsWidgetInteraction
 import expo.modules.targets.ExpoTargetsWidgetUpdateReceiver
 
@@ -49,6 +53,11 @@ class HelloWidget : GlanceAppWidget() {
           GlanceModifier.fillMaxSize().background(Color.White).padding(16.dp),
       ) {
         Text(text = "Hello Widget")
+        Image(
+          provider = ImageProvider(R.drawable.hellowidget_logo),
+          contentDescription = "Logo",
+          modifier = GlanceModifier.size(32.dp),
+        )
         Text(text = message)
         Text(text = "taps:$taps")
         Spacer(modifier = GlanceModifier.height(8.dp))

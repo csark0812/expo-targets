@@ -94,9 +94,10 @@ struct HelloWidgetView: View {
 
     private var content: some View {
         VStack(spacing: 12) {
-            Image(systemName: "star.fill")
-                .font(.system(size: 32))
-                .foregroundColor(accent)
+            Image("Logo", bundle: .main)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 32, height: 32)
             Text(entry.message)
                 .font(.body)
                 .fontWeight(.semibold)
@@ -105,7 +106,7 @@ struct HelloWidgetView: View {
                 .lineLimit(3)
             Text(entry.familyMarker)
                 .font(.caption2)
-                .foregroundColor(textPrimary.opacity(0.7))
+                .foregroundColor(accent)
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)

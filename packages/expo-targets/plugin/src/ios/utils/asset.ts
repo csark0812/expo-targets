@@ -89,37 +89,64 @@ export function createColorset({
 }
 
 /**
- * Create an empty imageset in Assets.xcassets.
+ * Create an imageset in Assets.xcassets.
+ *
+ * Pass `files` for named scale slots. `imageFilename` still fills only the 1x
+ * slot (empty 2x/3x placeholders) for callers that do not copy pixels yet.
  */
 export function createImageset({
   imagesetPath,
   imageFilename,
+  files,
+  template,
+  preservesVector,
 }: {
   imagesetPath: string;
   imageFilename?: string;
+  files?: { scale: '1x' | '2x' | '3x'; filename: string }[];
+  template?: boolean;
+  preservesVector?: boolean;
 }): void {
   FileUtils.ensureDirectoryExists(imagesetPath);
 
-  const contentsJson: any = {
-    images: [
-      {
-        idiom: 'universal',
-        scale: '1x',
-      },
-      {
-        idiom: 'universal',
-        scale: '2x',
-      },
-      {
-        idiom: 'universal',
-        scale: '3x',
-      },
-    ],
+  const filenameByScale = new Map<string, string>();
+  if (files) {
+    for (const file of files) {
+      filenameByScale.set(file.scale, file.filename);
+    }
+  } else if (imageFilename) {
+    filenameByScale.set('1x', imageFilename);
+  }
+
+  const images = (['1x', '2x', '3x'] as const).map((scale) => {
+    const entry: { idiom: string; scale: string; filename?: string } = {
+      idiom: 'universal',
+      scale,
+    };
+    const filename = filenameByScale.get(scale);
+    if (filename) {
+      entry.filename = filename;
+    }
+    return entry;
+  });
+
+  const contentsJson: {
+    images: typeof images;
+    info: { author: string; version: number };
+    properties?: Record<string, string | boolean>;
+  } = {
+    images,
     info: { author: 'xcode', version: 1 },
   };
 
-  if (imageFilename) {
-    contentsJson.images[0].filename = imageFilename;
+  if (template || preservesVector) {
+    contentsJson.properties = {};
+    if (template) {
+      contentsJson.properties['template-rendering-intent'] = 'template';
+    }
+    if (preservesVector) {
+      contentsJson.properties['preserves-vector-representation'] = true;
+    }
   }
 
   FileUtils.writeFileSafe(

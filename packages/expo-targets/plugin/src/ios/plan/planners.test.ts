@@ -418,6 +418,27 @@ describe('planAssets', () => {
     expect(plan.stickers).toBeUndefined();
   });
 
+  test('plans imagesets from ios.images relative to the target directory', () => {
+    const plan = assetsFor({
+      images: { Logo: './assets/logo.png' },
+    });
+
+    expect(plan.imagesets).toHaveLength(1);
+    expect(plan.imagesets[0]).toMatchObject({
+      name: 'Logo',
+      sourcePath: path.join(PROJECT_ROOT, 'targets/my-share/assets/logo.png'),
+    });
+    expect(plan.imagesets[0].imagesetPath).toBe(
+      path.join(
+        PROJECT_ROOT,
+        'ios',
+        SEALED_BUILD,
+        'Assets.xcassets',
+        'Logo.imageset'
+      )
+    );
+  });
+
   test('copies the user catalog when one exists', () => {
     const plan = assetsFor({}, { hasUserAssets: true });
 

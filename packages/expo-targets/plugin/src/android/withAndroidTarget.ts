@@ -1,10 +1,34 @@
-import type { ConfigPlugin } from '@expo/config-plugins';
+import { type ConfigPlugin, withDangerousMod } from '@expo/config-plugins';
 import type { TargetConfig } from '../config';
+import { generateImageResources } from './generateImageResources';
 import { withAndroidTargetSourceSets } from './targetSourceSets';
 import { withAndroidNotification } from './withAndroidNotification';
 import { withAndroidShareAction } from './withAndroidShareAction';
 import { withAndroidSystemService } from './withAndroidSystemService';
 import { withAndroidWidget } from './withAndroidWidget';
+
+const withAndroidImages: ConfigPlugin<TargetConfig & { directory: string }> = (
+  config,
+  targetConfig
+) => {
+  const images = targetConfig.android?.images;
+  if (!images || Object.keys(images).length === 0) {
+    return config;
+  }
+
+  return withDangerousMod(config, [
+    'android',
+    (cfg) => {
+      generateImageResources({
+        projectRoot: cfg.modRequest.projectRoot,
+        targetDirectory: targetConfig.directory,
+        targetName: targetConfig.name,
+        images,
+      });
+      return cfg;
+    },
+  ]);
+};
 
 /**
  * Main orchestrator for Android target configuration.
@@ -18,7 +42,8 @@ export const withAndroidTarget: ConfigPlugin<
     return config;
   }
 
-  let next = withAndroidTargetSourceSets(config, {
+  let next = withAndroidImages(config, targetConfig);
+  next = withAndroidTargetSourceSets(next, {
     directory: targetConfig.directory,
   });
 

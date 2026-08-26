@@ -228,6 +228,18 @@ export function getTargetColorsetPath({
 }
 
 /**
+ * Get path to an imageset in ExpoTargetsGenerated/<Product>/Assets.xcassets/.
+ */
+export function getTargetImagesetPath({
+  imageName,
+  ...assetsOptions
+}: Parameters<typeof getTargetAssetsPath>[0] & {
+  imageName: string;
+}): string {
+  return path.join(getTargetAssetsPath(assetsOptions), `${imageName}.imageset`);
+}
+
+/**
  * Get path to user's Swift source files in targets/TARGETNAME/ios/.
  * These are referenced in place, not copied.
  */

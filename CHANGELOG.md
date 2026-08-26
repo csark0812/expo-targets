@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Prebuild generates `ios.images` imagesets and `android.images` drawables from a name-to-path map.
 - One `widget` target can list many iOS WidgetKit picker products in `ios.kinds` (one `.appex`) and many Android `AppWidgetProvider` rows in `android.providers[]`.
 - Live Activity config lives on `ios.liveActivity` (`attributesName`, `static`, `contentState`, `pushType`). `ios.kinds` is gallery WidgetKit only. A `{ "type": "live-activity" }` kinds row fails.
 

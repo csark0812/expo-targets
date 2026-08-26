@@ -289,11 +289,28 @@ Color("Background")
 
 ### Images
 
-Reference image assets:
+Paths are relative to the target directory (`targets/<name>/`).
+
+On iOS, prebuild copies each file into a generated `.imageset` in ExpoTargetsGenerated.
+If `logo@2x.png` and `logo@3x.png` are in the same folder as `logo.png`, those scales are included.
+SVG and PDF files use template rendering so SwiftUI can tint them.
+A user imageset of the same name in `targets/<name>/ios/Assets.xcassets` is not replaced.
+
+On Android, prebuild copies each file into `targets/<name>/android/res/drawable*`.
+The resource name is `{sanitizedTarget}_{sanitizedKey}`.
+For `HelloWidget` and `Logo`, Glance loads `R.drawable.hellowidget_logo`.
+If density siblings exist, Android uses `drawable-mdpi`, `drawable-xhdpi`, and `drawable-xxhdpi`.
+Android copies PNG, WebP, JPEG, GIF, and VectorDrawable XML.
+Android does not copy SVG. Use a VectorDrawable XML file, or keep the SVG on iOS only.
 
 ```json
 {
   "ios": {
+    "images": {
+      "Logo": "./assets/logo.png"
+    }
+  },
+  "android": {
     "images": {
       "Logo": "./assets/logo.png"
     }
@@ -305,6 +322,15 @@ Use in Swift:
 
 ```swift
 Image("Logo")
+```
+
+Use in Glance:
+
+```kotlin
+Image(
+    provider = ImageProvider(R.drawable.hellowidget_logo),
+    contentDescription = "Logo",
+)
 ```
 
 ---
@@ -344,6 +370,7 @@ Android widgets are supported with **Glance** (Jetpack Compose) or **RemoteViews
 | `initialLayout`      | `widget_<name>`          | RemoteViews layout resource (no `@layout/` prefix)                  |
 | `providers`          | —                        | Opt-in list of AppWidgetProvider rows. Empty or omitted = 1:1 path  |
 | `colors`             | `{}`                     | Named colors for Android resources                                  |
+| `images`             | `{}`                     | Named images copied into `android/res/drawable*`                    |
 
 When `android.providers` is omitted or empty, the plugin registers one receiver from the scalar fields. The RemoteViews class name stays `{package}.widget.{sanitizedName}.{Pascal}Provider`. The Glance class name stays `{package}.widget.{sanitizedName}.{Pascal}WidgetReceiver`.
 

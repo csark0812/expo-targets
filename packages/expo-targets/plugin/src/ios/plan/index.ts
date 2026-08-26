@@ -28,6 +28,7 @@ export type {
   ColorsetPlan,
   EmbedPlan,
   EntitlementsPlan,
+  ImagesetPlan,
   InfoPlistPlan,
   IOSTargetProps,
   PodfilePlan,

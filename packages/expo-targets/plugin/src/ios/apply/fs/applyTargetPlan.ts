@@ -66,7 +66,7 @@ export function applyFsTargetPlan(
   });
   logger.log(`Prepared ${plan.swiftFiles.length} Swift file(s)`);
 
-  applyAssetPlan(plan.assets);
+  applyAssetPlan(plan.assets, logger);
   if (plan.assets.colorsets.length > 0) {
     logger.log(`Generated ${plan.assets.colorsets.length} color assets`);
   }

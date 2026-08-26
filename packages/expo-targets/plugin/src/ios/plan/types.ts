@@ -120,6 +120,12 @@ export interface ColorsetPlan {
   darkColor?: string;
 }
 
+export interface ImagesetPlan {
+  name: string;
+  imagesetPath: string;
+  sourcePath: string;
+}
+
 export interface StickerAssetPlan {
   sourcePath: string;
   filename: string;
@@ -148,6 +154,7 @@ export interface AssetPlan {
   userAssetsPath: string;
   copyUserAssets: boolean;
   colorsets: ColorsetPlan[];
+  imagesets: ImagesetPlan[];
   stickers?: StickersPlan;
 }
 

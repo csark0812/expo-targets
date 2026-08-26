@@ -531,6 +531,8 @@ export interface AndroidTargetConfig {
   targetCellHeight?: number;
   initialLayout?: string;
   colors?: Record<string, string | Color>;
+  /** Named images copied into `android/res/drawable*` (PNG/WebP/JPEG/GIF or VectorDrawable XML). */
+  images?: Record<string, string>;
   /**
    * Share/action MIME activation (optional). When omitted, plugin uses
    * `ios.activationRules` if present, else text+url defaults.

@@ -6,6 +6,7 @@ import * as Paths from '../utils/paths';
 import type {
   AssetPlan,
   ColorsetPlan,
+  ImagesetPlan,
   IOSTargetProps,
   ProjectPaths,
   StickerPackPlan,
@@ -44,6 +45,39 @@ function planColorsets({
   });
 }
 
+function resolveTargetRelativePath({
+  assetPath,
+  props,
+  paths,
+}: {
+  assetPath: string;
+  props: IOSTargetProps;
+  paths: ProjectPaths;
+}): string {
+  return path.isAbsolute(assetPath)
+    ? assetPath
+    : path.join(paths.projectRoot, props.directory, assetPath);
+}
+
+function planImagesets({
+  props,
+  paths,
+}: {
+  props: IOSTargetProps;
+  paths: ProjectPaths;
+}): ImagesetPlan[] {
+  return Object.entries(props.images || {}).map(([name, assetPath]) => ({
+    name,
+    imagesetPath: Paths.getTargetImagesetPath({
+      platformProjectRoot: paths.platformProjectRoot,
+      projectName: paths.projectName,
+      productName: Paths.sanitizeTargetName(props.displayName || props.name),
+      imageName: name,
+    }),
+    sourcePath: resolveTargetRelativePath({ assetPath, props, paths }),
+  }));
+}
+
 function planStickerPacks({
   props,
   paths,
@@ -61,9 +95,11 @@ function planStickerPacks({
       `${pack.name}.stickerpack`
     );
     const assets = pack.assets.map((assetPath) => {
-      const sourcePath = path.isAbsolute(assetPath)
-        ? assetPath
-        : path.join(paths.projectRoot, props.directory, assetPath);
+      const sourcePath = resolveTargetRelativePath({
+        assetPath,
+        props,
+        paths,
+      });
       const filename = path.basename(assetPath);
       const baseName = path.basename(assetPath, path.extname(assetPath));
 
@@ -93,9 +129,11 @@ function planStickers({
     // Match stickerPacks: paths in expo-target.config.json are relative to the
     // target directory (e.g. targets/stickers/assets/...), not the app root.
     sourceIconPath: props.targetIcon
-      ? path.isAbsolute(props.targetIcon)
-        ? props.targetIcon
-        : path.join(paths.projectRoot, props.directory, props.targetIcon)
+      ? resolveTargetRelativePath({
+          assetPath: props.targetIcon,
+          props,
+          paths,
+        })
       : undefined,
     packs: planStickerPacks({ props, paths, buildAssetsPath }),
   };
@@ -103,7 +141,8 @@ function planStickers({
 
 /**
  * Plan the target's asset catalog: which user assets to copy into the build
- * directory, which color sets to generate, and (for stickers) the sticker packs.
+ * directory, which color and image sets to generate, and (for stickers) the
+ * sticker packs.
  */
 export function planAssets({
   workspace,
@@ -131,6 +170,7 @@ export function planAssets({
     userAssetsPath: workspace.userAssetsPath,
     copyUserAssets: workspace.hasUserAssets,
     colorsets: planColorsets({ props, paths }),
+    imagesets: planImagesets({ props, paths }),
     stickers: isStickers
       ? planStickers({ props, paths, buildAssetsPath })
       : undefined,
