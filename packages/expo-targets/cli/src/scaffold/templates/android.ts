@@ -1,3 +1,13 @@
+import path from 'node:path';
+
+/** Widget Kotlin: targets/<name>/android/<File>.kt. Package line keeps FQCN. */
+export function androidWidgetKtPath(
+  targetDir: string,
+  fileBaseName: string
+): string {
+  return path.join(targetDir, 'android', `${fileBaseName}.kt`);
+}
+
 export function getGlanceWidgetTemplate(options: {
   packageName: string;
   pascalName: string;
@@ -27,7 +37,8 @@ import expo.modules.targets.ExpoTargetsWidgetInteraction
 import expo.modules.targets.ExpoTargetsWidgetUpdateReceiver
 
 /**
- * Glance widget deepen — FQCN must match withAndroidWidget:
+ * Glance widget deepen — file: targets/<name>/android/${pascalName}.kt
+ * FQCN must match withAndroidWidget:
  * {package}.widget.${widgetSegment}.${pascalName}WidgetReceiver
  *
  * Android has no JS layout sandbox: chrome + Bump mirror the iOS expo-ui demo

@@ -13,6 +13,7 @@ import {
 import { resolveAndroidPackage } from './resolveAndroidPackage';
 import { resolveAppGroup } from './resolveAppGroup';
 import {
+  androidWidgetKtPath,
   getGlanceWidgetTemplate,
   getNotificationServiceDeepenTemplate,
   getShareActionActivityTemplate,
@@ -245,17 +246,10 @@ function writeWidgetAndroid(
   }
 ): void {
   const widgetSegment = sanitizeAndroidWidgetSegment(opts.pascalName);
-  const packagePath = opts.packageName.replace(/\./g, '/');
-  const ktDir = path.join(
-    targetDir,
-    'android',
-    packagePath,
-    'widget',
-    widgetSegment
-  );
-  fs.mkdirSync(ktDir, { recursive: true });
+  const ktPath = androidWidgetKtPath(targetDir, opts.pascalName);
+  fs.mkdirSync(path.dirname(ktPath), { recursive: true });
   fs.writeFileSync(
-    path.join(ktDir, `${opts.pascalName}.kt`),
+    ktPath,
     getGlanceWidgetTemplate({
       packageName: opts.packageName,
       pascalName: opts.pascalName,

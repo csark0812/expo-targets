@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Android widget Kotlin lives at `targets/<name>/android/<File>.kt` (same layout as `ios/*.swift`). The `package` line still holds the FQCN.
+
 ### Added
 
 - One `widget` target can list many iOS WidgetKit picker products in `ios.kinds` (one `.appex`) and many Android `AppWidgetProvider` rows in `android.providers[]`.

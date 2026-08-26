@@ -177,7 +177,7 @@ Use the same `appGroup` as `expo-target.config.json`.
 
 ## Android widgets
 
-Android home-screen widgets (Glance / RemoteViews) are **first-class** in expo-targets (Kotlin Compose deepen under `targets/<name>/android/`). Same Devicewright DoD as iOS when green.
+Android home-screen widgets (Glance / RemoteViews) are **first-class** in expo-targets (Kotlin Compose deepen under `targets/<name>/android/*.kt`, same layout as `ios/*.swift`). Same Devicewright DoD as iOS when green.
 
 **Parity with iOS expo-ui is Glance deepen, not a JS sandbox.** App Widget cannot run the `'widget'` layout. The demo contract is:
 

@@ -1,7 +1,17 @@
 import { describe, expect, test } from 'bun:test';
+import path from 'node:path';
 
 import { getExpoUiWidgetTemplate } from './expoUiWidgetTemplate';
 import { generateConfig } from './generateConfig';
+import { androidWidgetKtPath } from './templates/android';
+
+describe('androidWidgetKtPath', () => {
+  test('puts widget Kotlin next to android/, not under a package tree', () => {
+    expect(androidWidgetKtPath('/targets/hello-widget', 'HelloWidget')).toBe(
+      path.join('/targets/hello-widget', 'android', 'HelloWidget.kt')
+    );
+  });
+});
 
 describe('getExpoUiWidgetTemplate', () => {
   test('emits createTarget Layout with widget directive', () => {

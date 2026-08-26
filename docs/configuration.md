@@ -401,7 +401,7 @@ Choose between two Android widget rendering approaches:
 
 ### 2. Create the Glance Widget
 
-Create `targets/my-widget/android/MyWidget.kt`:
+Create `targets/my-widget/android/MyWidget.kt` (flat, like `ios/Widget.swift`). Keep the FQCN in the `package` line. Do not nest `com/…` folders.
 
 ```kotlin
 package com.yourcompany.yourapp.widget
