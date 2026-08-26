@@ -25,6 +25,18 @@ describe('formatTargetsTypesFile names', () => {
     expect(content).not.toContain('displayName');
   });
 
+  test('emits KnownWidgetKinds from widgetKinds config', () => {
+    const content = formatTargetsTypesFile([
+      {
+        name: 'PoplWidgets',
+        widgetKinds: ['HomescreenWidgets', 'LockScreenWidgets'],
+      },
+    ]);
+    expect(content).toContain('interface KnownWidgetKinds');
+    expect(content).toContain('"HomescreenWidgets": true');
+    expect(content).toContain('"LockScreenWidgets": true');
+  });
+
   test('dedupes target names and sorts keys', () => {
     const content = formatTargetsTypesFile([
       { name: 'Zeta' },
@@ -32,7 +44,7 @@ describe('formatTargetsTypesFile names', () => {
       { name: 'Zeta' },
     ]);
     expect(content.indexOf('"Alpha"')).toBeLessThan(content.indexOf('"Zeta"'));
-    expect(content.match(/"Zeta"/g)?.length).toBe(1);
+    expect(content.match(/interface KnownTargets[\s\S]*?"Zeta"/)?.length).toBe(1);
   });
 });
 

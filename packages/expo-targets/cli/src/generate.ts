@@ -1,6 +1,7 @@
 import process from 'node:process';
 import {
   collectRuntimeConfigs,
+  widgetKindNamesForCodegen,
   writeTargetsTypesFile,
 } from 'expo-targets/codegen';
 
@@ -26,6 +27,7 @@ export function runGenerate(projectRoot = process.cwd()): number {
     projectRoot,
     runtimeConfigs.map((cfg) => ({
       name: cfg.name,
+      widgetKinds: widgetKindNamesForCodegen(cfg),
       liveActivity: cfg.liveActivity
         ? {
             attributesName: cfg.liveActivity.attributesName,

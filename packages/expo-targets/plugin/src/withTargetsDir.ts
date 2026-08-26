@@ -6,6 +6,7 @@ import { globSync } from 'glob';
 import { withAndroidTarget } from './android/withAndroidTarget';
 import { withAndroidTargetsConfig } from './android/withAndroidTargetsConfig';
 import { collectRuntimeConfigs } from './codegen/collectRuntimeConfigs';
+import { widgetKindNamesForCodegen } from './codegen/widgetKindNames';
 import {
   type TargetCodegenConfig,
   writeTargetsTypesFile,
@@ -413,6 +414,7 @@ function finalizeTargetsConfig(
       opts.expoConfig
     ).map((cfg) => ({
       name: cfg.name,
+      widgetKinds: widgetKindNamesForCodegen(cfg),
       liveActivity: cfg.liveActivity,
     }));
     writeTargetsTypesFile(opts.projectRoot, codegenConfigs);

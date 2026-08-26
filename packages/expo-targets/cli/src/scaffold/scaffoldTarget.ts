@@ -55,12 +55,20 @@ type TargetPromptResponse = {
   widgetUi?: 'native' | 'expo-ui';
 };
 
-function writeHostHelper(targetDir: string, pascalName: string): void {
-  const indexTs = `import { createTarget } from 'expo-targets';
-
-export const ${pascalToCamel(pascalName)} = createTarget('${pascalName}');
-`;
-  fs.writeFileSync(path.join(targetDir, 'index.ts'), indexTs);
+function writeHostHelper(
+  targetDir: string,
+  pascalName: string,
+  options?: { includeLiveActivity?: boolean; attributesName?: string }
+): void {
+  const camel = pascalToCamel(pascalName);
+  const imports = options?.includeLiveActivity
+    ? "import { LiveActivity, createTarget } from 'expo-targets';"
+    : "import { createTarget } from 'expo-targets';";
+  let body = `\nexport const ${camel} = createTarget('${pascalName}');\n`;
+  if (options?.includeLiveActivity && options.attributesName) {
+    body += `\nexport const ${camel}LiveActivity = LiveActivity.create('${options.attributesName}');\n`;
+  }
+  fs.writeFileSync(path.join(targetDir, 'index.ts'), `${imports}${body}`);
 }
 
 function writeIosFiles(options: {
@@ -384,7 +392,10 @@ function writeScaffoldedTarget(
   const expoUiWidget =
     response.type === 'widget' && response.widgetUi === 'expo-ui';
   if (!(response.useReactNative || expoUiWidget)) {
-    writeHostHelper(targetDir, pascalName);
+    writeHostHelper(targetDir, pascalName, {
+      includeLiveActivity: response.includeLiveActivity,
+      attributesName: `${pascalName}Attributes`,
+    });
   }
 
   return targetDir;

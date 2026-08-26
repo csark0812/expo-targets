@@ -15,6 +15,8 @@ export type LiveActivityFieldType = 'string' | 'double' | 'int' | 'bool';
 
 export interface TargetCodegenConfig {
   name: string;
+  /** Gallery kind / provider names (defaults to folder name when omitted). */
+  widgetKinds?: string[];
   liveActivity?: {
     attributesName?: string;
     static?: Record<string, LiveActivityFieldType>;
@@ -95,6 +97,11 @@ function formatPayloadRegistry(liveActivities: TargetCodegenConfig[]): string {
  */
 export function formatTargetsTypesFile(configs: TargetCodegenConfig[]): string {
   const names = [...new Set(configs.map((c) => c.name).filter(Boolean))].sort();
+  const widgetKindNames = [
+    ...new Set(
+      configs.flatMap((c) => c.widgetKinds ?? (c.name ? [c.name] : [])).filter(Boolean)
+    ),
+  ].sort();
   const liveActivities = configs.filter((c) => c.liveActivity?.attributesName);
   const attributesNames = [
     ...new Set(
@@ -108,6 +115,9 @@ export function formatTargetsTypesFile(configs: TargetCodegenConfig[]): string {
   content += `declare module 'expo-targets' {\n`;
   content += `  interface KnownTargets {\n`;
   content += interfaceMembers(names);
+  content += `  }\n`;
+  content += `  interface KnownWidgetKinds {\n`;
+  content += interfaceMembers(widgetKindNames);
   content += `  }\n`;
   content += `  interface KnownLiveActivityAttributes {\n`;
   content += interfaceMembers(attributesNames);

@@ -10,6 +10,9 @@ export interface KnownTargets {}
 // biome-ignore lint/suspicious/noEmptyInterface: module augmentation target
 export interface KnownLiveActivityAttributes {}
 
+// biome-ignore lint/suspicious/noEmptyInterface: module augmentation target
+export interface KnownWidgetKinds {}
+
 /** Filled by codegen with per-attributesName payload shapes. */
 // biome-ignore lint/suspicious/noEmptyInterface: module augmentation target
 export interface LiveActivityPayloadRegistry {}
@@ -17,6 +20,10 @@ export interface LiveActivityPayloadRegistry {}
 export type TargetName = [keyof KnownTargets] extends [never]
   ? string
   : keyof KnownTargets & string;
+
+export type WidgetKindName = [keyof KnownWidgetKinds] extends [never]
+  ? string
+  : keyof KnownWidgetKinds & string;
 
 export type LiveActivityAttributesName = [
   keyof KnownLiveActivityAttributes,

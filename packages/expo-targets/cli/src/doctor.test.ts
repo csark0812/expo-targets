@@ -257,6 +257,29 @@ describe('checkNameSync gallery kinds', () => {
   });
 });
 
+describe('checkNameSync gallery kinds via .widget', () => {
+  test('passes when every gallery kind has .widget', () => {
+    const root = makeProject({
+      'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
+      'targets/widget/expo-target.config.json': JSON.stringify({
+        type: 'widget',
+        name: 'PoplWidgets',
+        platforms: ['ios'],
+        appGroup: 'group.test',
+        ios: {
+          kinds: [{ name: 'Home' }, { name: 'Lock' }],
+        },
+      }),
+      'targets/widget/index.ts':
+        "import { createTarget } from 'expo-targets';\n" +
+        "export const popl = createTarget('PoplWidgets');\n" +
+        "export const home = popl.widget('Home');\n" +
+        "export const lock = popl.widget('Lock');\n",
+    });
+    expect(checkNameSync(loadProject(root))).toHaveLength(0);
+  });
+});
+
 describe('warnUnusedWidgetBundle', () => {
   test('warns leftover Bundle.swift when expo-ui lists gallery kinds', () => {
     const root = makeProject({

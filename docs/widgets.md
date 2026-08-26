@@ -29,8 +29,8 @@ expo-targets can depend on `expo-widgets` **as a private library** for the layou
 
 | expo-widgets | expo-targets |
 | --- | --- |
-| `createWidget(name, Layout)` | `createTarget(name, Layout)` + `entry` |
-| `updateSnapshot(props)` | `setData(props, { refresh: true })` |
+| `createWidget(name, Layout)` | `createTarget(name, Layout)` + `entry`, or `createTarget('Folder').widget('Kind', Layout)` |
+| `updateSnapshot(props)` | `setData(props)` on a widget **kind** handle (refresh implied) |
 | `updateTimeline(entries)` | `setTimeline(entries)` — `{ date, props }` |
 | `getTimeline()` | `getTimeline()` |
 | `reload()` | `refresh()` |
@@ -133,13 +133,14 @@ struct HelloWidget: Widget {
 // Provider (AppIntentTimelineProvider): intent.listId → App Group UserDefaults suite, then read back.
 ```
 
-From the host app, keep the widget in sync after in-app picks:
+From the host app, keep the widget in sync after in-app picks (use the **kind** handle when `ios.kinds` lists multiple products):
 
 ```ts
-const widget = createTarget("HelloWidget");
+const popl = createTarget("PoplWidgets");
+const widget = popl.widget("HelloWidget"); // or createTarget("HelloWidget") for 1:1
 widget.storage.set("listId", selectedId);
 widget.refresh();
-// or: widget.setData({ listId: selectedId }, { refresh: true });
+// or: widget.setData({ listId: selectedId });
 ```
 
 ### Expo-ui

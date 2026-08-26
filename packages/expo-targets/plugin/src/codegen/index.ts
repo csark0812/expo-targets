@@ -1,5 +1,6 @@
 export type { RuntimeTargetConfig } from './collectRuntimeConfigs';
 export { collectRuntimeConfigs } from './collectRuntimeConfigs';
+export { widgetKindNamesForCodegen } from './widgetKindNames';
 export type { TargetCodegenConfig } from './typedTargets';
 export {
   ensureTsconfigExpoTypesInclude,

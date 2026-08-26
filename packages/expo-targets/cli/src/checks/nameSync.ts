@@ -45,32 +45,82 @@ function parseCreateTargetArg(arg: Expression): string | null {
   return null;
 }
 
-function parseCreateTargetNames(filePath: string): string[] {
+function parseWidgetKindArg(arg: Expression | undefined): string | null {
+  if (!arg) {
+    return null;
+  }
+  return parseCreateTargetArg(arg);
+}
+
+export type ParsedHostHelperNames = {
+  createTargetNames: string[];
+  widgetKindNames: string[];
+};
+
+function recordCreateTargetCall(
+  path: import('@babel/traverse').NodePath<
+    import('@babel/types').CallExpression
+  >,
+  createTargetNames: string[]
+): void {
+  const arg = path.node.arguments[0] as Expression | undefined;
+  if (!arg) {
+    return;
+  }
+  const name = parseCreateTargetArg(arg);
+  if (name) {
+    createTargetNames.push(name);
+  }
+}
+
+function recordWidgetCall(
+  path: import('@babel/traverse').NodePath<
+    import('@babel/types').CallExpression
+  >,
+  widgetKindNames: string[]
+): void {
+  const callee = path.node.callee;
+  if (
+    !(
+      (callee.type === 'MemberExpression' ||
+        callee.type === 'OptionalMemberExpression') &&
+      !callee.computed &&
+      callee.property.type === 'Identifier' &&
+      callee.property.name === 'widget'
+    )
+  ) {
+    return;
+  }
+  const kind = parseWidgetKindArg(
+    path.node.arguments[0] as Expression | undefined
+  );
+  if (kind) {
+    widgetKindNames.push(kind);
+  }
+}
+
+export function parseHostHelperNames(filePath: string): ParsedHostHelperNames {
   const source = fs.readFileSync(filePath, 'utf8');
   const ast = parse(source, {
     sourceType: 'module',
     plugins: ['typescript', 'jsx'],
   });
 
-  const found: string[] = [];
+  const createTargetNames: string[] = [];
+  const widgetKindNames: string[] = [];
+
   traverse(ast, {
     CallExpression(path) {
       const callee = path.node.callee;
-      if (callee.type !== 'Identifier' || callee.name !== 'createTarget') {
+      if (callee.type === 'Identifier' && callee.name === 'createTarget') {
+        recordCreateTargetCall(path, createTargetNames);
         return;
       }
-      const arg = path.node.arguments[0] as Expression | undefined;
-      if (!arg) {
-        return;
-      }
-      const name = parseCreateTargetArg(arg);
-      if (name) {
-        found.push(name);
-      }
+      recordWidgetCall(path, widgetKindNames);
     },
   });
 
-  return found;
+  return { createTargetNames, widgetKindNames };
 }
 
 function helperPath(targetDir: string): string | null {
@@ -96,6 +146,17 @@ function galleryKindNames(target: {
     return kinds.map((kind) => kind.name as string);
   }
   return target.config.name ? [target.config.name] : [];
+}
+
+function isMultiKindWidgetFolder(
+  target: ProjectContext['targets'][number]
+): boolean {
+  const kinds = galleryKindNames(target);
+  const folder = target.config.name;
+  if (!folder) {
+    return false;
+  }
+  return kinds.length > 1 || (kinds.length === 1 && kinds[0] !== folder);
 }
 
 export function checkNameSync(ctx: ProjectContext): CheckResult[] {
@@ -130,19 +191,22 @@ function checkOneNameSync(
     return;
   }
 
-  const createNames = parseCreateTargetNames(helper);
-  if (createNames.length === 0) {
+  const { createTargetNames, widgetKindNames } = parseHostHelperNames(helper);
+  if (createTargetNames.length === 0 && widgetKindNames.length === 0) {
     return {
       ok: false,
       level: 'error',
       title: 'Name sync',
-      message: `targets/${target.dirName}: could not find createTarget('...') in ${path.basename(helper)}`,
-      fix: `Add: export const x = createTarget('${configName}');`,
+      message: `targets/${target.dirName}: could not find createTarget('...') or .widget('...') in ${path.basename(helper)}`,
+      fix: isMultiKindWidgetFolder(target)
+        ? `Add: export const ${configName.charAt(0).toLowerCase() + configName.slice(1)} = createTarget('${configName}'); export const home = ${configName.charAt(0).toLowerCase() + configName.slice(1)}.widget('KindName');`
+        : `Add: export const x = createTarget('${configName}');`,
     };
   }
 
   const expected = galleryKindNames(target);
-  const missing = expected.filter((name) => !createNames.includes(name));
+  const covered = new Set([...createTargetNames, ...widgetKindNames]);
+  const missing = expected.filter((name) => !covered.has(name));
   if (missing.length === 0) {
     return;
   }
@@ -151,7 +215,9 @@ function checkOneNameSync(
     ok: false,
     level: 'error',
     title: 'Name sync',
-    message: `targets/${target.dirName}: ios.kinds / name ${JSON.stringify(missing)} missing createTarget(...) in ${path.basename(helper)} (found ${JSON.stringify(createNames)})`,
-    fix: `Add createTarget('${missing[0]}', Layout) for each gallery kind`,
+    message: `targets/${target.dirName}: ios.kinds / name ${JSON.stringify(missing)} missing createTarget(...) or .widget(...) in ${path.basename(helper)} (found createTarget ${JSON.stringify(createTargetNames)}, .widget ${JSON.stringify(widgetKindNames)})`,
+    fix: isMultiKindWidgetFolder(target)
+      ? `Add createTarget('${configName}').widget('${missing[0]}') for each gallery kind`
+      : `Add createTarget('${missing[0]}', Layout) for each gallery kind`,
   };
 }

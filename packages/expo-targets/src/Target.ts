@@ -1,4 +1,3 @@
-import Constants from 'expo-constants';
 import { AppRegistry, Platform } from 'react-native';
 import type {
   ExtensionType,
@@ -6,8 +5,10 @@ import type {
   TargetConfig,
 } from '../plugin/src/config';
 import { resolveUiMode } from '../plugin/src/domain/uiMode';
-import type { TargetName } from './generatedNames';
+import { resolveLiveActivityConfig } from '../plugin/src/ios/utils/resolveIosKinds';
+import type { TargetName, WidgetKindName } from './generatedNames';
 import { Extension, type SharedData } from './modules/extension/index';
+import { createLiveActivity } from './modules/liveActivity/index';
 import {
   type ConversationInfo,
   type MessageLayout,
@@ -21,13 +22,20 @@ import {
   isSafariExtension,
   openTab,
 } from './modules/safari/index';
+import { AppGroupStorage } from './modules/storage/index';
+import { listTargets } from './modules/targetsConfig';
 import {
-  AppGroupStorage,
-  getTargetsConfigFromBundle,
-} from './modules/storage/index';
+  formatUnknownHostProductError,
+  galleryProductNames,
+  isMultiProductWidgetFolder,
+  resolveHostProduct,
+} from './resolveHostProduct';
 
 export type SetDataOptions = {
-  /** When true, reload WidgetKit timelines after writing (widgets). Default false. */
+  /**
+   * Widget product handles default to `true` (reload after write).
+   * Share/action/clip default to `false`. Pass `refresh: false` to batch widget writes.
+   */
   refresh?: boolean;
 };
 
@@ -46,6 +54,30 @@ type ExpoUiWidgetHandle = {
 };
 
 const expoUiWidgets = new Map<string, ExpoUiWidgetHandle>();
+
+export interface WidgetProductTarget extends BaseTarget {
+  widget: (
+    kindName: WidgetKindName,
+    layout?: React.ComponentType<any>
+  ) => BaseTarget;
+  liveActivity: () => ReturnType<typeof createLiveActivity>;
+}
+
+export interface WidgetFolderTarget {
+  name: string;
+  type: 'widget' | 'watch-widget';
+  appGroup: string;
+  config: TargetConfig;
+  /** Gallery kind or Android provider handle. */
+  widget: (
+    kindName: WidgetKindName,
+    layout?: React.ComponentType<any>
+  ) => BaseTarget;
+  /** Same handle as `LiveActivity.create(attributesName)` from config. */
+  liveActivity: () => ReturnType<typeof createLiveActivity>;
+  /** Reload every gallery kind / provider in this folder. */
+  refresh: () => void;
+}
 
 export interface BaseTarget {
   name: string;
@@ -107,50 +139,15 @@ export type Target =
   | ExtensionTarget
   | MessagesExtensionTarget
   | NonExtensionTarget
-  | SafariExtensionTarget;
+  | SafariExtensionTarget
+  | WidgetFolderTarget
+  | WidgetProductTarget;
 
 function getProcessEnv(): Record<string, string | undefined> {
   const proc = (
     globalThis as { process?: { env?: Record<string, string | undefined> } }
   ).process;
   return proc?.env ?? {};
-}
-
-function getTargetConfig(targetName: string): TargetConfig | null {
-  const expoConfig = Constants.expoConfig;
-
-  // Try expo config first (works in main app)
-  let targets = (expoConfig?.extra?.targets as TargetConfig[]) || [];
-
-  // Fallback to Info.plist for extensions
-  if (targets.length === 0) {
-    const bundleTargets = getTargetsConfigFromBundle();
-    if (bundleTargets) {
-      targets = bundleTargets as TargetConfig[];
-    } else {
-      return null;
-    }
-  }
-
-  const target = targets.find((t) => t.name === targetName);
-
-  if (!target) {
-    return null;
-  }
-
-  return target;
-}
-
-function getTargetAppGroup(
-  targetName: string,
-  config?: TargetConfig
-): string | null {
-  const targetConfig = config || getTargetConfig(targetName);
-  if (!targetConfig) {
-    return null;
-  }
-
-  return targetConfig.appGroup || null;
 }
 
 const EXTENSION_TYPES: Set<ReactNativeCompatibleType> = new Set([
@@ -173,12 +170,49 @@ function isWebExtensionType(type: ExtensionType): boolean {
   return WEB_EXTENSION_TYPES.has(type);
 }
 
-function createBaseTarget(
+function isWidgetType(type: ExtensionType): boolean {
+  return type === 'widget' || type === 'watch-widget';
+}
+
+function shouldRefreshAfterSetData(
+  widgetProduct: boolean,
+  options?: SetDataOptions
+): boolean {
+  return widgetProduct ? options?.refresh !== false : options?.refresh === true;
+}
+
+function mirrorExpoUiSnapshot(
   targetName: string,
-  config: TargetConfig,
-  appGroup: string
-): BaseTarget {
+  data: Record<string, any>
+): void {
+  const widget = expoUiWidgets.get(targetName);
+  if (widget && Platform.OS === 'ios') {
+    widget.updateSnapshot(data);
+  }
+}
+
+function reloadWidgetSurface(
+  targetName: string,
+  storage: AppGroupStorage
+): void {
+  storage.refresh(targetName);
+  expoUiWidgets.get(targetName)?.reload();
+}
+
+function createBaseTarget(opts: {
+  targetName: string;
+  config: TargetConfig;
+  appGroup: string;
+  widgetProduct?: boolean;
+}): BaseTarget {
+  const {
+    targetName,
+    config,
+    appGroup,
+    widgetProduct: widgetProductOpt,
+  } = opts;
   const storage = new AppGroupStorage(appGroup, targetName);
+  const widgetProduct = widgetProductOpt ?? isWidgetType(config.type);
   return {
     name: targetName,
     type: config.type,
@@ -186,24 +220,17 @@ function createBaseTarget(
     storage,
     config,
     setData(data: Record<string, any>, options?: SetDataOptions) {
-      // Always mirror into App Group storage (Android Glance + native deepen).
       storage.setData(data);
-      const widget = expoUiWidgets.get(targetName);
-      if (widget && Platform.OS === 'ios') {
-        // One-entry timeline blob (= expo-widgets updateSnapshot).
-        widget.updateSnapshot(data);
-      }
-      if (options?.refresh) {
-        storage.refresh(targetName);
-        widget?.reload();
+      mirrorExpoUiSnapshot(targetName, data);
+      if (shouldRefreshAfterSetData(widgetProduct, options)) {
+        reloadWidgetSurface(targetName, storage);
       }
     },
     getData<T extends Record<string, any>>(): T {
       return storage.getData<T>();
     },
     refresh() {
-      storage.refresh(targetName);
-      expoUiWidgets.get(targetName)?.reload();
+      reloadWidgetSurface(targetName, storage);
     },
     setTimeline(entries: TimelineEntry[]) {
       const widget = expoUiWidgets.get(targetName);
@@ -265,6 +292,171 @@ function createExtensionTarget(
     openHostApp: (path?: string) => extension.openHostApp(path),
     getSharedData: () => extension.getSharedData(),
   };
+}
+
+function assertGalleryProduct(config: TargetConfig, kindName: string): void {
+  const products = galleryProductNames(config);
+  if (!products.includes(kindName)) {
+    throw new Error(
+      `[expo-targets] Unknown widget product "${kindName}" on folder "${config.name}". ` +
+        `Configured: ${products.join(', ') || '(none)'}.`
+    );
+  }
+}
+
+function liveActivityHandleForConfig(config: TargetConfig) {
+  const liveActivity = resolveLiveActivityConfig(config);
+  const attributesName = liveActivity?.attributesName;
+  if (!attributesName) {
+    throw new Error(
+      `[expo-targets] Target "${config.name}" has no ios.liveActivity.attributesName. ` +
+        'Add ios.liveActivity to expo-target.config.json.'
+    );
+  }
+  return createLiveActivity(attributesName);
+}
+
+function augmentOneToOneWidgetHandle(
+  baseTarget: BaseTarget,
+  config: TargetConfig
+): WidgetProductTarget {
+  return {
+    ...baseTarget,
+    widget(kindName: string, layout?: React.ComponentType<any>) {
+      assertGalleryProduct(config, kindName);
+      if (kindName === baseTarget.name) {
+        if (layout) {
+          registerTargetComponent(kindName, layout, baseTarget as Target);
+        }
+        return baseTarget;
+      }
+      return createWidgetProductHandle({
+        config,
+        productName: kindName,
+        componentFunc: layout,
+      });
+    },
+    liveActivity: () => liveActivityHandleForConfig(config),
+  };
+}
+
+function createWidgetProductHandle(opts: {
+  config: TargetConfig;
+  productName: string;
+  componentFunc?: React.ComponentType<any>;
+  augmentOneToOne?: boolean;
+}): BaseTarget | WidgetProductTarget {
+  const { config, productName, componentFunc, augmentOneToOne } = opts;
+  const appGroup = config.appGroup;
+  if (!appGroup) {
+    throw new Error(
+      `App Group not configured for target "${config.name}". Add "appGroup" to your target config.`
+    );
+  }
+
+  const baseTarget = createBaseTarget({
+    targetName: productName,
+    config,
+    appGroup,
+    widgetProduct: true,
+  });
+  const target = buildTargetFromConfig(baseTarget, config);
+
+  if (componentFunc) {
+    registerTargetComponent(productName, componentFunc, target);
+  }
+
+  if (augmentOneToOne && !isMultiProductWidgetFolder(config)) {
+    return augmentOneToOneWidgetHandle(baseTarget, config);
+  }
+
+  return baseTarget;
+}
+
+function createWidgetFolderTarget(config: TargetConfig): WidgetFolderTarget {
+  const appGroup = config.appGroup;
+  if (!appGroup) {
+    throw new Error(
+      `App Group not configured for target "${config.name}". Add "appGroup" to your target config.`
+    );
+  }
+  if (!isWidgetType(config.type)) {
+    throw new Error(
+      `[expo-targets] Internal error: folder handle requires widget type`
+    );
+  }
+
+  const folderType = config.type as 'widget' | 'watch-widget';
+
+  return {
+    name: config.name,
+    type: folderType,
+    appGroup,
+    config,
+    widget(kindName: string, layout?: React.ComponentType<any>) {
+      assertGalleryProduct(config, kindName);
+      return createWidgetProductHandle({
+        config,
+        productName: kindName,
+        componentFunc: layout,
+      });
+    },
+    liveActivity: () => liveActivityHandleForConfig(config),
+    refresh() {
+      const storage = new AppGroupStorage(appGroup, config.name);
+      for (const product of galleryProductNames(config)) {
+        storage.refresh(product);
+        expoUiWidgets.get(product)?.reload();
+      }
+    },
+  };
+}
+
+function createProductTargetFromConfig(
+  config: TargetConfig,
+  productName: string,
+  componentFunc?: React.ComponentType<any>
+): Target {
+  if (isWidgetType(config.type)) {
+    const augmentOneToOne =
+      productName === config.name && !isMultiProductWidgetFolder(config);
+    return createWidgetProductHandle({
+      config,
+      productName,
+      componentFunc,
+      augmentOneToOne,
+    });
+  }
+
+  const appGroup = config.appGroup;
+  if (!appGroup) {
+    throw new Error(
+      `App Group not configured for target "${productName}". Add "appGroup" to your target config.`
+    );
+  }
+
+  const safariTarget = tryCreateSafariTargetFromConfig(
+    productName,
+    config,
+    componentFunc
+  );
+  if (safariTarget) {
+    return safariTarget;
+  }
+
+  const baseTarget = createBaseTarget({
+    targetName: productName,
+    config,
+    appGroup,
+    widgetProduct: false,
+  });
+  const target = buildTargetFromConfig(baseTarget, config);
+
+  if (componentFunc) {
+    registerTargetComponent(productName, componentFunc, target);
+  }
+
+  return target;
 }
 
 function buildTargetFromConfig(
@@ -387,68 +579,56 @@ function tryCreateSafariTargetFromConfig(
 
 // Function overloads for better type inference
 export function createTarget<_T extends 'messages'>(
-  targetName: TargetName,
+  targetName: TargetName | WidgetKindName,
   componentFunc?: React.ComponentType<any>
 ): MessagesExtensionTarget;
 export function createTarget<_T extends 'safari'>(
-  targetName: TargetName,
+  targetName: TargetName | WidgetKindName,
   componentFunc?: React.ComponentType<any>
 ): SafariExtensionTarget;
 export function createTarget<
   _T extends Exclude<ReactNativeCompatibleType, 'messages'>,
 >(
-  targetName: TargetName,
+  targetName: TargetName | WidgetKindName,
   componentFunc?: React.ComponentType<any>
 ): ExtensionTarget;
 export function createTarget<
   _T extends Exclude<ExtensionType, ReactNativeCompatibleType>,
 >(
-  targetName: TargetName,
+  targetName: TargetName | WidgetKindName,
   componentFunc?: React.ComponentType<any>
-): NonExtensionTarget;
+): NonExtensionTarget | WidgetFolderTarget;
 export function createTarget(
-  targetName: TargetName,
+  targetName: TargetName | WidgetKindName,
   componentFunc?: React.ComponentType<any>
 ): Target;
 export function createTarget<_T extends ExtensionType = ExtensionType>(
-  targetName: TargetName,
+  targetName: TargetName | WidgetKindName,
   componentFunc?: React.ComponentType<any>
 ): Target {
   if (isSafariExtension() && componentFunc) {
     return createSafariTarget(targetName, componentFunc);
   }
 
-  const config = getTargetConfig(targetName);
-  if (!config) {
-    throw new Error(
-      `Target "${targetName}" not found. Ensure it's defined in app.json under "extra.targets"`
-    );
+  const targets = listTargets();
+  const resolved = resolveHostProduct(targetName, targets);
+  if (!resolved) {
+    throw new Error(formatUnknownHostProductError(targetName, targets));
   }
 
-  const safariTarget = tryCreateSafariTargetFromConfig(
-    targetName,
-    config,
-    componentFunc
-  );
-  if (safariTarget) {
-    return safariTarget;
+  const { config, productName, role } = resolved;
+
+  if (role === 'folder' && isMultiProductWidgetFolder(config)) {
+    if (componentFunc) {
+      throw new Error(
+        `[expo-targets] createTarget("${targetName}", Layout) on a multi-product widget folder ` +
+          `requires .widget('KindName', Layout).`
+      );
+    }
+    return createWidgetFolderTarget(config);
   }
 
-  const appGroup = getTargetAppGroup(targetName, config);
-  if (!appGroup) {
-    throw new Error(
-      `App Group not configured for target "${targetName}". Add "appGroup" to your target config.`
-    );
-  }
-
-  const baseTarget = createBaseTarget(targetName, config, appGroup);
-  const target = buildTargetFromConfig(baseTarget, config);
-
-  if (componentFunc) {
-    registerTargetComponent(targetName, componentFunc, target);
-  }
-
-  return target;
+  return createProductTargetFromConfig(config, productName, componentFunc);
 }
 
 function createWebStorage(targetName: string) {

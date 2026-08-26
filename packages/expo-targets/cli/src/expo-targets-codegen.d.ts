@@ -23,10 +23,15 @@ declare module 'expo-targets/codegen' {
     expoConfig: { ios?: { entitlements?: Record<string, unknown> } }
   ): RuntimeTargetConfig[];
 
+  export function widgetKindNamesForCodegen(
+    cfg: Pick<RuntimeTargetConfig, 'name' | 'ios'>
+  ): string[];
+
   export function writeTargetsTypesFile(
     projectRoot: string,
     configs: Array<{
       name: string;
+      widgetKinds?: string[];
       liveActivity?: {
         attributesName?: string;
         static?: Record<string, LiveActivityFieldType>;

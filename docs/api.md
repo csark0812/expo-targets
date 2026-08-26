@@ -8,24 +8,37 @@
 
 ## createTarget
 
-Creates a target instance for extension communication.
+Creates a **host handle** for extension communication. It does not create an Xcode target.
 
-Target names are plain strings. They match `expo-target.config.json` `"name"`. After `prebuild` or `npx expo-targets generate`, TypeScript narrows those literals through ambient types under `.expo/types/`. This follows the Expo Router pattern. Do not import from `.expo/`.
+After `prebuild` or `npx expo-targets generate`, TypeScript narrows string literals through ambient types under `.expo/types/` (`TargetName`, `WidgetKindName`, `LiveActivityAttributesName`). Do not import from `.expo/`.
+
+| String you pass | Config field | Handle |
+| --- | --- | --- |
+| Folder name (`PoplWidgets`) | `expo-target.config.json` `"name"` | Share/action/clip, **or** widget folder when `ios.kinds` lists multiple products |
+| Kind name (`HomescreenWidgets`) | `ios.kinds[].name` (or `android.providers[].name`) | Widget **product** — use for `setData` / `refresh` |
+| Attributes name (`OrderAttributes`) | `ios.liveActivity.attributesName` | Live Activity factory via `LiveActivity.create` (not `createTarget`) |
 
 ```typescript
 import { createTarget } from "expo-targets";
 
-const share = createTarget("MyShare"); // typed as TargetName when generated
+const share = createTarget("MyShare"); // TargetName — folder is the product
+
+// 1:1 widget (folder name === kind)
+const hello = createTarget("HelloWidget");
+hello.setData({ message: "Hi" }); // refresh implied on widgets
+
+// Multi-kind widget folder
+const popl = createTarget("PoplWidgets");
+const home = popl.widget("HomescreenWidgets");
+home.setData({ message: "Updated" });
+const island = popl.liveActivity(); // or LiveActivity.create("DynamicIslandAttributes")
+
+// Legacy / doctor-era: kind name resolves to parent folder config
+const lock = createTarget("LockScreenWidgets");
 ```
 
 ```typescript
-import { createTarget } from "expo-targets";
-
-// For widgets and non-RN extensions
-const widget = createTarget("MyWidget");
-
-// For React Native extensions (share, action, clip, messages)
-// Pass the component as second argument - handles AppRegistry automatically
+// React Native extensions — pass the component as second argument
 import ShareExtension from "./ShareExtension";
 export const share = createTarget("ShareExt", ShareExtension);
 ```
@@ -34,30 +47,24 @@ export const share = createTarget("ShareExt", ShareExtension);
 
 | Parameter   | Type                  | Description                                                                                |
 | ----------- | --------------------- | ------------------------------------------------------------------------------------------ |
-| `name`      | `string` (`TargetName` when generated) | Must match the `name` field in your `expo-target.config.json` **exactly** (case-sensitive) |
-| `component` | `React.ComponentType` | _(Optional)_ For RN extensions only. Automatically calls `AppRegistry.registerComponent()` |
+| `name`      | `TargetName \| WidgetKindName` when generated | Folder `"name"`, or gallery kind / provider name on a multi-product widget |
+| `component` | `React.ComponentType` | _(Optional)_ For RN / expo-ui widgets. On multi-kind folders use `.widget('Kind', Layout)` instead |
 
-When you pass a component as the second argument, `createTarget` registers it for you. You do not need to call `AppRegistry.registerComponent()` manually. No type argument is required.
+Multi-product widget folders (`ios.kinds` with more than one row, or a single kind whose name differs from the folder) return a **folder handle** with `.widget()` / `.liveActivity()` only — not `setData`. Write data on the kind handle.
 
 ### Error Handling
 
-`createTarget` throws when the target is missing or misconfigured:
+`createTarget` throws when the name is missing or misconfigured:
 
 ```typescript
 try {
   const widget = createTarget("MyWidget");
 } catch (error) {
   // Possible errors:
-  // - 'Target "MyWidget" not found. Ensure it's defined in app.json under "extra.targets"'
-  // - 'App Group not configured for target "MyWidget". Add "appGroup" to your target config.'
+  // - Unknown folder/kind with configured folders and widget kinds listed
+  // - App Group not configured for target
+  // - createTarget("Folder", Layout) on a multi-kind widget folder
 }
-```
-
-**Console warnings** (non-fatal):
-
-```
-[expo-targets] Target "MyWidget" not found
-[expo-targets] Available targets: HelloWidget, ShareExt
 ```
 
 ---
@@ -101,15 +108,19 @@ widget.storage.clear();
 ### Refresh
 
 ```typescript
-widget.refresh(); // Tell iOS/Android to reload this widget / surface
+widget.refresh(); // Tell iOS/Android to reload this widget kind / provider
 ```
 
-**Important:** Call `refresh()` after you update data when you need an immediate widget reload.
+On **widget product** handles, `setData` reloads by default. Opt out when batching writes:
 
 ```typescript
-widget.setData({ message: "Updated!" }, { refresh: true });
-// or batch writes then: widget.refresh();
+widget.setData({ message: "Updated!" }); // writes + reloads
+widget.setData({ a: 1 }, { refresh: false });
+widget.setData({ b: 2 }, { refresh: false });
+widget.refresh();
 ```
+
+Share/action/clip `setData` does not reload widgets — pass `{ refresh: true }` only when you intentionally need a timeline reload from a non-widget target.
 
 ---
 

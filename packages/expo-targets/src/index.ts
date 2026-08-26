@@ -18,10 +18,12 @@ export { isIllegalUiMode, resolveUiMode } from '../plugin/src/domain/uiMode';
 export type {
   KnownLiveActivityAttributes,
   KnownTargets,
+  KnownWidgetKinds,
   LiveActivityAttributesName,
   LiveActivityPayloadFor,
   LiveActivityPayloadRegistry,
   TargetName,
+  WidgetKindName,
 } from './generatedNames';
 export type {
   LiveActivityEnvironment,
@@ -111,6 +113,16 @@ export {
   requestPinWidget,
 } from './modules/storage/index';
 export type {
+  HostProductRole,
+  ResolvedHostProduct,
+} from './resolveHostProduct';
+export {
+  formatUnknownHostProductError,
+  galleryProductNames,
+  isMultiProductWidgetFolder,
+  resolveHostProduct,
+} from './resolveHostProduct';
+export type {
   BaseTarget,
   ExtensionTarget,
   MessagesExtensionTarget,
@@ -119,6 +131,8 @@ export type {
   SetDataOptions,
   Target,
   TimelineEntry,
+  WidgetFolderTarget,
+  WidgetProductTarget,
 } from './Target';
 export { createTarget } from './Target';
 export type {
