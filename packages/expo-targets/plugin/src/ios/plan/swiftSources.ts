@@ -6,6 +6,7 @@ import {
   hasExplicitGalleryKinds,
   resolveGalleryWidgetKinds,
   resolveLiveActivityConfig,
+  resolveLiveActivityConfigs,
 } from '../utils/resolveIosKinds';
 import type {
   IOSTargetProps,
@@ -253,7 +254,8 @@ function planExpoUiBundleFile(opts: {
           name: row.name,
           configurable: Boolean(row.configuration),
         })),
-        includeLiveActivity: Boolean(resolveLiveActivityConfig({ ios: props })),
+        includeLiveActivity:
+          resolveLiveActivityConfigs({ ios: props }).length > 0,
         configurable: kinds.some((row) => Boolean(row.configuration)),
       },
     },

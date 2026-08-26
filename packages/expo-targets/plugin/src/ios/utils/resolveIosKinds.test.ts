@@ -3,6 +3,7 @@ import {
   hasExplicitGalleryKinds,
   resolveGalleryWidgetKinds,
   resolveLiveActivityConfig,
+  resolveLiveActivityConfigs,
 } from './resolveIosKinds';
 
 describe('resolveGalleryWidgetKinds 1:1', () => {
@@ -129,6 +130,69 @@ describe('resolveLiveActivityConfig', () => {
 
   test('omitted liveActivity and kinds has no live activity', () => {
     expect(resolveLiveActivityConfig({ ios: {} })).toBeUndefined();
+  });
+
+  test('reads ios.liveActivities array', () => {
+    const configs = resolveLiveActivityConfigs({
+      ios: {
+        liveActivities: [
+          {
+            attributesName: 'DynamicIslandAttributes',
+            contentState: { views: 'string' },
+          },
+          {
+            attributesName: 'MeetingLiveAttributes',
+            static: { meetingId: 'string' },
+            contentState: { status: 'string' },
+          },
+        ],
+      },
+    });
+    expect(configs.map((la) => la.attributesName)).toEqual([
+      'DynamicIslandAttributes',
+      'MeetingLiveAttributes',
+    ]);
+    expect(resolveLiveActivityConfig({ ios: { liveActivities: configs } })?.attributesName).toBe(
+      'DynamicIslandAttributes'
+    );
+  });
+
+  test('singular and array together throw', () => {
+    expect(() =>
+      resolveLiveActivityConfigs({
+        ios: {
+          liveActivity: {
+            attributesName: 'A',
+            contentState: { s: 'string' },
+          },
+          liveActivities: [
+            {
+              attributesName: 'B',
+              contentState: { s: 'string' },
+            },
+          ],
+        },
+      })
+    ).toThrow(/OR ios\.liveActivity/);
+  });
+
+  test('duplicate attributesName in liveActivities throws', () => {
+    expect(() =>
+      resolveLiveActivityConfigs({
+        ios: {
+          liveActivities: [
+            {
+              attributesName: 'SameAttributes',
+              contentState: { a: 'string' },
+            },
+            {
+              attributesName: 'SameAttributes',
+              contentState: { b: 'string' },
+            },
+          ],
+        },
+      })
+    ).toThrow(/Duplicate Live Activity/);
   });
 });
 

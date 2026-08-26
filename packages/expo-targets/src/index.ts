@@ -63,12 +63,19 @@ export type { FileProviderDomainOpts } from './modules/fileProvider/index';
 export { FileProviderDomain } from './modules/fileProvider/index';
 export type {
   LiveActivityContentState,
+  LiveActivityHandle,
   LiveActivityStartOptions,
 } from './modules/liveActivity/index';
-// Live Activity
+// Live Activity — target handles preferred; global helpers for OS / id-based ops
 export {
+  areLiveActivitiesEnabled,
+  buildLiveActivityHandle,
   createLiveActivity,
+  endAllLiveActivities,
+  endLiveActivity,
   LiveActivity,
+  startLiveActivity,
+  updateLiveActivity,
 } from './modules/liveActivity/index';
 export type {
   AttachmentPayload,

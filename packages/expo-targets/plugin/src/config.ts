@@ -349,11 +349,17 @@ interface BaseIosTargetConfig {
    */
   kinds?: IosWidgetKindConfig[];
   /**
-   * ActivityKit Live Activity in the same widget `.appex`. At most one.
+   * ActivityKit Live Activity in the same widget `.appex` (shorthand when one).
+   * Prefer `liveActivities` when declaring two or more in one target.
    * Native CNG uses `attributesName` / `static` / `contentState` / `pushType`.
    * Expo-ui Bundles add `WidgetLiveActivity()`.
    */
   liveActivity?: LiveActivityConfig;
+  /**
+   * Multiple Live Activities in the same widget `.appex`.
+   * Do not set together with `liveActivity` — use one form per target.
+   */
+  liveActivities?: LiveActivityConfig[];
 }
 
 /** WidgetKit family names (expo-ui supportedFamilies). */

@@ -122,6 +122,9 @@ export const helloExpoUiLiveActivity = createLiveActivityLayout(
   HelloExpoUiLiveActivity
 );
 
+export const helloExpoUiLiveActivityHandle =
+  createTarget('HelloExpoUi').liveActivity();
+
 export const updateExpoUiMessage = (message: string) => {
   helloExpoUi.setData({ message, taps: 0 }, { refresh: true });
 };

@@ -5,6 +5,8 @@ import * as path from 'node:path';
 
 import { checkAppGroups } from './checks/appGroups';
 import { checkEntries } from './checks/entries';
+import { checkLiveActivitiesConfig } from './checks/liveActivitiesConfig';
+import { checkLiveActivityHostApi } from './checks/liveActivityHostApi';
 import { checkLiveActivityKind } from './checks/liveActivityKind';
 import { checkMetro } from './checks/metro';
 import { checkNameSync } from './checks/nameSync';
@@ -349,5 +351,138 @@ describe('checkLiveActivityKind', () => {
       }),
     });
     expect(checkLiveActivityKind(loadProject(root))).toHaveLength(0);
+  });
+});
+
+describe('checkLiveActivitiesConfig', () => {
+  test('fails when singular and array are both set', () => {
+    const root = makeProject({
+      'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
+      'targets/widget/expo-target.config.json': JSON.stringify({
+        type: 'widget',
+        name: 'Home',
+        platforms: ['ios'],
+        ios: {
+          liveActivity: {
+            attributesName: 'A',
+            contentState: { status: 'string' },
+          },
+          liveActivities: [
+            {
+              attributesName: 'B',
+              contentState: { status: 'string' },
+            },
+          ],
+        },
+      }),
+    });
+    const errors = checkLiveActivitiesConfig(loadProject(root));
+    expect(errors[0]?.level).toBe('error');
+    expect(errors[0]?.message).toContain('not both');
+  });
+
+  test('fails duplicate attributesName in liveActivities', () => {
+    const root = makeProject({
+      'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
+      'targets/widget/expo-target.config.json': JSON.stringify({
+        type: 'widget',
+        name: 'Home',
+        platforms: ['ios'],
+        ios: {
+          liveActivities: [
+            {
+              attributesName: 'SameAttributes',
+              contentState: { a: 'string' },
+            },
+            {
+              attributesName: 'SameAttributes',
+              contentState: { b: 'string' },
+            },
+          ],
+        },
+      }),
+    });
+    const errors = checkLiveActivitiesConfig(loadProject(root));
+    expect(errors[0]?.message).toContain('duplicate');
+  });
+});
+
+describe('checkLiveActivityHostApi', () => {
+  test('warns on LiveActivity.create in target index', () => {
+    const root = makeProject({
+      'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
+      'targets/widget/expo-target.config.json': JSON.stringify({
+        type: 'widget',
+        name: 'HelloWidget',
+        platforms: ['ios'],
+        appGroup: 'group.test',
+        ios: {
+          liveActivity: {
+            attributesName: 'HelloWidgetAttributes',
+            contentState: { status: 'string' },
+          },
+        },
+      }),
+      'targets/widget/index.ts':
+        "import { LiveActivity, createTarget } from 'expo-targets';\n" +
+        "export const hello = createTarget('HelloWidget');\n" +
+        "export const la = LiveActivity.create('HelloWidgetAttributes');\n",
+    });
+    const warnings = checkLiveActivityHostApi(loadProject(root));
+    expect(warnings[0]?.level).toBe('warn');
+    expect(warnings[0]?.message).toContain('.liveActivity(');
+  });
+
+  test('passes when target index uses folder.liveActivity()', () => {
+    const root = makeProject({
+      'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
+      'targets/widget/expo-target.config.json': JSON.stringify({
+        type: 'widget',
+        name: 'HelloWidget',
+        platforms: ['ios'],
+        appGroup: 'group.test',
+        ios: {
+          liveActivity: {
+            attributesName: 'HelloWidgetAttributes',
+            contentState: { status: 'string' },
+          },
+        },
+      }),
+      'targets/widget/index.ts':
+        "import { createTarget } from 'expo-targets';\n" +
+        "export const hello = createTarget('HelloWidget');\n" +
+        "export const la = hello.liveActivity();\n",
+    });
+    expect(checkLiveActivityHostApi(loadProject(root))).toHaveLength(0);
+  });
+
+  test('warns when multi liveActivities missing .liveActivity(name)', () => {
+    const root = makeProject({
+      'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
+      'targets/widget/expo-target.config.json': JSON.stringify({
+        type: 'widget',
+        name: 'PoplWidgets',
+        platforms: ['ios'],
+        appGroup: 'group.test',
+        ios: {
+          liveActivities: [
+            {
+              attributesName: 'DynamicIslandAttributes',
+              contentState: { a: 'string' },
+            },
+            {
+              attributesName: 'MeetingLiveAttributes',
+              contentState: { b: 'string' },
+            },
+          ],
+        },
+      }),
+      'targets/widget/index.ts':
+        "import { createTarget } from 'expo-targets';\n" +
+        "export const popl = createTarget('PoplWidgets');\n" +
+        "export const island = popl.liveActivity('DynamicIslandAttributes');\n",
+    });
+    const warnings = checkLiveActivityHostApi(loadProject(root));
+    expect(warnings[0]?.message).toContain('MeetingLiveAttributes');
   });
 });

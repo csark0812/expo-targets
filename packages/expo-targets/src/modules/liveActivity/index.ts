@@ -4,7 +4,7 @@ import type {
   LiveActivityConfig,
   TargetConfig,
 } from '../../../plugin/src/config';
-import { resolveLiveActivityConfig } from '../../../plugin/src/ios/utils/resolveIosKinds';
+import { resolveLiveActivityConfigs } from '../../../plugin/src/ios/utils/resolveIosKinds';
 import type {
   LiveActivityAttributesName,
   LiveActivityPayloadFor,
@@ -38,6 +38,21 @@ export type LiveActivityStartOptions = {
   contentState: LiveActivityContentState;
 };
 
+export type LiveActivityHandle<
+  N extends LiveActivityAttributesName = LiveActivityAttributesName,
+> = {
+  attributesName: N;
+  start: (options: {
+    attributes: LiveActivityPayloadFor<N>['attributes'];
+    contentState: LiveActivityPayloadFor<N>['contentState'];
+  }) => Promise<string>;
+  update: (
+    activityId: string,
+    contentState: LiveActivityPayloadFor<N>['contentState']
+  ) => Promise<boolean>;
+  end: (activityId: string) => Promise<void>;
+};
+
 function getNative(): NativeLiveActivity {
   if (Platform.OS !== 'ios' && Platform.OS !== 'android') {
     throw new Error(
@@ -56,9 +71,10 @@ function liveActivityConfigs(): {
     if (target.type !== 'widget') {
       continue;
     }
-    const config = resolveLiveActivityConfig(target);
-    if (config?.attributesName) {
-      rows.push({ target, config });
+    for (const config of resolveLiveActivityConfigs(target)) {
+      if (config.attributesName) {
+        rows.push({ target, config });
+      }
     }
   }
   return rows;
@@ -78,7 +94,7 @@ function resolveMatch(attributesName: string): {
     throw new Error(
       `[expo-targets] Unknown Live Activity attributesName "${attributesName}". ` +
         `Configured: ${names || '(none)'}. ` +
-        `Set ios.liveActivity.attributesName in expo-target.config.json.`
+        `Use createTarget('Folder').liveActivity('${attributesName}') from the widget target entry.`
     );
   }
   return matches[0];
@@ -102,89 +118,105 @@ function mergeExpoUiProps(options: {
   return { ...options.attributes, ...options.contentState };
 }
 
-/** Typed helpers keyed by configured attributesName (widgets-like paved path). */
-export function createLiveActivity<N extends LiveActivityAttributesName>(
-  attributesName: N
-) {
+/** Start a Live Activity by configured attributesName (used by target handles). */
+export async function startLiveActivity<N extends LiveActivityAttributesName>(
+  attributesName: N,
+  options: {
+    attributes: LiveActivityPayloadFor<N>['attributes'];
+    contentState: LiveActivityPayloadFor<N>['contentState'];
+  }
+): Promise<string> {
+  const { target } = resolveMatch(attributesName);
+  if (target.entry) {
+    ensureExpoUiAttributesLink(attributesName);
+    const factory = getExpoUiLiveActivityByAttributes(attributesName);
+    if (!factory) {
+      throw new Error(
+        `[expo-targets] liveActivity("${attributesName}") for expo-ui widget ` +
+          `"${target.name}" requires createLiveActivityLayout('${target.name}', Layout) ` +
+          `in the widget entry (same file as createTarget).`
+      );
+    }
+    const instance = factory.start(
+      mergeExpoUiProps({
+        attributes: (options.attributes ?? {}) as Record<string, unknown>,
+        contentState: (options.contentState ?? {}) as Record<string, unknown>,
+      })
+    );
+    return instance.id;
+  }
+  return getNative().start(
+    attributesName,
+    JSON.stringify(options.attributes ?? {}),
+    JSON.stringify(options.contentState ?? {})
+  );
+}
+
+export async function updateLiveActivity<N extends LiveActivityAttributesName>(
+  activityId: string,
+  contentState: LiveActivityPayloadFor<N>['contentState']
+): Promise<boolean> {
+  const expoUi = getExpoUiLiveActivityInstance(activityId);
+  if (expoUi) {
+    await expoUi.update(
+      (contentState ?? {}) as unknown as Record<string, unknown>
+    );
+    return true;
+  }
+  return getNative().update(activityId, JSON.stringify(contentState ?? {}));
+}
+
+export async function endLiveActivity(activityId: string): Promise<void> {
+  const expoUi = getExpoUiLiveActivityInstance(activityId);
+  if (expoUi) {
+    await expoUi.end();
+    return;
+  }
+  return getNative().end(activityId);
+}
+
+export async function endAllLiveActivities(): Promise<void> {
+  return getNative().endAll();
+}
+
+export async function areLiveActivitiesEnabled(): Promise<boolean> {
+  return getNative().areActivitiesEnabled();
+}
+
+/** Target-scoped Live Activity handle (preferred host API). */
+export function buildLiveActivityHandle<
+  N extends LiveActivityAttributesName,
+>(attributesName: N): LiveActivityHandle<N> {
   resolveAttributesConfig(attributesName);
   ensureExpoUiAttributesLink(attributesName);
-  type Payload = LiveActivityPayloadFor<N>;
   return {
     attributesName,
-    start: (options: {
-      attributes: Payload['attributes'];
-      contentState: Payload['contentState'];
-    }) => LiveActivity.start(attributesName, options),
-    update: (activityId: string, contentState: Payload['contentState']) =>
-      LiveActivity.update(activityId, contentState),
-    end: (activityId: string) => LiveActivity.end(activityId),
+    start: (options) => startLiveActivity(attributesName, options),
+    update: (activityId, contentState) =>
+      updateLiveActivity(activityId, contentState),
+    end: (activityId) => endLiveActivity(activityId),
   };
 }
 
+/**
+ * @deprecated Use `createTarget('Folder').liveActivity('AttributesName')` from the widget target entry.
+ */
+export function createLiveActivity<N extends LiveActivityAttributesName>(
+  attributesName: N
+): LiveActivityHandle<N> {
+  return buildLiveActivityHandle(attributesName);
+}
+
+/** OS / session helpers. Prefer target handles for start/update/end. */
 export const LiveActivity = {
+  /** @deprecated Use `createTarget('Folder').liveActivity('AttributesName')`. */
   create: createLiveActivity,
 
-  async start<N extends LiveActivityAttributesName>(
-    attributesName: N,
-    options: {
-      attributes: LiveActivityPayloadFor<N>['attributes'];
-      contentState: LiveActivityPayloadFor<N>['contentState'];
-    }
-  ): Promise<string> {
-    const { target } = resolveMatch(attributesName);
-    if (target.entry) {
-      ensureExpoUiAttributesLink(attributesName);
-      const factory = getExpoUiLiveActivityByAttributes(attributesName);
-      if (!factory) {
-        throw new Error(
-          `[expo-targets] LiveActivity.start("${attributesName}") for expo-ui widget ` +
-            `"${target.name}" requires createLiveActivityLayout('${target.name}', Layout) ` +
-            `in the widget entry (same file as createTarget).`
-        );
-      }
-      const instance = factory.start(
-        mergeExpoUiProps({
-          attributes: (options.attributes ?? {}) as Record<string, unknown>,
-          contentState: (options.contentState ?? {}) as Record<string, unknown>,
-        })
-      );
-      return instance.id;
-    }
-    return getNative().start(
-      attributesName,
-      JSON.stringify(options.attributes ?? {}),
-      JSON.stringify(options.contentState ?? {})
-    );
-  },
+  /** @deprecated Use the handle from `.liveActivity(...)`. */
+  start: startLiveActivity,
 
-  async update<N extends LiveActivityAttributesName>(
-    activityId: string,
-    contentState: LiveActivityPayloadFor<N>['contentState']
-  ): Promise<boolean> {
-    const expoUi = getExpoUiLiveActivityInstance(activityId);
-    if (expoUi) {
-      await expoUi.update(
-        (contentState ?? {}) as unknown as Record<string, unknown>
-      );
-      return true;
-    }
-    return getNative().update(activityId, JSON.stringify(contentState ?? {}));
-  },
-
-  async end(activityId: string): Promise<void> {
-    const expoUi = getExpoUiLiveActivityInstance(activityId);
-    if (expoUi) {
-      await expoUi.end();
-      return;
-    }
-    return getNative().end(activityId);
-  },
-
-  async endAll(): Promise<void> {
-    return getNative().endAll();
-  },
-
-  async areActivitiesEnabled(): Promise<boolean> {
-    return getNative().areActivitiesEnabled();
-  },
+  update: updateLiveActivity,
+  end: endLiveActivity,
+  endAll: endAllLiveActivities,
+  areActivitiesEnabled: areLiveActivitiesEnabled,
 };

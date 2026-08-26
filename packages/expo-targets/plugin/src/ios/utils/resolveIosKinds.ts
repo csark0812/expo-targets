@@ -18,9 +18,10 @@ export function isWidgetKind(kind: KindRow): kind is IosWidgetKindConfig {
   return kind.type !== 'live-activity';
 }
 
-type IosKindSource = {
+export type IosKindSource = {
   kinds?: KindRow[];
   liveActivity?: LiveActivityConfig;
+  liveActivities?: LiveActivityConfig[];
   displayName?: string;
   supportedFamilies?: WidgetFamily[];
   contentMarginsDisabled?: boolean;
@@ -53,19 +54,53 @@ function explicitKinds(ios?: IosKindSource): KindRow[] | undefined {
 function assertNoLiveActivityKinds(ios?: IosKindSource): void {
   if ((explicitKinds(ios) ?? []).some(isLiveActivityKind)) {
     throw new Error(
-      'ios.kinds cannot contain { "type": "live-activity" }. Set ios.liveActivity instead.'
+      'ios.kinds cannot contain { "type": "live-activity" }. Set ios.liveActivity or ios.liveActivities instead.'
     );
   }
 }
 
+function assertUniqueLiveActivityNames(configs: LiveActivityConfig[]): void {
+  const seen = new Set<string>();
+  for (const config of configs) {
+    const name = config.attributesName;
+    if (seen.has(name)) {
+      throw new Error(
+        `Duplicate Live Activity attributesName "${name}" in ios.liveActivities.`
+      );
+    }
+    seen.add(name);
+  }
+}
+
+/** All Live Activities declared on a widget target (0..N). */
+export function resolveLiveActivityConfigs(input: {
+  ios?: IosKindSource;
+}): LiveActivityConfig[] {
+  assertNoLiveActivityKinds(input.ios);
+  const ios = input.ios;
+  const fromArray = (ios?.liveActivities ?? []).filter(
+    (row) => row.attributesName
+  );
+  const singular = ios?.liveActivity?.attributesName
+    ? [ios.liveActivity]
+    : [];
+
+  if (fromArray.length > 0 && singular.length > 0) {
+    throw new Error(
+      'Use ios.liveActivities OR ios.liveActivity on a widget target, not both.'
+    );
+  }
+
+  const configs = fromArray.length > 0 ? fromArray : singular;
+  assertUniqueLiveActivityNames(configs);
+  return configs;
+}
+
+/** First Live Activity on a widget target, when callers only need 0..1. */
 export function resolveLiveActivityConfig(input: {
   ios?: IosKindSource;
 }): LiveActivityConfig | undefined {
-  assertNoLiveActivityKinds(input.ios);
-  const sibling = input.ios?.liveActivity;
-  if (sibling?.attributesName) {
-    return sibling;
-  }
+  return resolveLiveActivityConfigs(input)[0];
 }
 
 function widgetRowsForTarget(

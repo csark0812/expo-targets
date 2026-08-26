@@ -19,7 +19,7 @@ import {
   getProjectName,
 } from '../apply/pbx';
 import * as Paths from '../utils/paths';
-import { resolveLiveActivityConfig } from '../utils/resolveIosKinds';
+import { resolveLiveActivityConfigs } from '../utils/resolveIosKinds';
 import {
   generateAppIntentShellSwift,
   generateAppShortcutsProviderSwift,
@@ -55,24 +55,29 @@ function pushLiveActivityPlans(
   if (!(target.type === 'widget')) {
     return;
   }
-  const la = resolveLiveActivityConfig(target);
-  if (!la?.attributesName) {
+  const liveActivities = resolveLiveActivityConfigs(target);
+  if (liveActivities.length === 0) {
     return;
   }
   // expo-ui widgets use WidgetLiveActivity blob attrs — skip typed CNG.
   if (target.entry) {
     return;
   }
-  plans.push({
-    fileName: `${la.attributesName}.swift`,
-    contents: generateLiveActivityAttributesSwift(la),
-    targetNames: ['MAIN', widgetProductName(target)],
-  });
-  plans.push({
-    fileName: `${la.attributesName}Bridge.swift`,
-    contents: generateLiveActivityBridgeSwift(la),
-    targetNames: ['MAIN'],
-  });
+  for (const la of liveActivities) {
+    if (!la.attributesName) {
+      continue;
+    }
+    plans.push({
+      fileName: `${la.attributesName}.swift`,
+      contents: generateLiveActivityAttributesSwift(la),
+      targetNames: ['MAIN', widgetProductName(target)],
+    });
+    plans.push({
+      fileName: `${la.attributesName}Bridge.swift`,
+      contents: generateLiveActivityBridgeSwift(la),
+      targetNames: ['MAIN'],
+    });
+  }
 }
 
 function pushAppIntentPlans(

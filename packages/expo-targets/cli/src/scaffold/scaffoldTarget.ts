@@ -61,12 +61,10 @@ function writeHostHelper(
   options?: { includeLiveActivity?: boolean; attributesName?: string }
 ): void {
   const camel = pascalToCamel(pascalName);
-  const imports = options?.includeLiveActivity
-    ? "import { LiveActivity, createTarget } from 'expo-targets';"
-    : "import { createTarget } from 'expo-targets';";
+  const imports = "import { createTarget } from 'expo-targets';";
   let body = `\nexport const ${camel} = createTarget('${pascalName}');\n`;
   if (options?.includeLiveActivity && options.attributesName) {
-    body += `\nexport const ${camel}LiveActivity = LiveActivity.create('${options.attributesName}');\n`;
+    body += `\nexport const ${camel}LiveActivity = ${camel}.liveActivity('${options.attributesName}');\n`;
   }
   fs.writeFileSync(path.join(targetDir, 'index.ts'), `${imports}${body}`);
 }

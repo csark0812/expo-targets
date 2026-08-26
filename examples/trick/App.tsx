@@ -3,11 +3,11 @@
  */
 import * as Notifications from 'expo-notifications';
 import { StatusBar } from 'expo-status-bar';
-import { FileProviderDomain, LiveActivity } from 'expo-targets';
+import { FileProviderDomain } from 'expo-targets';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-const trickLive = LiveActivity.create('TrickActivityAttributes');
+import { trickLiveActivityActivity } from './targets/trick-widgets';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -291,7 +291,7 @@ function startTrickLiveActivity(
   setLiveStatus: (value: string) => void,
   setStatusLine: (value: string) => void
 ) {
-  void trickLive
+  void trickLiveActivity
     .start({
       attributes: { title: 'ET Trick Live' },
       contentState: { status: 'active' },
@@ -313,7 +313,7 @@ function updateTrickLiveActivity(
     setStatusLine('No Live Activity to update');
     return;
   }
-  void trickLive
+  void trickLiveActivity
     .update(liveId, { status: 'updated' })
     .then((ok) => {
       if (ok) {

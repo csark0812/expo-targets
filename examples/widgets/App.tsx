@@ -1,6 +1,8 @@
 import { StatusBar } from 'expo-status-bar';
 import {
   addUserInteractionListener,
+  areLiveActivitiesEnabled,
+  endLiveActivity,
   LiveActivity,
   requestPinWidget,
 } from 'expo-targets';
@@ -18,6 +20,7 @@ import {
   helloExpoUi,
   helloExpoUiCompact,
   helloExpoUiLiveActivity,
+  helloExpoUiLiveActivityHandle,
   updateExpoUiMessage,
 } from './targets/hello-expo-ui';
 import {
@@ -26,7 +29,7 @@ import {
   updateRemoteViewsMessage,
 } from './targets/hello-remoteviews';
 import { helloRemoteViewsBundle } from './targets/hello-remoteviews-bundle';
-import { getMessage, helloWidget, updateMessage } from './targets/hello-widget';
+import { getMessage, helloWidget, helloWidgetLiveActivity, updateMessage } from './targets/hello-widget';
 
 // Keep layout registration reachable (tree-shake guard).
 void helloExpoUiLiveActivity;
@@ -429,12 +432,11 @@ async function startLiveActivity(
   setLiveId: (id: string | null) => void,
   setLiveStatus: (status: string) => void
 ) {
-  if (!(await LiveActivity.areActivitiesEnabled())) {
+  if (!(await areLiveActivitiesEnabled())) {
     setLiveStatus('disabled');
     return;
   }
-  const order = LiveActivity.create('HelloWidgetAttributes');
-  const id = await order.start({
+  const id = await helloWidgetLiveActivity.start({
     attributes: { title: 'Hello' },
     contentState: { status: 'preparing' },
   });
@@ -472,12 +474,11 @@ async function startExpoUiLiveActivity(
   setLiveId: (id: string | null) => void,
   setLiveStatus: (status: string) => void
 ) {
-  if (!(await LiveActivity.areActivitiesEnabled())) {
+  if (!(await areLiveActivitiesEnabled())) {
     setLiveStatus('disabled');
     return;
   }
-  const order = LiveActivity.create('HelloExpoUiAttributes');
-  const id = await order.start({
+  const id = await helloExpoUiLiveActivityHandle.start({
     attributes: { title: 'Expo UI' },
     contentState: { status: 'preparing' },
   });

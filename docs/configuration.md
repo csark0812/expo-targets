@@ -518,11 +518,13 @@ widget.setData(
     "kinds": [
       { "name": "WeatherWidget", "displayName": "Weather" }
     ],
-    "liveActivity": {
-      "attributesName": "WeatherAttributes",
-      "static": { "location": "string" },
-      "contentState": { "temp": "double", "summary": "string" }
-    },
+    "liveActivities": [
+      {
+        "attributesName": "WeatherAttributes",
+        "static": { "location": "string" },
+        "contentState": { "temp": "double", "summary": "string" }
+      }
+    ],
     "colors": {
       "AccentColor": { "light": "#007AFF", "dark": "#0A84FF" }
     }
@@ -530,7 +532,7 @@ widget.setData(
 }
 ```
 
-`ios.kinds` lists WidgetKit picker products (`name` matches `createTarget`). `supportedFamilies` on a kind is sizes of that one picker row, not extra products. `ios.liveActivity` holds `attributesName` / `static` / `contentState` / `pushType` (at most one per widget target). That object drives sealed CNG for native widgets and `WidgetLiveActivity()` on expo-ui Bundles. Ambient TypeScript payload types still land in `.expo/types/expo-targets.d.ts`. Host JS: `LiveActivity.create('WeatherAttributes')`. See [api.md](./api.md) and [widgets.md](./widgets.md).
+`ios.kinds` lists WidgetKit picker products (`name` matches `createTarget`). `supportedFamilies` on a kind is sizes of that one picker row, not extra products. Declare Live Activity on `ios.liveActivity` (one) or `ios.liveActivities` (two or more in the same `.appex`). Do not set both on one target. Each row holds `attributesName` / `static` / `contentState` / `pushType`. That drives sealed CNG for native widgets and `WidgetLiveActivity()` on expo-ui Bundles. Ambient TypeScript payload types still land in `.expo/types/expo-targets.d.ts`. Host JS: `LiveActivity.create('WeatherAttributes')` or `folder.liveActivity('WeatherAttributes')`. See [api.md](./api.md) and [widgets.md](./widgets.md).
 
 ### File Provider domain (iOS)
 

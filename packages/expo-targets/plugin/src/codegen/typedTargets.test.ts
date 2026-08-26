@@ -83,6 +83,29 @@ describe('formatTargetsTypesFile live activity', () => {
     expect(content).toContain('"WeatherAttributes": true');
   });
 
+  test('emits multiple KnownLiveActivityAttributes from liveActivities', () => {
+    const content = formatTargetsTypesFile([
+      {
+        name: 'PoplWidgets',
+        liveActivities: [
+          {
+            attributesName: 'DynamicIslandAttributes',
+            contentState: { views: 'string' },
+          },
+          {
+            attributesName: 'MeetingLiveAttributes',
+            static: { meetingId: 'string' },
+            contentState: { status: 'string' },
+          },
+        ],
+      },
+    ]);
+    expect(content).toContain('"DynamicIslandAttributes": true');
+    expect(content).toContain('"MeetingLiveAttributes": true');
+    expect(content).toContain('"meetingId": string');
+    expect(content).toContain('"views": string');
+  });
+
   test('emits LiveActivityPayloadRegistry from static/contentState', () => {
     const content = formatTargetsTypesFile([
       {

@@ -419,6 +419,7 @@ function finalizeTargetsConfig(
       android: cfg.android,
       widgetKinds: widgetKindNamesForCodegen(cfg),
       liveActivity: cfg.liveActivity,
+      liveActivities: cfg.liveActivities,
     }));
     writeTargetsTypesFile(opts.projectRoot, codegenConfigs);
   }

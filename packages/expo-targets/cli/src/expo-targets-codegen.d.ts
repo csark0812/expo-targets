@@ -12,8 +12,23 @@ declare module 'expo-targets/codegen' {
       static?: Record<string, LiveActivityFieldType>;
       contentState?: Record<string, LiveActivityFieldType>;
     };
+    liveActivities?: Array<{
+      attributesName?: string;
+      static?: Record<string, LiveActivityFieldType>;
+      contentState?: Record<string, LiveActivityFieldType>;
+    }>;
     ios?: {
       kinds?: Array<{ name?: string }>;
+      liveActivity?: {
+        attributesName?: string;
+        static?: Record<string, LiveActivityFieldType>;
+        contentState?: Record<string, LiveActivityFieldType>;
+      };
+      liveActivities?: Array<{
+        attributesName?: string;
+        static?: Record<string, LiveActivityFieldType>;
+        contentState?: Record<string, LiveActivityFieldType>;
+      }>;
       intents?: { ui?: boolean | { name?: string } };
       wallet?: { ui?: boolean | { name?: string } };
     };
@@ -44,6 +59,11 @@ declare module 'expo-targets/codegen' {
         static?: Record<string, LiveActivityFieldType>;
         contentState?: Record<string, LiveActivityFieldType>;
       };
+      liveActivities?: Array<{
+        attributesName?: string;
+        static?: Record<string, LiveActivityFieldType>;
+        contentState?: Record<string, LiveActivityFieldType>;
+      }>;
     }>
   ): string;
 

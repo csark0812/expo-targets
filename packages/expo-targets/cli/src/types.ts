@@ -20,6 +20,7 @@ export interface TargetConfig {
   ios?: {
     kinds?: { type?: string; name?: string }[];
     liveActivity?: { attributesName?: string };
+    liveActivities?: Array<{ attributesName?: string }>;
     intents?: { ui?: boolean | { name?: string } };
     wallet?: { ui?: boolean | { name?: string } };
   };

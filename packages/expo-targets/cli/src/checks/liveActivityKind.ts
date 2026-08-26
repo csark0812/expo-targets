@@ -18,8 +18,8 @@ export function checkLiveActivityKind(ctx: ProjectContext): CheckResult[] {
       ok: false,
       level: 'error',
       title: 'Live Activity kinds row',
-      message: `targets/${target.dirName}: ios.kinds cannot contain { "type": "live-activity" }. Set ios.liveActivity instead.`,
-      fix: 'Keep ios.kinds as gallery WidgetKit products only. Put attributesName, static, contentState, and pushType on ios.liveActivity.',
+      message: `targets/${target.dirName}: ios.kinds cannot contain { "type": "live-activity" }. Set ios.liveActivity or ios.liveActivities instead.`,
+      fix: 'Keep ios.kinds as gallery WidgetKit products only. Put attributesName, static, contentState, and pushType on ios.liveActivity or ios.liveActivities.',
     });
   }
   return errors;

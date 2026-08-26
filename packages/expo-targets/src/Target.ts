@@ -5,14 +5,18 @@ import type {
   TargetConfig,
 } from '../plugin/src/config';
 import { resolveUiMode } from '../plugin/src/domain/uiMode';
-import { resolveLiveActivityConfig } from '../plugin/src/ios/utils/resolveIosKinds';
+import { resolveLiveActivityConfigs } from '../plugin/src/ios/utils/resolveIosKinds';
 import type {
+  LiveActivityAttributesName,
   MultiProductWidgetFolderName,
   TargetName,
   WidgetKindName,
 } from './generatedNames';
 import { Extension, type SharedData } from './modules/extension/index';
-import { createLiveActivity } from './modules/liveActivity/index';
+import {
+  buildLiveActivityHandle,
+  type LiveActivityHandle,
+} from './modules/liveActivity/index';
 import {
   type ConversationInfo,
   type MessageLayout,
@@ -64,7 +68,9 @@ export interface WidgetProductTarget extends BaseTarget {
     kindName: WidgetKindName,
     layout?: React.ComponentType<any>
   ) => BaseTarget;
-  liveActivity: () => ReturnType<typeof createLiveActivity>;
+  liveActivity: (
+    attributesName?: LiveActivityAttributesName
+  ) => LiveActivityHandle<LiveActivityAttributesName>;
 }
 
 export interface WidgetFolderTarget {
@@ -77,8 +83,10 @@ export interface WidgetFolderTarget {
     kindName: WidgetKindName,
     layout?: React.ComponentType<any>
   ) => BaseTarget;
-  /** Same handle as `LiveActivity.create(attributesName)` from config. */
-  liveActivity: () => ReturnType<typeof createLiveActivity>;
+  /** Live Activity handle from this folder's ios.liveActivity / ios.liveActivities config. */
+  liveActivity: (
+    attributesName?: LiveActivityAttributesName
+  ) => LiveActivityHandle<LiveActivityAttributesName>;
   /** Reload every gallery kind / provider in this folder. */
   refresh: () => void;
 }
@@ -308,16 +316,36 @@ function assertGalleryProduct(config: TargetConfig, kindName: string): void {
   }
 }
 
-function liveActivityHandleForConfig(config: TargetConfig) {
-  const liveActivity = resolveLiveActivityConfig(config);
-  const attributesName = liveActivity?.attributesName;
-  if (!attributesName) {
+function liveActivityHandleForConfig(
+  config: TargetConfig,
+  attributesName?: LiveActivityAttributesName
+) {
+  const configs = resolveLiveActivityConfigs(config);
+  if (configs.length === 0) {
     throw new Error(
-      `[expo-targets] Target "${config.name}" has no ios.liveActivity.attributesName. ` +
-        'Add ios.liveActivity to expo-target.config.json.'
+      `[expo-targets] Target "${config.name}" has no Live Activity configured. ` +
+        'Add ios.liveActivity or ios.liveActivities to expo-target.config.json.'
     );
   }
-  return createLiveActivity(attributesName);
+  if (attributesName) {
+    if (!configs.some((la) => la.attributesName === attributesName)) {
+      throw new Error(
+        `[expo-targets] Unknown Live Activity "${attributesName}" on target "${config.name}". ` +
+          `Configured: ${configs.map((la) => la.attributesName).join(', ')}.`
+      );
+    }
+    return buildLiveActivityHandle(attributesName);
+  }
+  if (configs.length === 1) {
+    return buildLiveActivityHandle(
+      configs[0]!.attributesName as LiveActivityAttributesName
+    );
+  }
+  throw new Error(
+    `[expo-targets] Target "${config.name}" has multiple Live Activities. ` +
+      `Call .liveActivity('${configs[0]!.attributesName}') with attributesName. ` +
+      `Configured: ${configs.map((la) => la.attributesName).join(', ')}.`
+  );
 }
 
 function augmentOneToOneWidgetHandle(
@@ -340,7 +368,8 @@ function augmentOneToOneWidgetHandle(
         componentFunc: layout,
       });
     },
-    liveActivity: () => liveActivityHandleForConfig(config),
+    liveActivity: (attributesName?: LiveActivityAttributesName) =>
+      liveActivityHandleForConfig(config, attributesName),
   };
 }
 
@@ -405,7 +434,8 @@ function createWidgetFolderTarget(config: TargetConfig): WidgetFolderTarget {
         componentFunc: layout,
       });
     },
-    liveActivity: () => liveActivityHandleForConfig(config),
+    liveActivity: (attributesName?: LiveActivityAttributesName) =>
+      liveActivityHandleForConfig(config, attributesName),
     refresh() {
       const storage = new AppGroupStorage(appGroup, config.name);
       for (const product of galleryProductNames(config)) {

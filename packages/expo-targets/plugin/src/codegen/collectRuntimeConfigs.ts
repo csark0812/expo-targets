@@ -1,4 +1,4 @@
-import { resolveLiveActivityConfig } from '../ios/utils/resolveIosKinds';
+import { resolveLiveActivityConfigs } from '../ios/utils/resolveIosKinds';
 
 export type LiveActivityFieldType = 'string' | 'double' | 'int' | 'bool';
 
@@ -13,9 +13,15 @@ export interface RuntimeTargetConfig {
     static?: Record<string, LiveActivityFieldType>;
     contentState?: Record<string, LiveActivityFieldType>;
   };
+  liveActivities?: Array<{
+    attributesName?: string;
+    static?: Record<string, LiveActivityFieldType>;
+    contentState?: Record<string, LiveActivityFieldType>;
+  }>;
   ios?: {
     kinds?: import('../config').IosKindConfig[];
     liveActivity?: import('../config').LiveActivityConfig;
+    liveActivities?: import('../config').LiveActivityConfig[];
     intents?: { ui?: boolean | { name?: string } };
     wallet?: { ui?: boolean | { name?: string } };
   };
@@ -75,11 +81,19 @@ export function collectRuntimeConfigs(
 
   for (const { config: evaluatedConfig } of targets) {
     const appGroup = resolveAppGroup(evaluatedConfig, expoConfig);
-    const liveActivity = resolveLiveActivityConfig(evaluatedConfig);
+    const liveActivities = resolveLiveActivityConfigs(evaluatedConfig);
     const withGroup = {
       ...evaluatedConfig,
       appGroup,
-      liveActivity: liveActivity ?? evaluatedConfig.liveActivity,
+      liveActivity: liveActivities[0] ?? evaluatedConfig.liveActivity,
+      liveActivities:
+        liveActivities.length > 0
+          ? liveActivities.map((la) => ({
+              attributesName: la.attributesName,
+              static: la.static,
+              contentState: la.contentState,
+            }))
+          : undefined,
     };
 
     if (evaluatedConfig.type === 'intent') {

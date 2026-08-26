@@ -23,11 +23,17 @@ export interface TargetCodegenConfig {
   android?: RuntimeTargetConfig['android'];
   /** Gallery kind / provider names (defaults to folder name when omitted). */
   widgetKinds?: string[];
+  /** @deprecated Prefer liveActivities — kept for single-LA configs. */
   liveActivity?: {
     attributesName?: string;
     static?: Record<string, LiveActivityFieldType>;
     contentState?: Record<string, LiveActivityFieldType>;
   };
+  liveActivities?: Array<{
+    attributesName?: string;
+    static?: Record<string, LiveActivityFieldType>;
+    contentState?: Record<string, LiveActivityFieldType>;
+  }>;
 }
 
 function interfaceMembers(keys: string[]): string {
@@ -62,6 +68,38 @@ function formatRecordFields(
   return `{\n${body}\n    }`;
 }
 
+function liveActivityCodegenRows(
+  configs: TargetCodegenConfig[]
+): Array<{
+  attributesName: string;
+  static?: Record<string, LiveActivityFieldType>;
+  contentState?: Record<string, LiveActivityFieldType>;
+}> {
+  const rows: Array<{
+    attributesName: string;
+    static?: Record<string, LiveActivityFieldType>;
+    contentState?: Record<string, LiveActivityFieldType>;
+  }> = [];
+  for (const cfg of configs) {
+    const entries =
+      cfg.liveActivities && cfg.liveActivities.length > 0
+        ? cfg.liveActivities
+        : cfg.liveActivity?.attributesName
+          ? [cfg.liveActivity]
+          : [];
+    for (const la of entries) {
+      if (la.attributesName) {
+        rows.push({
+          attributesName: la.attributesName,
+          static: la.static,
+          contentState: la.contentState,
+        });
+      }
+    }
+  }
+  return rows;
+}
+
 function formatPayloadRegistry(liveActivities: TargetCodegenConfig[]): string {
   const payloadEntries = new Map<
     string,
@@ -70,14 +108,10 @@ function formatPayloadRegistry(liveActivities: TargetCodegenConfig[]): string {
       contentState?: Record<string, LiveActivityFieldType>;
     }
   >();
-  for (const cfg of liveActivities) {
-    const attr = cfg.liveActivity?.attributesName;
-    if (!attr) {
-      continue;
-    }
-    payloadEntries.set(attr, {
-      static: cfg.liveActivity?.static,
-      contentState: cfg.liveActivity?.contentState,
+  for (const la of liveActivityCodegenRows(liveActivities)) {
+    payloadEntries.set(la.attributesName, {
+      static: la.static,
+      contentState: la.contentState,
     });
   }
 
@@ -131,13 +165,9 @@ export function formatTargetsTypesFile(configs: TargetCodegenConfig[]): string {
     ),
   ].sort();
   const multiProductWidgetFolders = multiProductWidgetFolderNames(configs);
-  const liveActivities = configs.filter((c) => c.liveActivity?.attributesName);
+  const liveActivityRows = liveActivityCodegenRows(configs);
   const attributesNames = [
-    ...new Set(
-      liveActivities
-        .map((c) => c.liveActivity?.attributesName)
-        .filter((name): name is string => Boolean(name))
-    ),
+    ...new Set(liveActivityRows.map((la) => la.attributesName)),
   ].sort();
 
   let content = GENERATED_HEADER;
@@ -154,7 +184,7 @@ export function formatTargetsTypesFile(configs: TargetCodegenConfig[]): string {
   content += `  interface KnownLiveActivityAttributes {\n`;
   content += interfaceMembers(attributesNames);
   content += `  }\n`;
-  content += formatPayloadRegistry(liveActivities);
+  content += formatPayloadRegistry(configs);
   content += `}\n`;
   content += `\nexport {};\n`;
   return content;

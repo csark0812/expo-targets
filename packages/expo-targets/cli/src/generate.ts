@@ -31,13 +31,8 @@ export function runGenerate(projectRoot = process.cwd()): number {
       ios: cfg.ios,
       android: cfg.android,
       widgetKinds: widgetKindNamesForCodegen(cfg),
-      liveActivity: cfg.liveActivity
-        ? {
-            attributesName: cfg.liveActivity.attributesName,
-            static: cfg.liveActivity.static,
-            contentState: cfg.liveActivity.contentState,
-          }
-        : undefined,
+      liveActivity: cfg.liveActivity,
+      liveActivities: cfg.liveActivities,
     }))
   );
 

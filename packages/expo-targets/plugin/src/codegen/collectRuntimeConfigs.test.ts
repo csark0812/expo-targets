@@ -33,6 +33,39 @@ describe('collectRuntimeConfigs', () => {
     expect(configs[0]?.appGroup).toBe('group.com.example.app');
   });
 
+  test('copies ios.liveActivities onto the runtime row', () => {
+    const configs = collectRuntimeConfigs(
+      [
+        {
+          config: {
+            name: 'PoplWidgets',
+            type: 'widget',
+            ios: {
+              liveActivities: [
+                {
+                  attributesName: 'DynamicIslandAttributes',
+                  contentState: { views: 'string' },
+                },
+                {
+                  attributesName: 'MeetingLiveAttributes',
+                  contentState: { status: 'string' },
+                },
+              ],
+            },
+          },
+        },
+      ],
+      { ios: {} }
+    );
+    expect(configs[0]?.liveActivities?.map((la) => la.attributesName)).toEqual([
+      'DynamicIslandAttributes',
+      'MeetingLiveAttributes',
+    ]);
+    expect(configs[0]?.liveActivity?.attributesName).toBe(
+      'DynamicIslandAttributes'
+    );
+  });
+
   test('copies ios.liveActivity onto the runtime row', () => {
     const configs = collectRuntimeConfigs(
       [

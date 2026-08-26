@@ -1,6 +1,7 @@
 import { createTarget } from 'expo-targets';
 
 export const helloWidget = createTarget('HelloWidget');
+export const helloWidgetLiveActivity = helloWidget.liveActivity();
 
 export const updateMessage = (message: string) => {
   helloWidget.setData({ message });

@@ -16,7 +16,7 @@ After `prebuild` or `npx expo-targets generate`, TypeScript narrows string liter
 | --- | --- | --- |
 | Folder name (`PoplWidgets`) | `expo-target.config.json` `"name"` | Share/action/clip, **or** widget folder when `ios.kinds` lists multiple products |
 | Kind name (`HomescreenWidgets`) | `ios.kinds[].name` (or `android.providers[].name`) | Widget **product** — use for `setData` / `refresh` |
-| Attributes name (`OrderAttributes`) | `ios.liveActivity.attributesName` | Live Activity factory via `LiveActivity.create` (not `createTarget`) |
+| Attributes name (`OrderAttributes`) | `ios.liveActivity.attributesName` or `ios.liveActivities[].attributesName` | `folder.liveActivity('OrderAttributes')` handle — not `createTarget` |
 
 ```typescript
 import { createTarget } from "expo-targets";
@@ -31,7 +31,9 @@ hello.setData({ message: "Hi" }); // refresh implied on widgets
 const popl = createTarget("PoplWidgets");
 const home = popl.widget("HomescreenWidgets");
 home.setData({ message: "Updated" });
-const island = popl.liveActivity(); // or LiveActivity.create("DynamicIslandAttributes")
+const island = popl.liveActivity(); // single LA — or .liveActivity("DynamicIslandAttributes")
+const meeting = popl.liveActivity("MeetingLiveAttributes"); // when ios.liveActivities has 2+
+await island.start({ attributes: { … }, contentState: { … } });
 
 // Legacy / doctor-era: kind name resolves to parent folder config
 const lock = createTarget("LockScreenWidgets");
@@ -50,7 +52,7 @@ export const share = createTarget("ShareExt", ShareExtension);
 | `name`      | `TargetName \| WidgetKindName` when generated | Folder `"name"`, or gallery kind / provider name on a multi-product widget |
 | `component` | `React.ComponentType` | _(Optional)_ For RN / expo-ui widgets. On multi-kind folders use `.widget('Kind', Layout)` instead |
 
-Multi-product widget folders (`ios.kinds` with more than one row, or a single kind whose name differs from the folder) return a **folder handle** with `.widget()` / `.liveActivity()` only — not `setData`. Write data on the kind handle.
+Multi-product widget folders (`ios.kinds` with more than one row, or a single kind whose name differs from the folder) return a **folder handle** with `.widget()` / `.liveActivity(name?)` only — not `setData`. Write data on the kind handle. When a folder declares multiple Live Activities (`ios.liveActivities`), pass `attributesName` to `.liveActivity(...)`.
 
 ### Error Handling
 
@@ -469,24 +471,35 @@ await ContentBlocker.reload({ targetName: "MyBlocker" });
 
 ---
 
-## LiveActivity
+## Live Activity
 
-Start, update, or end Live Activities. `attributesName` must match `ios.liveActivity.attributesName` on a `type: widget` target. Unknown names throw with the configured list. Prefer `LiveActivity.create(name)`. This is a widgets-like factory. Also exported as `createLiveActivity(name)`.
+Live Activities belong to a **widget target folder**. Export handles from the target entry (`targets/<name>/index.ts`), then call `start` / `update` / `end` on that handle.
+
+- **Preferred:** `createTarget('PoplWidgets').liveActivity('DynamicIslandAttributes')` (omit the name when the folder declares exactly one Live Activity).
+- **Global helpers:** `areLiveActivitiesEnabled()`, `endAllLiveActivities()`, and id-based `LiveActivity.update(id, …)` / `LiveActivity.end(id)` when you only store the activity id in app code.
+- **Deprecated:** `LiveActivity.create`, `createLiveActivity`, and `LiveActivity.start(attributesName, …)` — doctor warns; use folder handles instead.
 
 - **iOS:** ActivityKit (16.2+). Attributes and the host bridge are CNG into `ios/*/ExpoTargetsGenerated/` (gitignored). Activity UI stays under `targets/<widget>/ios/`.
 - **Android:** Ongoing `NotificationCompat` helper with the same JS surface. No Dynamic Island, StandBy, or ActivityKit push-to-start.
 
 ```typescript
-import { LiveActivity } from "expo-targets";
+// targets/widgets/index.ts
+import { createTarget } from "expo-targets";
 
-if (await LiveActivity.areActivitiesEnabled()) {
-  const order = LiveActivity.create("OrderAttributes");
-  const id = await order.start({
-    attributes: { orderId: "12" },
-    contentState: { status: "preparing", progress: 0.1 },
+export const popl = createTarget("PoplWidgets");
+export const DynamicIsland = popl.liveActivity("DynamicIslandAttributes");
+
+// app code
+import { areLiveActivitiesEnabled, endLiveActivity, LiveActivity } from "expo-targets";
+import { DynamicIsland } from "../targets/widgets";
+
+if (await areLiveActivitiesEnabled()) {
+  const id = await DynamicIsland.start({
+    attributes: { title: "Popl" },
+    contentState: { views: "0" },
   });
-  await order.update(id, { status: "ready", progress: 1 });
-  await LiveActivity.end(id);
+  await DynamicIsland.update(id, { views: "1" });
+  await endLiveActivity(id); // or DynamicIsland.end(id)
   await LiveActivity.endAll();
 }
 ```

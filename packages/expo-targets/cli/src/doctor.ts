@@ -8,6 +8,8 @@ import {
 } from './checks/easCredentials';
 import { checkEntries } from './checks/entries';
 import { warnHeavyExclusions } from './checks/heavyExclusions';
+import { checkLiveActivityHostApi } from './checks/liveActivityHostApi';
+import { checkLiveActivitiesConfig } from './checks/liveActivitiesConfig';
 import { checkLiveActivityKind } from './checks/liveActivityKind';
 import { checkMetro } from './checks/metro';
 import { checkNameSync } from './checks/nameSync';
@@ -39,6 +41,7 @@ function collectFailures(ctx: ReturnType<typeof loadProject>): CheckResult[] {
   results.push(...checkEntries(ctx));
   results.push(...checkNameSync(ctx));
   results.push(...checkLiveActivityKind(ctx));
+  results.push(...checkLiveActivitiesConfig(ctx));
   results.push(...checkEasCredentialErrors(ctx));
   return results;
 }
@@ -48,6 +51,7 @@ function collectWarnings(ctx: ReturnType<typeof loadProject>): CheckResult[] {
     ...warnUnusedWidgetBundle(ctx),
     ...warnSealedZone(ctx),
     ...warnDualWidgets(ctx),
+    ...checkLiveActivityHostApi(ctx),
     ...checkUiMode(ctx),
     ...warnHeavyExclusions(ctx),
     ...warnExtensionBundleExport(ctx),

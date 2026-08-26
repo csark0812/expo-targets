@@ -10,7 +10,7 @@ Native WidgetKit and ActivityKit are **first-class** in expo-targets (not soft-d
 
 | Stage               | Behavior                                                                                    |
 | ------------------- | ------------------------------------------------------------------------------------------- |
-| **Now**             | Widget and Live Activity scaffolds and examples are supported. Put Live Activity on `ios.liveActivity`. `ios.kinds` is gallery WidgetKit only. A `{ "type": "live-activity" }` kinds row fails (doctor + resolver). |
+| **Now**             | Widget and Live Activity scaffolds and examples are supported. Put Live Activity on `ios.liveActivity` or `ios.liveActivities`. Prefer `createTarget('Folder').liveActivity('AttributesName')` over `LiveActivity.create` / `createLiveActivity` (deprecated). `ios.kinds` is gallery WidgetKit only. A `{ "type": "live-activity" }` kinds row fails (doctor + resolver). |
 | **Dual engines**    | Unsupported: do not run expo-widgets and expo-targets WidgetKit generators in one app       |
 | **Android widgets** | **First-class** Glance/Compose or RemoteViews deepen (not bridge-grade). Same DoD as iOS: registry + scaffold + example + Devicewright (or leftover). One generator per app if official `expo-widgets` Android lands. |
 | **Android dual**    | API-ceiling program (~40% of types). Ledger in `TYPE_CHARACTERISTICS` (`androidBucket` / `androidComponent`). W0–W3 shipped (through system services). Ceiling includes W4-in-1.0 partials + Wear strong — no separate W5 Wear wave. No orphan Android stubs outside the ceiling. |
