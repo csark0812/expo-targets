@@ -2,7 +2,7 @@
 
 **Source of truth for** `expo-target.config` options and extension types.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-14 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-26 -->
 
 > **Orphan-stub freeze:** do not add new `ExtensionType` values without registry, scaffold, example, and Devicewright row. See [deprecations.md](./deprecations.md). Widgets policy: [widgets.md](./widgets.md).
 
@@ -165,7 +165,7 @@ Add iOS-specific options under the `ios` key:
 | `entitlements`      | `{}`      | Custom entitlements                                                                                                                                                                                         |
 | `infoPlist`         | `{}`      | Custom Info.plist entries (deep merged with defaults)                                                                                                                                                       |
 | `icon`              | —         | Path to extension icon file                                                                                                                                                                                 |
-| `targetIcon`        | —         | Stickers: icon path. Actions: SF Symbol name (e.g., `"photo.fill"`) or image asset name. SF Symbols are Apple's icon library — browse in [SF Symbols app](https://developer.apple.com/sf-symbols/) or Xcode |
+| `targetIcon`        | —         | Stickers and messages: icon path (generates `iMessage App Icon.stickersiconset`). Actions: SF Symbol name (e.g., `"photo.fill"`) or image asset name. SF Symbols are Apple's icon library — browse in [SF Symbols app](https://developer.apple.com/sf-symbols/) or Xcode |
 | `activationRules`   | —         | Share/action extension content types                                                                                                                                                                        |
 | `preprocessingFile` | —         | JS file for web content preprocessing                                                                                                                                                                       |
 
@@ -782,9 +782,14 @@ Until `grid-size` is configurable, use **408×408** source stickers. Keep each s
   "name": "MyMessagesApp",
   "platforms": ["ios"],
   "appGroup": "group.com.yourapp",
-  "entry": "./targets/my-messages-app/index.tsx"
+  "entry": "./targets/my-messages-app/index.tsx",
+  "ios": {
+    "targetIcon": "./assets/imessage-icon.png"
+  }
 }
 ```
+
+Set `ios.targetIcon` to a PNG relative to the **target directory**. The plugin writes `iMessage App Icon.stickersiconset` and sets `ASSETCATALOG_COMPILER_APPICON_NAME` to `"iMessage App Icon"`. `ios.images` cannot replace this set. You do not need `stickerPacks`.
 
 **⚠️ iOS Limitation:** You cannot have both a `messages` target and a `stickers` target in the same app. iOS allows only one message payload provider extension per app. Both types use the same extension point identifier (`com.apple.message-payload-provider`). Choose a messages app OR stickers, but not both.
 

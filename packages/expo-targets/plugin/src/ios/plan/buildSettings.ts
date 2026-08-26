@@ -134,6 +134,19 @@ function planIsolatedSearchPathSettings(): Record<string, string | string[]> {
   };
 }
 
+/** Stickers always; messages only when `ios.targetIcon` is a file path. */
+function planIMessageAppIconSetting(
+  props: IOSTargetProps
+): Record<string, string> {
+  if (
+    props.type === 'stickers' ||
+    (props.type === 'messages' && props.targetIcon)
+  ) {
+    return { ASSETCATALOG_COMPILER_APPICON_NAME: '"iMessage App Icon"' };
+  }
+  return {};
+}
+
 function planInheritedSettings(
   mainBuildSettings: Record<string, any>,
   type: string
@@ -243,9 +256,9 @@ export function planBuildSettings({
 
   if (typeConfig.requiresCode) {
     Object.assign(settings, planCodeSettings(props, mainBuildSettings));
-  } else if (props.type === 'stickers') {
-    settings.ASSETCATALOG_COMPILER_APPICON_NAME = '"iMessage App Icon"';
   }
+
+  Object.assign(settings, planIMessageAppIconSetting(props));
 
   // Re-assert watchOS family after planCodeSettings (which may inherit host 1,2).
   if (isWatchOs) {

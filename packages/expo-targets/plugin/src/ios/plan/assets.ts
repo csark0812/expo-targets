@@ -139,10 +139,17 @@ function planStickers({
   };
 }
 
+function wantsIMessageAppIcon(props: IOSTargetProps): boolean {
+  return (
+    props.type === 'stickers' ||
+    (props.type === 'messages' && Boolean(props.targetIcon))
+  );
+}
+
 /**
  * Plan the target's asset catalog: which user assets to copy into the build
- * directory, which color and image sets to generate, and (for stickers) the
- * sticker packs.
+ * directory, which color and image sets to generate, and (for stickers /
+ * messages with `targetIcon`) the iMessage app icon set.
  */
 export function planAssets({
   workspace,
@@ -171,7 +178,7 @@ export function planAssets({
     copyUserAssets: workspace.hasUserAssets,
     colorsets: planColorsets({ props, paths }),
     imagesets: planImagesets({ props, paths }),
-    stickers: isStickers
+    stickers: wantsIMessageAppIcon(props)
       ? planStickers({ props, paths, buildAssetsPath })
       : undefined,
   };

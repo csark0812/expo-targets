@@ -237,6 +237,30 @@ describe('planBuildSettings for stickers', () => {
   });
 });
 
+describe('planBuildSettings for messages', () => {
+  test('sets the iMessage app icon name when targetIcon is a file path', () => {
+    const settings = buildSettingsFor({
+      props: {
+        type: 'messages',
+        name: 'MyMessages',
+        targetIcon: './assets/icon.png',
+      },
+    });
+
+    expect(settings.ASSETCATALOG_COMPILER_APPICON_NAME).toBe(
+      '"iMessage App Icon"'
+    );
+  });
+
+  test('does not set the iMessage app icon name without targetIcon', () => {
+    const settings = buildSettingsFor({
+      props: { type: 'messages', name: 'MyMessages' },
+    });
+
+    expect(settings.ASSETCATALOG_COMPILER_APPICON_NAME).toBeUndefined();
+  });
+});
+
 describe('planBuildSettings for watch targets', () => {
   test('watch targets use watchOS SDK and device family 4', () => {
     const settings = buildSettingsFor({
@@ -478,6 +502,36 @@ describe('planAssets for sticker targets', () => {
         'targets/my-share/stickers/hello.png'
       ),
     });
+  });
+});
+
+describe('planAssets for messages targets', () => {
+  test('plans an iMessage icon set in Assets.xcassets from targetIcon', () => {
+    const plan = assetsFor({
+      type: 'messages',
+      name: 'MyMessages',
+      targetIcon: './assets/icon.png',
+    });
+
+    expect(plan.isStickers).toBe(false);
+    expect(plan.referencePath).toBe(
+      `${PROJECT_NAME}/ExpoTargetsGenerated/MyMessagesTarget/Assets.xcassets`
+    );
+    expect(plan.stickers?.iconsetPath).toContain(
+      'iMessage App Icon.stickersiconset'
+    );
+    expect(plan.stickers?.iconsetPath).toContain('Assets.xcassets');
+    expect(plan.stickers?.sourceIconPath).toBe(
+      path.join(PROJECT_ROOT, 'targets/my-share', 'assets/icon.png')
+    );
+    expect(plan.stickers?.packs).toEqual([]);
+  });
+
+  test('does not plan an iMessage icon set without targetIcon', () => {
+    const plan = assetsFor({ type: 'messages', name: 'MyMessages' });
+
+    expect(plan.isStickers).toBe(false);
+    expect(plan.stickers).toBeUndefined();
   });
 });
 

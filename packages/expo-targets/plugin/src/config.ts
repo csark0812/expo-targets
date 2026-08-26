@@ -225,10 +225,10 @@ interface BaseIosTargetConfig {
   stickerPacks?: StickerPack[];
   /**
    * Icon for extension target
-   * - For stickers: Path to source image file (e.g., "./assets/imessage-icon.png")
+   * - For stickers and messages: Path to source image file (e.g., "./assets/imessage-icon.png")
    * - For action extensions: SF Symbol name (e.g., "photo.fill") or image asset name
    * @example
-   * targetIcon: "./assets/icon.png" // Sticker pack icon file path
+   * targetIcon: "./assets/icon.png" // iMessage app icon file path (stickers / messages)
    * targetIcon: "photo.fill" // Action extension SF Symbol
    * targetIcon: "MyActionIcon" // Action extension image asset name
    */
