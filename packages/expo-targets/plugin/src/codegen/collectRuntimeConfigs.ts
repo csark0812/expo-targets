@@ -15,6 +15,7 @@ export interface RuntimeTargetConfig {
   };
   ios?: {
     kinds?: import('../config').IosKindConfig[];
+    liveActivity?: import('../config').LiveActivityConfig;
     intents?: { ui?: boolean | { name?: string } };
     wallet?: { ui?: boolean | { name?: string } };
   };

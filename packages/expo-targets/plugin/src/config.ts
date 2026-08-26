@@ -343,10 +343,17 @@ interface BaseIosTargetConfig {
   /** Disable default WidgetKit content margins (expo-ui). */
   contentMarginsDisabled?: boolean;
   /**
-   * WidgetKit picker products plus at most one live-activity row.
+   * WidgetKit picker products (`name` matches `createTarget` / Swift `kind:`).
    * When omitted or empty, one widget uses `name` + scalar ios fields.
+   * Live Activity belongs on `liveActivity`, not in this list.
    */
-  kinds?: IosKindConfig[];
+  kinds?: IosWidgetKindConfig[];
+  /**
+   * ActivityKit Live Activity in the same widget `.appex`. At most one.
+   * Native CNG uses `attributesName` / `static` / `contentState` / `pushType`.
+   * Expo-ui Bundles add `WidgetLiveActivity()`.
+   */
+  liveActivity?: LiveActivityConfig;
 }
 
 /** WidgetKit family names (expo-ui supportedFamilies). */
@@ -416,12 +423,16 @@ export interface IosWidgetKindConfig {
   configuration?: WidgetConfiguration;
 }
 
-/** ActivityKit row. Adds `WidgetLiveActivity()` on expo-ui Bundles. At most one. */
+/**
+ * Leftover kinds row shape. Author Live Activity on `ios.liveActivity`.
+ * A `{ type: "live-activity" }` kinds row throws.
+ */
 export type IosLiveActivityKindConfig = LiveActivityConfig & {
   type: 'live-activity';
 };
 
-export type IosKindConfig = IosWidgetKindConfig | IosLiveActivityKindConfig;
+/** Gallery WidgetKit picker product. Not a Live Activity. */
+export type IosKindConfig = IosWidgetKindConfig;
 
 export interface AppIntentHostConfig {
   className: string;

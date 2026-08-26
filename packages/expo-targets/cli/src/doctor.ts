@@ -8,6 +8,7 @@ import {
 } from './checks/easCredentials';
 import { checkEntries } from './checks/entries';
 import { warnHeavyExclusions } from './checks/heavyExclusions';
+import { checkLiveActivityKind } from './checks/liveActivityKind';
 import { checkMetro } from './checks/metro';
 import { checkNameSync } from './checks/nameSync';
 import { checkPlugin } from './checks/plugin';
@@ -37,6 +38,7 @@ function collectFailures(ctx: ReturnType<typeof loadProject>): CheckResult[] {
   results.push(...checkAppGroups(ctx));
   results.push(...checkEntries(ctx));
   results.push(...checkNameSync(ctx));
+  results.push(...checkLiveActivityKind(ctx));
   results.push(...checkEasCredentialErrors(ctx));
   return results;
 }

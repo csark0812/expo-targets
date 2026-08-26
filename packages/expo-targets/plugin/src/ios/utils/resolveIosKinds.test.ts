@@ -33,11 +33,6 @@ describe('resolveGalleryWidgetKinds list', () => {
             displayName: 'Lock QR',
             supportedFamilies: ['accessoryCircular', 'accessoryRectangular'],
           },
-          {
-            type: 'live-activity',
-            attributesName: 'DynamicIslandAttributes',
-            contentState: { views: 'string' },
-          },
         ],
       },
     });
@@ -46,6 +41,24 @@ describe('resolveGalleryWidgetKinds list', () => {
       'LockScreenWidgets',
     ]);
     expect(kinds[1]?.displayName).toBe('Lock QR');
+  });
+
+  test('a live-activity kinds row throws', () => {
+    expect(() =>
+      resolveGalleryWidgetKinds({
+        targetName: 'HomescreenWidgets',
+        ios: {
+          kinds: [
+            { name: 'Home' },
+            {
+              type: 'live-activity',
+              attributesName: 'DynamicIslandAttributes',
+              contentState: { views: 'string' },
+            },
+          ],
+        },
+      })
+    ).toThrow(/ios\.liveActivity/);
   });
 
   test('duplicate widget names throw', () => {
@@ -59,47 +72,62 @@ describe('resolveGalleryWidgetKinds list', () => {
 });
 
 describe('resolveLiveActivityConfig', () => {
-  test('reads attributes from a live-activity kind', () => {
+  test('reads ios.liveActivity', () => {
     const la = resolveLiveActivityConfig({
       ios: {
-        kinds: [
-          { name: 'Home' },
-          {
-            type: 'live-activity',
-            attributesName: 'HelloExpoUiAttributes',
-            static: { title: 'string' },
-            contentState: { status: 'string' },
-            pushType: 'token',
-          },
-        ],
+        kinds: [{ name: 'Home' }],
+        liveActivity: {
+          attributesName: 'HelloExpoUiAttributes',
+          static: { title: 'string' },
+          contentState: { status: 'string' },
+          pushType: 'token',
+        },
       },
     });
     expect(la?.attributesName).toBe('HelloExpoUiAttributes');
     expect(la?.pushType).toBe('token');
   });
 
-  test('two live-activity kinds throw', () => {
+  test('a live-activity kinds row throws even when ios.liveActivity is set', () => {
     expect(() =>
       resolveLiveActivityConfig({
         ios: {
+          liveActivity: {
+            attributesName: 'SiblingAttributes',
+            contentState: { status: 'string' },
+          },
           kinds: [
             {
               type: 'live-activity',
-              attributesName: 'A',
-              contentState: { s: 'string' },
-            },
-            {
-              type: 'live-activity',
-              attributesName: 'B',
-              contentState: { s: 'string' },
+              attributesName: 'KindAttributes',
+              contentState: { status: 'string' },
             },
           ],
         },
       })
-    ).toThrow(/at most one/);
+    ).toThrow(/ios\.liveActivity/);
   });
 
-  test('omitted kinds has no live activity', () => {
+  test('a leftover live-activity kind throws', () => {
+    expect(() =>
+      resolveLiveActivityConfig({
+        ios: {
+          kinds: [
+            { name: 'Home' },
+            {
+              type: 'live-activity',
+              attributesName: 'HelloExpoUiAttributes',
+              static: { title: 'string' },
+              contentState: { status: 'string' },
+              pushType: 'token',
+            },
+          ],
+        },
+      })
+    ).toThrow(/ios\.liveActivity/);
+  });
+
+  test('omitted liveActivity and kinds has no live activity', () => {
     expect(resolveLiveActivityConfig({ ios: {} })).toBeUndefined();
   });
 });
