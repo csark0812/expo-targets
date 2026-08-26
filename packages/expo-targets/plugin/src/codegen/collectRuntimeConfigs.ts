@@ -19,6 +19,9 @@ export interface RuntimeTargetConfig {
     intents?: { ui?: boolean | { name?: string } };
     wallet?: { ui?: boolean | { name?: string } };
   };
+  android?: {
+    providers?: import('../config').AndroidWidgetProviderConfig[];
+  };
 }
 
 function resolveAppGroup(

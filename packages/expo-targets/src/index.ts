@@ -17,11 +17,13 @@ export type {
 export { isIllegalUiMode, resolveUiMode } from '../plugin/src/domain/uiMode';
 export type {
   KnownLiveActivityAttributes,
+  KnownMultiProductWidgetFolders,
   KnownTargets,
   KnownWidgetKinds,
   LiveActivityAttributesName,
   LiveActivityPayloadFor,
   LiveActivityPayloadRegistry,
+  MultiProductWidgetFolderName,
   TargetName,
   WidgetKindName,
 } from './generatedNames';

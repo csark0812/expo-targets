@@ -37,6 +37,27 @@ describe('formatTargetsTypesFile names', () => {
     expect(content).toContain('"LockScreenWidgets": true');
   });
 
+  test('emits KnownMultiProductWidgetFolders for multi-kind widget targets', () => {
+    const content = formatTargetsTypesFile([
+      {
+        name: 'PoplWidgets',
+        type: 'widget',
+        ios: {
+          kinds: [{ name: 'Home' }, { name: 'Lock' }],
+        },
+      },
+      {
+        name: 'HelloWidget',
+        type: 'widget',
+      },
+    ]);
+    expect(content).toContain('interface KnownMultiProductWidgetFolders');
+    expect(content).toContain('"PoplWidgets": true');
+    expect(content).not.toMatch(
+      /KnownMultiProductWidgetFolders[\s\S]*"HelloWidget"/
+    );
+  });
+
   test('dedupes target names and sorts keys', () => {
     const content = formatTargetsTypesFile([
       { name: 'Zeta' },
@@ -44,7 +65,9 @@ describe('formatTargetsTypesFile names', () => {
       { name: 'Zeta' },
     ]);
     expect(content.indexOf('"Alpha"')).toBeLessThan(content.indexOf('"Zeta"'));
-    expect(content.match(/interface KnownTargets[\s\S]*?"Zeta"/)?.length).toBe(1);
+    expect(content.match(/interface KnownTargets[\s\S]*?"Zeta"/)?.length).toBe(
+      1
+    );
   });
 });
 

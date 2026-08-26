@@ -414,6 +414,9 @@ function finalizeTargetsConfig(
       opts.expoConfig
     ).map((cfg) => ({
       name: cfg.name,
+      type: cfg.type,
+      ios: cfg.ios,
+      android: cfg.android,
       widgetKinds: widgetKindNamesForCodegen(cfg),
       liveActivity: cfg.liveActivity,
     }));

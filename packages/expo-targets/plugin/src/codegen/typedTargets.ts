@@ -1,6 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import type { RuntimeTargetConfig } from './collectRuntimeConfigs';
+import { isMultiProductWidgetFolderCodegen } from './widgetKindNames';
+
 /** Ambient decls (Expo Router–style). Gitignored under `.expo/`. */
 export const GENERATED_RELATIVE_PATH = '.expo/types/expo-targets.d.ts';
 
@@ -15,6 +18,9 @@ export type LiveActivityFieldType = 'string' | 'double' | 'int' | 'bool';
 
 export interface TargetCodegenConfig {
   name: string;
+  type?: string;
+  ios?: RuntimeTargetConfig['ios'];
+  android?: RuntimeTargetConfig['android'];
   /** Gallery kind / provider names (defaults to folder name when omitted). */
   widgetKinds?: string[];
   liveActivity?: {
@@ -91,6 +97,26 @@ function formatPayloadRegistry(liveActivities: TargetCodegenConfig[]): string {
   return body;
 }
 
+function multiProductWidgetFolderNames(
+  configs: TargetCodegenConfig[]
+): string[] {
+  return [
+    ...new Set(
+      configs
+        .filter((c) =>
+          isMultiProductWidgetFolderCodegen({
+            name: c.name,
+            type: c.type,
+            ios: c.ios,
+            android: c.android,
+          })
+        )
+        .map((c) => c.name)
+        .filter(Boolean)
+    ),
+  ].sort();
+}
+
 /**
  * Ambient module augmentation for `expo-targets`.
  * Narrows TargetName / LiveActivityAttributesName and LA payload shapes.
@@ -99,9 +125,12 @@ export function formatTargetsTypesFile(configs: TargetCodegenConfig[]): string {
   const names = [...new Set(configs.map((c) => c.name).filter(Boolean))].sort();
   const widgetKindNames = [
     ...new Set(
-      configs.flatMap((c) => c.widgetKinds ?? (c.name ? [c.name] : [])).filter(Boolean)
+      configs
+        .flatMap((c) => c.widgetKinds ?? (c.name ? [c.name] : []))
+        .filter(Boolean)
     ),
   ].sort();
+  const multiProductWidgetFolders = multiProductWidgetFolderNames(configs);
   const liveActivities = configs.filter((c) => c.liveActivity?.attributesName);
   const attributesNames = [
     ...new Set(
@@ -118,6 +147,9 @@ export function formatTargetsTypesFile(configs: TargetCodegenConfig[]): string {
   content += `  }\n`;
   content += `  interface KnownWidgetKinds {\n`;
   content += interfaceMembers(widgetKindNames);
+  content += `  }\n`;
+  content += `  interface KnownMultiProductWidgetFolders {\n`;
+  content += interfaceMembers(multiProductWidgetFolders);
   content += `  }\n`;
   content += `  interface KnownLiveActivityAttributes {\n`;
   content += interfaceMembers(attributesNames);

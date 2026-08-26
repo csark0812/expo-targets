@@ -6,7 +6,11 @@ import type {
 } from '../plugin/src/config';
 import { resolveUiMode } from '../plugin/src/domain/uiMode';
 import { resolveLiveActivityConfig } from '../plugin/src/ios/utils/resolveIosKinds';
-import type { TargetName, WidgetKindName } from './generatedNames';
+import type {
+  MultiProductWidgetFolderName,
+  TargetName,
+  WidgetKindName,
+} from './generatedNames';
 import { Extension, type SharedData } from './modules/extension/index';
 import { createLiveActivity } from './modules/liveActivity/index';
 import {
@@ -578,6 +582,10 @@ function tryCreateSafariTargetFromConfig(
 }
 
 // Function overloads for better type inference
+export function createTarget(
+  targetName: MultiProductWidgetFolderName,
+  componentFunc?: undefined
+): WidgetFolderTarget;
 export function createTarget<_T extends 'messages'>(
   targetName: TargetName | WidgetKindName,
   componentFunc?: React.ComponentType<any>
