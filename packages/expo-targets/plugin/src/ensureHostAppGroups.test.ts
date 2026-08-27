@@ -78,7 +78,9 @@ describe('ensureHostAppGroups', () => {
       config.ios?.entitlements?.['com.apple.security.application-groups']
     ).toEqual(['group.custom']);
   });
+});
 
+describe('ensureHostAppGroups union', () => {
   test('unions target appGroup into a non-empty host list', () => {
     const logger = new Logger(false);
     const config = ensureHostAppGroups(

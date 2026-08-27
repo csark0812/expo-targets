@@ -77,68 +77,84 @@ function parseLiveActivityHelperNames(filePath: string): string[] {
   return names;
 }
 
+function warnDeprecatedGlobal(
+  target: ProjectContext['targets'][number],
+  helper: string,
+  configured: string[]
+): CheckResult {
+  return {
+    ok: false,
+    level: 'warn',
+    title: 'Live Activity host API',
+    message: `targets/${target.dirName}: prefer createTarget('${target.config.name}').liveActivity('AttributesName') over LiveActivity.create / createLiveActivity / LiveActivity.start in ${path.basename(helper)}.`,
+    fix: `export const la = createTarget('${target.config.name}').liveActivity('${configured[0] ?? 'AttributesName'}');`,
+  };
+}
+
+function warnSingularHelperMissing(
+  target: ProjectContext['targets'][number],
+  helper: string,
+  attributesName: string
+): CheckResult {
+  return {
+    ok: false,
+    level: 'warn',
+    title: 'Live Activity host API',
+    message: `targets/${target.dirName}: ios.liveActivity is configured but ${path.basename(helper)} does not call .liveActivity().`,
+    fix: `Add: export const island = createTarget('${target.config.name}').liveActivity('${attributesName}');`,
+  };
+}
+
+function warnMultiHelperMissing(
+  target: ProjectContext['targets'][number],
+  helper: string,
+  names: { configured: string[]; missing: string[] }
+): CheckResult {
+  return {
+    ok: false,
+    level: 'warn',
+    title: 'Live Activity host API',
+    message: `targets/${target.dirName}: missing .liveActivity(${JSON.stringify(names.missing[0])}) in ${path.basename(helper)} (configured: ${names.configured.join(', ')}).`,
+    fix: `Add .liveActivity('${names.missing[0]}') for each ios.liveActivities row.`,
+  };
+}
+
+function checkWidgetLiveActivityHost(
+  target: ProjectContext['targets'][number]
+): CheckResult[] {
+  const configured = configuredLiveActivityNames(target.config.ios);
+  if (configured.length === 0) {
+    return [];
+  }
+  const helper = helperPath(path.dirname(target.configPath));
+  if (!helper) {
+    return [];
+  }
+  const source = fs.readFileSync(helper, 'utf8');
+  if (usesDeprecatedGlobalLiveActivity(source)) {
+    return [warnDeprecatedGlobal(target, helper, configured)];
+  }
+  const wired = parseLiveActivityHelperNames(helper);
+  const covered = new Set(wired);
+  const missing = configured.filter((name) => !covered.has(name));
+  if (missing.length === 0) {
+    return [];
+  }
+  if (configured.length === 1 && wired.length === 0) {
+    if (usesNoArgLiveActivityHelper(source)) {
+      return [];
+    }
+    return [warnSingularHelperMissing(target, helper, configured[0] ?? '')];
+  }
+  if (configured.length > 1) {
+    return [warnMultiHelperMissing(target, helper, { configured, missing })];
+  }
+  return [];
+}
+
 /** Warn when target entries use deprecated global Live Activity factories. */
 export function checkLiveActivityHostApi(ctx: ProjectContext): CheckResult[] {
-  const results: CheckResult[] = [];
-
-  for (const target of ctx.targets) {
-    if (target.config.type !== 'widget') {
-      continue;
-    }
-
-    const configured = configuredLiveActivityNames(target.config.ios);
-    if (configured.length === 0) {
-      continue;
-    }
-
-    const helper = helperPath(path.dirname(target.configPath));
-    if (!helper) {
-      continue;
-    }
-
-    const source = fs.readFileSync(helper, 'utf8');
-    if (usesDeprecatedGlobalLiveActivity(source)) {
-      results.push({
-        ok: false,
-        level: 'warn',
-        title: 'Live Activity host API',
-        message: `targets/${target.dirName}: prefer createTarget('${target.config.name}').liveActivity('AttributesName') over LiveActivity.create / createLiveActivity / LiveActivity.start in ${path.basename(helper)}.`,
-        fix: `export const la = createTarget('${target.config.name}').liveActivity('${configured[0] ?? 'AttributesName'}');`,
-      });
-      continue;
-    }
-
-    const wired = parseLiveActivityHelperNames(helper);
-    const covered = new Set(wired);
-    const missing = configured.filter((name) => !covered.has(name));
-    if (missing.length === 0) {
-      continue;
-    }
-
-    if (configured.length === 1 && wired.length === 0) {
-      if (usesNoArgLiveActivityHelper(source)) {
-        continue;
-      }
-      results.push({
-        ok: false,
-        level: 'warn',
-        title: 'Live Activity host API',
-        message: `targets/${target.dirName}: ios.liveActivity is configured but ${path.basename(helper)} does not call .liveActivity().`,
-        fix: `Add: export const island = createTarget('${target.config.name}').liveActivity('${configured[0]}');`,
-      });
-      continue;
-    }
-
-    if (missing.length > 0 && configured.length > 1) {
-      results.push({
-        ok: false,
-        level: 'warn',
-        title: 'Live Activity host API',
-        message: `targets/${target.dirName}: missing .liveActivity(${JSON.stringify(missing[0])}) in ${path.basename(helper)} (configured: ${configured.join(', ')}).`,
-        fix: `Add .liveActivity('${missing[0]}') for each ios.liveActivities row.`,
-      });
-    }
-  }
-
-  return results;
+  return ctx.targets
+    .filter((target) => target.config.type === 'widget')
+    .flatMap(checkWidgetLiveActivityHost);
 }

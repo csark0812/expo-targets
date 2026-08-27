@@ -73,7 +73,10 @@ describe('widget folder setData', () => {
   test('writes the same payload to every kind', () => {
     const folder = createTarget('PoplWidgets');
     folder.setData({ shareUrl: 'https://popl.co' });
-    expect(setDataCalls.map((c) => c.name).sort()).toEqual([
+    const names = setDataCalls
+      .map((c) => c.name)
+      .sort((a, b) => (a ?? '').localeCompare(b ?? ''));
+    expect(names).toEqual([
       'HomescreenWidgets',
       'LockScreenScanWidget',
       'LockScreenWidgets',
@@ -81,7 +84,7 @@ describe('widget folder setData', () => {
     expect(
       setDataCalls.every((c) => c.data.shareUrl === 'https://popl.co')
     ).toBe(true);
-    expect(refreshCalls.sort()).toEqual([
+    expect([...refreshCalls].sort((a, b) => a.localeCompare(b))).toEqual([
       'HomescreenWidgets',
       'LockScreenScanWidget',
       'LockScreenWidgets',

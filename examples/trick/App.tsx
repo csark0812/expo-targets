@@ -7,8 +7,6 @@ import { FileProviderDomain } from 'expo-targets';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { trickLiveActivityActivity } from './targets/trick-widgets';
-
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,

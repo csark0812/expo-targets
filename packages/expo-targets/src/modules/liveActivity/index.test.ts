@@ -1,10 +1,4 @@
-import {
-  beforeEach,
-  describe,
-  expect,
-  mock,
-  test,
-} from 'bun:test';
+import { beforeEach, describe, expect, mock, test } from 'bun:test';
 import type { TargetConfig } from '../../../plugin/src/config';
 
 const trickWidget: TargetConfig = {
@@ -56,7 +50,7 @@ const {
   LiveActivity,
 } = await import('./index');
 
-describe('liveActivity module', () => {
+describe('liveActivity module start', () => {
   beforeEach(() => {
     nativeStart.mockClear();
     nativeEndAll.mockClear();
@@ -107,6 +101,14 @@ describe('liveActivity module', () => {
     });
     expect(nativeEndAllForAttributes).not.toHaveBeenCalled();
     expect(nativeStart).toHaveBeenCalled();
+  });
+});
+
+describe('liveActivity module endAll', () => {
+  beforeEach(() => {
+    nativeStart.mockClear();
+    nativeEndAll.mockClear();
+    nativeEndAllForAttributes.mockClear();
   });
 
   test('LiveActivity.endAll delegates to native module', async () => {

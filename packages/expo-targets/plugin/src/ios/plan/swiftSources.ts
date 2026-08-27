@@ -5,7 +5,6 @@ import type { TargetWorkspace } from '../observe/workspace';
 import {
   hasExplicitGalleryKinds,
   resolveGalleryWidgetKinds,
-  resolveLiveActivityConfig,
   resolveLiveActivityConfigs,
 } from '../utils/resolveIosKinds';
 import type {

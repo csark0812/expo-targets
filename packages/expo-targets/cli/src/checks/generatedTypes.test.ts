@@ -4,8 +4,8 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 
 import { writeTargetsTypesFile } from '../../../plugin/src/codegen/typedTargets';
-import { checkGeneratedTypes } from './generatedTypes';
 import { loadProject } from '../project';
+import { checkGeneratedTypes } from './generatedTypes';
 
 const roots: string[] = [];
 
