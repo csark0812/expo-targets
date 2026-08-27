@@ -432,7 +432,9 @@ describe('checkLiveActivityHostApi', () => {
     expect(warnings[0]?.level).toBe('warn');
     expect(warnings[0]?.message).toContain('.liveActivity(');
   });
+});
 
+describe('checkLiveActivityHostApi folder helper', () => {
   test('passes when target index uses folder.liveActivity()', () => {
     const root = makeProject({
       'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
@@ -451,7 +453,7 @@ describe('checkLiveActivityHostApi', () => {
       'targets/widget/index.ts':
         "import { createTarget } from 'expo-targets';\n" +
         "export const hello = createTarget('HelloWidget');\n" +
-        "export const la = hello.liveActivity();\n",
+        'export const la = hello.liveActivity();\n',
     });
     expect(checkLiveActivityHostApi(loadProject(root))).toHaveLength(0);
   });

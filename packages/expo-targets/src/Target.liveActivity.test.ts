@@ -1,10 +1,4 @@
-import {
-  beforeEach,
-  describe,
-  expect,
-  mock,
-  test,
-} from 'bun:test';
+import { beforeEach, describe, expect, mock, test } from 'bun:test';
 import type { TargetConfig } from '../plugin/src/config';
 
 const poplWidgets: TargetConfig = {
@@ -55,6 +49,7 @@ mock.module('expo-modules-core', () => ({
     update: nativeUpdate,
     end: nativeEnd,
     endAll: mock(async () => {}),
+    endAllForAttributes: mock(async () => {}),
     areActivitiesEnabled: mock(async () => true),
   }),
 }));
@@ -68,7 +63,7 @@ mock.module('./modules/targetsConfig', () => ({
 
 const { createTarget } = await import('./Target');
 
-describe('createTarget().liveActivity()', () => {
+describe('createTarget().liveActivity() resolve', () => {
   beforeEach(() => {
     nativeStart.mockClear();
     nativeUpdate.mockClear();
@@ -106,6 +101,14 @@ describe('createTarget().liveActivity()', () => {
     expect(() => folder.liveActivity('MissingAttributes')).toThrow(
       /Unknown Live Activity "MissingAttributes"/
     );
+  });
+});
+
+describe('createTarget().liveActivity() native', () => {
+  beforeEach(() => {
+    nativeStart.mockClear();
+    nativeUpdate.mockClear();
+    nativeEnd.mockClear();
   });
 
   test('handle update and end delegate to native module', async () => {

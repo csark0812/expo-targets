@@ -1,5 +1,6 @@
 import type { ExtensionType } from './config';
 import { REACT_NATIVE_NATIVE_TYPES } from './domain';
+import { unusedHeavyPackages } from './entryGraph';
 
 /** Host-only Expo packages that crash / blank RN appex processes. Always merged in. */
 export const HOST_ONLY_EXCLUDED_PACKAGES = [
@@ -13,6 +14,8 @@ export type ResolveExcludedPackagesInput = {
   type: ExtensionType | string;
   entry?: string;
   excludedPackages?: string[];
+  /** When set, unused heavy host packages are union-merged (Sentry, reanimated, …). */
+  projectRoot?: string;
 };
 
 function isRnNativeType(type: string): boolean {
@@ -27,14 +30,18 @@ function isRnNativeType(type: string): boolean {
 export function resolveExcludedPackages(
   input: ResolveExcludedPackagesInput
 ): string[] | undefined {
-  const { type, entry, excludedPackages } = input;
+  const { type, entry, excludedPackages, projectRoot } = input;
   if (!(entry && isRnNativeType(type))) {
     return excludedPackages?.length ? [...excludedPackages] : undefined;
   }
 
+  const inferred =
+    projectRoot && entry ? unusedHeavyPackages({ projectRoot, entry }) : [];
+
   const merged = new Set<string>([
     ...HOST_ONLY_EXCLUDED_PACKAGES,
     ...(excludedPackages ?? []),
+    ...inferred,
   ]);
   return [...merged];
 }

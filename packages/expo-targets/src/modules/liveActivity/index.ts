@@ -25,6 +25,7 @@ type NativeLiveActivity = {
   update: (activityId: string, contentStateJson: string) => Promise<boolean>;
   end: (activityId: string) => Promise<void>;
   endAll: () => Promise<void>;
+  endAllForAttributes?: (attributesName: string) => Promise<void>;
   areActivitiesEnabled: () => Promise<boolean>;
 };
 
@@ -36,6 +37,11 @@ export type LiveActivityContentState = Record<
 export type LiveActivityStartOptions = {
   attributes: LiveActivityContentState;
   contentState: LiveActivityContentState;
+  /**
+   * When true (default), end activities for this attributesName before start.
+   * Does not call global `endAll`.
+   */
+  replaceExisting?: boolean;
 };
 
 export type LiveActivityHandle<
@@ -45,6 +51,7 @@ export type LiveActivityHandle<
   start: (options: {
     attributes: LiveActivityPayloadFor<N>['attributes'];
     contentState: LiveActivityPayloadFor<N>['contentState'];
+    replaceExisting?: boolean;
   }) => Promise<string>;
   update: (
     activityId: string,
@@ -118,14 +125,29 @@ function mergeExpoUiProps(options: {
   return { ...options.attributes, ...options.contentState };
 }
 
+async function endActivitiesForAttributes(
+  attributesName: string
+): Promise<void> {
+  const native = getNative();
+  if (typeof native.endAllForAttributes === 'function') {
+    await native.endAllForAttributes(attributesName);
+    return;
+  }
+  await native.endAll();
+}
+
 /** Start a Live Activity by configured attributesName (used by target handles). */
 export async function startLiveActivity<N extends LiveActivityAttributesName>(
   attributesName: N,
   options: {
     attributes: LiveActivityPayloadFor<N>['attributes'];
     contentState: LiveActivityPayloadFor<N>['contentState'];
+    replaceExisting?: boolean;
   }
 ): Promise<string> {
+  if (options.replaceExisting !== false) {
+    await endActivitiesForAttributes(attributesName);
+  }
   const { target } = resolveMatch(attributesName);
   if (target.entry) {
     ensureExpoUiAttributesLink(attributesName);
@@ -184,9 +206,9 @@ export async function areLiveActivitiesEnabled(): Promise<boolean> {
 }
 
 /** Target-scoped Live Activity handle (preferred host API). */
-export function buildLiveActivityHandle<
-  N extends LiveActivityAttributesName,
->(attributesName: N): LiveActivityHandle<N> {
+export function buildLiveActivityHandle<N extends LiveActivityAttributesName>(
+  attributesName: N
+): LiveActivityHandle<N> {
   resolveAttributesConfig(attributesName);
   ensureExpoUiAttributesLink(attributesName);
   return {

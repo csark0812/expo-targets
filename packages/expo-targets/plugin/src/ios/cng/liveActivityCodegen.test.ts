@@ -26,8 +26,12 @@ describe('liveActivityCodegen multi-target rows', () => {
 
     expect(files[0]?.attributes).toContain('struct DynamicIslandAttributes');
     expect(files[1]?.attributes).toContain('struct MeetingLiveAttributes');
-    expect(files[0]?.bridge).toContain('expo_targets_la_bootstrap_DynamicIslandAttributes');
-    expect(files[1]?.bridge).toContain('expo_targets_la_bootstrap_MeetingLiveAttributes');
+    expect(files[0]?.bridge).toContain(
+      'expo_targets_la_bootstrap_DynamicIslandAttributes'
+    );
+    expect(files[1]?.bridge).toContain(
+      'expo_targets_la_bootstrap_MeetingLiveAttributes'
+    );
     expect(files[0]?.bridge).not.toContain('MeetingLiveAttributes');
   });
 });

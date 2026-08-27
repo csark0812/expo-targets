@@ -131,7 +131,9 @@ describe('resolveLiveActivityConfig', () => {
   test('omitted liveActivity and kinds has no live activity', () => {
     expect(resolveLiveActivityConfig({ ios: {} })).toBeUndefined();
   });
+});
 
+describe('resolveLiveActivityConfigs', () => {
   test('reads ios.liveActivities array', () => {
     const configs = resolveLiveActivityConfigs({
       ios: {
@@ -152,9 +154,10 @@ describe('resolveLiveActivityConfig', () => {
       'DynamicIslandAttributes',
       'MeetingLiveAttributes',
     ]);
-    expect(resolveLiveActivityConfig({ ios: { liveActivities: configs } })?.attributesName).toBe(
-      'DynamicIslandAttributes'
-    );
+    expect(
+      resolveLiveActivityConfig({ ios: { liveActivities: configs } })
+        ?.attributesName
+    ).toBe('DynamicIslandAttributes');
   });
 
   test('singular and array together throw', () => {
@@ -175,7 +178,9 @@ describe('resolveLiveActivityConfig', () => {
       })
     ).toThrow(/OR ios\.liveActivity/);
   });
+});
 
+describe('resolveLiveActivityConfigs uniqueness', () => {
   test('duplicate attributesName in liveActivities throws', () => {
     expect(() =>
       resolveLiveActivityConfigs({

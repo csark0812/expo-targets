@@ -29,8 +29,9 @@ hello.setData({ message: "Hi" }); // refresh implied on widgets
 
 // Multi-kind widget folder
 const popl = createTarget("PoplWidgets");
+popl.setData({ message: "Updated" }); // every kind
 const home = popl.widget("HomescreenWidgets");
-home.setData({ message: "Updated" });
+home.setData({ message: "Updated" }); // one kind
 const island = popl.liveActivity(); // single LA — or .liveActivity("DynamicIslandAttributes")
 const meeting = popl.liveActivity("MeetingLiveAttributes"); // when ios.liveActivities has 2+
 await island.start({ attributes: { … }, contentState: { … } });
@@ -52,7 +53,7 @@ export const share = createTarget("ShareExt", ShareExtension);
 | `name`      | `TargetName \| WidgetKindName` when generated | Folder `"name"`, or gallery kind / provider name on a multi-product widget |
 | `component` | `React.ComponentType` | _(Optional)_ For RN / expo-ui widgets. On multi-kind folders use `.widget('Kind', Layout)` instead |
 
-Multi-product widget folders (`ios.kinds` with more than one row, or a single kind whose name differs from the folder) return a **folder handle** with `.widget()` / `.liveActivity(name?)` only — not `setData`. Write data on the kind handle. When a folder declares multiple Live Activities (`ios.liveActivities`), pass `attributesName` to `.liveActivity(...)`.
+Multi-product widget folders (`ios.kinds` with more than one row, or a single kind whose name differs from the folder) return a **folder handle** with `.widget()` / `.liveActivity(name?)` / folder `.setData`. Folder `setData` writes the same payload to every kind. When a folder declares multiple Live Activities (`ios.liveActivities`), pass `attributesName` to `.liveActivity(...)`. `start` ends existing activities for that attributes name by default (`replaceExisting: false` to keep them).
 
 ### Error Handling
 

@@ -6,11 +6,11 @@ import { globSync } from 'glob';
 import { withAndroidTarget } from './android/withAndroidTarget';
 import { withAndroidTargetsConfig } from './android/withAndroidTargetsConfig';
 import { collectRuntimeConfigs } from './codegen/collectRuntimeConfigs';
-import { widgetKindNamesForCodegen } from './codegen/widgetKindNames';
 import {
   type TargetCodegenConfig,
   writeTargetsTypesFile,
 } from './codegen/typedTargets';
+import { widgetKindNamesForCodegen } from './codegen/widgetKindNames';
 import {
   ensureHostAppGroups,
   warnMissingMetroWrapper,
@@ -162,6 +162,7 @@ interface TargetContext {
   targetDirectory: string;
   targetName: string;
   appGroup?: string;
+  projectRoot: string;
   logger: Logger;
 }
 
@@ -291,6 +292,7 @@ const withTargetIos: ConfigPlugin<{
     type: evaluatedConfig.type,
     entry: evaluatedConfig.entry,
     excludedPackages: evaluatedConfig.excludedPackages,
+    projectRoot: context.projectRoot,
   });
 
   const runtimeVersion = resolveRuntimeVersionFromExpoConfig(config);
@@ -358,6 +360,7 @@ const withTarget: ConfigPlugin<{
     targetDirectory,
     targetName,
     appGroup,
+    projectRoot,
     logger,
   };
 

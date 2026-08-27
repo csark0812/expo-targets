@@ -87,6 +87,8 @@ export interface WidgetFolderTarget {
   liveActivity: (
     attributesName?: LiveActivityAttributesName
   ) => LiveActivityHandle<LiveActivityAttributesName>;
+  /** Write the same payload to every gallery kind / provider in this folder. */
+  setData: (data: Record<string, any>, options?: SetDataOptions) => void;
   /** Reload every gallery kind / provider in this folder. */
   refresh: () => void;
 }
@@ -436,6 +438,21 @@ function createWidgetFolderTarget(config: TargetConfig): WidgetFolderTarget {
     },
     liveActivity: (attributesName?: LiveActivityAttributesName) =>
       liveActivityHandleForConfig(config, attributesName),
+    setData(data: Record<string, any>, options?: SetDataOptions) {
+      for (const product of galleryProductNames(config)) {
+        createWidgetProductHandle({
+          config,
+          productName: product,
+        }).setData(data, { refresh: false });
+      }
+      if (options?.refresh !== false) {
+        const storage = new AppGroupStorage(appGroup, config.name);
+        for (const product of galleryProductNames(config)) {
+          storage.refresh(product);
+          expoUiWidgets.get(product)?.reload();
+        }
+      }
+    },
     refresh() {
       const storage = new AppGroupStorage(appGroup, config.name);
       for (const product of galleryProductNames(config)) {

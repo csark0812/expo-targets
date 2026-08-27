@@ -2,7 +2,6 @@ import { StatusBar } from 'expo-status-bar';
 import {
   addUserInteractionListener,
   areLiveActivitiesEnabled,
-  endLiveActivity,
   LiveActivity,
   requestPinWidget,
 } from 'expo-targets';
@@ -29,7 +28,12 @@ import {
   updateRemoteViewsMessage,
 } from './targets/hello-remoteviews';
 import { helloRemoteViewsBundle } from './targets/hello-remoteviews-bundle';
-import { getMessage, helloWidget, helloWidgetLiveActivity, updateMessage } from './targets/hello-widget';
+import {
+  getMessage,
+  helloWidget,
+  helloWidgetLiveActivity,
+  updateMessage,
+} from './targets/hello-widget';
 
 // Keep layout registration reachable (tree-shake guard).
 void helloExpoUiLiveActivity;
@@ -456,7 +460,7 @@ async function updateLiveActivity(
   setLiveStatus('updated:ready');
 }
 
-async function endLiveActivity(
+async function endDemoLiveActivity(
   liveId: string | null,
   setLiveId: (id: string | null) => void,
   setLiveStatus: (status: string) => void
@@ -530,7 +534,7 @@ function NativeLiveActivitySection({
         label="End Live Activity"
         tone="danger"
         onPress={() => {
-          void endLiveActivity(liveId, setLiveId, setLiveStatus);
+          void endDemoLiveActivity(liveId, setLiveId, setLiveStatus);
         }}
       />
       <Text testID="text-live-status" style={styles.mono}>
@@ -580,7 +584,7 @@ function ExpoUiLiveActivitySection({
         label="End Expo UI Live Activity"
         tone="danger"
         onPress={() => {
-          void endLiveActivity(
+          void endDemoLiveActivity(
             expoUiLiveId,
             setExpoUiLiveId,
             setExpoUiLiveStatus

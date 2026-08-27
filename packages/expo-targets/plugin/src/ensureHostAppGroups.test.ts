@@ -80,6 +80,36 @@ describe('ensureHostAppGroups', () => {
   });
 });
 
+describe('ensureHostAppGroups union', () => {
+  test('unions target appGroup into a non-empty host list', () => {
+    const logger = new Logger(false);
+    const config = ensureHostAppGroups(
+      {
+        ios: {
+          bundleIdentifier: 'com.example.app',
+          entitlements: {
+            'com.apple.security.application-groups': ['group.onesignal'],
+          },
+        },
+      },
+      [
+        {
+          config: {
+            type: 'widget' as const,
+            platforms: ['ios'],
+            appGroup: 'group.widgets',
+          },
+        },
+      ],
+      logger
+    );
+
+    expect(
+      config.ios?.entitlements?.['com.apple.security.application-groups']
+    ).toEqual(['group.onesignal', 'group.widgets']);
+  });
+});
+
 describe('warnMissingMetroWrapper', () => {
   test('warns when entry target exists but metro lacks withTargets', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'expo-targets-plugin-'));

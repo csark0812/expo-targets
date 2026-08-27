@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `npx expo-targets doctor` fails when `.expo/types/expo-targets.d.ts` is missing or stale; `npx expo-targets generate` stays the no-prebuild fix.
+- Host App Groups union target `appGroup` / target entitlement groups into a non-empty host list.
+- App Clip compile phase copies host `CFBundleVersion` (EAS remote versioning).
+- Widget folder `setData` writes every kind. Live Activity `start({ replaceExisting })` defaults to true for that attributes name only.
+- RN `entry` targets infer unused heavy host packages (Sentry, reanimated, screens, netinfo) into `excludedPackages`.
+- Opt-in Android `android.qr` / `android.implementation` plus `ExpoTargetsQr.encode`.
+
 ### Changed
 
 - Android widget Kotlin lives at `targets/<name>/android/<File>.kt` (same layout as `ios/*.swift`). The `package` line still holds the FQCN.

@@ -11,6 +11,10 @@ import {
 } from '@expo/config-plugins';
 import type { AndroidTargetConfig, Color } from '../config';
 import {
+  appendGradleImplementations,
+  resolveAndroidExtraImplementations,
+} from './extraImplementations';
+import {
   buildAppWidgetProviderXml,
   mergeAppWidgetProviderXml,
   type ResolvedAndroidWidgetProvider,
@@ -136,6 +140,15 @@ export const withAndroidWidget: ConfigPlugin<WidgetProps> = (config, props) => {
   } else {
     config = configureRemoteViewsBuild(config, props);
   }
+
+  config = withAppBuildGradle(config, (buildGradleConfig) => {
+    const extras = resolveAndroidExtraImplementations(androidConfig);
+    buildGradleConfig.modResults.contents = appendGradleImplementations(
+      buildGradleConfig.modResults.contents,
+      extras
+    );
+    return buildGradleConfig;
+  });
 
   config = configureWidgetManifest(config, props);
 

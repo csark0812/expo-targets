@@ -54,6 +54,15 @@ public class ExpoTargetsLiveActivityModule: Module {
       }
     }
 
+    AsyncFunction("endAllForAttributes") { (attributesName: String) in
+      guard #available(iOS 16.2, *) else { return }
+      ensureGeneratedBridgeRegistered(attributesName)
+      guard let handler = ExpoTargetsLiveActivityBridge.handler(for: attributesName) else {
+        return
+      }
+      try await handler.endAll()
+    }
+
     AsyncFunction("areActivitiesEnabled") { () -> Bool in
       guard #available(iOS 16.2, *) else { return false }
       return ActivityAuthorizationInfo().areActivitiesEnabled

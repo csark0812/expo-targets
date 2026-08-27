@@ -564,6 +564,16 @@ export interface AndroidTargetConfig {
   imeLabel?: string;
   /** VPN service label (network-packet-tunnel). */
   vpnDisplayName?: string;
+  /**
+   * Extra `implementation("…")` coordinates for the host app `build.gradle`.
+   * Use for widget deepen that needs libraries the host does not already ship.
+   */
+  implementation?: string[];
+  /**
+   * When true, inject `com.google.zxing:core` (QR encode helper on
+   * `ExpoTargetsQr`). Off by default.
+   */
+  qr?: boolean;
 }
 
 /** Authoring mode — see docs/react-native-extensions.md and resolveUiMode(). */

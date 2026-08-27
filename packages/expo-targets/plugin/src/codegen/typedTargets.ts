@@ -68,26 +68,30 @@ function formatRecordFields(
   return `{\n${body}\n    }`;
 }
 
-function liveActivityCodegenRows(
-  configs: TargetCodegenConfig[]
-): Array<{
+type LiveActivityCodegenRow = {
   attributesName: string;
   static?: Record<string, LiveActivityFieldType>;
   contentState?: Record<string, LiveActivityFieldType>;
-}> {
-  const rows: Array<{
-    attributesName: string;
-    static?: Record<string, LiveActivityFieldType>;
-    contentState?: Record<string, LiveActivityFieldType>;
-  }> = [];
+};
+
+function liveActivityEntries(
+  cfg: TargetCodegenConfig
+): NonNullable<TargetCodegenConfig['liveActivities']> {
+  if (cfg.liveActivities && cfg.liveActivities.length > 0) {
+    return cfg.liveActivities;
+  }
+  if (cfg.liveActivity?.attributesName) {
+    return [cfg.liveActivity];
+  }
+  return [];
+}
+
+function liveActivityCodegenRows(
+  configs: TargetCodegenConfig[]
+): LiveActivityCodegenRow[] {
+  const rows: LiveActivityCodegenRow[] = [];
   for (const cfg of configs) {
-    const entries =
-      cfg.liveActivities && cfg.liveActivities.length > 0
-        ? cfg.liveActivities
-        : cfg.liveActivity?.attributesName
-          ? [cfg.liveActivity]
-          : [];
-    for (const la of entries) {
+    for (const la of liveActivityEntries(cfg)) {
       if (la.attributesName) {
         rows.push({
           attributesName: la.attributesName,

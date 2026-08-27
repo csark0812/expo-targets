@@ -30,7 +30,7 @@ expo-targets can depend on `expo-widgets` **as a private library** for the layou
 | expo-widgets | expo-targets |
 | --- | --- |
 | `createWidget(name, Layout)` | `createTarget(name, Layout)` + `entry`, or `createTarget('Folder').widget('Kind', Layout)` |
-| `updateSnapshot(props)` | `setData(props)` on a widget **kind** handle (refresh implied) |
+| `updateSnapshot(props)` | `setData(props)` on a widget **kind** handle, or folder `setData` for every kind (refresh implied) |
 | `updateTimeline(entries)` | `setTimeline(entries)` — `{ date, props }` |
 | `getTimeline()` | `getTimeline()` |
 | `reload()` | `refresh()` |
@@ -88,6 +88,7 @@ if (!(await areLiveActivitiesEnabled())) {
 const id = await orderLive.start({
   attributes: { orderId: '12' },
   contentState: { status: 'preparing', progress: 0.1 },
+  // replaceExisting defaults to true (ends this attributesName only)
 });
 await orderLive.update(id, { status: 'ready', progress: 1 });
 await LiveActivity.endAll();
@@ -194,6 +195,8 @@ Android home-screen widgets (Glance / RemoteViews) are **first-class** in expo-t
 - `Bump` button → increments taps, refreshes the tile, emits `addUserInteractionListener` (`source` / `target`)
 
 See `examples/widgets` (`HelloExpoUi` has two expo-ui kinds plus `ios.liveActivity`; `HelloRemoteViewsBundle` has two Android providers). Scaffolded Glance targets get the same chrome + Bump stub.
+
+For QR tiles, set `android.qr: true` (injects ZXing) and call `ExpoTargetsQr.encode(text, sizePx)` from RemoteViews deepen. Or list extra Gradle coordinates in `android.implementation`.
 
 One `type: widget` folder can list many iOS picker products in `ios.kinds` (one `.appex`) and many Android `AppWidgetProvider` rows in `android.providers[]`. `supportedFamilies` on a kind is sizes of that row, not extra products.
 

@@ -32,7 +32,9 @@ describe('collectRuntimeConfigs', () => {
     );
     expect(configs[0]?.appGroup).toBe('group.com.example.app');
   });
+});
 
+describe('collectRuntimeConfigs live activities', () => {
   test('copies ios.liveActivities onto the runtime row', () => {
     const configs = collectRuntimeConfigs(
       [

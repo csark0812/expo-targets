@@ -81,9 +81,7 @@ export function resolveLiveActivityConfigs(input: {
   const fromArray = (ios?.liveActivities ?? []).filter(
     (row) => row.attributesName
   );
-  const singular = ios?.liveActivity?.attributesName
-    ? [ios.liveActivity]
-    : [];
+  const singular = ios?.liveActivity?.attributesName ? [ios.liveActivity] : [];
 
   if (fromArray.length > 0 && singular.length > 0) {
     throw new Error(
