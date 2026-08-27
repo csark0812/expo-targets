@@ -2,8 +2,8 @@ import {
   collectImportsFromEntry,
   HEAVY_EXCLUSION_CANDIDATES,
   readPackageDeps,
-} from '../../../plugin/src/entryGraph';
-import { resolveExcludedPackages } from '../../../plugin/src/resolveExcludedPackages';
+} from '../../../plugin/build/entryGraph';
+import { resolveExcludedPackages } from '../../../plugin/build/resolveExcludedPackages';
 import type { CheckResult, ProjectContext } from '../types';
 
 export { HEAVY_EXCLUSION_CANDIDATES };
