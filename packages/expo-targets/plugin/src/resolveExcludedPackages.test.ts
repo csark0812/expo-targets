@@ -44,7 +44,13 @@ describe('resolveExcludedPackages user extras', () => {
         entry: './targets/action/index.tsx',
         excludedPackages: ['expo-updates', 'expo-font'],
       })
-    ).toEqual(['expo-updates', 'expo-dev-client', 'expo-font']);
+    ).toEqual([
+      'expo-updates',
+      'expo-dev-client',
+      'expo-dev-launcher',
+      'expo-dev-menu',
+      'expo-font',
+    ]);
   });
 });
 

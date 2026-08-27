@@ -5,6 +5,8 @@ import { REACT_NATIVE_NATIVE_TYPES } from './domain';
 export const HOST_ONLY_EXCLUDED_PACKAGES = [
   'expo-updates',
   'expo-dev-client',
+  'expo-dev-launcher',
+  'expo-dev-menu',
 ] as const;
 
 export type ResolveExcludedPackagesInput = {

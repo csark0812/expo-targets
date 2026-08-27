@@ -154,8 +154,17 @@ function indentCustomPods(podsRbContent?: string): string {
   return `\n${indented}\n`;
 }
 
-/** Parseable marker: packages to strip from this nested target's ExpoModulesProvider. */
-export const EXCLUDED_PACKAGES_MARKER = '# [expo-targets-excluded-packages]';
+/**
+ * Parseable marker: packages to strip from this nested target's ExpoModulesProvider.
+ * Must not be a prefix of the post_integrate fence markers, and those fences
+ * must not contain a Ruby `\bend\b` (standalone insert used to splice there).
+ */
+export const EXCLUDED_PACKAGES_MARKER =
+  '# [expo-targets-excluded-packages-list]';
+const EXCLUDED_PACKAGES_POST_INTEGRATE_START =
+  '# [expo-targets-excluded-packages-begin]';
+const EXCLUDED_PACKAGES_POST_INTEGRATE_END =
+  '# [expo-targets-excluded-packages-done]';
 
 /**
  * Generate a Podfile target block for a React Native extension.
@@ -334,6 +343,23 @@ end
 }
 
 /**
+ * Last `end` that opens a line (optional indent). Ignores `end` inside comments
+ * such as `# [expo-targets-*-end]`.
+ */
+function findLastLineLevelEndIndex(podfileContent: string): number {
+  const lineEnd = /^[ \t]*end\b/gm;
+  let match: RegExpExecArray | null;
+  let last: RegExpExecArray | null = null;
+  while ((match = lineEnd.exec(podfileContent)) !== null) {
+    last = match;
+  }
+  if (!last) {
+    throw new Error('Could not find any end keyword in Podfile');
+  }
+  return last.index + last[0].length;
+}
+
+/**
  * Standalone targets are inserted as siblings AFTER the main target's closing
  * `end`, which prevents CocoaPods from auto-generating Expo module providers.
  */
@@ -342,24 +368,26 @@ function insertStandaloneTargetBlock(
   targetBlock: string,
   logger?: { log: (message: string) => void }
 ): string {
-  // The main target is the outermost block in a standard Expo Podfile, so its
-  // closing 'end' is the last one in the file.
-  const lastEndMatch = podfileContent.match(/\bend\b(?!.*\bend\b)/s);
-
-  if (!lastEndMatch) {
-    throw new Error('Could not find any end keyword in Podfile');
+  const insertion = `\n\n${targetBlock.trim()}`;
+  const hookStart = podfileContent.indexOf(
+    EXCLUDED_PACKAGES_POST_INTEGRATE_START
+  );
+  if (hookStart !== -1) {
+    logger?.log(
+      'Inserting standalone target before excluded-packages post_integrate hook'
+    );
+    return `${podfileContent.slice(0, hookStart).trimEnd()}${insertion}\n\n${podfileContent.slice(hookStart)}`;
   }
 
-  const mainTargetEndIndex = lastEndMatch.index! + lastEndMatch[0].length;
+  const mainTargetEndIndex = findLastLineLevelEndIndex(podfileContent);
 
   logger?.log(
-    `Inserting standalone target after main target's closing 'end' at position ${mainTargetEndIndex}`
+    `Inserting standalone target after last line-level 'end' at position ${mainTargetEndIndex}`
   );
 
   return (
     podfileContent.slice(0, mainTargetEndIndex) +
-    '\n\n' +
-    targetBlock.trim() +
+    insertion +
     podfileContent.slice(mainTargetEndIndex)
   );
 }
@@ -789,11 +817,6 @@ export function ensureReactNativeExtensionFrameworkPaths(
     afterInsert
   );
 }
-
-const EXCLUDED_PACKAGES_POST_INTEGRATE_START =
-  '# [expo-targets-excluded-packages-start]';
-const EXCLUDED_PACKAGES_POST_INTEGRATE_END =
-  '# [expo-targets-excluded-packages-end]';
 
 function rubySingleQuoted(value: string): string {
   return `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;

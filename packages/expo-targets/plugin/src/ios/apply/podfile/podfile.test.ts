@@ -2,6 +2,8 @@ import { describe, expect, test } from 'bun:test';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { normalizePodfile } from '../../../../test-utils/normalizePodfile';
+import { Logger } from '../../../logger';
+import { applyPodfilePlan } from './applyPodfilePlan';
 import {
   ensureExcludedPackagesPostIntegrate,
   ensureExpoWidgetsPostInstall,
@@ -66,7 +68,7 @@ describe('generateReactNativeTargetBlock', () => {
       extensionType: 'share',
     });
     expect(block).toContain('inherit! :search_paths');
-    expect(block).not.toContain('[expo-targets-excluded-packages]');
+    expect(block).not.toContain('expo-targets-excluded-packages');
   });
 
   test('clip also inherits search_paths (host copies frameworks into AppClips)', () => {
@@ -86,7 +88,7 @@ describe('generateReactNativeTargetBlock', () => {
       excludedPackages: ['expo-updates', 'expo-dev-client'],
     });
     expect(block).toContain(
-      '# [expo-targets-excluded-packages] expo-updates,expo-dev-client'
+      '# [expo-targets-excluded-packages-list] expo-updates,expo-dev-client'
     );
   });
 });
@@ -99,7 +101,8 @@ describe('ensureExcludedPackagesPostIntegrate', () => {
         packages: ['expo-updates', 'expo-dev-client'],
       },
     ]);
-    expect(once).toContain('# [expo-targets-excluded-packages-start]');
+    expect(once).toContain('# [expo-targets-excluded-packages-begin]');
+    expect(once).toContain('# [expo-targets-excluded-packages-done]');
     expect(once).toContain('post_integrate do |installer|');
     expect(once).toContain(
       "'ExampleMessagesTarget' => ['expo-updates', 'expo-dev-client']"
@@ -114,7 +117,7 @@ describe('ensureExcludedPackagesPostIntegrate', () => {
         packages: ['expo-updates', 'expo-dev-client'],
       },
     ]);
-    expect(twice.split('# [expo-targets-excluded-packages-start]').length).toBe(
+    expect(twice.split('# [expo-targets-excluded-packages-begin]').length).toBe(
       2
     );
   });
@@ -124,7 +127,7 @@ describe('ensureExcludedPackagesPostIntegrate', () => {
       { targetName: 'ExampleMessagesTarget', packages: ['expo-updates'] },
     ]);
     const cleared = ensureExcludedPackagesPostIntegrate(withHook, []);
-    expect(cleared).not.toContain('# [expo-targets-excluded-packages-start]');
+    expect(cleared).not.toContain('# [expo-targets-excluded-packages-begin]');
     expect(cleared).not.toContain('post_integrate do |installer|');
   });
 });
@@ -161,6 +164,63 @@ describe('insertTargetBlock + removeTargetBlock', () => {
   test('removeTargetBlock is a no-op when the target does not exist', () => {
     const result = removeTargetBlock(plainPodfile, 'DoesNotExist');
     expect(result).toBe(plainPodfile);
+  });
+
+  test('standalone insert does not splice into the excluded-packages fence', () => {
+    const withHook = ensureExcludedPackagesPostIntegrate(plainPodfile, [
+      { targetName: 'MessagesTarget', packages: ['expo-updates'] },
+    ]);
+    const clip = generateStandaloneTargetBlock({
+      targetName: 'ClipTarget',
+      deploymentTarget: '16.4',
+      useFrameworks: true,
+    });
+    const result = insertTargetBlock(withHook, clip, { standalone: true });
+
+    expect(result).toContain('# [expo-targets-excluded-packages-begin]');
+    expect(result).toContain('# [expo-targets-excluded-packages-done]');
+    expect(result).not.toMatch(/excluded-packages-\w+\n/);
+    expect(result).not.toMatch(/^\s+end\]/m);
+    expect(result.indexOf("target 'ClipTarget'")).toBeLessThan(
+      result.indexOf('# [expo-targets-excluded-packages-begin]')
+    );
+  });
+});
+
+describe('applyPodfilePlan messages then clip', () => {
+  test('keeps fence markers intact after a later standalone target', () => {
+    const logger = new Logger();
+    const afterMessages = applyPodfilePlan(
+      plainPodfile,
+      {
+        targetName: 'MessagesTarget',
+        deploymentTarget: '16.4',
+        extensionType: 'messages',
+        standalone: false,
+        excludedPackages: ['expo-updates', 'expo-dev-client'],
+      },
+      { mainTargetName: 'App', logger }
+    );
+    const afterClip = applyPodfilePlan(
+      afterMessages,
+      {
+        targetName: 'ClipTarget',
+        deploymentTarget: '16.4',
+        extensionType: 'clip',
+        standalone: true,
+      },
+      { mainTargetName: 'App', logger }
+    );
+
+    expect(afterClip).toContain('# [expo-targets-excluded-packages-list]');
+    expect(afterClip).toContain('# [expo-targets-excluded-packages-begin]');
+    expect(afterClip).toContain('# [expo-targets-excluded-packages-done]');
+    expect(afterClip).not.toMatch(/excluded-packages-\w+\n/);
+    expect(afterClip).not.toMatch(/^\s+end\]/m);
+    expect(afterClip).toContain("target 'ClipTarget' do");
+    expect(afterClip.indexOf("target 'ClipTarget'")).toBeLessThan(
+      afterClip.indexOf('# [expo-targets-excluded-packages-begin]')
+    );
   });
 });
 
