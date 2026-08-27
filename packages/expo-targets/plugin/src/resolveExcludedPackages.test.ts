@@ -1,4 +1,7 @@
 import { describe, expect, test } from 'bun:test';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 
 import {
   HOST_ONLY_EXCLUDED_PACKAGES,
@@ -75,5 +78,53 @@ describe('resolveExcludedPackages non-RN', () => {
         entry: './targets/safari/popup.tsx',
       })
     ).toBeUndefined();
+  });
+});
+
+describe('resolveExcludedPackages inferred heavies', () => {
+  test('unions unused host Sentry when projectRoot + entry are set', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'expo-targets-excl-'));
+    fs.mkdirSync(path.join(root, 'targets', 'messages'), { recursive: true });
+    fs.writeFileSync(
+      path.join(root, 'package.json'),
+      JSON.stringify({
+        dependencies: { '@sentry/react-native': '6.0.0' },
+      })
+    );
+    fs.writeFileSync(
+      path.join(root, 'targets', 'messages', 'index.tsx'),
+      "import { View } from 'react-native';\nexport default function App() { return null; }\n"
+    );
+    expect(
+      resolveExcludedPackages({
+        type: 'messages',
+        entry: './targets/messages/index.tsx',
+        projectRoot: root,
+      })
+    ).toEqual([...HOST_ONLY_EXCLUDED_PACKAGES, '@sentry/react-native']);
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  test('does not infer Sentry when the entry imports it', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'expo-targets-excl-'));
+    fs.mkdirSync(path.join(root, 'targets', 'messages'), { recursive: true });
+    fs.writeFileSync(
+      path.join(root, 'package.json'),
+      JSON.stringify({
+        dependencies: { '@sentry/react-native': '6.0.0' },
+      })
+    );
+    fs.writeFileSync(
+      path.join(root, 'targets', 'messages', 'index.tsx'),
+      "import * as Sentry from '@sentry/react-native';\nexport default function App() { return null; }\n"
+    );
+    expect(
+      resolveExcludedPackages({
+        type: 'messages',
+        entry: './targets/messages/index.tsx',
+        projectRoot: root,
+      })
+    ).toEqual([...HOST_ONLY_EXCLUDED_PACKAGES]);
+    fs.rmSync(root, { recursive: true, force: true });
   });
 });

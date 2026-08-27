@@ -86,6 +86,22 @@ class ExpoTargetsLiveActivityModule : Module() {
       persistIds(ctx)
     }
 
+    AsyncFunction("endAllForAttributes") { attributesName: String ->
+      val ctx =
+        appContext.reactContext
+          ?: throw Exception("React context unavailable")
+      val loaded = loadIds(ctx)
+      val toEnd =
+        (activeIds.filter { it.value == attributesName }.keys +
+          loaded.filter { it.value == attributesName }.keys)
+          .toSet()
+      for (id in toEnd) {
+        ExpoTargetsNotificationRouter.cancelOngoing(ctx, id)
+        activeIds.remove(id)
+      }
+      persistIds(ctx)
+    }
+
     AsyncFunction("areActivitiesEnabled") {
       val ctx =
         appContext.reactContext
@@ -137,12 +153,30 @@ class ExpoTargetsLiveActivityModule : Module() {
     ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
   private fun persistIds(ctx: Context) {
-    prefs(ctx).edit().putString(KEY_IDS, activeIds.keys.joinToString(",")).commit()
+    val json = JSONObject()
+    for ((id, name) in activeIds) {
+      json.put(id, name)
+    }
+    prefs(ctx).edit().putString(KEY_IDS, json.toString()).commit()
   }
 
   private fun loadIds(ctx: Context): Map<String, String> {
     val raw = prefs(ctx).getString(KEY_IDS, "") ?: ""
     if (raw.isEmpty()) return emptyMap()
+    if (raw.startsWith("{")) {
+      return try {
+        val obj = JSONObject(raw)
+        val out = mutableMapOf<String, String>()
+        val keys = obj.keys()
+        while (keys.hasNext()) {
+          val id = keys.next()
+          out[id] = obj.optString(id, "live")
+        }
+        out
+      } catch (_: Exception) {
+        emptyMap()
+      }
+    }
     return raw.split(',').filter { it.isNotEmpty() }.associateWith { "live" }
   }
 

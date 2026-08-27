@@ -24,5 +24,6 @@ dependencies {
   compileOnly 'com.facebook.react:react-android'
   // FCM receive path — resolved from the app (expo-notifications / google-services)
   compileOnly 'com.google.firebase:firebase-messaging:24.1.0'
+  compileOnly 'com.google.zxing:core:3.4.1'
 }
 

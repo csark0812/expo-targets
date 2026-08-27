@@ -362,9 +362,10 @@ Omit host-only Expo modules from the nested extension's `ExpoModulesProvider`. N
 strips the listed packages from `expo-configure-project.sh` in a `post_integrate`
 hook and regenerates the provider.
 
-For RN-native targets with `entry`, **`expo-updates` and `expo-dev-client` are always
+For RN-native targets with `entry`, **`expo-updates`, `expo-dev-client`, `expo-dev-launcher`, and `expo-dev-menu` are always
 union-merged** (no escape hatch). Updates asserts before the RN factory is ready and
-blanks the sheet. List only **additional** packages:
+blanks the sheet. Unused heavy host packages (Sentry, reanimated, screens, netinfo)
+are inferred when the entry does not import them. List only **additional** packages:
 
 ```json
 {
@@ -375,9 +376,8 @@ blanks the sheet. List only **additional** packages:
 }
 ```
 
-`npx expo-targets doctor` **warns** when heavy host dependencies (reanimated, Sentry,
-screens, netinfo, and others) are present but not imported from the extension entry and not yet
-excluded. This is advisory only. It never auto-strips.
+`npx expo-targets doctor` is quiet when unused heavies are already inferred into the exclude list.
+It still warns only if a heavy remains after that merge.
 
 **Auto-excluded (always):**
 
@@ -385,14 +385,19 @@ excluded. This is advisory only. It never auto-strips.
 | ----------------- | ---------------------- | ------- |
 | `expo-updates`    | Crashes appex process  | ~500KB  |
 | `expo-dev-client` | Host-only dev tooling  | ~800KB  |
+| `expo-dev-launcher` | Host-only dev tooling | — |
+| `expo-dev-menu`   | Host-only dev tooling  | — |
 
-**Common extra exclusions:**
+**Inferred when unused by the entry:**
 
 | Package                   | Reason                     | Savings |
 | ------------------------- | -------------------------- | ------- |
 | `react-native-reanimated` | Heavy animation library    | ~1.5MB  |
 | `@sentry/react-native`    | Error reporting not needed | ~1MB    |
 | `react-native-screens`    | Native nav not needed      | ~300KB  |
+| `@react-native-community/netinfo` | Host networking     | — |
+
+**Common extra exclusions:**
 
 ### Tips for Smaller Bundles
 

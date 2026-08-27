@@ -46,6 +46,26 @@ declare module 'expo-targets/codegen' {
     cfg: Pick<RuntimeTargetConfig, 'name' | 'ios'>
   ): string[];
 
+  export function formatTargetsTypesFile(
+    configs: Array<{
+      name: string;
+      type?: string;
+      ios?: RuntimeTargetConfig['ios'];
+      android?: RuntimeTargetConfig['android'];
+      widgetKinds?: string[];
+      liveActivity?: {
+        attributesName?: string;
+        static?: Record<string, LiveActivityFieldType>;
+        contentState?: Record<string, LiveActivityFieldType>;
+      };
+      liveActivities?: Array<{
+        attributesName?: string;
+        static?: Record<string, LiveActivityFieldType>;
+        contentState?: Record<string, LiveActivityFieldType>;
+      }>;
+    }>
+  ): string;
+
   export function writeTargetsTypesFile(
     projectRoot: string,
     configs: Array<{

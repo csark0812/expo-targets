@@ -7,9 +7,10 @@ import {
   checkEasCredentialWarnings,
 } from './checks/easCredentials';
 import { checkEntries } from './checks/entries';
+import { checkGeneratedTypes } from './checks/generatedTypes';
 import { warnHeavyExclusions } from './checks/heavyExclusions';
-import { checkLiveActivityHostApi } from './checks/liveActivityHostApi';
 import { checkLiveActivitiesConfig } from './checks/liveActivitiesConfig';
+import { checkLiveActivityHostApi } from './checks/liveActivityHostApi';
 import { checkLiveActivityKind } from './checks/liveActivityKind';
 import { checkMetro } from './checks/metro';
 import { checkNameSync } from './checks/nameSync';
@@ -43,6 +44,7 @@ function collectFailures(ctx: ReturnType<typeof loadProject>): CheckResult[] {
   results.push(...checkLiveActivityKind(ctx));
   results.push(...checkLiveActivitiesConfig(ctx));
   results.push(...checkEasCredentialErrors(ctx));
+  results.push(...checkGeneratedTypes(ctx));
   return results;
 }
 

@@ -65,7 +65,7 @@ targets/my-widget/
 | `displayName`      | `name`      | Human-readable name (`CFBundleDisplayName` or `CFBundleName` on iOS; widget picker label)                                                                          |
 | `appGroup`         | _inherited_ | App Group ID. When omitted, inherits from your main app's `app.json` entitlements (see [App Group Inheritance](#app-group-inheritance) below) |
 | `entry`            | —           | React Native entry point for share, action, clip, and messages (see [Entry Field](#entry-field) below)                                                                  |
-| `excludedPackages` | auto for RN `entry` | Extra packages to omit from the nested `ExpoModulesProvider` (`post_integrate`). `expo-updates` and `expo-dev-client` are always merged for RN-native `entry` targets. List only extras (for example reanimated) |
+| `excludedPackages` | auto for RN `entry` | Extra packages to omit from the nested `ExpoModulesProvider` (`post_integrate`). Crash-class packages (`expo-updates`, `expo-dev-client`, `expo-dev-launcher`, `expo-dev-menu`) are always merged for RN-native `entry` targets. Unused heavy host packages (Sentry, reanimated, screens, netinfo) are inferred when the entry does not import them. List only extras the infer pass misses |
 
 ### Entry Field
 
@@ -371,6 +371,8 @@ Android widgets are supported with **Glance** (Jetpack Compose) or **RemoteViews
 | `providers`          | —                        | Opt-in list of AppWidgetProvider rows. Empty or omitted = 1:1 path  |
 | `colors`             | `{}`                     | Named colors for Android resources                                  |
 | `images`             | `{}`                     | Named images copied into `android/res/drawable*`                    |
+| `implementation`     | `[]`                     | Extra Gradle `implementation("…")` coordinates on the host app      |
+| `qr`                 | `false`                  | Inject ZXing core + `ExpoTargetsQr.encode` helper                   |
 
 When `android.providers` is omitted or empty, the plugin registers one receiver from the scalar fields. The RemoteViews class name stays `{package}.widget.{sanitizedName}.{Pascal}Provider`. The Glance class name stays `{package}.widget.{sanitizedName}.{Pascal}WidgetReceiver`.
 

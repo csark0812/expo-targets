@@ -24,7 +24,7 @@ afterEach(() => {
   }
 });
 
-test('warnHeavyExclusions warns when heavy dep is unused by entry and not excluded', () => {
+test('warnHeavyExclusions quiet when unused heavy is auto-inferred', () => {
   const root = makeProject({
     'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
     'package.json': JSON.stringify({
@@ -39,10 +39,7 @@ test('warnHeavyExclusions warns when heavy dep is unused by entry and not exclud
     'targets/share/index.tsx':
       "import { View } from 'react-native';\nexport default function App() { return null; }\n",
   });
-  const warnings = warnHeavyExclusions(loadProject(root));
-  expect(warnings).toHaveLength(1);
-  expect(warnings[0]?.message).toContain('react-native-reanimated');
-  expect(warnings[0]?.fix).toContain('excludedPackages');
+  expect(warnHeavyExclusions(loadProject(root))).toEqual([]);
 });
 
 test('warnHeavyExclusions quiet when entry imports the package', () => {

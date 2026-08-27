@@ -12,6 +12,7 @@ import {
 } from './buildPhases';
 import { applyBuildSettings, removeBuildSetting } from './buildSettings';
 import { ensureBundleReactNativePhase } from './bundleReactNative';
+import { ensureClipBuildNumberPhase } from './clipBuildNumber';
 import { ensureCopyFrameworksIntoAppClipPhase } from './copyFrameworksIntoAppClip';
 import {
   configureAppClipEmbed,
@@ -402,6 +403,49 @@ function applyMainAndWatchDependencies({
   }
 }
 
+function applyClipAndBundlePhases(
+  project: XcodeProject,
+  plan: XcodeTargetPlan,
+  {
+    target,
+    mainTarget,
+    logger,
+  }: {
+    target: XcodeTarget;
+    mainTarget: ApplyContext['mainTarget'];
+    logger: Logger;
+  }
+): void {
+  if (plan.identity.type === 'clip') {
+    const hostName =
+      mainTarget.target?.name || mainTarget.target?.productName || 'App';
+    ensureClipBuildNumberPhase({
+      project,
+      clipTargetUuid: target.uuid,
+      hostProductName: String(hostName).replace(/"/g, ''),
+      logger,
+    });
+  }
+
+  if (plan.bundleReactNative) {
+    ensureBundleReactNativePhase({
+      project,
+      targetUuid: target.uuid,
+      plan: plan.bundleReactNative,
+      logger,
+    });
+  }
+
+  if (plan.safariWebBundle) {
+    ensureSafariWebBundlePhase({
+      project,
+      targetUuid: target.uuid,
+      plan: plan.safariWebBundle,
+      logger,
+    });
+  }
+}
+
 /**
  * Apply a target plan to a parsed Xcode project.
  * Idempotent: running it twice against the same project is a no-op.
@@ -440,24 +484,7 @@ export function applyXcodeTargetPlan(
     mainTargetUuid: mainTarget.uuid,
   });
   applyEmbed(project, plan, { target, mainTargetUuid: mainTarget.uuid });
-
-  if (plan.bundleReactNative) {
-    ensureBundleReactNativePhase({
-      project,
-      targetUuid: target.uuid,
-      plan: plan.bundleReactNative,
-      logger,
-    });
-  }
-
-  if (plan.safariWebBundle) {
-    ensureSafariWebBundlePhase({
-      project,
-      targetUuid: target.uuid,
-      plan: plan.safariWebBundle,
-      logger,
-    });
-  }
+  applyClipAndBundlePhases(project, plan, { target, mainTarget, logger });
 
   logger.log(`Configured target ${plan.identity.targetProductName}`);
   return target;

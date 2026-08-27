@@ -17,7 +17,46 @@ interface EvaluatedTarget {
     type?: ExtensionType;
     platforms?: string[];
     entry?: string;
+    appGroup?: string;
+    ios?: {
+      entitlements?: Record<string, unknown>;
+    };
   };
+}
+
+function addStringGroups(groups: Set<string>, values: unknown): void {
+  if (!Array.isArray(values)) {
+    return;
+  }
+  for (const group of values) {
+    if (typeof group === 'string' && group.length > 0) {
+      groups.add(group);
+    }
+  }
+}
+
+export function collectTargetAppGroups(targets: EvaluatedTarget[]): string[] {
+  const groups = new Set<string>();
+  for (const target of targets) {
+    if (!target.config.platforms?.includes('ios')) {
+      continue;
+    }
+    if (!targetNeedsAppGroup(target.config.type)) {
+      continue;
+    }
+    if (typeof target.config.appGroup === 'string' && target.config.appGroup) {
+      groups.add(target.config.appGroup);
+    }
+    addStringGroups(
+      groups,
+      target.config.ios?.entitlements?.[APP_GROUP_ENTITLEMENT_KEY]
+    );
+  }
+  return [...groups];
+}
+
+function uniqueGroups(groups: string[]): string[] {
+  return [...new Set(groups.filter((g) => g.length > 0))];
 }
 
 export function targetNeedsAppGroup(type: ExtensionType | undefined): boolean {
@@ -34,6 +73,67 @@ export function anyTargetNeedsAppGroup(targets: EvaluatedTarget[]): boolean {
   );
 }
 
+function stringList(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter((g): g is string => typeof g === 'string');
+}
+
+function resolveMergedHostGroups(
+  config: ExpoConfig,
+  targets: EvaluatedTarget[],
+  logger: Logger
+): string[] | null {
+  const existing = stringList(
+    config.ios?.entitlements?.[APP_GROUP_ENTITLEMENT_KEY]
+  );
+  const fromTargets = collectTargetAppGroups(targets);
+  let merged = uniqueGroups([...existing, ...fromTargets]);
+
+  if (merged.length === 0) {
+    const bundleId = config.ios?.bundleIdentifier;
+    if (!bundleId) {
+      return null;
+    }
+    const invented = getAppGroup(bundleId);
+    logger.log(`Invented App Group for host: ${invented}`);
+    return [invented];
+  }
+
+  for (const group of fromTargets) {
+    if (!existing.includes(group)) {
+      logger.log(`Union App Group into host: ${group}`);
+    }
+  }
+  return merged;
+}
+
+function writeHostAppGroups(config: ExpoConfig, merged: string[]): ExpoConfig {
+  let next: ExpoConfig = {
+    ...config,
+    ios: {
+      ...config.ios,
+      entitlements: {
+        ...config.ios?.entitlements,
+        [APP_GROUP_ENTITLEMENT_KEY]: merged,
+      },
+    },
+  };
+
+  next = withEntitlementsPlist(next, async (cfg) => {
+    const entitlements = cfg.modResults;
+    entitlements[APP_GROUP_ENTITLEMENT_KEY] = uniqueGroups([
+      ...stringList(entitlements[APP_GROUP_ENTITLEMENT_KEY]),
+      ...merged,
+    ]);
+    cfg.modResults = entitlements;
+    return cfg;
+  });
+
+  return next;
+}
+
 export function ensureHostAppGroups(
   config: ExpoConfig,
   targets: EvaluatedTarget[],
@@ -43,41 +143,21 @@ export function ensureHostAppGroups(
     return config;
   }
 
-  const existing = config.ios?.entitlements?.[APP_GROUP_ENTITLEMENT_KEY];
-  if (Array.isArray(existing) && existing.length > 0) {
+  const existing = stringList(
+    config.ios?.entitlements?.[APP_GROUP_ENTITLEMENT_KEY]
+  );
+  const merged = resolveMergedHostGroups(config, targets, logger);
+  if (!merged) {
+    return config;
+  }
+  const same =
+    merged.length === existing.length &&
+    merged.every((g, i) => g === existing[i]);
+  if (same) {
     return config;
   }
 
-  const bundleId = config.ios?.bundleIdentifier;
-  if (!bundleId) {
-    return config;
-  }
-
-  const group = getAppGroup(bundleId);
-  logger.log(`Invented App Group for host: ${group}`);
-
-  let next: ExpoConfig = {
-    ...config,
-    ios: {
-      ...config.ios,
-      entitlements: {
-        ...config.ios?.entitlements,
-        [APP_GROUP_ENTITLEMENT_KEY]: [group],
-      },
-    },
-  };
-
-  next = withEntitlementsPlist(next, async (cfg) => {
-    const entitlements = cfg.modResults;
-    const current = entitlements[APP_GROUP_ENTITLEMENT_KEY];
-    if (!Array.isArray(current) || current.length === 0) {
-      entitlements[APP_GROUP_ENTITLEMENT_KEY] = [group];
-      cfg.modResults = entitlements;
-    }
-    return cfg;
-  });
-
-  return next;
+  return writeHostAppGroups(config, merged);
 }
 
 export function warnMissingMetroWrapper(

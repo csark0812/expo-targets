@@ -107,7 +107,7 @@ Add the plugin and App Groups to your `app.json`:
 
 Update the placeholder `appGroup` to match your `app.json`.
 
-For RN `entry` targets, the plugin **always** strips `expo-updates` and `expo-dev-client` from the nested `ExpoModulesProvider` (they crash appex processes). Add `excludedPackages` only for **extra** packages (for example reanimated). `npx expo-targets doctor` warns when heavy host deps look unused by the entry.
+For RN `entry` targets, the plugin **always** strips `expo-updates`, `expo-dev-client`, `expo-dev-launcher`, and `expo-dev-menu` from the nested `ExpoModulesProvider` (they crash appex processes). Unused heavy host packages (Sentry, reanimated) are inferred when the entry does not import them. Add `excludedPackages` only for extras the infer pass misses.
 
 Extension JS can still OTA without linking Updates in the appex: the host runs `eas update`, then sideloads Hermes bundles into the App Group. Set a string `expo.runtimeVersion`, run `npx expo-targets export-extension-bundles` before each update, and use a **Release** build to verify the share sheet. Full flow: [Extension bundle sideload](./react-native-extensions.md#extension-bundle-sideload-with-expo-updates).
 
@@ -154,7 +154,13 @@ await orderLive.start({
 
 Apps that only extend `expo/tsconfig.base` (no `include`) already load `.expo/types/*.d.ts` — `generate` does **not** invent an `include`. If `include` is already set (for example Expo Router), it appends `.expo/types/**/*.ts` when missing.
 
-Regenerate without a full prebuild: `npx expo-targets generate` (also runs with `npx expo-targets doctor --fix`).
+Regenerate without a full prebuild: `npx expo-targets generate` (also runs with `npx expo-targets doctor --fix`). Typecheck in CI:
+
+```bash
+npx expo-targets generate && npx tsc --noEmit
+```
+
+`npx expo-targets doctor` **fails** when `.expo/types/expo-targets.d.ts` is missing or stale versus `targets/`.
 
 ## Step 5: Build and run
 

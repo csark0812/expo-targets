@@ -55,6 +55,7 @@ mock.module('expo-modules-core', () => ({
     update: nativeUpdate,
     end: nativeEnd,
     endAll: mock(async () => {}),
+    endAllForAttributes: mock(async () => {}),
     areActivitiesEnabled: mock(async () => true),
   }),
 }));

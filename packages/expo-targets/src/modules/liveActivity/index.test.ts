@@ -22,6 +22,7 @@ const trickWidget: TargetConfig = {
 
 const nativeStart = mock(async () => 'act-99');
 const nativeEndAll = mock(async () => {});
+const nativeEndAllForAttributes = mock(async () => {});
 
 mock.module('react-native', () => ({
   Platform: { OS: 'ios' },
@@ -33,6 +34,7 @@ mock.module('expo-modules-core', () => ({
     update: mock(async () => true),
     end: mock(async () => {}),
     endAll: nativeEndAll,
+    endAllForAttributes: nativeEndAllForAttributes,
     areActivitiesEnabled: mock(async () => true),
   }),
 }));
@@ -58,6 +60,7 @@ describe('liveActivity module', () => {
   beforeEach(() => {
     nativeStart.mockClear();
     nativeEndAll.mockClear();
+    nativeEndAllForAttributes.mockClear();
   });
 
   test('buildLiveActivityHandle starts via native bridge', async () => {
@@ -76,6 +79,33 @@ describe('liveActivity module', () => {
       attributes: {},
       contentState: { status: 'x' },
     });
+    expect(nativeStart).toHaveBeenCalled();
+    expect(nativeEndAllForAttributes).toHaveBeenCalledWith(
+      'TrickActivityAttributes'
+    );
+  });
+
+  test('start default replaceExisting ends that attributesName only', async () => {
+    const handle = buildLiveActivityHandle('TrickActivityAttributes');
+    await handle.start({
+      attributes: {},
+      contentState: { status: 'x' },
+    });
+    expect(nativeEndAllForAttributes).toHaveBeenCalledWith(
+      'TrickActivityAttributes'
+    );
+    expect(nativeEndAll).not.toHaveBeenCalled();
+    expect(nativeStart).toHaveBeenCalled();
+  });
+
+  test('start replaceExisting false skips end', async () => {
+    const handle = buildLiveActivityHandle('TrickActivityAttributes');
+    await handle.start({
+      attributes: {},
+      contentState: { status: 'x' },
+      replaceExisting: false,
+    });
+    expect(nativeEndAllForAttributes).not.toHaveBeenCalled();
     expect(nativeStart).toHaveBeenCalled();
   });
 
