@@ -117,7 +117,9 @@ When you omit `appGroup` in your target config, it inherits automatically from y
 }
 ```
 
-The first App Group in the array is used. When no App Group is configured in `app.json`, you **must** specify `appGroup` in each target config.
+The first App Group in the array is used. When no App Group is configured in `app.json`, you **must** specify `appGroup` in each target that needs one.
+
+**App Clips** do not inherit host App Groups. If the Clip does not share data, omit `appGroup` and do not set `com.apple.security.application-groups`. An empty list also omits the key, so AdHoc codesign can match a Clip profile that has no App Groups capability. Set `appGroup` or a non-empty group list only when the Clip shares data with the host.
 
 **Best practice:** Use the same App Group ID everywhere:
 

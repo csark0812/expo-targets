@@ -658,6 +658,47 @@ describe('planEntitlements per type', () => {
   });
 });
 
+describe('planEntitlements clip omit', () => {
+  test('omits host groups when clip lists none or []', () => {
+    const absent = planEntitlements({
+      type: 'clip',
+      mainBundleIdentifier: MAIN_BUNDLE_ID,
+      mainAppGroups: ['group.com.example.app'],
+      paths: entitlementPaths,
+    });
+    const empty = planEntitlements({
+      type: 'clip',
+      entitlements: { 'com.apple.security.application-groups': [] },
+      mainBundleIdentifier: MAIN_BUNDLE_ID,
+      mainAppGroups: ['group.com.example.app'],
+      paths: entitlementPaths,
+    });
+
+    expect(absent.entitlements).not.toHaveProperty(
+      'com.apple.security.application-groups'
+    );
+    expect(empty.entitlements).not.toHaveProperty(
+      'com.apple.security.application-groups'
+    );
+  });
+
+  test('keeps an explicit non-empty clip App Group list', () => {
+    const plan = planEntitlements({
+      type: 'clip',
+      entitlements: {
+        'com.apple.security.application-groups': ['group.com.example.clip'],
+      },
+      mainBundleIdentifier: MAIN_BUNDLE_ID,
+      mainAppGroups: ['group.com.example.app'],
+      paths: entitlementPaths,
+    });
+
+    expect(plan.entitlements['com.apple.security.application-groups']).toEqual([
+      'group.com.example.clip',
+    ]);
+  });
+});
+
 describe('planEmbed', () => {
   test('maps each type to its embed strategy', () => {
     expect(planEmbed('share')).toEqual({ kind: 'foundation-extension' });

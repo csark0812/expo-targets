@@ -181,7 +181,7 @@ const BASE_TYPE_CHARACTERISTICS: Record<
     frameworks: [], // SwiftUI auto-linked
     productType: 'com.apple.product-type.application.on-demand-install-capable',
     extensionPointIdentifier: '',
-    defaultUsesAppGroups: true,
+    defaultUsesAppGroups: false,
     requiresEntitlements: true,
     basePlist: {
       CFBundleShortVersionString: '$(MARKETING_VERSION)',

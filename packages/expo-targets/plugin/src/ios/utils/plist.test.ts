@@ -63,12 +63,24 @@ describe('syncAppGroups', () => {
 
     expect(result).toEqual({ foo: 'bar' });
   });
+
+  test('omits an empty application-groups array instead of writing the key', () => {
+    const result = syncAppGroups({
+      targetEntitlements: {
+        foo: 'bar',
+        'com.apple.security.application-groups': [],
+      },
+      mainAppGroups: ['group.com.example.app'],
+    });
+
+    expect(result).toEqual({ foo: 'bar' });
+  });
 });
 
 describe('shouldUseAppGroups', () => {
-  test('share, clip, widget, messages, action, and bg-download default to true', () => {
+  test('share, widget, messages, action, and bg-download default to true', () => {
     expect(shouldUseAppGroups('share')).toBe(true);
-    expect(shouldUseAppGroups('clip')).toBe(true);
+    expect(shouldUseAppGroups('clip')).toBe(false);
     expect(shouldUseAppGroups('widget')).toBe(true);
     expect(shouldUseAppGroups('messages')).toBe(true);
     expect(shouldUseAppGroups('action')).toBe(true);

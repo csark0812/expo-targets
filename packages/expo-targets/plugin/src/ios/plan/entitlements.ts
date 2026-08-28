@@ -1,6 +1,7 @@
 import type { ExtensionType } from '../../domain';
 import {
   APP_GROUP_ENTITLEMENT_KEY,
+  omitEmptyApplicationGroups,
   shouldUseAppGroups,
   TYPE_CHARACTERISTICS,
 } from '../../domain';
@@ -68,6 +69,8 @@ export function planEntitlements({
       mainAppGroups,
     });
   }
+
+  entitlements = omitEmptyApplicationGroups(entitlements);
 
   return {
     required,

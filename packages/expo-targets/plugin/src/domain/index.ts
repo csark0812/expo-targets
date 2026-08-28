@@ -8,8 +8,10 @@
 export {
   APP_GROUP_ENTITLEMENT_KEY,
   EAS_APP_GROUP_TYPES,
+  omitEmptyApplicationGroups,
   REQUIRES_APP_GROUP_TYPES,
   requiresAppGroup,
+  resolveApplicationGroups,
   shouldUseAppGroups,
 } from './appGroups';
 export {
