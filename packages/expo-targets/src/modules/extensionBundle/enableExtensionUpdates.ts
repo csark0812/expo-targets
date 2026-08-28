@@ -62,7 +62,7 @@ function rnNativeSyncTargets(): {
 
 function loadBundledAssetModules(): Record<string, number> {
   try {
-    // Resolved by `withTargets` → assets/expo-targets/extensionBundleModules.js
+    // withTargets: assets/expo-targets/extensionBundleModules.js, else packaged stub
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     return require('expo-targets/extension-bundle-assets') as Record<
       string,

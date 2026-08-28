@@ -588,7 +588,7 @@ ExtensionUpdates.enable();
 `enable()`:
 
 - Discovers RN-native targets + App Group from `expo.extra.targets`
-- Resolves bundles via Metro alias `expo-targets/extension-bundle-assets` → `assets/expo-targets/extensionBundleModules.js`
+- Resolves bundles via Metro alias `expo-targets/extension-bundle-assets` → `assets/expo-targets/extensionBundleModules.js` when that file exists. Otherwise Metro uses the packaged empty stub (`expo-targets/extension-bundle-assets`). The resolver does not write under `.expo/`.
 - Syncs App Group from the **currently running** update on launch (`syncOnStart`, default `true`)
 - Returns the Updates-shaped API (`checkForUpdateAsync`, `fetchUpdateAsync`, `reloadAsync`, `syncFromCurrentUpdate`)
 

@@ -431,7 +431,7 @@ Layout on disk (App Group container):
 1. **String `expo.runtimeVersion`** in `app.json` or `app.config` (for example `"1.0.0"`). Prebuild bakes it into the extension RN host. When it is missing or a policy object, App Group load is skipped forever and Release always uses the embedded bundle.
 2. **Shared App Group** on host + target (`appGroup` / entitlements).
 3. **Host import** of `expo-targets` (auto-enables `ExtensionUpdates`) or an explicit `ExtensionUpdates.enable()`.
-4. **Metro** wrapped with `withTargets` so the publish-time asset module resolves.
+4. **Metro** wrapped with `withTargets` so the publish-time asset module resolves when `assets/expo-targets/extensionBundleModules.js` exists. Before that export, the packaged `expo-targets/extension-bundle-assets` stub is an empty map.
 
 #### Publish pipeline
 

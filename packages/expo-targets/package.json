@@ -17,6 +17,7 @@
     "ios",
     "android",
     "expo-module.config.json",
+    "extension-bundle-assets.js",
     "README.md"
   ],
   "exports": {
@@ -24,6 +25,7 @@
       "import": "./build/src/index.js",
       "require": "./build/src/index.js"
     },
+    "./extension-bundle-assets": "./extension-bundle-assets.js",
     "./metro": {
       "import": "./metro/build/index.js",
       "require": "./metro/build/index.js"
