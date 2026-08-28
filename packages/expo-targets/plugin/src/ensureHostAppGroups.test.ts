@@ -112,27 +112,22 @@ describe('ensureHostAppGroups union', () => {
       config.ios?.entitlements?.['com.apple.security.application-groups']
     ).toEqual(['group.onesignal', 'group.widgets']);
   });
+});
 
+describe('ensureHostAppGroups clip omit', () => {
   test('does not invent a host group for a clip that lists none', () => {
     const logger = new Logger(false);
     const config = ensureHostAppGroups(
-      {
-        ios: { bundleIdentifier: 'com.example.app' },
-      },
-      [
-        {
-          config: {
-            type: 'clip' as const,
-            platforms: ['ios'],
-          },
-        },
-      ],
+      { ios: { bundleIdentifier: 'com.example.app' } },
+      [{ config: { type: 'clip' as const, platforms: ['ios'] } }],
       logger
     );
 
     expect(config.ios?.entitlements).toBeUndefined();
   });
+});
 
+describe('ensureHostAppGroups clip union', () => {
   test('unions an explicit clip appGroup into the host list', () => {
     const logger = new Logger(false);
     const config = ensureHostAppGroups(

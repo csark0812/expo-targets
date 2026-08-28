@@ -221,8 +221,10 @@ describe('appGroups', () => {
     ]);
     expect(shouldUseAppGroups('clip')).toBe(false);
   });
+});
 
-  test('resolveApplicationGroups omits empty lists and inherits only when asked', () => {
+describe('resolveApplicationGroups', () => {
+  test('omits empty lists and inherits only when asked', () => {
     expect(
       resolveApplicationGroups({
         configured: [],
