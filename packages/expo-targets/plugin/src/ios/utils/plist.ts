@@ -54,12 +54,14 @@ export function syncAppGroups({
   mainAppGroups: string[] | undefined;
 }): Record<string, any> {
   const AppGroupKey = 'com.apple.security.application-groups';
+  const configured = targetEntitlements[AppGroupKey];
 
-  if (
-    !targetEntitlements[AppGroupKey] &&
-    Array.isArray(mainAppGroups) &&
-    mainAppGroups.length > 0
-  ) {
+  if (Array.isArray(configured) && configured.length === 0) {
+    const { [AppGroupKey]: _omitted, ...rest } = targetEntitlements;
+    return rest;
+  }
+
+  if (!configured && Array.isArray(mainAppGroups) && mainAppGroups.length > 0) {
     return {
       ...targetEntitlements,
       [AppGroupKey]: mainAppGroups,

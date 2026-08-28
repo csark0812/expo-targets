@@ -1,20 +1,12 @@
+import {
+  APP_GROUP_ENTITLEMENT_KEY,
+  EAS_APP_GROUP_TYPES,
+  shouldUseAppGroups,
+} from '../../../plugin/src/domain';
+import type { ExtensionType } from '../../../plugin/src/domain/types';
 import type { CheckResult, ProjectContext } from '../types';
 
-const APP_GROUP_KEY = 'com.apple.security.application-groups';
-
-/** Mirror plugin EAS_APP_GROUP_TYPES — types that should carry App Groups in EAS. */
-const EAS_APP_GROUP_TYPES = new Set([
-  'widget',
-  'clip',
-  'share',
-  'bg-download',
-  'messages',
-  'action',
-  'notification-service',
-  'notification-content',
-  'intent',
-  'intent-ui',
-]);
+const APP_GROUP_KEY = APP_GROUP_ENTITLEMENT_KEY;
 
 type AppExtensionRow = {
   targetName?: string;
@@ -102,6 +94,16 @@ function wrongProductNameError(
   };
 }
 
+function targetUsesAppGroupsForEas(
+  type: ExtensionType | undefined,
+  appGroup: unknown
+): boolean {
+  if (typeof appGroup === 'string' && appGroup.length > 0) {
+    return true;
+  }
+  return Boolean(type && shouldUseAppGroups(type));
+}
+
 function checkExtensionRow(
   target: ProjectContext['targets'][number],
   row: AppExtensionRow | undefined,
@@ -120,8 +122,13 @@ function checkExtensionRow(
     );
   }
 
-  const type = target.config.type;
-  if (type && EAS_APP_GROUP_TYPES.has(type) && hostAppGroups.length > 0) {
+  const type = target.config.type as ExtensionType | undefined;
+  if (
+    type &&
+    EAS_APP_GROUP_TYPES.includes(type) &&
+    hostAppGroups.length > 0 &&
+    targetUsesAppGroupsForEas(type, target.config.appGroup)
+  ) {
     const groups = row.entitlements?.[APP_GROUP_KEY];
     const hasGroups = Array.isArray(groups) && groups.length > 0;
     if (!hasGroups) {

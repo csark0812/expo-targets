@@ -16,8 +16,10 @@ import {
   isReactNativeCompatible,
   isReactNativeNative,
   isReactNativeWeb,
+  omitEmptyApplicationGroups,
   REACT_NATIVE_COMPATIBLE_TYPES,
   requiresAppGroup,
+  resolveApplicationGroups,
   resolveUiMode,
   shouldUseAppGroups,
   TYPE_CHARACTERISTICS,
@@ -89,7 +91,12 @@ function validateEntry(props: IosTargetProps, projectRoot: string): void {
 function validateAppGroup(props: IosTargetProps, mainAppGroups: unknown): void {
   let appGroup = props.appGroup;
 
-  if (!appGroup && Array.isArray(mainAppGroups) && mainAppGroups.length > 0) {
+  if (
+    !appGroup &&
+    shouldUseAppGroups(props.type) &&
+    Array.isArray(mainAppGroups) &&
+    mainAppGroups.length > 0
+  ) {
     appGroup = mainAppGroups[0];
     props.logger.log(`Inherited App Group: ${appGroup}`);
   }
@@ -117,18 +124,17 @@ function resolveTargetEntitlements(
     ...(props.entitlements || {}),
   };
 
-  if (!entitlements[APP_GROUP_ENTITLEMENT_KEY]) {
-    // Explicit target appGroup wins even when the type does not default-sync
-    // (action historically had defaultUsesAppGroups:false).
-    if (props.appGroup) {
-      entitlements[APP_GROUP_ENTITLEMENT_KEY] = [props.appGroup];
-    } else if (
-      shouldUseAppGroups(props.type) &&
-      Array.isArray(mainAppGroups) &&
-      mainAppGroups.length > 0
-    ) {
-      entitlements[APP_GROUP_ENTITLEMENT_KEY] = mainAppGroups;
-    }
+  const groups = resolveApplicationGroups({
+    configured: entitlements[APP_GROUP_ENTITLEMENT_KEY],
+    appGroup: props.appGroup,
+    mainAppGroups,
+    inheritHost: shouldUseAppGroups(props.type),
+  });
+
+  if (groups && groups.length > 0) {
+    entitlements[APP_GROUP_ENTITLEMENT_KEY] = groups;
+  } else {
+    delete entitlements[APP_GROUP_ENTITLEMENT_KEY];
   }
 
   return entitlements;
@@ -334,12 +340,19 @@ function buildEasEntitlements({
   };
 
   const mainAppGroups = mainAppEntitlements?.[APP_GROUP_ENTITLEMENT_KEY];
-  if (
-    Array.isArray(mainAppGroups) &&
-    mainAppGroups.length > 0 &&
-    EAS_APP_GROUP_TYPES.includes(props.type)
-  ) {
-    easEntitlements[APP_GROUP_ENTITLEMENT_KEY] = mainAppGroups;
+  const groups = resolveApplicationGroups({
+    configured: easEntitlements[APP_GROUP_ENTITLEMENT_KEY],
+    appGroup: props.appGroup,
+    mainAppGroups,
+    inheritHost:
+      shouldUseAppGroups(props.type) &&
+      EAS_APP_GROUP_TYPES.includes(props.type),
+  });
+
+  if (groups && groups.length > 0) {
+    easEntitlements[APP_GROUP_ENTITLEMENT_KEY] = groups;
+  } else {
+    delete easEntitlements[APP_GROUP_ENTITLEMENT_KEY];
   }
 
   if (props.type === 'clip') {
@@ -352,7 +365,7 @@ function buildEasEntitlements({
     );
   }
 
-  return easEntitlements;
+  return omitEmptyApplicationGroups(easEntitlements);
 }
 
 /**

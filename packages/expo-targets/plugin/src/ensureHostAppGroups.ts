@@ -35,13 +35,30 @@ function addStringGroups(groups: Set<string>, values: unknown): void {
   }
 }
 
+function targetHasExplicitAppGroup(target: EvaluatedTarget): boolean {
+  if (typeof target.config.appGroup === 'string' && target.config.appGroup) {
+    return true;
+  }
+  const configured =
+    target.config.ios?.entitlements?.[APP_GROUP_ENTITLEMENT_KEY];
+  return (
+    Array.isArray(configured) &&
+    configured.some((g) => typeof g === 'string' && g.length > 0)
+  );
+}
+
 export function collectTargetAppGroups(targets: EvaluatedTarget[]): string[] {
   const groups = new Set<string>();
   for (const target of targets) {
     if (!target.config.platforms?.includes('ios')) {
       continue;
     }
-    if (!targetNeedsAppGroup(target.config.type)) {
+    if (
+      !(
+        targetNeedsAppGroup(target.config.type) ||
+        targetHasExplicitAppGroup(target)
+      )
+    ) {
       continue;
     }
     if (typeof target.config.appGroup === 'string' && target.config.appGroup) {
@@ -69,7 +86,8 @@ export function targetNeedsAppGroup(type: ExtensionType | undefined): boolean {
 export function anyTargetNeedsAppGroup(targets: EvaluatedTarget[]): boolean {
   return targets.some(
     (t) =>
-      t.config.platforms?.includes('ios') && targetNeedsAppGroup(t.config.type)
+      t.config.platforms?.includes('ios') &&
+      (targetNeedsAppGroup(t.config.type) || targetHasExplicitAppGroup(t))
   );
 }
 

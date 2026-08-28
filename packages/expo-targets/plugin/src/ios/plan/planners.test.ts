@@ -639,6 +639,51 @@ describe('planEntitlements per type', () => {
     ).toBe(true);
   });
 
+  test('omits App Groups on clip when host groups exist but clip lists none', () => {
+    const plan = planEntitlements({
+      type: 'clip',
+      mainBundleIdentifier: MAIN_BUNDLE_ID,
+      mainAppGroups: ['group.com.example.app', 'group.com.example.extra'],
+      paths: entitlementPaths,
+    });
+
+    expect(plan.entitlements).not.toHaveProperty(
+      'com.apple.security.application-groups'
+    );
+    expect(plan.syncedAppGroups).toBe(false);
+  });
+
+  test('omits empty clip application-groups instead of writing the key', () => {
+    const plan = planEntitlements({
+      type: 'clip',
+      entitlements: { 'com.apple.security.application-groups': [] },
+      mainBundleIdentifier: MAIN_BUNDLE_ID,
+      mainAppGroups: ['group.com.example.app'],
+      paths: entitlementPaths,
+    });
+
+    expect(plan.entitlements).not.toHaveProperty(
+      'com.apple.security.application-groups'
+    );
+    expect(plan.syncedAppGroups).toBe(false);
+  });
+
+  test('keeps an explicit non-empty clip App Group list', () => {
+    const plan = planEntitlements({
+      type: 'clip',
+      entitlements: {
+        'com.apple.security.application-groups': ['group.com.example.clip'],
+      },
+      mainBundleIdentifier: MAIN_BUNDLE_ID,
+      mainAppGroups: ['group.com.example.app'],
+      paths: entitlementPaths,
+    });
+
+    expect(plan.entitlements['com.apple.security.application-groups']).toEqual([
+      'group.com.example.clip',
+    ]);
+  });
+
   test('adds payment pass provisioning for wallet targets', () => {
     const plan = planEntitlements({ type: 'wallet', paths: entitlementPaths });
 

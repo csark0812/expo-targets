@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 import { TYPE_MINIMUM_DEPLOYMENT_TARGETS } from '../config';
-import { REQUIRES_APP_GROUP_TYPES, shouldUseAppGroups } from './appGroups';
+import {
+  REQUIRES_APP_GROUP_TYPES,
+  resolveApplicationGroups,
+  shouldUseAppGroups,
+} from './appGroups';
 import { TYPE_BUNDLE_IDENTIFIER_SUFFIXES } from './bundleIds';
 import {
   EXTENSION_POINT_IDENTIFIERS,
@@ -212,9 +216,42 @@ describe('appGroups', () => {
     }
     expect(sorted(REQUIRES_APP_GROUP_TYPES)).toEqual([
       'bg-download',
-      'clip',
       'share',
       'widget',
     ]);
+    expect(shouldUseAppGroups('clip')).toBe(false);
+  });
+
+  test('resolveApplicationGroups omits empty lists and inherits only when asked', () => {
+    expect(
+      resolveApplicationGroups({
+        configured: [],
+        mainAppGroups: ['group.host'],
+        inheritHost: true,
+      })
+    ).toBeUndefined();
+    expect(
+      resolveApplicationGroups({
+        configured: undefined,
+        mainAppGroups: ['group.host'],
+        inheritHost: false,
+      })
+    ).toBeUndefined();
+    expect(
+      resolveApplicationGroups({
+        configured: undefined,
+        appGroup: 'group.clip',
+        mainAppGroups: ['group.host'],
+        inheritHost: false,
+      })
+    ).toEqual(['group.clip']);
+    expect(
+      resolveApplicationGroups({
+        configured: ['group.explicit'],
+        appGroup: 'group.clip',
+        mainAppGroups: ['group.host'],
+        inheritHost: true,
+      })
+    ).toEqual(['group.explicit']);
   });
 });

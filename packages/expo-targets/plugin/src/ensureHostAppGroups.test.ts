@@ -22,6 +22,10 @@ describe('targetNeedsAppGroup', () => {
   test('safari does not need app groups', () => {
     expect(targetNeedsAppGroup('safari')).toBe(false);
   });
+
+  test('clip does not need app groups by default', () => {
+    expect(targetNeedsAppGroup('clip')).toBe(false);
+  });
 });
 
 describe('ensureHostAppGroups', () => {
@@ -107,6 +111,54 @@ describe('ensureHostAppGroups union', () => {
     expect(
       config.ios?.entitlements?.['com.apple.security.application-groups']
     ).toEqual(['group.onesignal', 'group.widgets']);
+  });
+
+  test('does not invent a host group for a clip that lists none', () => {
+    const logger = new Logger(false);
+    const config = ensureHostAppGroups(
+      {
+        ios: { bundleIdentifier: 'com.example.app' },
+      },
+      [
+        {
+          config: {
+            type: 'clip' as const,
+            platforms: ['ios'],
+          },
+        },
+      ],
+      logger
+    );
+
+    expect(config.ios?.entitlements).toBeUndefined();
+  });
+
+  test('unions an explicit clip appGroup into the host list', () => {
+    const logger = new Logger(false);
+    const config = ensureHostAppGroups(
+      {
+        ios: {
+          bundleIdentifier: 'com.example.app',
+          entitlements: {
+            'com.apple.security.application-groups': ['group.onesignal'],
+          },
+        },
+      },
+      [
+        {
+          config: {
+            type: 'clip' as const,
+            platforms: ['ios'],
+            appGroup: 'group.clip',
+          },
+        },
+      ],
+      logger
+    );
+
+    expect(
+      config.ios?.entitlements?.['com.apple.security.application-groups']
+    ).toEqual(['group.onesignal', 'group.clip']);
   });
 });
 

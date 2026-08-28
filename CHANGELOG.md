@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- App Clips no longer inherit host App Groups. An empty or absent group list omits `com.apple.security.application-groups` so AdHoc codesign matches Clip profiles that have no App Groups capability.
 - Metro `withTargets` no longer writes `expo-targets/extension-bundle-assets` under gitignored `.expo/` during `resolveRequest` (EAS `export:embed` SHA-1 failure). Missing host assets resolve to a packaged empty stub.
 
 ### Added
