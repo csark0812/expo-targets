@@ -1,9 +1,9 @@
 import {
   APP_GROUP_ENTITLEMENT_KEY,
   EAS_APP_GROUP_TYPES,
+  type ExtensionType,
   shouldUseAppGroups,
-} from '../../../plugin/src/domain';
-import type { ExtensionType } from '../../../plugin/src/domain/types';
+} from '../../../plugin/build/domain';
 import type { CheckResult, ProjectContext } from '../types';
 
 const APP_GROUP_KEY = APP_GROUP_ENTITLEMENT_KEY;
