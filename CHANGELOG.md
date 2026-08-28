@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Metro `withTargets` no longer writes `expo-targets/extension-bundle-assets` under gitignored `.expo/` during `resolveRequest` (EAS `export:embed` SHA-1 failure). Missing host assets resolve to a packaged empty stub.
+
 ### Added
 
 - `npx expo-targets doctor` fails when `.expo/types/expo-targets.d.ts` is missing or stale; `npx expo-targets generate` stays the no-prebuild fix.

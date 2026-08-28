@@ -119,6 +119,10 @@ function logScanSummary(
   );
 }
 
+function packagedExtensionBundleAssetsPath(): string {
+  return path.join(__dirname, '..', '..', 'extension-bundle-assets.js');
+}
+
 function resolveExtensionBundleAssets(projectRoot: string): {
   type: 'sourceFile';
   filePath: string;
@@ -129,19 +133,13 @@ function resolveExtensionBundleAssets(projectRoot: string): {
     'expo-targets',
     'extensionBundleModules.js'
   );
-  const stubAssets = path.join(
-    projectRoot,
-    '.expo',
-    'expo-targets-extension-bundle-assets.js'
-  );
   if (fs.existsSync(extensionAssets)) {
     return { type: 'sourceFile', filePath: extensionAssets };
   }
-  fs.mkdirSync(path.dirname(stubAssets), { recursive: true });
-  if (!fs.existsSync(stubAssets)) {
-    fs.writeFileSync(stubAssets, 'module.exports = {};\n');
-  }
-  return { type: 'sourceFile', filePath: stubAssets };
+  return {
+    type: 'sourceFile',
+    filePath: packagedExtensionBundleAssetsPath(),
+  };
 }
 
 function createTargetsResolveRequest(

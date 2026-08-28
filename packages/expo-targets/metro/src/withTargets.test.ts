@@ -120,7 +120,14 @@ function shareContentProject() {
   ]);
 }
 
-test('withTargets resolveRequest returns extension bundle assets stub', () => {
+const packagedExtensionBundleAssetsStub = path.join(
+  import.meta.dir,
+  '..',
+  '..',
+  'extension-bundle-assets.js'
+);
+
+test('withTargets resolveRequest uses packaged stub when host assets are missing', () => {
   const root = shareContentProject();
   tempRoots.push(root);
   const config = buildWithTargetsConfig(root);
@@ -131,9 +138,40 @@ test('withTargets resolveRequest returns extension bundle assets stub', () => {
     'expo-targets/extension-bundle-assets',
     'ios'
   );
-  expect(assetsResult.filePath).toContain(
-    'expo-targets-extension-bundle-assets.js'
+  expect(assetsResult).toEqual({
+    type: 'sourceFile',
+    filePath: packagedExtensionBundleAssetsStub,
+  });
+  expect(
+    fs.existsSync(
+      path.join(root, '.expo', 'expo-targets-extension-bundle-assets.js')
+    )
+  ).toBe(false);
+});
+
+test('withTargets resolveRequest prefers exported extensionBundleModules.js', () => {
+  const root = shareContentProject();
+  tempRoots.push(root);
+  const generated = path.join(
+    root,
+    'assets',
+    'expo-targets',
+    'extensionBundleModules.js'
   );
+  fs.mkdirSync(path.dirname(generated), { recursive: true });
+  fs.writeFileSync(generated, 'module.exports = { Share: 1 };\n');
+  const config = buildWithTargetsConfig(root);
+  const assetsResult = config.resolver!.resolveRequest!(
+    {
+      resolveRequest: () => ({ type: 'sourceFile', filePath: '/fallback' }),
+    } as any,
+    'expo-targets/extension-bundle-assets',
+    'ios'
+  );
+  expect(assetsResult).toEqual({
+    type: 'sourceFile',
+    filePath: generated,
+  });
 });
 
 test('withTargets resolveRequest returns mapped entry files', () => {
