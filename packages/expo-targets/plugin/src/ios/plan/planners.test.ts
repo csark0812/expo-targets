@@ -424,6 +424,112 @@ describe('planSwiftSources per type', () => {
   });
 });
 
+describe('planSwiftSources native widget bundle emit', () => {
+  test('emits a sealed WidgetBundle from ios.kinds when the user has no Bundle.swift', () => {
+    const plans = swiftSourcesFor(
+      {
+        type: 'widget',
+        name: 'PoplWidgets',
+        kinds: [
+          { name: 'HomescreenWidgets' },
+          { name: 'LockScreenWidgets' },
+          { name: 'LockScreenScanWidget' },
+        ],
+        liveActivity: {
+          attributesName: 'DynamicIslandAttributes',
+          static: { id: 'string' },
+          contentState: { title: 'string' },
+        },
+      },
+      {
+        type: 'widget',
+        swiftFiles: ['HomescreenWidgets.swift', 'LiveActivity.swift'],
+      }
+    );
+
+    expect(plans.map((plan) => plan.file)).toEqual([
+      'HomescreenWidgets.swift',
+      'LiveActivity.swift',
+      'PoplWidgetsBundle.swift',
+    ]);
+    const bundle = plans[2];
+    expect(bundle.generate?.template).toBe('nativeWidgetBundle');
+    expect(bundle.generate?.options).toMatchObject({
+      name: 'PoplWidgets',
+      widgets: [
+        { name: 'HomescreenWidgets' },
+        { name: 'LockScreenWidgets' },
+        { name: 'LockScreenScanWidget' },
+      ],
+      includeLiveActivity: true,
+    });
+    expect(bundle.sourcePath).toContain(
+      path.join(
+        'ios',
+        PROJECT_NAME,
+        'ExpoTargetsGenerated',
+        PRODUCT_NAME,
+        'PoplWidgetsBundle.swift'
+      )
+    );
+  });
+});
+
+describe('planSwiftSources native widget bundle user files', () => {
+  test('keeps a user *Bundle.swift and does not emit a sealed bundle', () => {
+    const plans = swiftSourcesFor(
+      {
+        type: 'widget',
+        name: 'HelloWidget',
+        kinds: [{ name: 'HelloWidget' }],
+      },
+      {
+        type: 'widget',
+        swiftFiles: ['Widget.swift', 'WidgetBundle.swift'],
+      }
+    );
+
+    expect(plans.map((plan) => plan.file)).toEqual([
+      'Widget.swift',
+      'WidgetBundle.swift',
+    ]);
+    expect(plans.every((plan) => plan.generate === undefined)).toBe(true);
+  });
+
+  test('keeps a user target-named Bundle.swift and does not emit a sealed bundle', () => {
+    const plans = swiftSourcesFor(
+      {
+        type: 'widget',
+        name: 'PoplWidgets',
+        kinds: [{ name: 'HomescreenWidgets' }],
+      },
+      {
+        type: 'widget',
+        swiftFiles: ['HomescreenWidgets.swift', 'PoplWidgetsBundle.swift'],
+      }
+    );
+
+    expect(plans.map((plan) => plan.file)).toEqual([
+      'HomescreenWidgets.swift',
+      'PoplWidgetsBundle.swift',
+    ]);
+    expect(plans.every((plan) => plan.generate === undefined)).toBe(true);
+    expect(plans[1].sourcePath).toBe(
+      path.join(PROJECT_ROOT, 'targets/my-share/ios/PoplWidgetsBundle.swift')
+    );
+  });
+
+  test('does not emit a sealed bundle when ios.kinds is omitted', () => {
+    const plans = swiftSourcesFor(
+      { type: 'widget', name: 'HelloWidget' },
+      { type: 'widget', swiftFiles: ['Widget.swift'] }
+    );
+
+    expect(plans.map((plan) => plan.file)).toEqual(['Widget.swift']);
+    expect(plans[0].generate).toBeUndefined();
+  });
+});
+
 describe('planAssets', () => {
   test('plans colorsets and a reference relative to ios/', () => {
     const plan = assetsFor({

@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test';
 import {
   generateExpoUiWidgetBundleSwift,
   generateExpoUiWidgetSwift,
+  generateNativeWidgetBundleSwift,
 } from './expoUiWidgetSwift';
 
 describe('generateExpoUiWidgetSwift', () => {
@@ -44,5 +45,27 @@ describe('generateExpoUiWidgetBundleSwift', () => {
     expect(src).toContain('HomescreenWidgets()');
     expect(src).toContain('LockScreenWidgets()');
     expect(src).toContain('WidgetLiveActivity()');
+  });
+});
+
+describe('generateNativeWidgetBundleSwift', () => {
+  test('lists gallery kinds and the native Live Activity type without ExpoWidgets', () => {
+    const src = generateNativeWidgetBundleSwift({
+      name: 'PoplWidgets',
+      widgets: [
+        { name: 'HomescreenWidgets' },
+        { name: 'LockScreenWidgets' },
+        { name: 'LockScreenScanWidget' },
+      ],
+      includeLiveActivity: true,
+    });
+    expect(src).toContain('@main');
+    expect(src).toContain('struct PoplWidgetsBundle: WidgetBundle');
+    expect(src).toContain('HomescreenWidgets()');
+    expect(src).toContain('LockScreenWidgets()');
+    expect(src).toContain('LockScreenScanWidget()');
+    expect(src).toContain('PoplWidgetsLiveActivity()');
+    expect(src).not.toContain('WidgetLiveActivity()');
+    expect(src).not.toContain('ExpoWidgets');
   });
 });

@@ -20,6 +20,8 @@ function renderSwiftTemplate(plan: SwiftTemplatePlan): string {
       return ExpoUiWidgetSwift.generateExpoUiWidgetSwift(plan.options);
     case 'expoUiWidgetBundle':
       return ExpoUiWidgetSwift.generateExpoUiWidgetBundleSwift(plan.options);
+    case 'nativeWidgetBundle':
+      return ExpoUiWidgetSwift.generateNativeWidgetBundleSwift(plan.options);
     default:
       return ReactNativeSwift.generateReactNativeViewController(plan.options);
   }
