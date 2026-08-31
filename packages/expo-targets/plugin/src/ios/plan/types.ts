@@ -99,6 +99,15 @@ export type SwiftTemplatePlan =
         configurable?: boolean;
         widgets?: { name: string; configurable?: boolean }[];
       };
+    }
+  | {
+      template: 'nativeWidgetBundle';
+      options: {
+        name: string;
+        includeLiveActivity?: boolean;
+        configurable?: boolean;
+        widgets?: { name: string; configurable?: boolean }[];
+      };
     };
 
 /** One Swift file that should end up in the target's Sources phase. */

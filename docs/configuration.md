@@ -2,7 +2,7 @@
 
 **Source of truth for** `expo-target.config` options and extension types.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-26 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-31 -->
 
 > **Orphan-stub freeze:** do not add new `ExtensionType` values without registry, scaffold, example, and Devicewright row. See [deprecations.md](./deprecations.md). Widgets policy: [widgets.md](./widgets.md).
 
@@ -563,7 +563,7 @@ widget.setData(
 }
 ```
 
-`ios.kinds` lists WidgetKit picker products (`name` matches `createTarget`). `supportedFamilies` on a kind is sizes of that one picker row, not extra products. Declare Live Activity on `ios.liveActivity` (one) or `ios.liveActivities` (two or more in the same `.appex`). Do not set both on one target. Each row holds `attributesName` / `static` / `contentState` / `pushType`. That drives sealed CNG for native widgets and `WidgetLiveActivity()` on expo-ui Bundles. Ambient TypeScript payload types still land in `.expo/types/expo-targets.d.ts`. Host JS: `LiveActivity.create('WeatherAttributes')` or `folder.liveActivity('WeatherAttributes')`. See [api.md](./api.md) and [widgets.md](./widgets.md).
+`ios.kinds` lists WidgetKit picker products (`name` matches `createTarget`). `supportedFamilies` on a kind is sizes of that one picker row, not extra products. Declare Live Activity on `ios.liveActivity` (one) or `ios.liveActivities` (two or more in the same `.appex`). Do not set both on one target. Each row holds `attributesName` / `static` / `contentState` / `pushType`. That drives sealed CNG for native widgets and `WidgetLiveActivity()` on expo-ui Bundles. A native widget with `ios.kinds` and no user `*Bundle.swift` also gets a sealed `@main` WidgetBundle (`<name>LiveActivity()` when a Live Activity is set). Ambient TypeScript payload types still land in `.expo/types/expo-targets.d.ts`. Host JS: `LiveActivity.create('WeatherAttributes')` or `folder.liveActivity('WeatherAttributes')`. See [api.md](./api.md) and [widgets.md](./widgets.md).
 
 ### File Provider domain (iOS)
 

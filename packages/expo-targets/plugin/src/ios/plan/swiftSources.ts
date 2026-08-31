@@ -33,6 +33,22 @@ function isExpoUiWidget(props: IOSTargetProps): boolean {
   );
 }
 
+function isNativeWidgetKitTarget(props: IOSTargetProps): boolean {
+  return (
+    (props.type === 'widget' || props.type === 'watch-widget') &&
+    !isExpoUiWidget(props)
+  );
+}
+
+function isWidgetBundleFile(file: string): boolean {
+  const base = file.replace(/\\/g, '/').split('/').pop() ?? file;
+  return base.endsWith('Bundle.swift');
+}
+
+function hasUserWidgetBundle(workspace: TargetWorkspace): boolean {
+  return workspace.swiftFiles.some(isWidgetBundleFile);
+}
+
 /** Match a well-known file name at the root or nested in a subdirectory. */
 function isNamed(file: string, fileName: string): boolean {
   return (
@@ -85,6 +101,20 @@ function resolveEntryOnlySwiftFiles(props: IOSTargetProps): string[] {
   return [REACT_NATIVE_VIEW_CONTROLLER];
 }
 
+function maybeEnsureNativeWidgetBundle(
+  files: string[],
+  workspace: TargetWorkspace,
+  props: IOSTargetProps
+): void {
+  if (!(isNativeWidgetKitTarget(props) && hasExplicitGalleryKinds(props))) {
+    return;
+  }
+  if (hasUserWidgetBundle(workspace)) {
+    return;
+  }
+  ensureNamed(files, `${props.name}Bundle.swift`);
+}
+
 function resolveSwiftFileNames(
   workspace: TargetWorkspace,
   props: IOSTargetProps
@@ -102,6 +132,8 @@ function resolveSwiftFileNames(
     }
     return files;
   }
+
+  maybeEnsureNativeWidgetBundle(files, workspace, props);
 
   if (props.entry && files.length === 0) {
     return resolveEntryOnlySwiftFiles(props);
@@ -261,6 +293,59 @@ function planExpoUiBundleFile(opts: {
   });
 }
 
+function planNativeWidgetSwiftFile({
+  file,
+  workspace,
+  props,
+}: {
+  file: string;
+  workspace: TargetWorkspace;
+  props: IOSTargetProps;
+}): UnresolvedSwiftFilePlan | undefined {
+  if (
+    !(
+      isNativeWidgetKitTarget(props) &&
+      hasExplicitGalleryKinds(props) &&
+      isNamed(file, `${props.name}Bundle.swift`)
+    )
+  ) {
+    return;
+  }
+  return planNativeWidgetBundleFile({ file, workspace, props });
+}
+
+function planNativeWidgetBundleFile(opts: {
+  file: string;
+  workspace: TargetWorkspace;
+  props: IOSTargetProps;
+}): UnresolvedSwiftFilePlan {
+  const { file, workspace, props } = opts;
+  const kinds = resolveGalleryWidgetKinds({
+    targetName: props.name,
+    displayName: props.displayName,
+    ios: props,
+  });
+  return planGeneratedFile({
+    file,
+    fileName: `${props.name}Bundle.swift`,
+    hasUserFile: hasUserWidgetBundle(workspace),
+    workspace,
+    template: {
+      template: 'nativeWidgetBundle',
+      options: {
+        name: props.name,
+        widgets: kinds.map((row) => ({
+          name: row.name,
+          configurable: Boolean(row.configuration),
+        })),
+        includeLiveActivity:
+          resolveLiveActivityConfigs({ ios: props }).length > 0,
+        configurable: kinds.some((row) => Boolean(row.configuration)),
+      },
+    },
+  });
+}
+
 function planExpoUiWidgetSwiftFile({
   file,
   workspace,
@@ -288,7 +373,7 @@ function planExpoUiWidgetSwiftFile({
   }
 }
 
-function planSwiftFile({
+function planExtensionHostSwiftFile({
   file,
   workspace,
   props,
@@ -299,11 +384,6 @@ function planSwiftFile({
   props: IOSTargetProps;
   identity: TargetIdentity;
 }): UnresolvedSwiftFilePlan | undefined {
-  const expoUiPlan = planExpoUiWidgetSwiftFile({ file, workspace, props });
-  if (expoUiPlan) {
-    return expoUiPlan;
-  }
-
   if (
     props.entry &&
     props.type === 'messages' &&
@@ -352,8 +432,25 @@ function planSwiftFile({
       },
     });
   }
+}
 
-  return planUserFile({ file, workspace });
+function planSwiftFile({
+  file,
+  workspace,
+  props,
+  identity,
+}: {
+  file: string;
+  workspace: TargetWorkspace;
+  props: IOSTargetProps;
+  identity: TargetIdentity;
+}): UnresolvedSwiftFilePlan | undefined {
+  return (
+    planExpoUiWidgetSwiftFile({ file, workspace, props }) ??
+    planNativeWidgetSwiftFile({ file, workspace, props }) ??
+    planExtensionHostSwiftFile({ file, workspace, props, identity }) ??
+    planUserFile({ file, workspace })
+  );
 }
 
 /**

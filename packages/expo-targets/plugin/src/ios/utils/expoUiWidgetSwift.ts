@@ -264,14 +264,12 @@ struct ${options.name}: Widget {
 `;
 }
 
-export function generateExpoUiWidgetBundleSwift(options: {
+function widgetBundleBodyLines(options: {
   name: string;
-  /** Gallery Widget structs to instantiate (kind names). */
   widgets?: { name: string; configurable?: boolean }[];
-  /** When true, include expo-widgets WidgetLiveActivity() for expo-ui LA slots. */
   includeLiveActivity?: boolean;
-  /** Wrap home widget in iOS 17 availability (configurable AppIntent). */
   configurable?: boolean;
+  liveActivityExpr: string;
 }): string {
   const widgets =
     options.widgets && options.widgets.length > 0
@@ -290,8 +288,25 @@ export function generateExpoUiWidgetBundleSwift(options: {
     .join('\n');
 
   const liveLine = options.includeLiveActivity
-    ? '\n    WidgetLiveActivity()'
+    ? `\n    ${options.liveActivityExpr}`
     : '';
+
+  return `${widgetLines}${liveLine}`;
+}
+
+export function generateExpoUiWidgetBundleSwift(options: {
+  name: string;
+  /** Gallery Widget structs to instantiate (kind names). */
+  widgets?: { name: string; configurable?: boolean }[];
+  /** When true, include expo-widgets WidgetLiveActivity() for expo-ui LA slots. */
+  includeLiveActivity?: boolean;
+  /** Wrap home widget in iOS 17 availability (configurable AppIntent). */
+  configurable?: boolean;
+}): string {
+  const body = widgetBundleBodyLines({
+    ...options,
+    liveActivityExpr: 'WidgetLiveActivity()',
+  });
 
   return `import WidgetKit
 import SwiftUI
@@ -300,7 +315,31 @@ internal import ExpoWidgets
 @main
 struct ${options.name}Bundle: WidgetBundle {
   var body: some Widget {
-${widgetLines}${liveLine}
+${body}
+  }
+}
+`;
+}
+
+/** Native WidgetKit `@main` — kinds only; user deepen supplies the Widget structs. */
+export function generateNativeWidgetBundleSwift(options: {
+  name: string;
+  widgets?: { name: string; configurable?: boolean }[];
+  includeLiveActivity?: boolean;
+  configurable?: boolean;
+}): string {
+  const body = widgetBundleBodyLines({
+    ...options,
+    liveActivityExpr: `${options.name}LiveActivity()`,
+  });
+
+  return `import WidgetKit
+import SwiftUI
+
+@main
+struct ${options.name}Bundle: WidgetBundle {
+  var body: some Widget {
+${body}
   }
 }
 `;

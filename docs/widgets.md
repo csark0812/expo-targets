@@ -2,7 +2,7 @@
 
 **Source of truth for** WidgetKit / ActivityKit ownership in expo-targets.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-14 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-31 -->
 
 ## Ownership
 
@@ -103,7 +103,7 @@ npx expo-targets add
 # optional: --configurable (Edit Widget) · --live-activity
 ```
 
-- **native (default)** — SwiftUI / Glance deepen under `targets/<name>/ios|android/`.
+- **native (default)** — SwiftUI / Glance deepen under `targets/<name>/ios|android/`. When `ios.kinds` lists gallery widgets and the user did not add a `*Bundle.swift`, CNG writes a sealed `@main` WidgetBundle into ExpoTargetsGenerated. That bundle constructs each kind and `<name>LiveActivity()` when `ios.liveActivity` is set.
 - **expo-ui** — writes `entry` + `createTarget(name, Layout)` with the `'widget'` directive; CNG emits `ExpoUiWidget` (+ optional AppIntentConfiguration / `WidgetLiveActivity`).
 - **Configurable (Edit Widget)** — native scaffolds `AppIntentConfiguration` under user deepen; expo-ui uses `ios.configuration` → sealed AppIntent + `environment.configuration` in Layout.
 - **Live Activity** — writes `ios.liveActivity` (one) or `ios.liveActivities` (multiple in the same `.appex`). Native: one `LiveActivity.swift` deepen UI block per attributes type + typed CNG attributes. Expo-ui: same entry registers `createLiveActivityLayout` + Bundle includes `WidgetLiveActivity()` (blob attrs; skip typed CNG).
