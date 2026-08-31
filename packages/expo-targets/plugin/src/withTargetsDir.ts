@@ -15,6 +15,7 @@ import {
   ensureHostAppGroups,
   warnMissingMetroWrapper,
 } from './ensureHostAppGroups';
+import { ensureHostLiveActivities } from './ensureHostLiveActivities';
 import { withIOSTarget } from './ios/config-plugins/withIOSTarget';
 import { resolveLiveActivityConfig } from './ios/utils/resolveIosKinds';
 import { Logger } from './logger';
@@ -484,6 +485,7 @@ export const withTargetsDir: ConfigPlugin<{
   validateWatchWidgetCompanion(targets);
 
   let next = ensureHostAppGroups(config, targets, logger);
+  next = ensureHostLiveActivities(next, targets, logger);
   warnMissingMetroWrapper(projectRoot, targets, logger);
 
   return applyAllTargets(next, {
