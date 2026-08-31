@@ -68,7 +68,7 @@ Host CNG deletes only root-level `*.swift` under `ExpoTargetsGenerated/`. It nev
 }
 ```
 
-`attributesName` is the source of truth. Export a handle from the widget target entry — unknown names throw with the configured list:
+`attributesName` is the source of truth. The plugin sets host `NSSupportsLiveActivities=true` when any target sets `ios.liveActivity` or `ios.liveActivities`. Export a handle from the widget target entry — unknown names throw with the configured list:
 
 ```ts
 // targets/order-widget/index.ts
