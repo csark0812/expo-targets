@@ -16,10 +16,7 @@ export type LinkerCompanion = {
 export const OPTIONAL_LINKER_COMPANIONS: readonly LinkerCompanion[] = [
   {
     tokens: ['ExpoModulesWorkletsAdapter'],
-    requiresAnyPackage: [
-      'react-native-worklets',
-      'react-native-worklets-core',
-    ],
+      requiresAnyPackage: ['react-native-worklets', 'react-native-worklets-core'],
     requiresAnyToken: ['RNWorklets'],
   },
 ];
