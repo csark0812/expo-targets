@@ -888,8 +888,24 @@ const EXCLUDED_PACKAGES_RUBY_PREFIX = [
   '# Expo regenerates the provider during integrate_user_targets after post_install.',
   '# Do not copy host OTHER_LDFLAGS onto the appex — inherit! :search_paths already',
   '# did; subtract unused -l / -framework / module maps from Pods-<target> xcconfigs.',
+  '# Match each -framework NAME / -lNAME as one argv — a prefix token must not glue the rest.',
   'post_integrate do |installer|',
   '  exclusions = {',
+] as const;
+
+/**
+ * Ruby that mutates `xc` for each linker `token`. Exported so tests run the
+ * same gsub as `pod install` (unanchored `"?token"?` smashed OTHER_LDFLAGS).
+ */
+export const EXCLUDED_LINKER_STRIP_RUBY = [
+  '        tokens.each do |token|',
+  '          next if token.to_s.empty?',
+  '          escaped = Regexp.escape(token)',
+  '          xc.gsub!(/\\s*-l(?:"#{escaped}"|#{escaped}(?=[\\s"]|$))/, \'\')',
+  '          xc.gsub!(/\\s*-framework\\s+(?:"#{escaped}"|#{escaped}(?=[\\s"]|$))/, \'\')',
+  '          xc.gsub!(/\\s*-Xcc\\s+-fmodule-map-file="[^"]*[\\/"]#{escaped}(?:\\.modulemap|[\\/"])[^"]*"/, \'\')',
+  '          xc.gsub!(/\\s*-fmodule-map-file="[^"]*[\\/"]#{escaped}(?:\\.modulemap|[\\/"])[^"]*"/, \'\')',
+  '        end',
 ] as const;
 
 const EXCLUDED_PACKAGES_RUBY_SUFFIX = [
@@ -926,12 +942,7 @@ const EXCLUDED_PACKAGES_RUBY_SUFFIX = [
   '    unless tokens.empty?',
   "      Dir.glob(File.join(support_dir, '*.xcconfig')).each do |xcconfig_path|",
   '        xc = File.read(xcconfig_path)',
-  '        tokens.each do |token|',
-  '          xc.gsub!(/\\s*-l"?#{Regexp.escape(token)}"?/, \'\')',
-  '          xc.gsub!(/\\s*-framework\\s+"?#{Regexp.escape(token)}"?/, \'\')',
-  '          xc.gsub!(/\\s*-Xcc\\s+-fmodule-map-file="[^"]*#{Regexp.escape(token)}[^"]*"/, \'\')',
-  '          xc.gsub!(/\\s*-fmodule-map-file="[^"]*#{Regexp.escape(token)}[^"]*"/, \'\')',
-  '        end',
+  ...EXCLUDED_LINKER_STRIP_RUBY,
   '        File.write(xcconfig_path, xc)',
   '      end',
   '      Pod::UI.puts "[expo-targets] Stripped #{tokens.length} linker tokens from Pods-#{target_name}"',

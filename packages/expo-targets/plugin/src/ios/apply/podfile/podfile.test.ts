@@ -125,6 +125,7 @@ describe('ensureExcludedPackagesPostIntegrate', () => {
     expect(once).toContain('ExpoTargetsExtensionBundleModule');
     expect(once).toContain('OTHER_LDFLAGS');
     expect(once).toContain('-framework');
+    expect(once).toContain('one argv');
 
     const twice = ensureExcludedPackagesPostIntegrate(once, [
       {
