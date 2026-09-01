@@ -8,7 +8,10 @@ import {
 } from './checks/easCredentials';
 import { checkEntries } from './checks/entries';
 import { checkGeneratedTypes } from './checks/generatedTypes';
-import { warnHeavyExclusions } from './checks/heavyExclusions';
+import {
+  nativeUnlinkSummaries,
+  warnHeavyExclusions,
+} from './checks/heavyExclusions';
 import { checkLiveActivitiesConfig } from './checks/liveActivitiesConfig';
 import { checkLiveActivityHostApi } from './checks/liveActivityHostApi';
 import { checkLiveActivityKind } from './checks/liveActivityKind';
@@ -78,6 +81,7 @@ function passedChecks(ctx: ReturnType<typeof loadProject>): string[] {
   if (checkNameSync(ctx).length === 0) {
     passed.push('Name sync');
   }
+  passed.push(...nativeUnlinkSummaries(ctx));
   return passed;
 }
 

@@ -14,6 +14,7 @@ export interface PodfileTargetRef {
 export interface ExcludedPackagesTargetRef {
   targetName: string;
   packages: string[];
+  linkerTokens: string[];
 }
 
 const NESTED_TARGET_START = /^\s+target\s+'([^']+)'\s+do/;
@@ -23,6 +24,7 @@ const STANDALONE_TARGET =
 /** Keep in sync with EXCLUDED_PACKAGES_MARKER in podfile.ts */
 const EXCLUDED_PACKAGES_LINE =
   /# \[expo-targets-excluded-packages-list\]\s*(.+)/;
+const EXCLUDED_LINKER_LINE = /# \[expo-targets-excluded-linker-list\]\s*(.+)/;
 
 /**
  * The main target's block, up to the `post_install` hook when there is one.
@@ -126,9 +128,14 @@ export function findExcludedPackagesTargets(
         .split(',')
         .map((p) => p.trim())
         .filter(Boolean);
-      return { targetName: name, packages };
+      const linkerMatch = block.match(EXCLUDED_LINKER_LINE);
+      const linkerTokens = (linkerMatch?.[1] ?? '')
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean);
+      return { targetName: name, packages, linkerTokens };
     })
-    .filter((t) => t.packages.length > 0);
+    .filter((t) => t.packages.length > 0 || t.linkerTokens.length > 0);
 }
 
 /**

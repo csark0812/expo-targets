@@ -40,6 +40,7 @@ interface IosTargetProps extends IOSTargetConfigWithReactNative {
   entry?: string;
   ui?: 'native' | 'expo-ui' | 'react-native';
   excludedPackages?: string[];
+  linkerTokens?: string[];
   directory: string;
   configPath: string;
   logger: Logger;
@@ -266,26 +267,29 @@ const withTargetPods: ConfigPlugin<{
   }
 
   const isWebBasedEntry = Boolean(props.entry) && isReactNativeWeb(props.type);
-  const uiMode = resolveUiMode({
-    type: props.type,
-    entry: props.entry,
-    ui: props.ui,
-  });
-  // watch-widget returns earlier (no Podfile). Remaining expo-ui widget targets
-  // stay sibling/standalone (not nested RN share-class).
-  const isExpoUiWidget = uiMode === 'expo-ui' && props.type === 'widget';
+  const isExpoUiWidget = isExpoUiWidgetTarget(props);
 
   return withTargetPodfile(config, {
     targetName: targetProductName, // Use sanitized name to match Xcode target
     deploymentTarget,
     extensionType: props.type,
     excludedPackages: props.excludedPackages,
+    linkerTokens: props.linkerTokens,
     standalone: !props.entry || isWebBasedEntry || isExpoUiWidget,
     expoUiWidget: isExpoUiWidget,
     targetDirectory: props.directory, // For pods.rb file detection
     logger: props.logger,
   });
 };
+
+function isExpoUiWidgetTarget(props: IosTargetProps): boolean {
+  const uiMode = resolveUiMode({
+    type: props.type,
+    entry: props.entry,
+    ui: props.ui,
+  });
+  return uiMode === 'expo-ui' && props.type === 'widget';
+}
 
 /**
  * App Clips are provisioned against their parent app and can claim the parent's

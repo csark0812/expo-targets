@@ -3,7 +3,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { loadProject } from '../project';
-import { warnHeavyExclusions } from './heavyExclusions';
+import { nativeUnlinkSummaries, warnHeavyExclusions } from './heavyExclusions';
 
 const roots: string[] = [];
 
@@ -24,7 +24,7 @@ afterEach(() => {
   }
 });
 
-test('warnHeavyExclusions quiet when unused heavy is auto-inferred', () => {
+test('warnHeavyExclusions is quiet after invert default', () => {
   const root = makeProject({
     'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
     'package.json': JSON.stringify({
@@ -42,39 +42,20 @@ test('warnHeavyExclusions quiet when unused heavy is auto-inferred', () => {
   expect(warnHeavyExclusions(loadProject(root))).toEqual([]);
 });
 
-test('warnHeavyExclusions quiet when entry imports the package', () => {
+test('nativeUnlinkSummaries reports unlink count for RN entry targets', () => {
   const root = makeProject({
     'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
-    'package.json': JSON.stringify({
-      dependencies: { 'react-native-reanimated': '3.0.0' },
-    }),
+    'package.json': JSON.stringify({ dependencies: {} }),
     'targets/share/expo-target.config.json': JSON.stringify({
       type: 'share',
       name: 'Share',
       platforms: ['ios'],
       entry: './targets/share/index.tsx',
-    }),
-    'targets/share/index.tsx':
-      "import Animated from 'react-native-reanimated';\nexport default function App() { return null; }\n",
-  });
-  expect(warnHeavyExclusions(loadProject(root))).toEqual([]);
-});
-
-test('warnHeavyExclusions quiet when already in excludedPackages', () => {
-  const root = makeProject({
-    'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
-    'package.json': JSON.stringify({
-      dependencies: { 'react-native-reanimated': '3.0.0' },
-    }),
-    'targets/share/expo-target.config.json': JSON.stringify({
-      type: 'share',
-      name: 'Share',
-      platforms: ['ios'],
-      entry: './targets/share/index.tsx',
-      excludedPackages: ['react-native-reanimated'],
     }),
     'targets/share/index.tsx':
       "import { View } from 'react-native';\nexport default function App() { return null; }\n",
   });
-  expect(warnHeavyExclusions(loadProject(root))).toEqual([]);
+  expect(nativeUnlinkSummaries(loadProject(root))).toEqual([
+    'Native unlink (Share): 4 packages',
+  ]);
 });

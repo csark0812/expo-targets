@@ -19,7 +19,7 @@ import { ensureHostLiveActivities } from './ensureHostLiveActivities';
 import { withIOSTarget } from './ios/config-plugins/withIOSTarget';
 import { resolveLiveActivityConfig } from './ios/utils/resolveIosKinds';
 import { Logger } from './logger';
-import { resolveExcludedPackages } from './resolveExcludedPackages';
+import { resolveNativeUnlink } from './resolveExcludedPackages';
 
 interface EvaluatedTarget {
   config: any;
@@ -273,6 +273,24 @@ function applyIosCompanionTargets(opts: {
   return next;
 }
 
+function nativeUnlinkProps(
+  evaluatedConfig: EvaluatedTarget['config'],
+  projectRoot: string
+) {
+  const nativeUnlink = resolveNativeUnlink({
+    type: evaluatedConfig.type,
+    entry: evaluatedConfig.entry,
+    excludedPackages: evaluatedConfig.excludedPackages,
+    linkedPackages: evaluatedConfig.linkedPackages,
+    nativeLink: evaluatedConfig.ios?.nativeLink,
+    projectRoot,
+  });
+  return {
+    excludedPackages: nativeUnlink?.packages,
+    linkerTokens: nativeUnlink?.linkerTokens,
+  };
+}
+
 const withTargetIos: ConfigPlugin<{
   context: TargetContext;
   runtimeConfigs: any[];
@@ -289,12 +307,10 @@ const withTargetIos: ConfigPlugin<{
         }
       : undefined;
 
-  const excludedPackages = resolveExcludedPackages({
-    type: evaluatedConfig.type,
-    entry: evaluatedConfig.entry,
-    excludedPackages: evaluatedConfig.excludedPackages,
-    projectRoot: context.projectRoot,
-  });
+  const { excludedPackages, linkerTokens } = nativeUnlinkProps(
+    evaluatedConfig,
+    context.projectRoot
+  );
 
   const runtimeVersion = resolveRuntimeVersionFromExpoConfig(config);
   warnMissingRuntimeForSideload({
@@ -314,6 +330,7 @@ const withTargetIos: ConfigPlugin<{
     ui: evaluatedConfig.ui,
     liveActivity: resolveLiveActivityConfig(evaluatedConfig),
     excludedPackages,
+    linkerTokens,
     runtimeVersion: runtimeVersion || undefined,
     directory: targetDirectory,
     configPath: target.targetPath,
