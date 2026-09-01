@@ -6,6 +6,7 @@ import * as path from 'node:path';
 import {
   HOST_ONLY_EXCLUDED_PACKAGES,
   resolveExcludedPackages,
+  resolveNativeUnlink,
 } from './resolveExcludedPackages';
 
 describe('resolveExcludedPackages omitted list', () => {
@@ -81,39 +82,39 @@ describe('resolveExcludedPackages non-RN', () => {
   });
 });
 
-describe('resolveExcludedPackages inferred heavies', () => {
-  test('unions unused host Sentry when projectRoot + entry are set', () => {
+describe('resolveExcludedPackages invert autolinked', () => {
+  test('unions unused autolinked hosts; user list is force-strip only', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'expo-targets-excl-'));
     fs.mkdirSync(path.join(root, 'targets', 'messages'), { recursive: true });
     fs.writeFileSync(
-      path.join(root, 'package.json'),
-      JSON.stringify({
-        dependencies: { '@sentry/react-native': '6.0.0' },
-      })
-    );
-    fs.writeFileSync(
       path.join(root, 'targets', 'messages', 'index.tsx'),
-      "import { View } from 'react-native';\nexport default function App() { return null; }\n"
+      "import { Image } from 'expo-image';\nexport default function App() { return null; }\n"
     );
     expect(
       resolveExcludedPackages({
         type: 'messages',
         entry: './targets/messages/index.tsx',
         projectRoot: root,
+        autolinkedPackages: [
+          'expo-image',
+          'expo-modules-core',
+          '@intercom/intercom-react-native',
+          '@sentry/react-native',
+        ],
+        excludedPackages: ['expo-font'],
       })
-    ).toEqual([...HOST_ONLY_EXCLUDED_PACKAGES, '@sentry/react-native']);
+    ).toEqual([
+      ...HOST_ONLY_EXCLUDED_PACKAGES,
+      'expo-font',
+      '@intercom/intercom-react-native',
+      '@sentry/react-native',
+    ]);
     fs.rmSync(root, { recursive: true, force: true });
   });
 
-  test('does not infer Sentry when the entry imports it', () => {
+  test('does not infer a package the entry imports', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'expo-targets-excl-'));
     fs.mkdirSync(path.join(root, 'targets', 'messages'), { recursive: true });
-    fs.writeFileSync(
-      path.join(root, 'package.json'),
-      JSON.stringify({
-        dependencies: { '@sentry/react-native': '6.0.0' },
-      })
-    );
     fs.writeFileSync(
       path.join(root, 'targets', 'messages', 'index.tsx'),
       "import * as Sentry from '@sentry/react-native';\nexport default function App() { return null; }\n"
@@ -123,8 +124,65 @@ describe('resolveExcludedPackages inferred heavies', () => {
         type: 'messages',
         entry: './targets/messages/index.tsx',
         projectRoot: root,
+        autolinkedPackages: ['@sentry/react-native'],
       })
     ).toEqual([...HOST_ONLY_EXCLUDED_PACKAGES]);
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  test('resolveNativeUnlink maps unused packages to linker tokens', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'expo-targets-excl-'));
+    fs.mkdirSync(path.join(root, 'targets', 'messages'), { recursive: true });
+    fs.writeFileSync(
+      path.join(root, 'targets', 'messages', 'index.tsx'),
+      "import { View } from 'react-native';\nexport default function App() { return null; }\n"
+    );
+    const resolved = resolveNativeUnlink({
+      type: 'messages',
+      entry: './targets/messages/index.tsx',
+      projectRoot: root,
+      autolinkedPackages: [
+        {
+          packageName: '@intercom/intercom-react-native',
+          linkerTokens: [
+            '@intercom/intercom-react-native',
+            'intercom-react-native',
+            'Intercom',
+          ],
+        },
+      ],
+    });
+    expect(resolved?.packages).toContain('@intercom/intercom-react-native');
+    expect(resolved?.linkerTokens).toEqual(
+      expect.arrayContaining([
+        'intercom-react-native',
+        'Intercom',
+        '@intercom/intercom-react-native',
+      ])
+    );
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  test('nativeLink host skips invert; user excludedPackages still strip', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'expo-targets-excl-'));
+    fs.mkdirSync(path.join(root, 'targets', 'messages'), { recursive: true });
+    fs.writeFileSync(
+      path.join(root, 'targets', 'messages', 'index.tsx'),
+      "import { View } from 'react-native';\nexport default function App() { return null; }\n"
+    );
+    const host = resolveNativeUnlink({
+      type: 'messages',
+      entry: './targets/messages/index.tsx',
+      projectRoot: root,
+      nativeLink: 'host',
+      autolinkedPackages: ['@intercom/intercom-react-native'],
+      excludedPackages: ['expo-font'],
+    });
+    expect(host?.packages).toEqual([
+      ...HOST_ONLY_EXCLUDED_PACKAGES,
+      'expo-font',
+    ]);
+    expect(host?.linkerTokens).toEqual([]);
     fs.rmSync(root, { recursive: true, force: true });
   });
 });

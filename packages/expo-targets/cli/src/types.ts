@@ -17,12 +17,14 @@ export interface TargetConfig {
   ui?: 'native' | 'expo-ui' | 'react-native';
   appGroup?: string;
   excludedPackages?: string[];
+  linkedPackages?: string[];
   ios?: {
     kinds?: { type?: string; name?: string }[];
     liveActivity?: { attributesName?: string };
     liveActivities?: Array<{ attributesName?: string }>;
     intents?: { ui?: boolean | { name?: string } };
     wallet?: { ui?: boolean | { name?: string } };
+    nativeLink?: 'entry' | 'host';
   };
 }
 

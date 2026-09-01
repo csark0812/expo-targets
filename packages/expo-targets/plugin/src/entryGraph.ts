@@ -1,12 +1,13 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-/** Heavy / host-leaning packages to auto-exclude when unused by the entry. */
-export const HEAVY_EXCLUSION_CANDIDATES = [
-  'react-native-reanimated',
-  '@sentry/react-native',
-  'react-native-screens',
-  '@react-native-community/netinfo',
+/** Always keep these npm names even when the entry does not import them. */
+export const CORE_KEEP_PACKAGES = [
+  'react',
+  'react-native',
+  'expo',
+  'expo-modules-core',
+  'expo-targets',
 ] as const;
 
 const IMPORT_RE = /(?:from\s+|require\s*\(\s*)['"](@?[^'"]+)['"]/g;
@@ -113,17 +114,24 @@ export function collectImportsFromEntry(
   return seen;
 }
 
-export function unusedHeavyPackages(opts: {
+/**
+ * Invert: autolinked − (core ∪ usedByEntry ∪ linkedPackages).
+ * Empty `autolinked` means "could not resolve" — strip nothing from invert.
+ */
+export function unusedAutolinkedPackages(opts: {
   projectRoot: string;
   entry: string;
+  autolinked: readonly string[];
+  linkedPackages?: readonly string[];
 }): string[] {
-  const deps = readPackageDeps(opts.projectRoot);
-  const imported = collectImportsFromEntry(opts.projectRoot, opts.entry);
-  const unused: string[] = [];
-  for (const candidate of HEAVY_EXCLUSION_CANDIDATES) {
-    if (!deps.has(candidate)) continue;
-    if (imported.has(candidate)) continue;
-    unused.push(candidate);
+  if (opts.autolinked.length === 0) {
+    return [];
   }
-  return unused;
+  const imported = collectImportsFromEntry(opts.projectRoot, opts.entry);
+  const keep = new Set<string>([
+    ...CORE_KEEP_PACKAGES,
+    ...imported,
+    ...(opts.linkedPackages ?? []),
+  ]);
+  return [...new Set(opts.autolinked.filter((pkg) => !keep.has(pkg)))];
 }

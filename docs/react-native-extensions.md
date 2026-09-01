@@ -112,7 +112,7 @@ Or manually configure `expo-target.config.json`:
 Key fields:
 
 - `entry`: Path to your React Native entry file **(relative to project root)**
-- `excludedPackages`: Optional **additional** packages to omit from the extension's `ExpoModulesProvider` (through CocoaPods `post_integrate`). `expo-updates` and `expo-dev-client` are **auto-merged** for RN-native `entry` targets. Do not list them. Nested `use_expo_modules!(exclude:)` alone does **not** work.
+- `excludedPackages`: Optional force-strip list. Unused autolinked host packages are already stripped for RN `entry` targets. `expo-updates` and `expo-dev-client` are always merged. Nested `use_expo_modules!(exclude:)` alone does **not** work.
 
 ### 2. Create the Entry Point
 
@@ -357,51 +357,48 @@ iOS extensions have **strict memory limits**. Exceeding them causes iOS to termi
 
 ### Excluding Packages
 
-Omit host-only Expo modules from the nested extension's `ExpoModulesProvider`. Nested
-`use_expo_modules!(exclude:)` is a no-op (parent AutolinkingManager). expo-targets
-strips the listed packages from `expo-configure-project.sh` in a `post_integrate`
-hook and regenerates the provider.
+Omit unused host packages from the nested extension's `ExpoModulesProvider` and
+from the `Pods-<Target>` linker. Nested `use_expo_modules!(exclude:)` is a no-op
+(parent AutolinkingManager). expo-targets strips names from `expo-configure-project.sh`
+in a `post_integrate` hook, regenerates the provider, and drops matching `-l` /
+`-framework` / module-map flags.
 
-For RN-native targets with `entry`, **`expo-updates`, `expo-dev-client`, `expo-dev-launcher`, and `expo-dev-menu` are always
-union-merged** (no escape hatch). Updates asserts before the RN factory is ready and
-blanks the sheet. Unused heavy host packages (Sentry, reanimated, screens, netinfo)
-are inferred when the entry does not import them. List only **additional** packages:
+For RN-native targets with `entry`, the plugin inverts the host autolink set:
+
+`strip = autolinked − (core ∪ entry imports ∪ linkedPackages)`
+
+Core keep is React Native, Hermes, Yoga, ExpoModulesCore, and `expo-targets`.
+The same strip set is applied to `ExpoModulesProvider` and to `Pods-<Target>`
+linker flags (`-l`, `-framework`, module maps). The host can still embed those
+frameworks in the app. The plugin does not copy host `OTHER_LDFLAGS`.
+
+**Always stripped (no escape hatch):**
+
+| Package           | Reason                 |
+| ----------------- | ---------------------- |
+| `expo-updates`    | Crashes appex process  |
+| `expo-dev-client` | Host-only dev tooling  |
+| `expo-dev-launcher` | Host-only dev tooling |
+| `expo-dev-menu`   | Host-only dev tooling  |
+
+`excludedPackages` is force-strip only. Use `linkedPackages` when a native
+module must stay and the entry does not import it. Set `ios.nativeLink` to
+`"host"` only when you need the old fat host link.
 
 ```json
 {
-  "excludedPackages": [
-    "@react-native-community/netinfo",
-    "react-native-reanimated"
-  ]
+  "linkedPackages": ["expo-image"],
+  "ios": {
+    "nativeLink": "entry"
+  }
 }
 ```
 
-`npx expo-targets doctor` is quiet when unused heavies are already inferred into the exclude list.
-It still warns only if a heavy remains after that merge.
-
-**Auto-excluded (always):**
-
-| Package           | Reason                 | Savings |
-| ----------------- | ---------------------- | ------- |
-| `expo-updates`    | Crashes appex process  | ~500KB  |
-| `expo-dev-client` | Host-only dev tooling  | ~800KB  |
-| `expo-dev-launcher` | Host-only dev tooling | — |
-| `expo-dev-menu`   | Host-only dev tooling  | — |
-
-**Inferred when unused by the entry:**
-
-| Package                   | Reason                     | Savings |
-| ------------------------- | -------------------------- | ------- |
-| `react-native-reanimated` | Heavy animation library    | ~1.5MB  |
-| `@sentry/react-native`    | Error reporting not needed | ~1MB    |
-| `react-native-screens`    | Native nav not needed      | ~300KB  |
-| `@react-native-community/netinfo` | Host networking     | — |
-
-**Common extra exclusions:**
+`npx expo-targets doctor` reports the unlink count for each RN `entry` target.
 
 ### Tips for Smaller Bundles
 
-1. **Exclude aggressively** — Start minimal, add packages only when needed; run `npx expo-targets doctor`
+1. **Keep the invert default** — Import only what the entry needs. Use `linkedPackages` for native-only keep. Run `npx expo-targets doctor`
 2. **Avoid heavy UI libraries** — Use basic React Native components
 3. **Keep extension logic minimal** — Do heavy processing in your main app
 4. **Test on physical devices** — Simulators are more forgiving with memory
@@ -559,7 +556,7 @@ Causes:
   - Missing App Group configuration
 Solutions:
   - Check name consistency (see Naming Conventions above)
-  - Add more packages to excludedPackages
+  - Confirm invert unlinked unused host packages (`npx expo-targets doctor`)
   - Verify App Group IDs match everywhere
 ```
 

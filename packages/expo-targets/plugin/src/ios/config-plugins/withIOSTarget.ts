@@ -40,6 +40,7 @@ interface IosTargetProps extends IOSTargetConfigWithReactNative {
   entry?: string;
   ui?: 'native' | 'expo-ui' | 'react-native';
   excludedPackages?: string[];
+  linkerTokens?: string[];
   directory: string;
   configPath: string;
   logger: Logger;
@@ -280,6 +281,7 @@ const withTargetPods: ConfigPlugin<{
     deploymentTarget,
     extensionType: props.type,
     excludedPackages: props.excludedPackages,
+    linkerTokens: props.linkerTokens,
     standalone: !props.entry || isWebBasedEntry || isExpoUiWidget,
     expoUiWidget: isExpoUiWidget,
     targetDirectory: props.directory, // For pods.rb file detection

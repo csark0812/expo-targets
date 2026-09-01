@@ -15,6 +15,7 @@ export function planPodfile({
   standalone,
   expoUiWidget,
   excludedPackages,
+  linkerTokens,
   podsRbContent,
 }: {
   targetName: string;
@@ -23,6 +24,7 @@ export function planPodfile({
   standalone: boolean;
   expoUiWidget?: boolean;
   excludedPackages?: string[];
+  linkerTokens?: string[];
   podsRbContent?: string;
 }): PodfilePlan {
   return {
@@ -32,6 +34,7 @@ export function planPodfile({
     standalone,
     expoUiWidget,
     excludedPackages,
+    linkerTokens,
     podsRbContent,
   };
 }

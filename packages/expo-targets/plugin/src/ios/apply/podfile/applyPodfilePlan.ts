@@ -48,6 +48,7 @@ function targetBlockFor(
       extensionType: plan.extensionType,
       podsRbContent: plan.podsRbContent,
       excludedPackages: plan.excludedPackages,
+      linkerTokens: plan.linkerTokens,
     });
   }
 

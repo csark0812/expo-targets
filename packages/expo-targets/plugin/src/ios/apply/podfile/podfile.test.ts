@@ -91,6 +91,19 @@ describe('generateReactNativeTargetBlock', () => {
       '# [expo-targets-excluded-packages-list] expo-updates,expo-dev-client'
     );
   });
+
+  test('records linker tokens for the same strip set', () => {
+    const block = generateReactNativeTargetBlock({
+      targetName: 'ExampleMessagesTarget',
+      deploymentTarget: '16.4',
+      extensionType: 'messages',
+      excludedPackages: ['@intercom/intercom-react-native'],
+      linkerTokens: ['Intercom', 'intercom-react-native'],
+    });
+    expect(block).toContain(
+      '# [expo-targets-excluded-linker-list] Intercom,intercom-react-native'
+    );
+  });
 });
 
 describe('ensureExcludedPackagesPostIntegrate', () => {
@@ -105,11 +118,13 @@ describe('ensureExcludedPackagesPostIntegrate', () => {
     expect(once).toContain('# [expo-targets-excluded-packages-done]');
     expect(once).toContain('post_integrate do |installer|');
     expect(once).toContain(
-      "'ExampleMessagesTarget' => ['expo-updates', 'expo-dev-client']"
+      "'ExampleMessagesTarget' => { :packages => ['expo-updates', 'expo-dev-client'], :linker => [] }"
     );
     expect(once).toContain('expo-configure-project.sh');
     expect(once).toContain('Pods-#{target_name}');
     expect(once).toContain('ExpoTargetsExtensionBundleModule');
+    expect(once).toContain('OTHER_LDFLAGS');
+    expect(once).toContain('-framework');
 
     const twice = ensureExcludedPackagesPostIntegrate(once, [
       {
@@ -120,6 +135,18 @@ describe('ensureExcludedPackagesPostIntegrate', () => {
     expect(twice.split('# [expo-targets-excluded-packages-begin]').length).toBe(
       2
     );
+  });
+
+  test('records linker tokens in the post_integrate spec', () => {
+    const once = ensureExcludedPackagesPostIntegrate(plainPodfile, [
+      {
+        targetName: 'ExampleMessagesTarget',
+        packages: ['@intercom/intercom-react-native'],
+        linkerTokens: ['Intercom'],
+      },
+    ]);
+    expect(once).toContain(":linker => ['Intercom']");
+    expect(once).toContain('Dir.glob');
   });
 
   test('removes the hook when exclusions are empty', () => {
@@ -252,6 +279,7 @@ describe('ensureReactNativeExtensionFrameworkPaths', () => {
     expect(result).toContain(
       String.raw`.gsub(/\s*"\$\{PODS_CONFIGURATION_BUILD_DIR\}\/EXUpdates"/, '')`
     );
+    expect(result).not.toMatch(/OTHER_LDFLAGS = #\{/);
   });
 });
 

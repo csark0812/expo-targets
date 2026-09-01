@@ -215,6 +215,8 @@ export const TYPE_BUNDLE_IDENTIFIER_SUFFIXES: Record<ExtensionType, string> = {
 };
 
 // Base configuration shared by all iOS targets
+export type NativeLinkMode = 'entry' | 'host';
+
 interface BaseIosTargetConfig {
   icon?: string;
   deploymentTarget?: string;
@@ -234,6 +236,12 @@ interface BaseIosTargetConfig {
    */
   targetIcon?: string;
   frameworks?: string[];
+  /**
+   * How the nested RN target links native host packages.
+   * `entry` (default): invert unused autolinked packages off provider + linker.
+   * `host`: copy the host fat link (old behavior).
+   */
+  nativeLink?: NativeLinkMode;
   entitlements?: Record<string, any>;
   infoPlist?: Record<string, any>;
 
@@ -598,13 +606,18 @@ interface BaseTargetConfig {
    */
   entry?: string;
   /**
-   * Extra Expo packages to omit from the nested extension's ExpoModulesProvider
-   * (via CocoaPods `post_integrate`). For RN-native / Host targets with `entry`,
-   * `expo-updates` and `expo-dev-client` are **always** union-merged — no escape
-   * hatch. Use this field only for additional packages (e.g. reanimated, Sentry).
-   * @example ['react-native-reanimated', '@sentry/react-native']
+   * Extra packages to omit from the nested extension's ExpoModulesProvider
+   * and linker. For RN-native `entry` targets, unused autolinked host packages
+   * are inverted out by default. Crash-class packages (`expo-updates`,
+   * `expo-dev-client`, `expo-dev-launcher`, `expo-dev-menu`) always merge.
+   * This list is force-strip only.
    */
   excludedPackages?: string[];
+  /**
+   * Force-keep these autolinked packages on the extension even when the JS
+   * entry does not import them.
+   */
+  linkedPackages?: string[];
 }
 
 // Target config for React Native compatible types

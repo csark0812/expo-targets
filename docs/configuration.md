@@ -65,7 +65,8 @@ targets/my-widget/
 | `displayName`      | `name`      | Human-readable name (`CFBundleDisplayName` or `CFBundleName` on iOS; widget picker label)                                                                          |
 | `appGroup`         | _inherited_ | App Group ID. When omitted, inherits from your main app's `app.json` entitlements (see [App Group Inheritance](#app-group-inheritance) below) |
 | `entry`            | —           | React Native entry point for share, action, clip, and messages (see [Entry Field](#entry-field) below)                                                                  |
-| `excludedPackages` | auto for RN `entry` | Extra packages to omit from the nested `ExpoModulesProvider` (`post_integrate`). Crash-class packages (`expo-updates`, `expo-dev-client`, `expo-dev-launcher`, `expo-dev-menu`) are always merged for RN-native `entry` targets. Unused heavy host packages (Sentry, reanimated, screens, netinfo) are inferred when the entry does not import them. List only extras the infer pass misses |
+| `excludedPackages` | auto for RN `entry` | Force-strip extra packages from the nested `ExpoModulesProvider` and the extension linker. For RN `entry` targets, unused autolinked host packages are stripped by default. Crash-class packages (`expo-updates`, `expo-dev-client`, `expo-dev-launcher`, `expo-dev-menu`) always merge. Do not use this field as a keep-list. |
+| `linkedPackages` | `[]` | Force-keep these autolinked packages on the extension when the JS entry does not import them. |
 
 ### Entry Field
 
@@ -164,6 +165,7 @@ Add iOS-specific options under the `ios` key:
 | `colors`            | `{}`      | Named colors for Assets.xcassets                                                                                                                                                                            |
 | `images`            | `{}`      | Named images for Assets.xcassets                                                                                                                                                                            |
 | `frameworks`        | _by type_ | Additional frameworks to link                                                                                                                                                                               |
+| `nativeLink`        | `entry`   | RN `entry` targets only. `entry` strips unused autolinked packages from the provider and the `Pods-<Target>` linker. `host` keeps the old fat host copy. |
 | `entitlements`      | `{}`      | Custom entitlements                                                                                                                                                                                         |
 | `infoPlist`         | `{}`      | Custom Info.plist entries (deep merged with defaults)                                                                                                                                                       |
 | `icon`              | —         | Path to extension icon file                                                                                                                                                                                 |

@@ -17,6 +17,7 @@ export interface IOSTargetProps extends IOSTargetConfigWithReactNative {
   entry?: string;
   ui?: 'native' | 'expo-ui' | 'react-native';
   excludedPackages?: string[];
+  linkerTokens?: string[];
   appGroup?: string;
   /** Baked into RN VC for App Group sideload matching (optional). */
   runtimeVersion?: string;
@@ -240,6 +241,7 @@ export interface PodfilePlan {
   /** Link ExpoWidgets sandbox via use_expo_modules_widgets! */
   expoUiWidget?: boolean;
   excludedPackages?: string[];
+  linkerTokens?: string[];
   podsRbContent?: string;
 }
 

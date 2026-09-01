@@ -13,6 +13,7 @@ export type {
   IOSTargetConfig,
   IOSTargetConfigNativeOnly,
   IOSTargetConfigWithReactNative,
+  NativeLinkMode,
   NativeOnlyType,
   ReactNativeCompatibleType,
   ShareExtensionActivationRule,
