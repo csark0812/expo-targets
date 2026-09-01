@@ -267,14 +267,7 @@ const withTargetPods: ConfigPlugin<{
   }
 
   const isWebBasedEntry = Boolean(props.entry) && isReactNativeWeb(props.type);
-  const uiMode = resolveUiMode({
-    type: props.type,
-    entry: props.entry,
-    ui: props.ui,
-  });
-  // watch-widget returns earlier (no Podfile). Remaining expo-ui widget targets
-  // stay sibling/standalone (not nested RN share-class).
-  const isExpoUiWidget = uiMode === 'expo-ui' && props.type === 'widget';
+  const isExpoUiWidget = isExpoUiWidgetTarget(props);
 
   return withTargetPodfile(config, {
     targetName: targetProductName, // Use sanitized name to match Xcode target
@@ -288,6 +281,15 @@ const withTargetPods: ConfigPlugin<{
     logger: props.logger,
   });
 };
+
+function isExpoUiWidgetTarget(props: IosTargetProps): boolean {
+  const uiMode = resolveUiMode({
+    type: props.type,
+    entry: props.entry,
+    ui: props.ui,
+  });
+  return uiMode === 'expo-ui' && props.type === 'widget';
+}
 
 /**
  * App Clips are provisioned against their parent app and can claim the parent's

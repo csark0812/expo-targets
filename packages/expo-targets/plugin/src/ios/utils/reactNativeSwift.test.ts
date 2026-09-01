@@ -8,7 +8,7 @@ const baseOptions = {
   targetName: 'ShareExt',
 };
 
-describe('generateReactNativeViewController', () => {
+describe('generateReactNativeViewController placeholders', () => {
   test('substitutes BUNDLE_ROOT from entry path', () => {
     const result = generateReactNativeViewController({
       ...baseOptions,
@@ -38,7 +38,9 @@ describe('generateReactNativeViewController', () => {
     expect(result).toContain('withModuleName: "ShareExt"');
     expect(result).toContain('URLQueryItem(name: "target", value: "ShareExt")');
   });
+});
 
+describe('generateReactNativeViewController factory', () => {
   test('includes Metro fallback and error handling in template output', () => {
     const result = generateReactNativeViewController({
       ...baseOptions,

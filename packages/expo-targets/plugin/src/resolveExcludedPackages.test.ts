@@ -82,7 +82,7 @@ describe('resolveExcludedPackages non-RN', () => {
   });
 });
 
-describe('resolveExcludedPackages invert autolinked', () => {
+describe('resolveExcludedPackages invert unused hosts', () => {
   test('unions unused autolinked hosts; user list is force-strip only', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'expo-targets-excl-'));
     fs.mkdirSync(path.join(root, 'targets', 'messages'), { recursive: true });
@@ -111,7 +111,9 @@ describe('resolveExcludedPackages invert autolinked', () => {
     ]);
     fs.rmSync(root, { recursive: true, force: true });
   });
+});
 
+describe('resolveExcludedPackages invert imported keep', () => {
   test('does not infer a package the entry imports', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'expo-targets-excl-'));
     fs.mkdirSync(path.join(root, 'targets', 'messages'), { recursive: true });
@@ -129,7 +131,9 @@ describe('resolveExcludedPackages invert autolinked', () => {
     ).toEqual([...HOST_ONLY_EXCLUDED_PACKAGES]);
     fs.rmSync(root, { recursive: true, force: true });
   });
+});
 
+describe('resolveNativeUnlink linker tokens', () => {
   test('resolveNativeUnlink maps unused packages to linker tokens', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'expo-targets-excl-'));
     fs.mkdirSync(path.join(root, 'targets', 'messages'), { recursive: true });
@@ -162,7 +166,9 @@ describe('resolveExcludedPackages invert autolinked', () => {
     );
     fs.rmSync(root, { recursive: true, force: true });
   });
+});
 
+describe('resolveNativeUnlink nativeLink host', () => {
   test('nativeLink host skips invert; user excludedPackages still strip', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'expo-targets-excl-'));
     fs.mkdirSync(path.join(root, 'targets', 'messages'), { recursive: true });
