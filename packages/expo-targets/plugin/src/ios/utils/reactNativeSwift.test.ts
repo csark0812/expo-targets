@@ -58,6 +58,23 @@ describe('generateReactNativeViewController', () => {
     expect(result).toContain('Could not load the JavaScript bundle');
   });
 
+  test('creates ExpoReactNativeFactory before any bundleURL() read in setup', () => {
+    const result = generateReactNativeViewController({
+      ...baseOptions,
+      entry: './index.tsx',
+    });
+    const setupStart = result.indexOf('private func setupReactNativeView');
+    const setupEnd = result.indexOf('private func cleanupAfterClose');
+    const setup = result.slice(setupStart, setupEnd);
+    const factoryAt = setup.indexOf('ExpoReactNativeFactory(delegate:');
+    const bundleUrlAt = setup.indexOf('.bundleURL()');
+
+    expect(setupStart).toBeGreaterThan(-1);
+    expect(factoryAt).toBeGreaterThan(-1);
+    expect(bundleUrlAt).toBeGreaterThan(-1);
+    expect(factoryAt).toBeLessThan(bundleUrlAt);
+  });
+
   test('empty runtimeVersion disables App Group load (fail closed)', () => {
     const result = generateReactNativeViewController({
       ...baseOptions,

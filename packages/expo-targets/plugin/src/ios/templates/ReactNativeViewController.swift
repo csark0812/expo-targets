@@ -179,18 +179,22 @@ class ReactNativeViewController: UIViewController {
     private func setupReactNativeView(with sharedData: [String: Any]?) {
         // Create delegate with target-specific bundle root
         let delegate = ExtensionReactDelegate(bundleRoot: "{{BUNDLE_ROOT}}")
+        reactNativeFactoryDelegate = delegate
+        reactNativeFactoryDelegate!.dependencyProvider = RCTAppDependencyProvider()
+
+        // Factory must exist before any RCTBundleURLProvider / bundleURL() call.
+        // Those read RN feature flags; ExpoReactNativeFactory.init overrides them.
+        // Reading first aborts in ReactNativeFeatureFlagsAccessor::ensureFlagsNotAccessed.
+        reactNativeFactory = ExpoReactNativeFactory(delegate: reactNativeFactoryDelegate!)
+
         guard delegate.bundleURL() != nil else {
             showError(
                 "Could not load the JavaScript bundle. Start Metro with `npx expo start` for live reload, or rebuild with an embedded bundle (Release / no packager)."
             )
+            reactNativeFactory = nil
+            reactNativeFactoryDelegate = nil
             return
         }
-
-        reactNativeFactoryDelegate = delegate
-        reactNativeFactoryDelegate!.dependencyProvider = RCTAppDependencyProvider()
-
-        // Create factory via Expo (pulls RCTAppDelegate APIs through Expo.h)
-        reactNativeFactory = ExpoReactNativeFactory(delegate: reactNativeFactoryDelegate!)
 
         // Capture current view properties
         let currentBounds = self.view.bounds
