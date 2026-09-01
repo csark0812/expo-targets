@@ -95,3 +95,27 @@ describe('invert linker strip argv', () => {
     );
   });
 });
+
+describe('invert linker strip worklets argv', () => {
+  test('ExpoModulesWorkletsAdapter does not glue ExpoModulesWorklets', () => {
+    const flags = [
+      'OTHER_LDFLAGS = $(inherited)',
+      '-l"RNWorklets"',
+      '-framework "ExpoModulesCore"',
+      '-framework "ExpoModulesWorklets"',
+      '-framework "ExpoModulesWorkletsAdapter"',
+    ].join(' ');
+    const stripped = stripLinkerTokens(flags, [
+      'RNWorklets',
+      'ExpoModulesWorkletsAdapter',
+    ]);
+    expect(stripped).toContain('-framework "ExpoModulesCore"');
+    expect(stripped).toContain('-framework "ExpoModulesWorklets"');
+    expect(stripped).not.toContain('-l"RNWorklets"');
+    expect(stripped).not.toContain('ExpoModulesWorkletsAdapter');
+    expect(frameworkArgv(stripped)).toEqual([
+      'ExpoModulesCore',
+      'ExpoModulesWorklets',
+    ]);
+  });
+});

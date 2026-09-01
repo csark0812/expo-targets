@@ -168,6 +168,79 @@ describe('resolveNativeUnlink linker tokens', () => {
   });
 });
 
+describe('resolveNativeUnlink unused worklets companion', () => {
+  test('unused worklets strips RNWorklets and ExpoModulesWorkletsAdapter', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'expo-targets-excl-'));
+    fs.mkdirSync(path.join(root, 'targets', 'messages'), { recursive: true });
+    fs.writeFileSync(
+      path.join(root, 'targets', 'messages', 'index.tsx'),
+      "import { View } from 'react-native';\nexport default function App() { return null; }\n"
+    );
+    const resolved = resolveNativeUnlink({
+      type: 'messages',
+      entry: './targets/messages/index.tsx',
+      projectRoot: root,
+      autolinkedPackages: [
+        {
+          packageName: 'expo-modules-core',
+          linkerTokens: [
+            'expo-modules-core',
+            'ExpoModulesCore',
+            'ExpoModulesWorklets',
+            'ExpoModulesWorkletsAdapter',
+          ],
+        },
+        {
+          packageName: 'react-native-worklets',
+          linkerTokens: ['react-native-worklets', 'RNWorklets'],
+        },
+      ],
+    });
+    expect(resolved?.packages).toContain('react-native-worklets');
+    expect(resolved?.packages).not.toContain('expo-modules-core');
+    expect(resolved?.linkerTokens).toEqual(
+      expect.arrayContaining(['RNWorklets', 'ExpoModulesWorkletsAdapter'])
+    );
+    expect(resolved?.linkerTokens).not.toContain('ExpoModulesCore');
+    expect(resolved?.linkerTokens).not.toContain('ExpoModulesWorklets');
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+});
+
+describe('resolveNativeUnlink imported worklets companion', () => {
+  test('imported worklets keeps RNWorklets and the adapter', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'expo-targets-excl-'));
+    fs.mkdirSync(path.join(root, 'targets', 'messages'), { recursive: true });
+    fs.writeFileSync(
+      path.join(root, 'targets', 'messages', 'index.tsx'),
+      "import { createSerializable } from 'react-native-worklets';\nexport default function App() { return null; }\n"
+    );
+    const resolved = resolveNativeUnlink({
+      type: 'messages',
+      entry: './targets/messages/index.tsx',
+      projectRoot: root,
+      autolinkedPackages: [
+        {
+          packageName: 'expo-modules-core',
+          linkerTokens: [
+            'expo-modules-core',
+            'ExpoModulesCore',
+            'ExpoModulesWorkletsAdapter',
+          ],
+        },
+        {
+          packageName: 'react-native-worklets',
+          linkerTokens: ['react-native-worklets', 'RNWorklets'],
+        },
+      ],
+    });
+    expect(resolved?.packages).not.toContain('react-native-worklets');
+    expect(resolved?.linkerTokens).not.toContain('RNWorklets');
+    expect(resolved?.linkerTokens).not.toContain('ExpoModulesWorkletsAdapter');
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+});
+
 describe('resolveNativeUnlink nativeLink host', () => {
   test('nativeLink host skips invert; user excludedPackages still strip', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'expo-targets-excl-'));
