@@ -28,7 +28,9 @@ export function runExportSafari(projectRoot = process.cwd()): number {
   for (const target of targets) {
     const displayName =
       target.config.displayName || target.config.name || target.dirName;
-    const productName = sanitizeTargetName(displayName);
+    const productName = sanitizeTargetName(
+      target.config.name || target.dirName
+    );
     const entryFile = target.config.entry!.replace(/^\.\//, '');
 
     const result = exportSafariWebBundle({

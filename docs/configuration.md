@@ -62,7 +62,7 @@ targets/my-widget/
 
 | Field              | Default     | Description                                                                                                                                                      |
 | ------------------ | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `displayName`      | `name`      | Human-readable name (`CFBundleDisplayName` or `CFBundleName` on iOS; widget picker label)                                                                          |
+| `displayName`      | `name`      | Drawer label only (`CFBundleDisplayName` / `CFBundleName` on iOS; widget picker). Xcode product, Pod target, and pbx name use `name` (`Messages` → `MessagesTarget`). |
 | `appGroup`         | _inherited_ | App Group ID. When omitted, inherits from your main app's `app.json` entitlements (see [App Group Inheritance](#app-group-inheritance) below) |
 | `entry`            | —           | React Native entry point for share, action, clip, and messages (see [Entry Field](#entry-field) below)                                                                  |
 | `excludedPackages` | auto for RN `entry` | Force-strip extra packages from the nested `ExpoModulesProvider` and the extension linker. For RN `entry` targets, unused autolinked host packages are stripped by default. Crash-class packages (`expo-updates`, `expo-dev-client`, `expo-dev-launcher`, `expo-dev-menu`) always merge. Do not use this field as a keep-list. |

@@ -368,16 +368,58 @@ function findLastLineLevelEndIndex(podfileContent: string): number {
   return last.index + last[0].length;
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** Index just past the `end` that closes `target 'name' do`. */
+function findNamedTargetEndIndex(
+  podfileContent: string,
+  targetName: string
+): number {
+  const targetRegex = new RegExp(
+    `target\\s+['"]${escapeRegExp(targetName)}['"]\\s+do`
+  );
+  const match = targetRegex.exec(podfileContent);
+  if (!match) {
+    return -1;
+  }
+  return findBlockEndIndex(podfileContent, match.index + match[0].length);
+}
+
+function spliceAfter(podfileContent: string, index: number, insertion: string) {
+  return (
+    podfileContent.slice(0, index) + insertion + podfileContent.slice(index)
+  );
+}
+
 /**
  * Standalone targets are inserted as siblings AFTER the main target's closing
  * `end`, which prevents CocoaPods from auto-generating Expo module providers.
+ * Always keep a newline after the block so `end` cannot glue onto the next
+ * `target` (OneSignal NSE and similar siblings).
  */
 function insertStandaloneTargetBlock(
   podfileContent: string,
   targetBlock: string,
-  logger?: { log: (message: string) => void }
+  options: {
+    logger?: { log: (message: string) => void };
+    mainTargetName?: string;
+  }
 ): string {
-  const insertion = `\n\n${targetBlock.trim()}`;
+  const { logger, mainTargetName } = options;
+  const insertion = `\n\n${targetBlock.trim()}\n`;
+
+  if (mainTargetName) {
+    const mainEnd = findNamedTargetEndIndex(podfileContent, mainTargetName);
+    if (mainEnd !== -1) {
+      logger?.log(
+        `Inserting standalone target after '${mainTargetName}' closing end`
+      );
+      return spliceAfter(podfileContent, mainEnd, insertion);
+    }
+  }
+
   const hookStart = podfileContent.indexOf(
     EXCLUDED_PACKAGES_POST_INTEGRATE_START
   );
@@ -385,7 +427,7 @@ function insertStandaloneTargetBlock(
     logger?.log(
       'Inserting standalone target before excluded-packages post_integrate hook'
     );
-    return `${podfileContent.slice(0, hookStart).trimEnd()}${insertion}\n\n${podfileContent.slice(hookStart)}`;
+    return `${podfileContent.slice(0, hookStart).trimEnd()}${insertion}\n${podfileContent.slice(hookStart)}`;
   }
 
   const mainTargetEndIndex = findLastLineLevelEndIndex(podfileContent);
@@ -394,11 +436,7 @@ function insertStandaloneTargetBlock(
     `Inserting standalone target after last line-level 'end' at position ${mainTargetEndIndex}`
   );
 
-  return (
-    podfileContent.slice(0, mainTargetEndIndex) +
-    insertion +
-    podfileContent.slice(mainTargetEndIndex)
-  );
+  return spliceAfter(podfileContent, mainTargetEndIndex, insertion);
 }
 
 /**
@@ -412,12 +450,16 @@ export function insertTargetBlock(
   options: {
     standalone?: boolean;
     logger?: { log: (message: string) => void };
+    mainTargetName?: string;
   } = {}
 ): string {
-  const { standalone = false, logger } = options;
+  const { standalone = false, logger, mainTargetName } = options;
 
   if (standalone) {
-    return insertStandaloneTargetBlock(podfileContent, targetBlock, logger);
+    return insertStandaloneTargetBlock(podfileContent, targetBlock, {
+      logger,
+      mainTargetName,
+    });
   }
 
   logger?.log('Inserting React Native target nested inside main target');
@@ -432,6 +474,13 @@ export function insertTargetBlock(
       '\n  ' +
       podfileContent.slice(postInstallIndex)
     );
+  }
+
+  if (mainTargetName) {
+    const mainEnd = findNamedTargetEndIndex(podfileContent, mainTargetName);
+    if (mainEnd !== -1) {
+      return spliceAfter(podfileContent, mainEnd - 'end'.length, targetBlock);
+    }
   }
 
   // Fallback: insert before the last 'end' of main target

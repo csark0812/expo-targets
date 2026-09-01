@@ -82,7 +82,7 @@ describe('checkEasCredentials errors', () => {
   });
 });
 
-describe('checkEasCredentials displayName product', () => {
+describe('checkEasCredentials product from name', () => {
   test('warns when committed appExtensions misses a target', () => {
     const results = checkEasCredentials(
       withAppExtensions([
@@ -99,12 +99,12 @@ describe('checkEasCredentials displayName product', () => {
     ).toBe(true);
   });
 
-  test('matches plugin product from displayName || name', () => {
+  test('matches plugin product from name, not displayName', () => {
     const results = checkEasCredentials(
       withAppExtensions(
         [
           {
-            targetName: 'ExampleShareTarget',
+            targetName: 'ShareTarget',
             bundleIdentifier: 'com.example.app.share',
             entitlements: {
               'com.apple.security.application-groups': [
@@ -118,5 +118,18 @@ describe('checkEasCredentials displayName product', () => {
     );
     expect(results.some((r) => r.message.includes('missing'))).toBe(false);
     expect(results.some((r) => r.level === 'error')).toBe(false);
+    expect(
+      checkEasCredentials(
+        withAppExtensions(
+          [
+            {
+              targetName: 'ExampleShareTarget',
+              bundleIdentifier: 'com.example.app.share',
+            },
+          ],
+          { displayName: 'Example Share' }
+        )
+      ).some((r) => r.message.includes('ShareTarget'))
+    ).toBe(true);
   });
 });

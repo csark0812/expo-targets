@@ -162,8 +162,7 @@ function reactNativeTemplate(
     template: 'reactNativeViewController',
     options: {
       type: props.type,
-      // AppRegistry / createTarget(name) — must NOT use displayName product
-      // (Example Action → ExampleActionTarget). Mismatch aborts the extension.
+      // AppRegistry / createTarget(name) — config `name`, not displayName.
       moduleName: identity.name,
       targetName: props.name,
       preprocessingFile: props.preprocessingFile,

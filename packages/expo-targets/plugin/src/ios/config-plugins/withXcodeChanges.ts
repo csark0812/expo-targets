@@ -26,12 +26,12 @@ export const withXcodeChanges: ConfigPlugin<IOSTargetProps> = (config, props) =>
     const project = config.modResults;
     const projectName =
       config.modRequest.projectName || getProjectName(platformProjectRoot);
-    const productName = Paths.sanitizeTargetName(
-      props.displayName || props.name
-    );
+    const productName = Paths.sanitizeTargetName(props.name);
 
     props.logger.log(
-      `Adding Xcode target: ${props.displayName || props.name} (${props.type})`
+      `Adding Xcode target: ${productName} (${props.type}${
+        props.displayName ? `, display ${props.displayName}` : ''
+      })`
     );
 
     const workspace = buildTargetWorkspace({

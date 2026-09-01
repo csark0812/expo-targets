@@ -45,7 +45,7 @@ type WrittenGeneratedFile = {
 };
 
 function widgetProductName(target: TargetConfig): string {
-  return Paths.sanitizeTargetName(target.displayName || target.name);
+  return Paths.sanitizeTargetName(target.name);
 }
 
 function pushLiveActivityPlans(

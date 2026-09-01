@@ -24,7 +24,7 @@ export function resolveIdentity({
   }
 
   const typeConfig = TYPE_CHARACTERISTICS[props.type];
-  const targetName = props.displayName || props.name;
+  const targetName = props.name;
 
   // Use type-specific suffix, falling back to sanitized target name if not in map
   const bundleIdentifierSuffix =

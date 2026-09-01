@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'bun:test';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 
 import {
+  frameworkNamesFromPodspec,
   mergeAutolinkedPackages,
   parseExpoAutolinkingResolve,
   parseReactNativeConfig,
@@ -27,7 +31,76 @@ describe('parseExpoAutolinkingResolve', () => {
   });
 });
 
-describe('parseReactNativeConfig', () => {
+describe('frameworkNamesFromPodspec', () => {
+  test('maps wrapper pod dependencies to XCFramework names, not React runtime pods', () => {
+    expect(
+      frameworkNamesFromPodspec(`
+Pod::Spec.new do |s|
+  s.name = "intercom-react-native"
+  s.dependency "Intercom", '~> 19.3.0'
+  s.dependency "React-Core"
+end
+`)
+    ).toEqual(['Intercom']);
+
+    expect(
+      frameworkNamesFromPodspec(`
+Pod::Spec.new do |s|
+  s.name = "logrocket-react-native"
+  s.dependency "LogRocket", "3.6.0"
+  s.dependency "React"
+end
+`)
+    ).toEqual(['LogRocket']);
+  });
+
+  test('maps vendored xcframework basenames', () => {
+    expect(
+      frameworkNamesFromPodspec(`
+s.vendored_frameworks = "ios/SomeSDK.xcframework"
+`)
+    ).toEqual(['SomeSDK']);
+  });
+});
+
+describe('parseReactNativeConfig podspec file', () => {
+  test('reads framework names from the podspec on disk', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'expo-targets-podspec-'));
+    const podspecPath = path.join(dir, 'intercom-react-native.podspec');
+    fs.writeFileSync(
+      podspecPath,
+      `
+Pod::Spec.new do |s|
+  s.dependency "Intercom", '~> 19.3.0'
+  s.dependency "React-Core"
+end
+`
+    );
+    expect(
+      parseReactNativeConfig({
+        dependencies: {
+          '@intercom/intercom-react-native': {
+            platforms: {
+              ios: { podspecPath },
+            },
+          },
+        },
+      })
+    ).toEqual([
+      {
+        packageName: '@intercom/intercom-react-native',
+        linkerTokens: [
+          '@intercom/intercom-react-native',
+          'intercom-react-native',
+          'Intercom',
+        ],
+      },
+    ]);
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+});
+
+describe('parseReactNativeConfig basename', () => {
   test('maps RN community deps from podspec basename', () => {
     expect(
       parseReactNativeConfig({
