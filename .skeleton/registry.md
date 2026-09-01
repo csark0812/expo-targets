@@ -9,6 +9,7 @@
 | Topic | Canonical file |
 | --- | --- |
 | Package overview | [README.md](../README.md) |
+| Community adoption evidence | [adoption.md](../docs/adoption.md) |
 | Contributing (humans) | [CONTRIBUTING.md](../CONTRIBUTING.md) |
 | Agent cold-start | [AGENTS.md](../AGENTS.md) |
 | Getting started | [getting-started.md](../docs/getting-started.md) |

@@ -152,6 +152,7 @@ See [examples/README.md](./examples/README.md) for the full suite (~48 hosts), D
 ## Documentation
 
 - **[Getting Started](./docs/getting-started.md)** — Build a React Native share extension
+- **[Community and adoption](./docs/adoption.md)** — Public implementation reports, maintenance loops, and independently verifiable signals
 - **[React Native Extensions](./docs/react-native-extensions.md)** — RN runtime contract + Metro; [App Group OTA / eas update](./docs/react-native-extensions.md#extension-bundle-sideload-with-expo-updates)
 - **[Widgets](./docs/widgets.md)** — WidgetKit / Live Activities ownership vs `expo-widgets`
 - **[Configuration](./docs/configuration.md)** — All config options
@@ -207,6 +208,8 @@ target.refresh();
 ## Contributing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) (humans) and [AGENTS.md](./AGENTS.md) (agent posture).
+
+Built something with expo-targets? Use the [project showcase form](https://github.com/csark0812/expo-targets/issues/new?template=showcase.yml) to share a public implementation without implying endorsement or production use.
 
 ## License
 

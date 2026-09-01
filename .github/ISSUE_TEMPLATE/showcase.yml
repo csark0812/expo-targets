@@ -1,0 +1,64 @@
+name: Share a project
+description: Share a public project or implementation that uses expo-targets
+title: "[Showcase]: "
+labels:
+  - showcase
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for sharing what you built. This form creates a public issue. Do not include private code, credentials, customer information, or anything you cannot publish.
+  - type: input
+    id: project
+    attributes:
+      label: Project or organization
+      description: The public name you want associated with this implementation.
+      placeholder: Project name
+    validations:
+      required: true
+  - type: input
+    id: public_url
+    attributes:
+      label: Public project URL
+      description: A repository, product page, App Store listing, Play Store listing, or other public source.
+      placeholder: https://...
+    validations:
+      required: true
+  - type: input
+    id: package_version
+    attributes:
+      label: expo-targets version
+      placeholder: 0.2.7
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: What did expo-targets enable or make easier?
+      description: Describe the concrete extension, workflow, or problem the package helped with.
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Integration status
+      options:
+        - Experimental or prototype
+        - Open-source project
+        - Internal project
+        - Production
+    validations:
+      required: true
+  - type: input
+    id: production_evidence
+    attributes:
+      label: Public evidence for a production claim
+      description: Required only if you selected Production. Link to a public store listing, product page, release, or statement that supports the claim.
+      placeholder: https://...
+  - type: checkboxes
+    id: permission
+    attributes:
+      label: Permission
+      options:
+        - label: I give permission to quote this submission and link it from expo-targets and Christopher Sarkissian's public GitHub profile.
+          required: true
