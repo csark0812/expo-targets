@@ -27,7 +27,7 @@ function planColorsets({
     const colorsetPath = Paths.getTargetColorsetPath({
       platformProjectRoot: paths.platformProjectRoot,
       projectName: paths.projectName,
-      productName: Paths.sanitizeTargetName(props.displayName || props.name),
+      productName: Paths.sanitizeTargetName(props.name),
       colorName: name,
     });
 
@@ -71,7 +71,7 @@ function planImagesets({
     imagesetPath: Paths.getTargetImagesetPath({
       platformProjectRoot: paths.platformProjectRoot,
       projectName: paths.projectName,
-      productName: Paths.sanitizeTargetName(props.displayName || props.name),
+      productName: Paths.sanitizeTargetName(props.name),
       imageName: name,
     }),
     sourcePath: resolveTargetRelativePath({ assetPath, props, paths }),
@@ -166,7 +166,7 @@ export function planAssets({
   const buildAssetsPath = Paths.getTargetAssetsPath({
     platformProjectRoot: paths.platformProjectRoot,
     projectName: paths.projectName,
-    productName: Paths.sanitizeTargetName(props.displayName || props.name),
+    productName: Paths.sanitizeTargetName(props.name),
     isStickers,
   });
 

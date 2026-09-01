@@ -69,7 +69,7 @@ function planEntitlementsSetting({
   const entitlementsPath = Paths.getTargetEntitlementsPath({
     platformProjectRoot: paths.platformProjectRoot,
     projectName: paths.projectName,
-    productName: Paths.sanitizeTargetName(props.displayName || props.name),
+    productName: Paths.sanitizeTargetName(props.name),
   });
 
   return {

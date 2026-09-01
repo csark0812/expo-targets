@@ -141,6 +141,7 @@ export function applyPodfilePlan(
   next = insertTargetBlock(next, targetBlockFor(next, plan, mainTargetName), {
     standalone: plan.standalone,
     logger,
+    mainTargetName,
   });
 
   if (plan.expoUiWidget) {

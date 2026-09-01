@@ -116,7 +116,8 @@ Extension JS can still OTA without linking Updates in the appex: the host runs `
 | Location            | Format     | Example                        | Notes                     |
 | ------------------- | ---------- | ------------------------------ | ------------------------- |
 | Target folder       | kebab-case | `targets/my-share/`            | Organizational            |
-| Config `name` field | PascalCase | `"name": "MyShare"`            | Canonical identifier      |
+| Config `name` field | PascalCase | `"name": "MyShare"`            | Canonical identifier; Xcode / Pod product is `MyShareTarget` |
+| `displayName`       | Any        | `"displayName": "My Share"`    | Drawer / `CFBundleDisplayName` only |
 | `createTarget()`    | Same name  | `createTarget('MyShare', …)`   | Must match config exactly |
 | `entry`             | Path       | `./targets/my-share/index.tsx` | Relative to project root  |
 

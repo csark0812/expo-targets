@@ -19,13 +19,12 @@ function sanitizeTargetName(name: string): string {
   return `${name.replace(/[^a-zA-Z0-9]/g, '')}Target`;
 }
 
-/** Same input as `withIOSTarget`: displayName || name. */
+/** Same input as `withIOSTarget`: config `name` (displayName is CFBundle only). */
 function productNameForTarget(
   target: ProjectContext['targets'][number]
 ): string {
   const configName = target.config.name as string;
-  const label = target.config.displayName || configName;
-  return sanitizeTargetName(label);
+  return sanitizeTargetName(configName);
 }
 
 function readAppExtensions(

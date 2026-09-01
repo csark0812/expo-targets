@@ -214,6 +214,57 @@ describe('insertTargetBlock + removeTargetBlock', () => {
   });
 });
 
+const onesignalSiblingPodfile = `${plainPodfile.trimEnd()}
+
+target 'OneSignalNotificationServiceExtension' do
+  pod 'OneSignalXCFramework/OneSignal', '>= 5.0', '< 6.0'
+end
+`;
+
+describe('insertTargetBlock OneSignal sibling', () => {
+  test('does not glue end onto the next top-level target', () => {
+    const logger = new Logger();
+    const afterMessages = applyPodfilePlan(
+      onesignalSiblingPodfile,
+      {
+        targetName: 'MessagesTarget',
+        deploymentTarget: '16.4',
+        extensionType: 'messages',
+        standalone: false,
+        excludedPackages: ['expo-updates'],
+        linkerTokens: ['Intercom'],
+      },
+      { mainTargetName: 'App', logger }
+    );
+    const afterClip = applyPodfilePlan(
+      afterMessages,
+      {
+        targetName: 'ClipTarget',
+        deploymentTarget: '16.4',
+        extensionType: 'clip',
+        standalone: true,
+      },
+      { mainTargetName: 'App', logger }
+    );
+
+    expect(afterClip).not.toMatch(/endend/);
+    expect(afterClip).not.toMatch(/endtarget/);
+    for (const line of afterClip.split('\n')) {
+      if (line.includes("target '")) {
+        expect(line).toMatch(/^\s*target '/);
+      }
+    }
+    expect(afterClip).toMatch(
+      /\n[ \t]*end\n+target 'OneSignalNotificationServiceExtension'/
+    );
+    expect(afterClip).toContain("target 'MessagesTarget' do");
+    expect(afterClip).toContain("target 'ClipTarget' do");
+    expect(afterClip.indexOf("target 'ClipTarget'")).toBeLessThan(
+      afterClip.indexOf("target 'OneSignalNotificationServiceExtension'")
+    );
+  });
+});
+
 describe('applyPodfilePlan messages then clip', () => {
   test('keeps fence markers intact after a later standalone target', () => {
     const logger = new Logger();

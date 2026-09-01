@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
@@ -23,12 +24,63 @@ const CORE_LINKER_BLOCKLIST = new Set([
   'expo',
 ]);
 
+function isBlockedLinkerToken(token: string): boolean {
+  if (CORE_LINKER_BLOCKLIST.has(token)) {
+    return true;
+  }
+  return /^(React([-_A-Z].*)?|RCT|Folly|glog|fmt|boost|Yoga|hermes)/.test(
+    token
+  );
+}
+
 function lastSegment(packageName: string): string {
   if (packageName.startsWith('@')) {
     const parts = packageName.split('/');
     return parts[1] ?? packageName;
   }
   return packageName.split('/')[0] ?? packageName;
+}
+
+function frameworkStem(file: string): string | undefined {
+  const base = path.basename(file.trim());
+  if (base.endsWith('.xcframework')) {
+    return base.slice(0, -'.xcframework'.length);
+  }
+  if (base.endsWith('.framework')) {
+    return base.slice(0, -'.framework'.length);
+  }
+}
+
+/**
+ * XCFramework / CocoaPod names that appear as `-framework X` on OTHER_LDFLAGS.
+ * Wrapper pods (`intercom-react-native`) depend on `Intercom`; the npm name
+ * does not match the linker flag.
+ */
+export function frameworkNamesFromPodspec(source: string): string[] {
+  const names = new Set<string>();
+  const dependency = /(?:^|\n)\s*(?:s|spec)\.dependency\s+["']([^"']+)["']/g;
+  for (const match of source.matchAll(dependency)) {
+    const name = (match[1] ?? '').split('/')[0];
+    if (name && !isBlockedLinkerToken(name)) {
+      names.add(name);
+    }
+  }
+  const vendored = /['"]([^'"]+\.(?:xcframework|framework))['"]/g;
+  for (const match of source.matchAll(vendored)) {
+    const stem = frameworkStem(match[1] ?? '');
+    if (stem && !isBlockedLinkerToken(stem)) {
+      names.add(stem);
+    }
+  }
+  return [...names];
+}
+
+function readPodspecFrameworkNames(podspecPath: string): string[] {
+  try {
+    return frameworkNamesFromPodspec(fs.readFileSync(podspecPath, 'utf8'));
+  } catch {
+    return [];
+  }
 }
 
 export function linkerTokensForPackageName(packageName: string): string[] {
@@ -135,12 +187,13 @@ function rnDepToPackage(
   }
   const tokens = new Set(linkerTokensForPackageName(packageName));
   if (typeof ios === 'object') {
-    const token = podspecToken(
-      stringField((ios as { podspecPath?: unknown }).podspecPath) ?? ''
-    );
+    const podspecPath =
+      stringField((ios as { podspecPath?: unknown }).podspecPath) ?? '';
+    const token = podspecToken(podspecPath);
     if (token) {
       tokens.add(token);
     }
+    addTokens(tokens, readPodspecFrameworkNames(podspecPath));
   }
   return { packageName, linkerTokens: [...tokens] };
 }
@@ -248,7 +301,7 @@ export function linkerTokensForPackages(
   const tokens = new Set<string>();
   for (const name of packageNames) {
     for (const token of byName.get(name) ?? linkerTokensForPackageName(name)) {
-      if (!CORE_LINKER_BLOCKLIST.has(token)) {
+      if (!isBlockedLinkerToken(token)) {
         tokens.add(token);
       }
     }

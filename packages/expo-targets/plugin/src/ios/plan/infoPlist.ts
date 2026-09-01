@@ -77,7 +77,7 @@ export function planInfoPlist({
   const infoPlistPath = Paths.getTargetInfoPlistPath({
     platformProjectRoot: paths.platformProjectRoot,
     projectName: paths.projectName,
-    productName: Paths.sanitizeTargetName(props.displayName || props.name),
+    productName: Paths.sanitizeTargetName(props.name),
   });
   const mainAppSchemes = resolveMainAppSchemes(expoConfig);
   const targetsConfig = expoConfig.extra?.targets as any[] | undefined;

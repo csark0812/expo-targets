@@ -2,7 +2,7 @@
 
 **Source of truth for** React Native extensions (runtime contract, Metro, type support).
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-10 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-08-31 -->
 
 Build share extensions, action extensions, App Clips, iMessage apps, rich notification UI, and Safari popups with React Native instead of native Swift or Kotlin.
 
@@ -369,7 +369,9 @@ For RN-native targets with `entry`, the plugin inverts the host autolink set:
 
 Core keep is React Native, Hermes, Yoga, ExpoModulesCore, and `expo-targets`.
 The same strip set is applied to `ExpoModulesProvider` and to `Pods-<Target>`
-linker flags (`-l`, `-framework`, module maps). The host can still embed those
+linker flags (`-l`, `-framework`, module maps). Linker tokens include XCFramework
+names from each unused package podspec (`s.dependency "Intercom"` → `-framework Intercom`),
+not only the npm or wrapper-pod name. The host can still embed those
 frameworks in the app. The plugin does not copy host `OTHER_LDFLAGS`.
 
 **Always stripped (no escape hatch):**

@@ -137,11 +137,21 @@ function assetsFor(
 }
 
 describe('resolveIdentity', () => {
+  test('product and pbx name follow config name; displayName is not the product', () => {
+    const identity = identityFor(
+      makeProps({ name: 'Messages', displayName: 'Popl' })
+    );
+    expect(identity.targetName).toBe('Messages');
+    expect(identity.targetProductName).toBe('MessagesTarget');
+    expect(identity.displayName).toBe('Popl');
+  });
+
   test('derives product name, bundle id and frameworks from the type', () => {
     const identity = identityFor(makeProps({ displayName: 'My Share' }));
 
-    expect(identity.targetName).toBe('My Share');
+    expect(identity.targetName).toBe('MyShare');
     expect(identity.targetProductName).toBe('MyShareTarget');
+    expect(identity.displayName).toBe('My Share');
     expect(identity.bundleIdentifier).toBe('com.example.app.share');
     expect(identity.productType).toBe('com.apple.product-type.app-extension');
     expect(identity.targetType).toBe('app_extension');
@@ -332,9 +342,9 @@ describe('planSwiftSources React Native generation', () => {
       targetName: 'Action',
     });
     expect(
-      identityFor(makeProps({ displayName: 'Example Action' }))
+      identityFor(makeProps({ name: 'Action', displayName: 'Example Action' }))
         .targetProductName
-    ).toBe('ExampleActionTarget');
+    ).toBe('ActionTarget');
   });
 });
 

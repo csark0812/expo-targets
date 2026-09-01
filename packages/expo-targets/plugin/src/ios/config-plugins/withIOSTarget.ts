@@ -440,8 +440,12 @@ function withExpoWidgetsAppGroupKeys(
 }
 
 export const withIOSTarget: ConfigPlugin<IosTargetProps> = (config, props) => {
-  const targetName = props.displayName || props.name;
-  props.logger.log(`Configuring iOS target: ${targetName} (${props.type})`);
+  const targetName = props.name;
+  props.logger.log(
+    `Configuring iOS target: ${targetName} (${props.type}${
+      props.displayName ? `, display ${props.displayName}` : ''
+    })`
+  );
 
   validateEntry(props, config._internal?.projectRoot || process.cwd());
   validateAppGroup(

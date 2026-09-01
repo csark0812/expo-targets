@@ -28,9 +28,8 @@ function configuredProductNames(ctx: ProjectContext): Set<string> {
     if (!target.config.platforms?.includes('ios')) {
       continue;
     }
-    const displayName =
-      target.config.displayName || target.config.name || target.dirName;
-    names.add(sanitizeTargetName(displayName));
+    const configName = target.config.name || target.dirName;
+    names.add(sanitizeTargetName(configName));
   }
   return names;
 }
