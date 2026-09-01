@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
+import { companionTokensForUnused } from './linkerCompanions';
+
 export type AutolinkedNativePackage = {
   packageName: string;
   linkerTokens: string[];
@@ -304,6 +306,14 @@ export function linkerTokensForPackages(
       if (!isBlockedLinkerToken(token)) {
         tokens.add(token);
       }
+    }
+  }
+  for (const token of companionTokensForUnused({
+    unusedPackages: packageNames,
+    unusedTokens: [...tokens],
+  })) {
+    if (!isBlockedLinkerToken(token)) {
+      tokens.add(token);
     }
   }
   return [...tokens];
