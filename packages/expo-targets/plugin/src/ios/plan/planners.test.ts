@@ -342,9 +342,8 @@ describe('planSwiftSources React Native generation', () => {
       targetName: 'Action',
     });
     expect(
-      identityFor(
-        makeProps({ name: 'Action', displayName: 'Example Action' })
-      ).targetProductName
+      identityFor(makeProps({ name: 'Action', displayName: 'Example Action' }))
+        .targetProductName
     ).toBe('ActionTarget');
   });
 });
