@@ -1,12 +1,12 @@
 # Configuration Reference
 
-**Source of truth for** `expo-target.config` options and extension types.
+**Source of truth for** `target.config` options and extension types.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-31 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-09-15 -->
 
 > **Orphan-stub freeze:** do not add new `ExtensionType` values without registry, scaffold, example, and Devicewright row. See [deprecations.md](./deprecations.md). Widgets policy: [widgets.md](./widgets.md).
 
-Each target uses an `expo-target.config.json` file in its directory.
+Each target uses a `target.config.json` file in its directory (`.ts` and `.js` also work). `expo-target.config.*` still loads if you have not renamed yet.
 
 ## Basic Structure
 
@@ -14,7 +14,7 @@ Each target uses an `expo-target.config.json` file in its directory.
 
 ```
 targets/my-widget/
-├── expo-target.config.json   ← Configuration file
+├── target.config.json   ← Configuration file
 ├── index.ts                  ← JS API for your app
 └── ios/
     └── Widget.swift          ← SwiftUI code
@@ -24,7 +24,7 @@ targets/my-widget/
 
 ```
 targets/my-widget/
-├── expo-target.config.json
+├── target.config.json
 ├── index.ts
 ├── ios/
 │   └── Widget.swift          ← SwiftUI code
@@ -93,7 +93,7 @@ my-app/
 ├── App.tsx
 └── targets/
     └── share-ext/
-        ├── expo-target.config.json   ← entry: "./targets/share-ext/index.tsx"
+        ├── target.config.json   ← entry: "./targets/share-ext/index.tsx"
         └── index.tsx                 ← Contains createTarget('ShareExt', Component)
 ```
 
@@ -132,7 +132,7 @@ The first App Group in the array is used. When no App Group is configured in `ap
 | Location                              | Value must be                   |
 | ------------------------------------- | ------------------------------- |
 | `app.json` entitlements               | `group.com.yourcompany.myapp`   |
-| `expo-target.config.json`             | `group.com.yourcompany.myapp`   |
+| `target.config.json`             | `group.com.yourcompany.myapp`   |
 | Swift code `UserDefaults(suiteName:)` | `"group.com.yourcompany.myapp"` |
 
 ---
@@ -194,7 +194,7 @@ Add a `pods.rb` file in your target's `ios/` directory to include custom CocoaPo
 
 ```
 targets/my-widget/
-├── expo-target.config.json
+├── target.config.json
 └── ios/
     ├── pods.rb                ← Custom CocoaPods configuration
     └── Widget.swift
@@ -766,7 +766,7 @@ Access through `getSharedData().preprocessedData` in your extension.
 }
 ```
 
-Declare packs with `ios.stickerPacks`. Asset paths and `targetIcon` are relative to the **target directory** (where `expo-target.config.json` lives), not the app root.
+Declare packs with `ios.stickerPacks`. Asset paths and `targetIcon` are relative to the **target directory** (where `target.config.json` lives), not the app root.
 
 The plugin hardcodes sticker pack **grid size to `regular`**. Provide @3x PNGs sized for that grid (Apple's Messages sticker sizes):
 
@@ -938,7 +938,7 @@ class PassProvider: PKIssuerProvisioningExtensionHandler {
 Use `.js` or `.ts` for dynamic configs that need access to your Expo app configuration:
 
 ```typescript
-// expo-target.config.ts
+// target.config.ts
 import type { ExpoConfig } from "expo/config";
 
 /**
@@ -974,7 +974,7 @@ export default function (config: ExpoConfig) {
 - `config.android?.package` — Your app's Android package name
 - Any other fields from your Expo config
 
-**Note:** Dynamic configs (`.ts` or `.js`) are processed by expo-targets during prebuild. TypeScript is supported without extra configuration. The plugin handles transpilation. Use `satisfies TargetConfig` (or a typed function return) for editor checks. `expo-target.config.json` is plain JSON. It has no types unless you add a JSON Schema. This package does not ship a schema yet.
+**Note:** Dynamic configs (`.ts` or `.js`) are processed by expo-targets during prebuild. TypeScript is supported without extra configuration. The plugin handles transpilation. Use `satisfies TargetConfig` (or a typed function return) for editor checks. `target.config.json` is plain JSON. It has no types unless you add a JSON Schema. This package does not ship a schema yet.
 
 ---
 
@@ -1093,12 +1093,12 @@ Write your Safari extension popup with React Native components. The same `create
 
 ```
 targets/my-safari/
-├── expo-target.config.json
+├── target.config.json
 └── src/
     └── SafariExtension.tsx
 ```
 
-**Config (`expo-target.config.json`):**
+**Config (`target.config.json`):**
 
 ```json
 {
@@ -1172,7 +1172,7 @@ For full control, provide your own web resources without an `entry` field. The S
 
 ```
 targets/my-safari/
-├── expo-target.config.json
+├── target.config.json
 └── ios/
     └── Resources/
         ├── manifest.json
@@ -1195,7 +1195,7 @@ targets/my-safari/
 
 ```
 targets/my-safari/
-├── expo-target.config.json
+├── target.config.json
 └── ios/
     └── Resources/
         ├── manifest.json          ← Required: Web extension manifest
@@ -1615,7 +1615,7 @@ struct MyAppIntentExtension: AppIntentsExtension {}
 
 **Solutions:**
 
-- Name the file `expo-target.config.json` (or `.js` or `.ts`)
+- Name the file `target.config.json` (or `.js` or `.ts`). `expo-target.config.*` still loads.
 - Check JSON syntax (validate at jsonlint.com)
 - Re-run `npx expo prebuild --clean`
 
@@ -1648,7 +1648,7 @@ struct MyAppIntentExtension: AppIntentsExtension {}
 ```bash
 # Check all three locations match exactly:
 grep -r "group.com" app.json
-grep -r "appGroup" targets/*/expo-target.config.json
+grep -r "appGroup" targets/*/target.config.json
 grep -r "suiteName" targets/*/ios/*.swift
 ```
 

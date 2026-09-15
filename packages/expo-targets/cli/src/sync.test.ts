@@ -57,7 +57,7 @@ function scaffoldBareProject(extra: Record<string, string> = {}): string {
 </dict></plist>
 `,
     'ios/Podfile': fs.readFileSync(FIXTURE_PODFILE, 'utf8'),
-    'targets/share-minimal/expo-target.config.json': JSON.stringify({
+    'targets/share-minimal/target.config.json': JSON.stringify({
       type: 'share',
       name: 'ShareMinimal',
       platforms: ['ios'],

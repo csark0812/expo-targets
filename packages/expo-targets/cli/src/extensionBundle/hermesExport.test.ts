@@ -68,7 +68,7 @@ function seedShareProject(project: string): void {
   const targetDir = path.join(project, 'targets', 'share');
   fs.mkdirSync(targetDir, { recursive: true });
   fs.writeFileSync(
-    path.join(targetDir, 'expo-target.config.json'),
+    path.join(targetDir, 'target.config.json'),
     JSON.stringify({
       type: 'share',
       name: 'Share',

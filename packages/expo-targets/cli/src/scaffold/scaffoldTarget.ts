@@ -376,7 +376,7 @@ function writeScaffoldedTarget(
     includeLiveActivity: response.includeLiveActivity,
     liveActivityAttributesName: `${pascalName}Attributes`,
   });
-  fs.writeFileSync(path.join(targetDir, 'expo-target.config.json'), config);
+  fs.writeFileSync(path.join(targetDir, 'target.config.json'), config);
 
   writeIosFiles({ targetDir, response, pascalName, appGroup });
   writeAndroidFiles({

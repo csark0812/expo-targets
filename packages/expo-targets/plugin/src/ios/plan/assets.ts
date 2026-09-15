@@ -126,7 +126,7 @@ function planStickers({
   return {
     assetsPath: buildAssetsPath,
     iconsetPath: path.join(buildAssetsPath, IMESSAGE_APP_ICON),
-    // Match stickerPacks: paths in expo-target.config.json are relative to the
+    // Match stickerPacks: paths in target.config.json are relative to the
     // target directory (e.g. targets/stickers/assets/...), not the app root.
     sourceIconPath: props.targetIcon
       ? resolveTargetRelativePath({

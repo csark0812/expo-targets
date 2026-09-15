@@ -1,6 +1,7 @@
 import process from 'node:process';
 
 import { checkAppGroups } from './checks/appGroups';
+import { warnLegacyConfigName } from './checks/configFilename';
 import { warnDualWidgets } from './checks/dualWidgets';
 import {
   checkEasCredentialErrors,
@@ -53,6 +54,7 @@ function collectFailures(ctx: ReturnType<typeof loadProject>): CheckResult[] {
 
 function collectWarnings(ctx: ReturnType<typeof loadProject>): CheckResult[] {
   return [
+    ...warnLegacyConfigName(ctx),
     ...warnUnusedWidgetBundle(ctx),
     ...warnSealedZone(ctx),
     ...warnDualWidgets(ctx),

@@ -23,7 +23,7 @@ export function checkEntries(ctx: ProjectContext): CheckResult[] {
       level: 'error',
       title: 'Entry files',
       message: `Target "${name}": entry "${entry}" does not exist`,
-      fix: `Create ${entry} or update expo-target.config.json`,
+      fix: `Create ${entry} or update target.config.json`,
     });
   }
 

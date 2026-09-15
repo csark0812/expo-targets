@@ -27,7 +27,7 @@ function resolveBundleId(target: TargetConfig): string {
   }
   throw new Error(
     `[expo-targets] Content blocker "${target.name}" needs ios.bundleIdentifier ` +
-      `(absolute) in expo-target.config.json so reload can resolve the extension id.`
+      `(absolute) in target.config.json so reload can resolve the extension id.`
   );
 }
 

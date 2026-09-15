@@ -68,7 +68,7 @@ function shareProps(): IOSTargetProps {
     name: 'ShareMinimal',
     entry: './index.share.js',
     directory: TARGET_DIRECTORY,
-    configPath: path.join(TARGET_DIRECTORY, 'expo-target.config.json'),
+    configPath: path.join(TARGET_DIRECTORY, 'target.config.json'),
     logger: new Logger(false),
   } as IOSTargetProps;
 }

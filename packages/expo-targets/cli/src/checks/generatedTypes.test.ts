@@ -28,7 +28,7 @@ afterEach(() => {
 
 const shareTarget = {
   'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
-  'targets/share/expo-target.config.json': JSON.stringify({
+  'targets/share/target.config.json': JSON.stringify({
     type: 'share',
     name: 'Share',
     platforms: ['ios'],

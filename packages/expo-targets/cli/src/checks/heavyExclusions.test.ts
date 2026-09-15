@@ -30,7 +30,7 @@ test('warnHeavyExclusions is quiet after invert default', () => {
     'package.json': JSON.stringify({
       dependencies: { 'react-native-reanimated': '3.0.0' },
     }),
-    'targets/share/expo-target.config.json': JSON.stringify({
+    'targets/share/target.config.json': JSON.stringify({
       type: 'share',
       name: 'Share',
       platforms: ['ios'],
@@ -46,7 +46,7 @@ test('nativeUnlinkSummaries reports unlink count for RN entry targets', () => {
   const root = makeProject({
     'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
     'package.json': JSON.stringify({ dependencies: {} }),
-    'targets/share/expo-target.config.json': JSON.stringify({
+    'targets/share/target.config.json': JSON.stringify({
       type: 'share',
       name: 'Share',
       platforms: ['ios'],

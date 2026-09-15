@@ -181,7 +181,7 @@ function checkOneNameSync(
       ok: false,
       level: 'error',
       title: 'Name sync',
-      message: `targets/${target.dirName}: missing "name" in expo-target.config`,
+      message: `targets/${target.dirName}: missing "name" in target.config`,
       fix: 'Set "name" to match createTarget(\'...\') in the target index file',
     };
   }

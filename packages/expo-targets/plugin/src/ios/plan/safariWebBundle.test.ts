@@ -22,7 +22,7 @@ function makeProps(overrides: Partial<IOSTargetProps> = {}): IOSTargetProps {
     directory: 'targets/my-safari',
     configPath: path.join(
       PROJECT_ROOT,
-      'targets/my-safari/expo-target.config.js'
+      'targets/my-safari/target.config.js'
     ),
     logger: new Logger(false),
     ...overrides,

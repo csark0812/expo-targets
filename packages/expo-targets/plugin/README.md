@@ -31,7 +31,7 @@ The iOS pipeline has four layers. Data flows one way. Each layer has one job.
 | Apply | `src/ios/apply` | Execute a plan against disk, the pbxproj, the Podfile | writes / mutates |
 
 ```
-withIOSTarget            resolves props per target from expo-target.config
+withIOSTarget            resolves props per target from target.config
   └── withXcodeChanges   orchestration only
         ├── observe/workspace      → TargetWorkspace   (what exists on disk)
         ├── plan/compose           → XcodeTargetPlan   (what must exist)
@@ -67,7 +67,7 @@ The same PR must ship the full per-type DoD ([deprecations.md](../../../docs/dep
 
 1. **`src/domain/characteristics.ts`** — product type, frameworks, extension point, Info.plist base, RN flags. Prefer a flag over a plan-layer branch.
 2. **`packages/expo-targets/cli/src/scaffold/`** — scaffold template for the type.
-3. **`examples/<id>`** — production-thin host with `expo-target.config` + principal.
+3. **`examples/<id>`** — production-thin host with `target.config` + principal.
 4. **Devicewright** — journey under `examples/.devicewright/`, row in `required.ts` / `touchpoints.ts` / `claims.ts` as needed.
 5. Docs: maturity in [configuration.md](../../../docs/configuration.md) only (README showcase stays curated).
 

@@ -326,7 +326,7 @@ function liveActivityHandleForConfig(
   if (configs.length === 0) {
     throw new Error(
       `[expo-targets] Target "${config.name}" has no Live Activity configured. ` +
-        'Add ios.liveActivity or ios.liveActivities to expo-target.config.json.'
+        'Add ios.liveActivity or ios.liveActivities to target.config.json.'
     );
   }
   if (attributesName) {
@@ -580,7 +580,7 @@ function registerTargetComponent(
   if (!('entry' in config && config.entry)) {
     throw new Error(
       `[expo-targets] createTarget("${targetName}", Component) requires an "entry" field in ` +
-        'expo-target.config pointing at the RN entry file (relative to project root). ' +
+        'target.config pointing at the RN entry file (relative to project root). ' +
         'See docs/react-native-extensions.md'
     );
   }

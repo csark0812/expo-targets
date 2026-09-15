@@ -14,7 +14,7 @@ After `prebuild` or `npx expo-targets generate`, TypeScript narrows string liter
 
 | String you pass | Config field | Handle |
 | --- | --- | --- |
-| Folder name (`PoplWidgets`) | `expo-target.config.json` `"name"` | Share/action/clip, **or** widget folder when `ios.kinds` lists multiple products |
+| Folder name (`PoplWidgets`) | `target.config.json` `"name"` | Share/action/clip, **or** widget folder when `ios.kinds` lists multiple products |
 | Kind name (`HomescreenWidgets`) | `ios.kinds[].name` (or `android.providers[].name`) | Widget **product** — use for `setData` / `refresh` |
 | Attributes name (`OrderAttributes`) | `ios.liveActivity.attributesName` or `ios.liveActivities[].attributesName` | `folder.liveActivity('OrderAttributes')` handle — not `createTarget` |
 
@@ -643,7 +643,7 @@ Wires the host by default (plugin, App Groups, Metro). Dynamic `app.config.ts` o
 
 ```
 targets/{name}/
-├── expo-target.config.json  # Configuration (incl. appGroup when resolved)
+├── target.config.json  # Configuration (incl. appGroup when resolved)
 ├── index.tsx                # RN: createTarget<'type'>('Name', Component)
 └── ios/
     └── {Main}.swift         # Template code for the extension type
@@ -800,7 +800,7 @@ interface NonExtensionTarget extends BaseTarget {
 | Error Message              | Cause                              | Solution                                                     |
 | -------------------------- | ---------------------------------- | ------------------------------------------------------------ |
 | `Target "X" not found`     | Target name doesn't match config   | Check `createTarget('X')` matches `"name"` in config exactly |
-| `App Group not configured` | Missing `appGroup` in config       | Add `appGroup` to `expo-target.config.json` or `app.json`    |
+| `App Group not configured` | Missing `appGroup` in config       | Add `appGroup` to `target.config.json` or `app.json`    |
 | `Unknown Live Activity attributesName` | Name not in `ios.liveActivity` | Use a configured `attributesName` / `LiveActivity.create` |
 | `fileProviderDomain` missing | FP target lacks domain config      | Add `ios.fileProviderDomain` to the file-provider config     |
 | `No targets config found`  | Running in wrong context           | Run from the app or extension, not a unit test               |
