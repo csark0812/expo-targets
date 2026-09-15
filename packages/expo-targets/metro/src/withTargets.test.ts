@@ -9,6 +9,25 @@ import {
   withTargetsMetro,
 } from './withTargets';
 
+const tempRoots: string[] = [];
+
+function writeScriptProject(opts: {
+  dir: string;
+  configFile: string;
+  source: string;
+  entryFile: string;
+}): { root: string; entryPath: string } {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'expo-targets-metro-'));
+  tempRoots.push(root);
+  const targetDir = path.join(root, 'targets', opts.dir);
+  fs.mkdirSync(targetDir, { recursive: true });
+  fs.writeFileSync(path.join(targetDir, opts.configFile), opts.source);
+  const entryPath = path.join(root, opts.entryFile);
+  fs.mkdirSync(path.dirname(entryPath), { recursive: true });
+  fs.writeFileSync(entryPath, 'export default function App() { return null }');
+  return { root, entryPath };
+}
+
 function makeTempProject(
   entries: {
     dir: string;
@@ -35,8 +54,6 @@ function makeTempProject(
   }
   return root;
 }
-
-const tempRoots: string[] = [];
 
 afterEach(() => {
   for (const root of tempRoots.splice(0)) {
@@ -97,6 +114,82 @@ describe('scanTargetsDirectory', () => {
     expect(entryMap.size).toBe(0);
     expect(warnings).toEqual([]);
   });
+});
+
+test('scanTargetsDirectory maps entry from target.config.ts', () => {
+  const { root, entryPath } = writeScriptProject({
+    dir: 'messages',
+    configFile: 'target.config.ts',
+    source: `export default {
+  type: 'messages',
+  name: 'Messages',
+  entry: './targets/messages/index.tsx',
+  platforms: ['ios'],
+} satisfies import('expo-targets').TargetConfig;
+`,
+    entryFile: 'targets/messages/index.tsx',
+  });
+
+  const { entryMap, warnings } = scanTargetsDirectory(root);
+  expect(warnings).toEqual([]);
+  expect(entryMap.get('targets/messages/index')).toBe(entryPath);
+});
+
+test('scanTargetsDirectory maps entry from target.config.js module.exports', () => {
+  const { root, entryPath } = writeScriptProject({
+    dir: 'messages',
+    configFile: 'target.config.js',
+    source: `module.exports = {
+  type: 'messages',
+  name: 'Messages',
+  entry: './targets/messages/index.tsx',
+  platforms: ['ios'],
+};
+`,
+    entryFile: 'targets/messages/index.tsx',
+  });
+
+  const { entryMap, warnings } = scanTargetsDirectory(root);
+  expect(warnings).toEqual([]);
+  expect(entryMap.get('targets/messages/index')).toBe(entryPath);
+});
+
+test('scanTargetsDirectory maps entry from target.config.js function export', () => {
+  const { root, entryPath } = writeScriptProject({
+    dir: 'share',
+    configFile: 'target.config.js',
+    source: `module.exports = function () {
+  return {
+    type: 'share',
+    name: 'Share',
+    entry: './targets/share/index.tsx',
+  };
+};
+`,
+    entryFile: 'targets/share/index.tsx',
+  });
+
+  const { entryMap, warnings } = scanTargetsDirectory(root);
+  expect(warnings).toEqual([]);
+  expect(entryMap.get('targets/share/index')).toBe(entryPath);
+});
+
+test('scanTargetsDirectory maps entry from target.config.js export default', () => {
+  const { root, entryPath } = writeScriptProject({
+    dir: 'action',
+    configFile: 'target.config.js',
+    source: `export default {
+  type: 'action',
+  name: 'Action',
+  entry: './targets/action/index.tsx',
+};
+`,
+    entryFile: 'targets/action/index.tsx',
+  });
+
+  const { entryMap, warnings } = scanTargetsDirectory(root);
+  expect(warnings).toEqual([]);
+  expect(entryMap.get('targets/action/index')).toBe(entryPath);
 });
 
 test('scanTargetsDirectory falls back to expo-target.config.json', () => {

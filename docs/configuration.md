@@ -974,7 +974,7 @@ export default function (config: ExpoConfig) {
 - `config.android?.package` — Your app's Android package name
 - Any other fields from your Expo config
 
-**Note:** Dynamic configs (`.ts` or `.js`) are processed by expo-targets during prebuild. TypeScript is supported without extra configuration. The plugin handles transpilation. Use `satisfies TargetConfig` (or a typed function return) for editor checks. `target.config.json` is plain JSON. It has no types unless you add a JSON Schema. This package does not ship a schema yet.
+**Note:** Dynamic configs (`.ts` or `.js`) are processed by expo-targets during prebuild. TypeScript is supported without extra configuration. The plugin handles transpilation. Metro `withTargets` also reads `entry` from those files so RN extensions resolve without a JSON copy. Use `satisfies TargetConfig` (or a typed function return) for editor checks. `target.config.json` is plain JSON. It has no types unless you add a JSON Schema. This package does not ship a schema yet.
 
 ---
 

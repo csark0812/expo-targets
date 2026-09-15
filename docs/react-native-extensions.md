@@ -2,7 +2,7 @@
 
 **Source of truth for** React Native extensions (runtime contract, Metro, type support).
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-31 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-09-15 -->
 
 Build share extensions, action extensions, App Clips, iMessage apps, rich notification UI, and Safari popups with React Native instead of native Swift or Kotlin.
 
@@ -190,7 +190,7 @@ module.exports = withTargets(getDefaultConfig(__dirname));
 
 The Metro wrapper:
 
-- Discovers targets with an `entry` field in their config
+- Discovers targets with an `entry` field in `target.config.json`, `.ts`, or `.js`
 - Validates that each `entry` file exists (warns when missing)
 - Maps Metro `bundleRoot` (entry path without extension) to the absolute entry file. This must match the native host `jsBundleURL(forBundleRoot:)`
 - Chains any existing `resolveRequest` so other Metro plugins keep working
