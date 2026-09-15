@@ -20,10 +20,7 @@ function makeProps(overrides: Partial<IOSTargetProps> = {}): IOSTargetProps {
     type: 'safari',
     name: 'MySafari',
     directory: 'targets/my-safari',
-    configPath: path.join(
-      PROJECT_ROOT,
-      'targets/my-safari/target.config.js'
-    ),
+    configPath: path.join(PROJECT_ROOT, 'targets/my-safari/target.config.js'),
     logger: new Logger(false),
     ...overrides,
   } as IOSTargetProps;

@@ -43,10 +43,7 @@ function makeProps(overrides: Partial<IOSTargetProps> = {}): IOSTargetProps {
     type: 'share',
     name: 'MyShare',
     directory: 'targets/my-share',
-    configPath: path.join(
-      PROJECT_ROOT,
-      'targets/my-share/target.config.js'
-    ),
+    configPath: path.join(PROJECT_ROOT, 'targets/my-share/target.config.js'),
     logger: new Logger(false),
     deploymentTarget: '15.1',
     ...overrides,
