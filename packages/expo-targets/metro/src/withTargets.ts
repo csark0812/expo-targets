@@ -3,6 +3,8 @@ import * as path from 'node:path';
 import process from 'node:process';
 import type { MetroConfig } from 'metro-config';
 
+import { parseScriptTargetConfig } from './parseScriptConfig';
+
 export interface TargetConfig {
   name: string;
   entry?: string;
@@ -13,29 +15,49 @@ export interface ScanResult {
   warnings: string[];
 }
 
+const TARGET_CONFIG_FILES = [
+  'target.config.json',
+  'target.config.ts',
+  'target.config.js',
+  'expo-target.config.json',
+  'expo-target.config.ts',
+  'expo-target.config.js',
+] as const;
+
+function readTargetConfig(configPath: string): TargetConfig {
+  const source = fs.readFileSync(configPath, 'utf-8');
+  if (configPath.endsWith('.json')) {
+    return JSON.parse(source) as TargetConfig;
+  }
+  const parsed = parseScriptTargetConfig(source);
+  if (!parsed) {
+    throw new Error('expected export default or module.exports config object');
+  }
+  return { name: parsed.name ?? '', entry: parsed.entry };
+}
+
 function loadTargetConfig(
   configPath: string,
   dirName: string,
   warnings: string[]
 ): TargetConfig | undefined {
   try {
-    return JSON.parse(fs.readFileSync(configPath, 'utf-8')) as TargetConfig;
+    return readTargetConfig(configPath);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    const fileName = path.basename(configPath);
     warnings.push(
-      `[expo-targets/metro] targets/${dirName}: invalid target.config.json (${message})`
+      `[expo-targets/metro] targets/${dirName}: invalid ${fileName} (${message})`
     );
   }
 }
 
-function resolveTargetConfigJson(targetDir: string): string | undefined {
-  const current = path.join(targetDir, 'target.config.json');
-  if (fs.existsSync(current)) {
-    return current;
-  }
-  const legacy = path.join(targetDir, 'expo-target.config.json');
-  if (fs.existsSync(legacy)) {
-    return legacy;
+function resolveTargetConfigFile(targetDir: string): string | undefined {
+  for (const name of TARGET_CONFIG_FILES) {
+    const candidate = path.join(targetDir, name);
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
   }
 }
 
@@ -72,7 +94,7 @@ function registerTargetEntry(opts: {
 }
 
 /**
- * Scan each target's target.config.json for RN entry fields.
+ * Scan each target's target.config.json / .ts / .js for RN entry fields.
  * Exported for tests and tooling.
  */
 export function scanTargetsDirectory(projectRoot: string): ScanResult {
@@ -89,7 +111,7 @@ export function scanTargetsDirectory(projectRoot: string): ScanResult {
       continue;
     }
 
-    const configPath = resolveTargetConfigJson(path.join(targetsDir, dir.name));
+    const configPath = resolveTargetConfigFile(path.join(targetsDir, dir.name));
     if (!configPath) {
       continue;
     }
