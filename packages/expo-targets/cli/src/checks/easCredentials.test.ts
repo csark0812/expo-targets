@@ -13,7 +13,7 @@ function baseCtx(overrides: Partial<ProjectContext> = {}): ProjectContext {
     targets: [
       {
         dirName: 'share',
-        configPath: '/tmp/app/targets/share/expo-target.config.json',
+        configPath: '/tmp/app/targets/share/target.config.json',
         config: {
           type: 'share',
           name: 'Share',

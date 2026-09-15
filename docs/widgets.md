@@ -176,7 +176,7 @@ function Layout(props, environment) {
 }
 ```
 
-Use the same `appGroup` as `expo-target.config.json`.
+Use the same `appGroup` as `target.config.json`.
 
 ### Buttons + push
 

@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 
 const APP_GROUP = 'group.com.expotargets.example.native.action';
-/** Matches expo-target.config.json `name` / Android TARGET_NAME meta. */
+/** Matches target.config.json `name` / Android TARGET_NAME meta. */
 const ANDROID_TARGET_NAME = 'NativeAction';
 const IOS_STORAGE_KEY = 'nativeAction:items';
 

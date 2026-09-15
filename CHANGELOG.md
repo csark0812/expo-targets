@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Target config filename is now `target.config.json` / `.ts` / `.js` (was `expo-target.config.*`). Existing `expo-target.config.*` files still load; `npx expo-targets doctor` warns to rename.
 - Android widget Kotlin lives at `targets/<name>/android/<File>.kt` (same layout as `ios/*.swift`). The `package` line still holds the FQCN.
 
 ### Added

@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { globSync } from 'glob';
 
+import { discoverTargetConfigFiles } from './targetConfigFile';
 import type { DiscoveredTarget, ProjectContext, TargetConfig } from './types';
 
 const APP_GROUP_KEY = 'com.apple.security.application-groups';
@@ -81,9 +81,9 @@ function discoverTargets(
   projectRoot: string,
   expo: Record<string, unknown>
 ): DiscoveredTarget[] {
-  const files = globSync('./targets/*/expo-target.config.@(js|ts|json)', {
+  const files = discoverTargetConfigFiles({
+    targetsRoot: './targets',
     cwd: projectRoot,
-    absolute: true,
   });
 
   return files.map((configPath) => {

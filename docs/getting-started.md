@@ -52,7 +52,7 @@ This creates:
 
 ```
 targets/my-share/
-├── expo-target.config.json
+├── target.config.json
 ├── index.tsx                 # createTarget + component registration
 └── ios/                      # User deepen (committed)
 ```
@@ -213,7 +213,7 @@ Make sure `metro.config.js` wraps with `withTargets` (or legacy `withTargetsMetr
 
 ### App Group / data issues
 
-Match App Group IDs in `app.json`, `expo-target.config.json`, and any native suite name. `npx expo-targets doctor` checks host ↔ target consistency.
+Match App Group IDs in `app.json`, `target.config.json`, and any native suite name. `npx expo-targets doctor` checks host ↔ target consistency.
 
 ### Upgrading from expo-targets &lt; 0.2.8 (sealed path)
 

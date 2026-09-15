@@ -13,7 +13,7 @@ export function checkUiMode(ctx: ProjectContext): CheckResult[] {
         level: 'error',
         title: 'UI mode',
         message: `Target "${name}": ${illegal}`,
-        fix: `Fix ui / entry in targets/${target.dirName}/expo-target.config.json`,
+        fix: `Fix ui / entry in targets/${target.dirName}/target.config.json`,
       });
       continue;
     }

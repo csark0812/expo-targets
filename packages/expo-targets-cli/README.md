@@ -51,7 +51,7 @@ npx expo-targets sync --clean   # opt-in: remove orphaned sealed dirs + Podfile 
 **What it does:**
 
 - Runs the `expo-targets` config plugin via `compileModsAsync` (Xcode project, Podfile, sealed `ios/<App>/ExpoTargetsGenerated/<Product>/`)
-- Reports orphaned sealed products / Podfile / Xcode targets with no matching `targets/*/expo-target.config.*`
+- Reports orphaned sealed products / Podfile / Xcode targets with no matching `targets/*/target.config.*`
 - `--clean` removes sealed product dirs and Podfile target blocks only. Xcode native targets are report-only.
 
 **Recommended path for new projects:** managed Expo + `npx expo prebuild`. Use `sync` when you already have a bare `ios/` tree.

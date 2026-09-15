@@ -21,7 +21,7 @@ function makeTempProject(
     const targetDir = path.join(root, 'targets', item.dir);
     fs.mkdirSync(targetDir, { recursive: true });
     fs.writeFileSync(
-      path.join(targetDir, 'expo-target.config.json'),
+      path.join(targetDir, 'target.config.json'),
       JSON.stringify(item.config, null, 2)
     );
     if (item.entryFile) {
@@ -97,6 +97,27 @@ describe('scanTargetsDirectory', () => {
     expect(entryMap.size).toBe(0);
     expect(warnings).toEqual([]);
   });
+});
+
+test('scanTargetsDirectory falls back to expo-target.config.json', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'expo-targets-metro-'));
+  tempRoots.push(root);
+  const targetDir = path.join(root, 'targets', 'share-content');
+  fs.mkdirSync(targetDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(targetDir, 'expo-target.config.json'),
+    JSON.stringify({
+      type: 'share',
+      name: 'ShareContent',
+      entry: './targets/share-content/index.tsx',
+    })
+  );
+  const entryPath = path.join(root, 'targets/share-content/index.tsx');
+  fs.writeFileSync(entryPath, 'export default function App() { return null }');
+
+  const { entryMap, warnings } = scanTargetsDirectory(root);
+  expect(warnings).toEqual([]);
+  expect(entryMap.get('targets/share-content/index')).toBe(entryPath);
 });
 
 function buildWithTargetsConfig(root: string) {

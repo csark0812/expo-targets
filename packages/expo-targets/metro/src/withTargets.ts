@@ -23,8 +23,19 @@ function loadTargetConfig(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     warnings.push(
-      `[expo-targets/metro] targets/${dirName}: invalid expo-target.config.json (${message})`
+      `[expo-targets/metro] targets/${dirName}: invalid target.config.json (${message})`
     );
+  }
+}
+
+function resolveTargetConfigJson(targetDir: string): string | undefined {
+  const current = path.join(targetDir, 'target.config.json');
+  if (fs.existsSync(current)) {
+    return current;
+  }
+  const legacy = path.join(targetDir, 'expo-target.config.json');
+  if (fs.existsSync(legacy)) {
+    return legacy;
   }
 }
 
@@ -61,7 +72,7 @@ function registerTargetEntry(opts: {
 }
 
 /**
- * Scan each target's expo-target.config.json for RN entry fields.
+ * Scan each target's target.config.json for RN entry fields.
  * Exported for tests and tooling.
  */
 export function scanTargetsDirectory(projectRoot: string): ScanResult {
@@ -78,12 +89,8 @@ export function scanTargetsDirectory(projectRoot: string): ScanResult {
       continue;
     }
 
-    const configPath = path.join(
-      targetsDir,
-      dir.name,
-      'expo-target.config.json'
-    );
-    if (!fs.existsSync(configPath)) {
+    const configPath = resolveTargetConfigJson(path.join(targetsDir, dir.name));
+    if (!configPath) {
       continue;
     }
 

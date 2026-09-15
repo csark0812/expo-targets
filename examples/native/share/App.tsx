@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 
 const APP_GROUP = 'group.com.expotargets.example.native.share';
-/** Matches expo-target.config.json `name` / Android TARGET_NAME meta. */
+/** Matches target.config.json `name` / Android TARGET_NAME meta. */
 const ANDROID_TARGET_NAME = 'NativeShare';
 const IOS_STORAGE_KEY = 'nativeShare:items';
 

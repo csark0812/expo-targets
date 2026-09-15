@@ -720,7 +720,7 @@ module.exports = withTargets(config, { projectRoot });
     targetConfig.entry = `./targets/${opts.targetFolder}/index.tsx`;
   }
   writeIfMissing(
-    path.join(targetDir, "expo-target.config.json"),
+    path.join(targetDir, "target.config.json"),
     JSON.stringify(targetConfig, null, 2) + "\n",
   );
   writeIfMissing(

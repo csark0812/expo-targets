@@ -83,7 +83,7 @@ examples/.devicewright/artifacts/*
 **/targets/*/ios/build/
 **/targets/*/android/build/
 
-# Target generated resources (regenerated from expo-target.config.json)
+# Target generated resources (regenerated from target.config.json)
 **/targets/*/android/res/
 
 .cursor/*

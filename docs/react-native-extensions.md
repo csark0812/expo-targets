@@ -55,7 +55,7 @@ Stable across **share**, **action**, **clip**, and **messages**. Messages adds A
 
 ### Bootstrap
 
-1. Declare `entry` in `expo-target.config` (path relative to project root).
+1. Declare `entry` in `target.config` (path relative to project root).
 2. Wrap Metro with `withTargets` so the extension host can resolve that entry.
 3. Call `createTarget(name, Component)` in the entry file. The `name` must match config `name` exactly. Share-class registers with `AppRegistry`. expo-ui widgets register the `'widget'` layout through `expo-widgets` (not AppRegistry). For Live Activity slots on the same widget target, also call `createLiveActivityLayout(name, slots)`.
 4. Rebuild native (`npx expo prebuild`, or `npx expo-targets sync` on bare RN). The extension target must embed expo-targets and load the RN host.
@@ -97,7 +97,7 @@ npx expo-targets add
 # Choose: Share Extension → share-ext → iOS → Yes (Use React Native)
 ```
 
-Or manually configure `expo-target.config.json`:
+Or manually configure `target.config.json`:
 
 ```json
 {
@@ -225,7 +225,7 @@ npx expo run:ios --configuration Release
 **If these do not match**, the extension crashes on launch with no useful error message.
 
 ```typescript
-// expo-target.config.json
+// target.config.json
 { "name": "ShareExt" }
 
 // index.tsx - MUST use exact same name
@@ -593,7 +593,7 @@ Causes:
 Solutions:
   - Check all three locations have identical App Group ID:
     • app.json entitlements
-    • expo-target.config.json
+    • target.config.json
     • Swift code (if any)
 ```
 

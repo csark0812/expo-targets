@@ -1,7 +1,6 @@
 import path from 'node:path';
 import process from 'node:process';
 import type { ConfigPlugin } from '@expo/config-plugins';
-import { globSync } from 'glob';
 
 import { withAndroidTarget } from './android/withAndroidTarget';
 import { withAndroidTargetsConfig } from './android/withAndroidTargetsConfig';
@@ -20,6 +19,7 @@ import { withIOSTarget } from './ios/config-plugins/withIOSTarget';
 import { resolveLiveActivityConfig } from './ios/utils/resolveIosKinds';
 import { Logger } from './logger';
 import { resolveNativeUnlink } from './resolveExcludedPackages';
+import { discoverTargetConfigFiles } from './targetConfigFile';
 
 interface EvaluatedTarget {
   config: any;
@@ -45,7 +45,7 @@ export function resolveRuntimeVersionFromExpoConfig(
 }
 
 /**
- * Evaluate every `expo-target.config.*` once, up front, so the validation pass
+ * Evaluate every `target.config.*` once, up front, so the validation pass
  * and the processing pass agree on what they are looking at.
  */
 function evaluateTargetConfigs(
@@ -356,7 +356,7 @@ const withTarget: ConfigPlugin<{
 
   if (!evaluatedConfig.name) {
     throw new Error(
-      `Target in ${targetDirName} must specify 'name' property in expo-target.config`
+      `Target in ${targetDirName} must specify 'name' property in target.config`
     );
   }
 
@@ -483,13 +483,10 @@ export const withTargetsDir: ConfigPlugin<{
   const logger = new Logger(options?.debug ?? false);
   const projectRoot = config._internal?.projectRoot;
 
-  const targetConfigFiles = globSync(
-    `${targetsRoot}/*/expo-target.config.@(js|ts|json)`,
-    {
-      cwd: projectRoot,
-      absolute: true,
-    }
-  );
+  const targetConfigFiles = discoverTargetConfigFiles({
+    targetsRoot,
+    cwd: projectRoot,
+  });
 
   if (targetConfigFiles.length > 0) {
     logger.logSparse(true, `Found ${targetConfigFiles.length} target(s)`);

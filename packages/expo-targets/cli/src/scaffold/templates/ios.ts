@@ -58,7 +58,7 @@ struct WidgetView: View {
 }
 
 ${mainAttr}struct ${name}: Widget {
-    // ⚠️ IMPORTANT: This "kind" must match the "name" field in expo-target.config.json exactly
+    // ⚠️ IMPORTANT: This "kind" must match the "name" field in target.config.json exactly
     let kind: String = "${name}"
 
     var body: some WidgetConfiguration {
@@ -159,7 +159,7 @@ struct WidgetView: View {
 }
 
 ${mainAttr}struct ${name}: Widget {
-    // ⚠️ IMPORTANT: This "kind" must match the "name" field in expo-target.config.json exactly
+    // ⚠️ IMPORTANT: This "kind" must match the "name" field in target.config.json exactly
     let kind: String = "${name}"
 
     var body: some WidgetConfiguration {

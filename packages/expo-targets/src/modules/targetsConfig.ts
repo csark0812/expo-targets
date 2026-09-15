@@ -35,7 +35,7 @@ export function resolveUniqueTarget(
   }
   if (ofType.length === 0) {
     throw new Error(
-      `[expo-targets] No ${type} target configured. Add one under targets/*/expo-target.config.json.`
+      `[expo-targets] No ${type} target configured. Add one under targets/*/target.config.json.`
     );
   }
   if (ofType.length > 1) {
@@ -59,7 +59,7 @@ export function assertMatchesConfig(
     throw new Error(
       `[expo-targets] Strict CNG: ${label} mismatch. ` +
         `config="${expected}" argument="${actual}". ` +
-        `Update expo-target.config.json (config is authoritative).`
+        `Update target.config.json (config is authoritative).`
     );
   }
 }

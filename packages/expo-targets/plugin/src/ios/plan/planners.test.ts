@@ -45,7 +45,7 @@ function makeProps(overrides: Partial<IOSTargetProps> = {}): IOSTargetProps {
     directory: 'targets/my-share',
     configPath: path.join(
       PROJECT_ROOT,
-      'targets/my-share/expo-target.config.js'
+      'targets/my-share/target.config.js'
     ),
     logger: new Logger(false),
     deploymentTarget: '15.1',

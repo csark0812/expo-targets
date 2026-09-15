@@ -35,7 +35,7 @@ function resolveDomain(opts?: FileProviderDomainOpts): {
   if (!(domain?.identifier && domain?.displayName)) {
     throw new Error(
       `[expo-targets] Target "${target.name}" is missing ios.fileProviderDomain ` +
-        `{ identifier, displayName } in expo-target.config.json.`
+        `{ identifier, displayName } in target.config.json.`
     );
   }
   assertMatchesConfig('identifier', domain.identifier, opts?.identifier);

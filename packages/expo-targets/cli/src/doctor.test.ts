@@ -4,6 +4,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 
 import { checkAppGroups } from './checks/appGroups';
+import { warnLegacyConfigName } from './checks/configFilename';
 import { checkEntries } from './checks/entries';
 import { checkLiveActivitiesConfig } from './checks/liveActivitiesConfig';
 import { checkLiveActivityHostApi } from './checks/liveActivityHostApi';
@@ -53,7 +54,7 @@ describe('checkMetro', () => {
   test('skips when no RN entries', () => {
     const root = makeProject({
       'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
-      'targets/share/expo-target.config.json': JSON.stringify({
+      'targets/share/target.config.json': JSON.stringify({
         type: 'share',
         name: 'Share',
         platforms: ['ios'],
@@ -65,7 +66,7 @@ describe('checkMetro', () => {
   test('fails when entry exists but metro lacks withTargets', () => {
     const root = makeProject({
       'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
-      'targets/share/expo-target.config.json': JSON.stringify({
+      'targets/share/target.config.json': JSON.stringify({
         type: 'share',
         name: 'Share',
         platforms: ['ios'],
@@ -81,7 +82,7 @@ describe('checkMetro', () => {
   test('passes with withTargetsMetro alias', () => {
     const root = makeProject({
       'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
-      'targets/share/expo-target.config.json': JSON.stringify({
+      'targets/share/target.config.json': JSON.stringify({
         type: 'share',
         name: 'Share',
         platforms: ['ios'],
@@ -106,7 +107,7 @@ describe('checkAppGroups', () => {
           ios: { bundleIdentifier: 'com.example.app' },
         },
       }),
-      'targets/share/expo-target.config.json': JSON.stringify({
+      'targets/share/target.config.json': JSON.stringify({
         type: 'share',
         name: 'Share',
         platforms: ['ios'],
@@ -132,7 +133,7 @@ describe('checkAppGroups', () => {
           },
         },
       }),
-      'targets/share/expo-target.config.json': JSON.stringify({
+      'targets/share/target.config.json': JSON.stringify({
         type: 'share',
         name: 'Share',
         platforms: ['ios'],
@@ -147,7 +148,7 @@ describe('checkEntries', () => {
   test('fails when entry path is missing', () => {
     const root = makeProject({
       'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
-      'targets/share/expo-target.config.json': JSON.stringify({
+      'targets/share/target.config.json': JSON.stringify({
         type: 'share',
         name: 'Share',
         platforms: ['ios'],
@@ -164,7 +165,7 @@ describe('checkNameSync', () => {
   test('fails when createTarget name mismatches config', () => {
     const root = makeProject({
       'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
-      'targets/share/expo-target.config.json': JSON.stringify({
+      'targets/share/target.config.json': JSON.stringify({
         type: 'share',
         name: 'Share',
         platforms: ['ios'],
@@ -181,7 +182,7 @@ describe('checkNameSync', () => {
   test('passes when names match', () => {
     const root = makeProject({
       'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
-      'targets/share/expo-target.config.json': JSON.stringify({
+      'targets/share/target.config.json': JSON.stringify({
         type: 'share',
         name: 'Share',
         platforms: ['ios'],
@@ -196,7 +197,7 @@ describe('checkNameSync', () => {
   test('passes when createTarget uses Targets.Share member', () => {
     const root = makeProject({
       'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
-      'targets/share/expo-target.config.json': JSON.stringify({
+      'targets/share/target.config.json': JSON.stringify({
         type: 'share',
         name: 'Share',
         platforms: ['ios'],
@@ -214,7 +215,7 @@ describe('checkNameSync gallery kinds', () => {
   test('fails when a gallery kind has no createTarget', () => {
     const root = makeProject({
       'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
-      'targets/widget/expo-target.config.json': JSON.stringify({
+      'targets/widget/target.config.json': JSON.stringify({
         type: 'widget',
         name: 'Home',
         platforms: ['ios'],
@@ -237,7 +238,7 @@ describe('checkNameSync gallery kinds', () => {
   test('passes when every gallery kind has createTarget', () => {
     const root = makeProject({
       'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
-      'targets/widget/expo-target.config.json': JSON.stringify({
+      'targets/widget/target.config.json': JSON.stringify({
         type: 'widget',
         name: 'Home',
         platforms: ['ios'],
@@ -263,7 +264,7 @@ describe('checkNameSync gallery kinds via .widget', () => {
   test('passes when every gallery kind has .widget', () => {
     const root = makeProject({
       'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
-      'targets/widget/expo-target.config.json': JSON.stringify({
+      'targets/widget/target.config.json': JSON.stringify({
         type: 'widget',
         name: 'PoplWidgets',
         platforms: ['ios'],
@@ -286,7 +287,7 @@ describe('warnUnusedWidgetBundle', () => {
   test('warns leftover Bundle.swift when expo-ui lists gallery kinds', () => {
     const root = makeProject({
       'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
-      'targets/widget/expo-target.config.json': JSON.stringify({
+      'targets/widget/target.config.json': JSON.stringify({
         type: 'widget',
         name: 'Home',
         platforms: ['ios'],
@@ -303,7 +304,7 @@ describe('warnUnusedWidgetBundle', () => {
   test('skips live-activity-only kinds', () => {
     const root = makeProject({
       'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
-      'targets/widget/expo-target.config.json': JSON.stringify({
+      'targets/widget/target.config.json': JSON.stringify({
         type: 'widget',
         name: 'Home',
         platforms: ['ios'],
@@ -321,7 +322,7 @@ describe('checkLiveActivityKind', () => {
   test('fails leftover live-activity kinds', () => {
     const root = makeProject({
       'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
-      'targets/widget/expo-target.config.json': JSON.stringify({
+      'targets/widget/target.config.json': JSON.stringify({
         type: 'widget',
         name: 'Home',
         platforms: ['ios'],
@@ -338,7 +339,7 @@ describe('checkLiveActivityKind', () => {
   test('skips when Live Activity is only on ios.liveActivity', () => {
     const root = makeProject({
       'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
-      'targets/widget/expo-target.config.json': JSON.stringify({
+      'targets/widget/target.config.json': JSON.stringify({
         type: 'widget',
         name: 'Home',
         platforms: ['ios'],
@@ -358,7 +359,7 @@ describe('checkLiveActivitiesConfig', () => {
   test('fails when singular and array are both set', () => {
     const root = makeProject({
       'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
-      'targets/widget/expo-target.config.json': JSON.stringify({
+      'targets/widget/target.config.json': JSON.stringify({
         type: 'widget',
         name: 'Home',
         platforms: ['ios'],
@@ -384,7 +385,7 @@ describe('checkLiveActivitiesConfig', () => {
   test('fails duplicate attributesName in liveActivities', () => {
     const root = makeProject({
       'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
-      'targets/widget/expo-target.config.json': JSON.stringify({
+      'targets/widget/target.config.json': JSON.stringify({
         type: 'widget',
         name: 'Home',
         platforms: ['ios'],
@@ -411,7 +412,7 @@ describe('checkLiveActivityHostApi', () => {
   test('warns on LiveActivity.create in target index', () => {
     const root = makeProject({
       'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
-      'targets/widget/expo-target.config.json': JSON.stringify({
+      'targets/widget/target.config.json': JSON.stringify({
         type: 'widget',
         name: 'HelloWidget',
         platforms: ['ios'],
@@ -438,7 +439,7 @@ describe('checkLiveActivityHostApi folder helper', () => {
   test('passes when target index uses folder.liveActivity()', () => {
     const root = makeProject({
       'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
-      'targets/widget/expo-target.config.json': JSON.stringify({
+      'targets/widget/target.config.json': JSON.stringify({
         type: 'widget',
         name: 'HelloWidget',
         platforms: ['ios'],
@@ -461,7 +462,7 @@ describe('checkLiveActivityHostApi folder helper', () => {
   test('warns when multi liveActivities missing .liveActivity(name)', () => {
     const root = makeProject({
       'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
-      'targets/widget/expo-target.config.json': JSON.stringify({
+      'targets/widget/target.config.json': JSON.stringify({
         type: 'widget',
         name: 'PoplWidgets',
         platforms: ['ios'],
@@ -486,5 +487,32 @@ describe('checkLiveActivityHostApi folder helper', () => {
     });
     const warnings = checkLiveActivityHostApi(loadProject(root));
     expect(warnings[0]?.message).toContain('MeetingLiveAttributes');
+  });
+});
+
+describe('warnLegacyConfigName', () => {
+  test('warns when expo-target.config.json is still used', () => {
+    const root = makeProject({
+      'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
+      'targets/share/expo-target.config.json': JSON.stringify({
+        type: 'share',
+        name: 'Share',
+        platforms: ['ios'],
+      }),
+    });
+    const warnings = warnLegacyConfigName(loadProject(root));
+    expect(warnings[0]?.message).toContain('expo-target.config');
+  });
+
+  test('is quiet for target.config.json', () => {
+    const root = makeProject({
+      'app.json': JSON.stringify({ expo: { plugins: ['expo-targets'] } }),
+      'targets/share/target.config.json': JSON.stringify({
+        type: 'share',
+        name: 'Share',
+        platforms: ['ios'],
+      }),
+    });
+    expect(warnLegacyConfigName(loadProject(root))).toHaveLength(0);
   });
 });
