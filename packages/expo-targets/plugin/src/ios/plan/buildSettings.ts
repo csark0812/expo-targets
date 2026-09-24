@@ -172,10 +172,9 @@ function planInheritedSettings(
  * not inherit the iPhone host's IPHONEOS_* settings.
  */
 function planWatchOsSettings(
-  deploymentTarget: string,
-  mainBuildSettings: Record<string, any>
+  deploymentTarget: string
 ): Record<string, string | string[]> {
-  const settings: Record<string, string | string[]> = {
+  return {
     SDKROOT: 'watchos',
     SUPPORTED_PLATFORMS: '"watchos watchsimulator"',
     TARGETED_DEVICE_FAMILY: '"4"',
@@ -193,16 +192,24 @@ function planWatchOsSettings(
     ],
     GENERATE_INFOPLIST_FILE: 'YES',
   };
+}
 
+/**
+ * Xcode signs every target this planner writes. Expo device signing writes
+ * DEVELOPMENT_TEAM only for product types in its signable list, which omits
+ * messages and ExtensionKit. Copy the host team onto every target.
+ */
+function planDevelopmentTeam(
+  mainBuildSettings: Record<string, any>
+): Record<string, string> {
   const team =
     unquote(mainBuildSettings.DEVELOPMENT_TEAM) ||
     process.env.APPLE_TEAM_ID ||
     process.env.DEVELOPMENT_TEAM;
-  if (team) {
-    settings.DEVELOPMENT_TEAM = `"${team}"`;
+  if (!team) {
+    return {};
   }
-
-  return settings;
+  return { DEVELOPMENT_TEAM: `"${team}"` };
 }
 
 /**
@@ -235,10 +242,7 @@ export function planBuildSettings({
   };
 
   if (isWatchOs) {
-    Object.assign(
-      settings,
-      planWatchOsSettings(identity.deploymentTarget, mainBuildSettings)
-    );
+    Object.assign(settings, planWatchOsSettings(identity.deploymentTarget));
   } else {
     settings.IPHONEOS_DEPLOYMENT_TARGET = identity.deploymentTarget;
   }
@@ -273,6 +277,8 @@ export function planBuildSettings({
   if (!isWatchOs && typeConfig.needsIsolatedSearchPaths && !props.entry) {
     Object.assign(settings, planIsolatedSearchPathSettings());
   }
+
+  Object.assign(settings, planDevelopmentTeam(mainBuildSettings));
 
   return settings;
 }

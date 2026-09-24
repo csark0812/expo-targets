@@ -199,6 +199,19 @@ describe('planBuildSettings', () => {
     expect(settings.CODE_SIGN_ENTITLEMENTS).toBe(`"${ENTITLEMENTS_REFERENCE}"`);
   });
 
+  test('copies the host development team onto signed targets', () => {
+    const types = ['share', 'stickers', 'clip', 'app-intent', 'watch'] as const;
+
+    for (const type of types) {
+      const settings = buildSettingsFor({
+        props: { type, name: 'Target' },
+        mainBuildSettings: { DEVELOPMENT_TEAM: '"ABCDE12345"' },
+      });
+
+      expect(settings.DEVELOPMENT_TEAM).toBe('"ABCDE12345"');
+    }
+  });
+
   test('falls back to Swift 5.0 and version 1.0.0 (1)', () => {
     const settings = buildSettingsFor();
 
@@ -265,6 +278,15 @@ describe('planBuildSettings for messages', () => {
     });
 
     expect(settings.ASSETCATALOG_COMPILER_APPICON_NAME).toBeUndefined();
+  });
+
+  test('receives the host development team', () => {
+    const settings = buildSettingsFor({
+      props: { type: 'messages', name: 'MyMessages' },
+      mainBuildSettings: { DEVELOPMENT_TEAM: '"ABCDE12345"' },
+    });
+
+    expect(settings.DEVELOPMENT_TEAM).toBe('"ABCDE12345"');
   });
 });
 
