@@ -937,7 +937,7 @@
     },
     "packages/expo-targets": {
       "name": "expo-targets",
-      "version": "1.0.0",
+      "version": "1.9.3",
       "bin": {
         "expo-targets": "./bin/expo-targets.js",
       },
@@ -956,6 +956,7 @@
         "expo-widgets": "~57.0.9",
         "fs-extra": "^11.2.0",
         "glob": "^10.4.2",
+        "jiti": "^2.7.0",
         "prompts": "^2.4.2",
         "xcode": "3.0.1",
       },
@@ -968,15 +969,9 @@
         "typescript": "~5.3.3",
       },
       "peerDependencies": {
-        "@expo/ui": "*",
         "expo": "*",
         "expo-constants": "*",
-        "expo-widgets": "*",
       },
-      "optionalPeers": [
-        "@expo/ui",
-        "expo-widgets",
-      ],
     },
     "packages/expo-targets-cli": {
       "name": "@expo-targets/cli",
@@ -1905,6 +1900,8 @@
     "jest-worker": ["jest-worker@29.7.0", "", { "dependencies": { "@types/node": "*", "jest-util": "^29.7.0", "merge-stream": "^2.0.0", "supports-color": "^8.0.0" } }, "sha512-eIz2msL/EzL9UFTFFx7jBTkeZfku0yUAyZZZmJ93H2TYEiroIx2PQjEXcwYtYl8zXCxb+PAmA2hLIt/6ZEkPHw=="],
 
     "jimp-compact": ["jimp-compact@0.16.1", "", {}, "sha512-dZ6Ra7u1G8c4Letq/B5EzAxj4tLFHL+cGtdpR+PVm4yzPDj+lCk+AbivWt1eOM+ikzkowtyV7qSqX6qr3t71Ww=="],
+
+    "jiti": ["jiti@2.7.0", "", { "bin": { "jiti": "lib/jiti-cli.mjs" } }, "sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ=="],
 
     "joi": ["joi@17.13.3", "", { "dependencies": { "@hapi/hoek": "^9.3.0", "@hapi/topo": "^5.1.0", "@sideway/address": "^4.1.5", "@sideway/formula": "^3.0.1", "@sideway/pinpoint": "^2.0.0" } }, "sha512-otDA4ldcIx+ZXsKHWmp0YizCweVRZG96J10b0FevjfuncLO1oX59THoAmHkNubYJ+9gWsYsp5k8v4ib6oDv1fA=="],
 

@@ -4,6 +4,27 @@ import * as path from 'node:path';
 import { discoverTargetConfigFiles } from './targetConfigFile';
 import type { DiscoveredTarget, ProjectContext, TargetConfig } from './types';
 
+function evaluateTargetConfigModule(
+  configPath: string,
+  expo: Record<string, unknown>
+): TargetConfig {
+  const fromSource = __dirname.endsWith(`${path.sep}src`);
+  const loaderPath = path.join(
+    __dirname,
+    fromSource
+      ? '../../plugin/src/loadTargetConfigModule.ts'
+      : '../../plugin/build/loadTargetConfigModule.js'
+  );
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const loaded = require(loaderPath) as {
+    evaluateTargetConfigModule: (
+      targetPath: string,
+      expoConfig: unknown
+    ) => TargetConfig;
+  };
+  return loaded.evaluateTargetConfigModule(configPath, expo);
+}
+
 const APP_GROUP_KEY = 'com.apple.security.application-groups';
 
 function readJson(filePath: string): Record<string, unknown> | null {
@@ -66,15 +87,7 @@ function evaluateTargetConfig(
   configPath: string,
   expo: Record<string, unknown>
 ): TargetConfig {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  let evaluated = require(configPath);
-  if (evaluated?.default) {
-    evaluated = evaluated.default;
-  }
-  if (typeof evaluated === 'function') {
-    evaluated = evaluated(expo);
-  }
-  return evaluated as TargetConfig;
+  return evaluateTargetConfigModule(configPath, expo);
 }
 
 function discoverTargets(
