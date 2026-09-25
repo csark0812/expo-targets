@@ -17,6 +17,7 @@ import {
 import { ensureHostLiveActivities } from './ensureHostLiveActivities';
 import { withIOSTarget } from './ios/config-plugins/withIOSTarget';
 import { resolveLiveActivityConfig } from './ios/utils/resolveIosKinds';
+import { evaluateTargetConfigModule } from './loadTargetConfigModule';
 import { Logger } from './logger';
 import { resolveNativeUnlink } from './resolveExcludedPackages';
 import { discoverTargetConfigFiles } from './targetConfigFile';
@@ -52,25 +53,11 @@ function evaluateTargetConfigs(
   targetConfigFiles: string[],
   expoConfig: any
 ): EvaluatedTarget[] {
-  return targetConfigFiles.map((targetPath) => {
-    let evaluatedConfig = require(targetPath);
-
-    // Handle ES module default export (export default config)
-    if (evaluatedConfig?.default) {
-      evaluatedConfig = evaluatedConfig.default;
-    }
-
-    // Handle function exports (like app.config.js)
-    if (typeof evaluatedConfig === 'function') {
-      evaluatedConfig = evaluatedConfig(expoConfig);
-    }
-
-    return {
-      config: evaluatedConfig,
-      targetPath,
-      targetDirName: path.basename(path.dirname(targetPath)),
-    };
-  });
+  return targetConfigFiles.map((targetPath) => ({
+    config: evaluateTargetConfigModule(targetPath, expoConfig),
+    targetPath,
+    targetDirName: path.basename(path.dirname(targetPath)),
+  }));
 }
 
 /**
