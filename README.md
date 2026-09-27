@@ -1,5 +1,10 @@
 # expo-targets
 
+[![npm version](https://img.shields.io/npm/v/expo-targets?logo=npm)](https://www.npmjs.com/package/expo-targets)
+[![npm downloads](https://img.shields.io/npm/dm/expo-targets?logo=npm)](https://www.npmjs.com/package/expo-targets)
+[![test](https://github.com/csark0812/expo-targets/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/csark0812/expo-targets/actions/workflows/test.yml)
+[![license](https://img.shields.io/npm/l/expo-targets)](./LICENSE)
+
 **Source of truth for** package overview.
 
 <!-- doc-meta: owner=eng | last-reviewed=2026-08-10 -->
