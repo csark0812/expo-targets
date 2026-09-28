@@ -151,10 +151,10 @@ function planIMessageAppIconSetting(
  * App Clips compile `AppIcon.appiconset` only when that set is in the user
  * catalog. A missing set with this name fails the asset catalog build.
  *
- * `INCLUDE_ALL_APPICON_ASSETS` is actool `--include-all-app-icons`. Without
- * it, a single-size catalog can stay inside `Assets.car` and the Clip
- * product omits the loose `AppIcon60x60@2x.png` that App Store Connect
- * requires.
+ * The App Clip product type sets `STANDALONE_ICON_BEHAVIOR` to `none`.
+ * That value drops loose icon PNGs and `CFBundleIconFiles`. `default`
+ * restores `AppIcon60x60@2x.png` and `CFBundleIconFiles` = `AppIcon60x60`.
+ * `INCLUDE_ALL_APPICON_ASSETS` does not emit those loose files.
  */
 function planClipAppIconSetting(
   props: IOSTargetProps,
@@ -164,6 +164,7 @@ function planClipAppIconSetting(
     return {
       ASSETCATALOG_COMPILER_APPICON_NAME: 'AppIcon',
       ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS: 'YES',
+      ASSETCATALOG_COMPILER_STANDALONE_ICON_BEHAVIOR: 'default',
     };
   }
   return {};

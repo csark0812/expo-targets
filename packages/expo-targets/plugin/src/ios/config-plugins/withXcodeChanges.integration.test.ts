@@ -188,6 +188,45 @@ describe('withXcodeChanges integration target contents', () => {
   });
 });
 
+describe('withXcodeChanges integration clip AppIcon', () => {
+  test('integration: writes standalone icon behavior for a Clip AppIcon catalog', async () => {
+    const { projectRoot, pbxprojPath } = scaffoldProject();
+    const directory = 'targets/clip-icon';
+    fs.mkdirSync(
+      path.join(
+        projectRoot,
+        directory,
+        'ios',
+        'Assets.xcassets',
+        'AppIcon.appiconset'
+      ),
+      { recursive: true }
+    );
+    const project = loadPbx(pbxprojPath);
+
+    await runPipeline(projectRoot, project, {
+      type: 'clip',
+      name: 'ClipIcon',
+      directory,
+      configPath: path.join(directory, 'target.config.json'),
+      logger: new Logger(false),
+    } as IOSTargetProps);
+
+    const created = findNativeTargetByProductName(project, 'ClipIconTarget');
+    const buildSettings = allBuildSettings(project, created?.target);
+
+    expect(buildSettings.length).toBeGreaterThan(0);
+    for (const settings of buildSettings) {
+      expect(unquote(settings.ASSETCATALOG_COMPILER_APPICON_NAME)).toBe(
+        'AppIcon'
+      );
+      expect(
+        unquote(settings.ASSETCATALOG_COMPILER_STANDALONE_ICON_BEHAVIOR)
+      ).toBe('default');
+    }
+  });
+});
+
 describe('withXcodeChanges integration idempotency', () => {
   test('integration: is idempotent across two runs', async () => {
     const { projectRoot, pbxprojPath } = scaffoldProject();

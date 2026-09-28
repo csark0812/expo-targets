@@ -238,12 +238,18 @@ describe('planBuildSettings for App Clips', () => {
     expect(settings.ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES).toBe('YES');
     expect(settings.ENABLE_PREVIEWS).toBe('YES');
     expect(settings.ASSETCATALOG_COMPILER_APPICON_NAME).toBeUndefined();
-    expect(
-      settings.ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS
-    ).toBeUndefined();
   });
 
-  test('sets the AppIcon compiler name when an AppIcon catalog is present', () => {
+  test('leaves search paths inherited for other types', () => {
+    const settings = buildSettingsFor();
+
+    expect(settings.LIBRARY_SEARCH_PATHS).toBeUndefined();
+    expect(settings.ENABLE_PREVIEWS).toBeUndefined();
+  });
+});
+
+describe('planBuildSettings for App Clip icons', () => {
+  test('restores loose icon files when an AppIcon catalog is present', () => {
     const settings = buildSettingsFor({
       props: { type: 'clip', name: 'MyClip' },
       hasAppIconCatalog: true,
@@ -253,9 +259,22 @@ describe('planBuildSettings for App Clips', () => {
     expect(settings.ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS).toBe(
       'YES'
     );
+    expect(settings.ASSETCATALOG_COMPILER_STANDALONE_ICON_BEHAVIOR).toBe(
+      'default'
+    );
   });
 
-  test('does not set the AppIcon compiler name on other types', () => {
+  test('does not restore loose icon files without an AppIcon catalog', () => {
+    const settings = buildSettingsFor({
+      props: { type: 'clip', name: 'MyClip' },
+    });
+
+    expect(
+      settings.ASSETCATALOG_COMPILER_STANDALONE_ICON_BEHAVIOR
+    ).toBeUndefined();
+  });
+
+  test('does not set Clip icon settings on other types', () => {
     const settings = buildSettingsFor({
       props: { type: 'share', name: 'MyShare' },
       hasAppIconCatalog: true,
@@ -265,13 +284,9 @@ describe('planBuildSettings for App Clips', () => {
     expect(
       settings.ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS
     ).toBeUndefined();
-  });
-
-  test('leaves search paths inherited for other types', () => {
-    const settings = buildSettingsFor();
-
-    expect(settings.LIBRARY_SEARCH_PATHS).toBeUndefined();
-    expect(settings.ENABLE_PREVIEWS).toBeUndefined();
+    expect(
+      settings.ASSETCATALOG_COMPILER_STANDALONE_ICON_BEHAVIOR
+    ).toBeUndefined();
   });
 });
 
@@ -895,6 +910,9 @@ describe('composeXcodeTargetPlan clip AppIcon', () => {
     expect(
       plan.buildSettings.ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS
     ).toBe('YES');
+    expect(
+      plan.buildSettings.ASSETCATALOG_COMPILER_STANDALONE_ICON_BEHAVIOR
+    ).toBe('default');
     expect(plan.infoPlist.contents).toContain('CFBundleIconName');
     expect(plan.infoPlist.contents).toContain('<string>AppIcon</string>');
   });

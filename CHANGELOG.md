@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- App Clip targets with `AppIcon.appiconset` set `ASSETCATALOG_COMPILER_STANDALONE_ICON_BEHAVIOR` to `default`. The App Clip product type sets this to `none`, which omits `AppIcon60x60@2x.png` and `CFBundleIconFiles`.
 - App Clip targets with `AppIcon.appiconset` set `ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS` to `YES`. App Store Connect rejects a Clip that has the icon only inside `Assets.car` and omits `AppIcon60x60@2x.png`.
 - App Clip targets that ship `Assets.xcassets/AppIcon.appiconset` set `ASSETCATALOG_COMPILER_APPICON_NAME` and `CFBundleIconName` to `AppIcon`. App Store Connect rejects a Clip icon without both.
 - TypeScript `target.config.ts` files load during prebuild on Node 22.13 (EAS) without `NODE_OPTIONS=--experimental-strip-types`.

@@ -633,9 +633,11 @@ The plugin then sets `ASSETCATALOG_COMPILER_APPICON_NAME` to `AppIcon`.
 The plugin also sets `CFBundleIconName` to `AppIcon` in the Clip Info.plist.
 App Store Connect requires both values.
 
-The plugin also sets `ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS` to `YES`.
-That setting tells the compiler to include every AppIcon size in the Clip product.
-App Store Connect requires the 120×120 icon file (`AppIcon60x60@2x.png`).
+The plugin also sets `ASSETCATALOG_COMPILER_STANDALONE_ICON_BEHAVIOR` to `default`.
+An App Clip product type otherwise sets that value to `none`.
+`none` omits the loose icon file `AppIcon60x60@2x.png`.
+App Store Connect requires that file.
+The compiler then writes `AppIcon60x60` into `CFBundleIconFiles`.
 
 ### Share Extension
 
