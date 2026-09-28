@@ -39,6 +39,18 @@ async function dismissShareSheet(device: DeviceSession): Promise<void> {
   }
 }
 
+function pointNames(node: {
+  label?: string;
+  value?: string;
+  identifier?: string;
+  type?: string;
+  role?: string;
+}): string[] {
+  return [node.label, node.value, node.identifier, node.type, node.role]
+    .map((value) => String(value ?? "").trim())
+    .filter(Boolean);
+}
+
 /**
  * Find share/action-extension cell via published suite probe
  * (`findSheetRowProbe` + probe taps). `needsViewMore` → expandMore true.
@@ -48,35 +60,49 @@ async function findExtensionRow(
   entry: TargetCatalogEntry,
   timeoutMs = 15_000,
 ) {
+  let screen: { width: number; height: number } | undefined;
   if (entry.needsViewMore) {
-    // iOS 26's opaque share-sheet favorites row exposes the trailing More
-    // control visually but not as a usable selector. Capture the exact
-    // system-UI point before dispatch, then require the named extension row
-    // below as the post-action assertion.
-    const morePoint = { x: 333, y: 652 };
-    const descriptors = await device.inspectPoint(morePoint);
-    if (descriptors.length === 0) {
-      throw new Error("share-sheet More point inspection returned no surface");
+    // Wait for the opaque share sheet before tapping: the host's animation can
+    // take several seconds, and a fast point tap otherwise lands on the host.
+    const { width, height } = (screen = await device.screenSize());
+    const surfacePoint = { x: Math.round(width / 2), y: Math.round(height * 0.64) };
+    const deadline = Date.now() + timeoutMs;
+    let shareSurface: import("../driver").AccessibilityNode[] = [];
+    do {
+      shareSurface = await device.inspectPoint(surfacePoint);
+      if (
+        shareSurface.some((node) =>
+          pointNames(node).some((name) =>
+            /activitylistview|sharesheet\.remotecontainerview/i.test(name),
+          ),
+        )
+      ) {
+        break;
+      }
+      await sleep(250);
+    } while (Date.now() < deadline);
+    if (!shareSurface.some((node) =>
+      pointNames(node).some((name) =>
+        /activitylistview|sharesheet\.remotecontainerview/i.test(name),
+      ),
+    )) {
+      if (shareSurface[0]) {
+        await device.capturePointEvidence(surfacePoint, shareSurface[0]);
+      }
+      throw new Error("share-sheet surface did not appear after host action");
     }
-    await device.capturePointEvidence(morePoint, descriptors[0]!);
-    await device.tap(morePoint);
+    await device.capturePointEvidence(surfacePoint, shareSurface[0]!);
+
+    // The iOS share sheet has two different controls: Apps-row "More" and
+    // action-row "View More". A com.apple.ui-services action extension is in
+    // the latter, not the Apps editor. The opaque surface requires a
+    // screenshot-backed coordinate tap; the extension-row probe remains the
+    // required behavioral oracle.
+    const viewMorePoint = { x: Math.round(width * 0.83), y: Math.round(height * 0.89) };
+    await device.capturePointEvidence(viewMorePoint, shareSurface[0]!);
+    await device.tap(viewMorePoint);
     await sleep(500);
-    const expandedSurface = await device.inspectPoint({ x: 200, y: 560 });
-    if (expandedSurface[0]) {
-      await device.capturePointEvidence({ x: 200, y: 560 }, expandedSurface[0]);
-    }
-    const editPoint = { x: 355, y: 110 };
-    const editSurface = await device.inspectPoint(editPoint);
-    if (editSurface.length === 0) {
-      throw new Error("share-sheet Apps page Edit point inspection returned no surface");
-    }
-    await device.capturePointEvidence(editPoint, editSurface[0]!);
-    await device.tap(editPoint);
-    await sleep(500);
-    const allAppsSurface = await device.inspectPoint({ x: 200, y: 200 });
-    if (allAppsSurface[0]) {
-      await device.capturePointEvidence({ x: 200, y: 200 }, allAppsSurface[0]);
-    }
+    await device.capturePointEvidence(viewMorePoint, shareSurface[0]!);
   }
 
   const names = [
@@ -96,15 +122,11 @@ async function findExtensionRow(
   // at ~636 can ghost-match Example Action while the real row is ~539.
   const listFirstHotspots = entry.needsViewMore
     ? [
-        { x: 200, y: 560 },
-        { x: 200, y: 590 },
-        { x: 200, y: 620 },
-        { x: 200, y: 650 },
-        { x: 200, y: 700 },
-        { x: 200, y: 730 },
-        { x: 200, y: 760 },
-        { x: 100, y: 560 },
-        { x: 100, y: 730 },
+        { x: Math.round((screen?.width ?? 402) * 0.5), y: Math.round((screen?.height ?? 874) * 0.71) },
+        { x: Math.round((screen?.width ?? 402) * 0.5), y: Math.round((screen?.height ?? 874) * 0.75) },
+        { x: Math.round((screen?.width ?? 402) * 0.5), y: Math.round((screen?.height ?? 874) * 0.79) },
+        { x: Math.round((screen?.width ?? 402) * 0.25), y: Math.round((screen?.height ?? 874) * 0.71) },
+        { x: Math.round((screen?.width ?? 402) * 0.25), y: Math.round((screen?.height ?? 874) * 0.79) },
       ]
     : undefined;
 
@@ -305,7 +327,22 @@ export async function runShareActionJourney(
     checklist.push(C1.findExtensionRow);
 
     steps.push("tap-extension");
-    await tapProbeHit(device, row);
+    if (entry.needsViewMore) {
+      // iOS 27's AX frame for the opaque action list is vertically offset from
+      // the rendered sheet (the row probe reports Native Action around y=559,
+      // while its screenshot shows the row around y=618). Anchor the separate
+      // touch to that screenshot-backed row location; never let the mismatched
+      // AX coordinate tap the adjacent Save to Files action.
+      const { width, height } = await device.screenSize();
+      const actionPoint = {
+        x: Math.round(width * 0.3),
+        y: Math.round(height * 0.71),
+      };
+      await device.capturePointEvidence(actionPoint, row.node);
+      await device.tap(actionPoint);
+    } else {
+      await tapProbeHit(device, row);
+    }
     // RN share/action appex is AX-opaque until ~2.5s after open; 1.2s settle
     // left Save/Process hotspots empty and the slow bottom-up sweep timed out.
     await sleep(2_500);
