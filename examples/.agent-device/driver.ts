@@ -392,6 +392,25 @@ export class DeviceSession {
     return nodes;
   }
 
+  async screenSize(): Promise<{ width: number; height: number }> {
+    const result = await this.client.capture.screenshot({
+      ...this.selection(),
+      session: this.session,
+      fullscreen: true,
+      scale: 1,
+    });
+    const width = result.logicalWidth ?? result.width;
+    const height = result.logicalHeight ?? result.height;
+    if (!width || !height) {
+      throw new AgentDeviceCapabilityError(
+        "screen-size",
+        "fullscreen screenshot omitted logical dimensions",
+      );
+    }
+    this.record("screen-size", { width, height });
+    return { width, height };
+  }
+
   async capturePointEvidence(
     point: { x: number; y: number },
     descriptor: AccessibilityNode,

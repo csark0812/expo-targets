@@ -9,7 +9,8 @@
     "android": "expo run:android"
   },
   "dependencies": {
-    "expo": "~57.0.9",
+    "expo": "~57.0.24",
+    "expo-build-properties": "~57.0.21",
     "expo-status-bar": "~57.0.1",
     "expo-targets": "workspace:*",
     "react": "19.2.3",
