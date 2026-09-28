@@ -24,11 +24,10 @@ jobs:
           node-version: "22.13.0"
 
       - run: bun install --frozen-lockfile
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
       - run: bunx biome ci . --error-on-warnings
       - run: bun run typecheck
       - run: bun run test:unit
+      - run: bun run test:agent-device
       - run: bun run build
 
   # L3: drives the real iOS pipeline against a stripped pbxproj fixture.
@@ -41,8 +40,6 @@ jobs:
         with:
           bun-version: latest
       - run: bun install --frozen-lockfile
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
       - run: bun run test:integration
 
   security:
@@ -56,8 +53,6 @@ jobs:
         with:
           bun-version: latest
       - run: bun install --frozen-lockfile
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
       # Transitive Expo/RN advisories often fail hard; keep the report without
       # blocking the PR gate. Gitleaks remains the hard security check.
       - name: Dependency audit

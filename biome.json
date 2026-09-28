@@ -12,7 +12,7 @@
       "!**/dist",
       "!**/*.d.ts",
       "!!**/node_modules",
-      "!**/examples/.devicewright",
+      "!**/examples/.agent-device",
       "!**/scripts"
     ]
   },

@@ -7,7 +7,7 @@ import path from "node:path";
 import {
   OPTIONAL_KITCHEN_SINK,
   REQUIRED_V2,
-} from "../examples/.devicewright/required.ts";
+} from "../examples/.agent-device/required.ts";
 
 const rows = [...REQUIRED_V2, OPTIONAL_KITCHEN_SINK];
 const byPath = new Map<string, { id: string; path: string }>();
@@ -60,7 +60,7 @@ for (const [p, row] of [...byPath.entries()].sort()) {
 
 Thin expo-targets example host for \`${typeHint}\`.
 
-Suite how-to (install, Devicewright, icons): [${ups}/README.md](${ups}/README.md).
+Suite how-to (install, agent-device, icons): [${ups}/README.md](${ups}/README.md).
 
 Type / maturity SSOT: [${docs}/configuration.md](${docs}/configuration.md).
 
@@ -72,10 +72,10 @@ npx expo prebuild --platform ios
 npx expo run:ios
 \`\`\`
 
-Devicewright (operator, after Release install on a booted sim):
+agent-device (operator, after Release install on a booted sim):
 
 \`\`\`bash
-bun run examples:devicewright:matrix --ids=${row.id}
+bun run examples:agent-device:matrix --ids=${row.id}
 \`\`\`
 
 Do not commit generated \`ios/\` / \`android/\`. Never edit \`ExpoTargetsGenerated/\`.

@@ -27,7 +27,7 @@
         android:textSize="11sp"
         android:alpha="0.7" />
 
-    <!-- Custom RemoteViews marker for Devicewright Locked P (expand → ET NCE Content). -->
+    <!-- Custom RemoteViews marker for agent-device Locked P (expand → ET NCE Content). -->
     <TextView
         android:id="@+id/expo_targets_notif_marker"
         android:layout_width="match_parent"

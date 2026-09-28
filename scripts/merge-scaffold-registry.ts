@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-/** Merge scaffolded required-rows + claims into devicewright sources. */
+/** Merge scaffolded required-rows + claims into agent-device sources. */
 import fs from "node:fs";
 import path from "node:path";
 
@@ -23,7 +23,7 @@ function fmtRows(list: typeof rows): string {
     .join("\n");
 }
 
-const requiredPath = path.join(ROOT, "examples/.devicewright/required.ts");
+const requiredPath = path.join(ROOT, "examples/.agent-device/required.ts");
 let required = fs.readFileSync(requiredPath, "utf8");
 required = required.replace(
   /export const REQUIRED_V2_PHASE4: readonly RequiredTargetRow\[\] = \[\] as const;/,
@@ -35,7 +35,7 @@ required = required.replace(
 );
 fs.writeFileSync(requiredPath, required);
 
-const claimsPath = path.join(ROOT, "examples/.devicewright/claims.ts");
+const claimsPath = path.join(ROOT, "examples/.agent-device/claims.ts");
 const claimsBody = claims
   .map((c) => `  { id: '${c.id}', reason: ${JSON.stringify(c.reason)} },`)
   .join("\n");
@@ -69,7 +69,7 @@ export function claimForId(id: string): ClaimsEntry | undefined {
 export function assertOsLimitAllowed(id: string): void {
   if (!BY_ID.has(id)) {
     throw new Error(
-      \`os-limit claim for "\${id}" is not in OS_LIMIT_CLAIMS — add it in the same PR as the type (examples/.devicewright/claims.ts)\`,
+      \`os-limit claim for "\${id}" is not in OS_LIMIT_CLAIMS — add it in the same PR as the type (examples/.agent-device/claims.ts)\`,
     );
   }
 }
@@ -77,7 +77,7 @@ export function assertOsLimitAllowed(id: string): void {
 );
 
 // Append catalog entries
-const catalogPath = path.join(ROOT, "examples/.devicewright/catalog.ts");
+const catalogPath = path.join(ROOT, "examples/.agent-device/catalog.ts");
 let catalog = fs.readFileSync(catalogPath, "utf8");
 if (!catalog.includes("'notification-service'")) {
   const extras = rows

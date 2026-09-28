@@ -68,7 +68,7 @@ function buildIntentFilters(
   rules: ShareExtensionActivationRule[] | undefined
 ): any[] {
   if (type === 'action') {
-    // PROCESS_TEXT = selection toolbar; SEND = host Share.share / DW openShareText
+    // PROCESS_TEXT = selection toolbar; SEND = host Share.share / agent-device share intent
     // Locked P (host sheet → chooser → Activity). MIME from activationRules.
     const filters: any[] = [
       {

@@ -9,8 +9,8 @@ import path from "node:path";
 import {
   REQUIRED_ANDROID,
   REQUIRED_ANDROID_IDS,
-} from "../examples/.devicewright/required";
-import { TARGET_CATALOG, hostLaunchId } from "../examples/.devicewright/catalog";
+} from "../examples/.agent-device/required";
+import { TARGET_CATALOG, hostLaunchId } from "../examples/.agent-device/catalog";
 
 const root = path.resolve(import.meta.dir, "..");
 const device =
@@ -20,6 +20,28 @@ const idsArg = process.argv.find((a) => a.startsWith("--ids="));
 const ids = idsArg
   ? idsArg.slice("--ids=".length).split(",").filter(Boolean)
   : [...REQUIRED_ANDROID_IDS];
+
+function resolveAndroidSdkRoot(): string | undefined {
+  const configured = process.env.ANDROID_HOME ?? process.env.ANDROID_SDK_ROOT;
+  if (configured && fs.existsSync(configured)) return configured;
+
+  const standard = path.join(process.env.HOME ?? "", "Library/Android/sdk");
+  if (fs.existsSync(standard)) return standard;
+
+  for (const segment of (process.env.PATH ?? "").split(path.delimiter)) {
+    const executable = path.join(segment, "sdkmanager");
+    if (!fs.existsSync(executable)) continue;
+    const resolved = fs.realpathSync(executable);
+    const root = path.resolve(path.dirname(resolved), "../../..");
+    if (fs.existsSync(path.join(root, "platform-tools"))) return root;
+  }
+  return undefined;
+}
+
+const androidSdkRoot = resolveAndroidSdkRoot();
+const androidBuildEnv = androidSdkRoot
+  ? { ANDROID_HOME: androidSdkRoot, ANDROID_SDK_ROOT: androidSdkRoot }
+  : undefined;
 
 function run(cmd: string, cwd: string, env?: NodeJS.ProcessEnv): void {
   console.log(`\n$ (${cwd}) ${cmd}`);
@@ -62,6 +84,7 @@ for (const id of ids) {
     run(
       "./gradlew assembleRelease -x lintVitalAnalyzeRelease -x lintVitalReportRelease -x lintVitalRelease",
       androidDir,
+      androidBuildEnv,
     );
     const apk = findApk(androidDir);
     run(`adb -s ${device} install -r "${apk}"`, root);

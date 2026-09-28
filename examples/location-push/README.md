@@ -2,7 +2,7 @@
 
 Thin expo-targets example host for `location-push`.
 
-Suite how-to (install, Devicewright, icons): [../README.md](../README.md).
+Suite how-to (install, agent-device, icons): [../README.md](../README.md).
 
 Type / maturity SSOT: [../../docs/configuration.md](../../docs/configuration.md).
 
@@ -14,10 +14,10 @@ npx expo prebuild --platform ios
 npx expo run:ios
 ```
 
-Devicewright (operator, after Release install on a booted sim):
+agent-device (operator, after Release install on a booted sim):
 
 ```bash
-bun run examples:devicewright:matrix --ids=location-push
+bun run examples:agent-device:matrix --ids=location-push
 ```
 
 Do not commit generated `ios/` / `android/`. Never edit `ExpoTargetsGenerated/`.

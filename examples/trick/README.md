@@ -12,10 +12,10 @@ npx expo run:ios
 
 From the monorepo root, run `bun install` once before `npm install` in this folder.
 
-Devicewright (operator, after Release install on a booted sim):
+agent-device (operator, after Release install on a booted sim):
 
 ```bash
-bun run examples:devicewright:matrix --ids=live-activity
+bun run examples:agent-device:matrix --ids=live-activity
 ```
 
 Do not commit generated `ios/`. Never edit `ExpoTargetsGenerated/`.

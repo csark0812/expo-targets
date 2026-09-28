@@ -107,7 +107,7 @@ Showcase subset (common adoption path). **Full type set and maturity (~47 types)
 
 **Legend:** ✅ Production ready · 🔜 Planned · — Not applicable
 
-> ‡Android share/action: dedicated Activities + RN `entry` host (TTI + Devicewright green — spike `android-rn-host-tti-2026-08-10.md`). Showcase mark waits on notification FCM close. §Android notifications: host-process; FCM receive wired — shade green with `FCM_*` retires this mark. Widget ownership and Android LA → ongoing-notification: [widgets.md](./docs/widgets.md), [limits.md](./docs/limits.md). Full matrix: [configuration.md](./docs/configuration.md).
+> ‡Android share/action: dedicated Activities + RN `entry` host (TTI baseline green — spike `android-rn-host-tti-2026-08-10.md`; agent-device parity remains capability-gated). Showcase mark waits on notification FCM close. §Android notifications: host-process; FCM receive wired — shade green with `FCM_*` retires this mark. Widget ownership and Android LA → ongoing-notification: [widgets.md](./docs/widgets.md), [limits.md](./docs/limits.md). Full matrix: [configuration.md](./docs/configuration.md).
 >
 > Wallet, Safari, Network Extension family, file providers, and the rest: [configuration.md](./docs/configuration.md). Lib floor vs Apple gates: [limits.md](./docs/limits.md). **No new orphan stubs** — [deprecations.md](./docs/deprecations.md).
 
@@ -148,9 +148,9 @@ npm install && npx expo run:ios
 | [stickers](./examples/stickers)         | Asset-only sticker pack                                           |
 | [widgets](./examples/widgets)           | iOS WidgetKit + Live Activities ([widgets.md](./docs/widgets.md)) |
 | [kitchen-sink](./examples/kitchen-sink) | Five primary types in one host (messages, not stickers)           |
-| [trick](./examples/trick)               | Multi-target kitchen sink (Devicewright coverage host)            |
+| [trick](./examples/trick)               | Multi-target kitchen sink (agent-device coverage host)            |
 
-See [examples/README.md](./examples/README.md) for the full suite (~48 hosts), Devicewright coverage, and stub READMEs.
+See [examples/README.md](./examples/README.md) for the full suite (~48 hosts), agent-device coverage, and stub READMEs.
 
 ---
 

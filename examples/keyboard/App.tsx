@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 
-/** Typed into the host field by Devicewright (custom keyboard inserts "ET"). */
+/** Typed into the host field by agent-device (custom keyboard inserts "ET"). */
 export const UITEST_KEYBOARD_TYPED = 'ET';
 
 async function openImeSettings() {

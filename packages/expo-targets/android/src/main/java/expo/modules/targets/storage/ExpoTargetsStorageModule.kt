@@ -181,7 +181,7 @@ class ExpoTargetsStorageModule : Module() {
     }
 
     /**
-     * Host helper for network-packet-tunnel Devicewright Locked P.
+     * Host helper for network-packet-tunnel agent-device Locked P.
      * Starts the system VpnService.prepare consent UI when needed.
      * @return "consent-shown" | "already-consented" | "unavailable"
      */
@@ -203,7 +203,7 @@ class ExpoTargetsStorageModule : Module() {
     }
 
     /**
-     * Host helper for Devicewright Android widget journeys.
+     * Host helper for agent-device Android widget journeys.
      * Shows the system "Add to Home screen?" pin sheet for a widget target.
      * @return "requested" | "already-hosted" | "unsupported" | "unknown-target" | "no-activity" | "failed"
      */

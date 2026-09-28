@@ -105,7 +105,7 @@ function NseHostView({
         com.expotargets.example.notification-service
       </Text>
       <Text testID="text-notif-perm">{perm}</Text>
-      {/* Devicewright scrapes this AX label for the APNs Sandbox device token. */}
+      {/* agent-device scrapes this AX label for the APNs Sandbox device token. */}
       <Text testID="text-device-push-token" selectable>
         {pushToken}
       </Text>

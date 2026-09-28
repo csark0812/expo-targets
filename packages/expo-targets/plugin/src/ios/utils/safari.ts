@@ -416,7 +416,7 @@ function writeContentScriptStubs(
   contentScripts: NonNullable<SafariManifestConfig['content_scripts']>,
   displayName: string
 ): void {
-  const contentStub = `// ${displayName} content script — Devicewright runtime proof
+  const contentStub = `// ${displayName} content script — agent-device runtime proof
 (function () {
   var MARKER = 'expo-targets uitest safari content';
   try {

@@ -70,7 +70,17 @@ AuthKey_*.p8
 # Ephemeral agent workspace (handoffs, etc.)
 _agent/
 
-# Devicewright suite run outputs (keep committed spikes + leftovers + matrix gates)
+# agent-device suite run outputs (keep committed spikes + leftovers + matrix gates)
+examples/.agent-device/artifacts/*
+!examples/.agent-device/artifacts/spikes/
+!examples/.agent-device/artifacts/spikes/**
+!examples/.agent-device/artifacts/leftovers/
+!examples/.agent-device/artifacts/leftovers/**
+!examples/.agent-device/artifacts/matrix/
+!examples/.agent-device/artifacts/matrix/**
+
+# Legacy Devicewright proof is immutable. Ignore any new run output while
+# retaining the already committed historical evidence below these folders.
 examples/.devicewright/artifacts/*
 !examples/.devicewright/artifacts/spikes/
 !examples/.devicewright/artifacts/spikes/**

@@ -69,7 +69,7 @@ class PhotoEditingViewController: UIViewController, PHContentEditingController {
       data: Data("grayscale".utf8)
     )
 
-    // Done-persistence marker for host Devicewright asserts.
+    // Done-persistence marker for host agent-device asserts.
     if let defaults = UserDefaults(suiteName: appGroup) {
       defaults.set("expo-targets uitest photo-edit done", forKey: "photoEdit:lastDone")
       defaults.set(Date().timeIntervalSince1970, forKey: "photoEdit:lastDoneAt")

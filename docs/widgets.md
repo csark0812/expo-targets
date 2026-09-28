@@ -182,11 +182,11 @@ Use the same `appGroup` as `target.config.json`.
 
 - `addUserInteractionListener` — widget Button presses (iOS AppIntent → host; Android Glance/RemoteViews Bump → `ExpoTargetsStorage` `onUserInteraction` with the same event shape).
 - `createLiveActivityLayout(name, slots)` — multi-slot LA UI in the same entry as the home Layout; host code uses `createTarget('Folder').liveActivity('AttributesName')` to start/update/end.
-- `ios.liveActivity.pushType: "token"` — native CNG requests ActivityKit push tokens; `addPushToStartTokenListener` for push-to-start. Simulator cannot prove APNs — Devicewright CLAIMS for DI / push / StandBy.
+- `ios.liveActivity.pushType: "token"` — native CNG requests ActivityKit push tokens; `addPushToStartTokenListener` for push-to-start. Simulator cannot prove APNs — agent-device CLAIMS for DI / push / StandBy.
 
 ## Android widgets
 
-Android home-screen widgets (Glance / RemoteViews) are **first-class** in expo-targets (Kotlin Compose deepen under `targets/<name>/android/*.kt`, same layout as `ios/*.swift`). Same Devicewright DoD as iOS when green.
+Android home-screen widgets (Glance / RemoteViews) are **first-class** in expo-targets (Kotlin Compose deepen under `targets/<name>/android/*.kt`, same layout as `ios/*.swift`). Same agent-device DoD as iOS when green.
 
 **Parity with iOS expo-ui is Glance deepen, not a JS sandbox.** App Widget cannot run the `'widget'` layout. The demo contract is:
 

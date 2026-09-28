@@ -9,7 +9,7 @@ import android.widget.LinearLayout
 
 /**
  * Minimal IME (Wave 3b keyboard). Settings → Language & input enablement is leftover.
- * Inserts `ET` via the labeled key (Devicewright journeys assert `typed:ET`).
+ * Inserts `ET` via the labeled key (agent-device journeys assert `typed:ET`).
  */
 open class ExpoTargetsInputMethodService : InputMethodService() {
   override fun onCreateInputView(): View {

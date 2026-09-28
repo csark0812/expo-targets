@@ -2,7 +2,7 @@
 
 Thin expo-targets example host for `share` (native UI — no RN `entry`).
 
-Suite how-to (install, Devicewright, icons): [../../README.md](../../README.md).
+Suite how-to (install, agent-device, icons): [../../README.md](../../README.md).
 
 Type / maturity SSOT: [../../../docs/configuration.md](../../../docs/configuration.md).
 
@@ -18,10 +18,10 @@ npx expo prebuild --platform android
 npx expo run:android
 ```
 
-Devicewright (operator, after Release install on a booted sim):
+agent-device (operator, after Release install on a booted sim):
 
 ```bash
-bun run examples:devicewright:matrix --ids=native-share
+bun run examples:agent-device:matrix --ids=native-share
 ```
 
 Do not commit generated `ios/` / `android/`. Never edit `ExpoTargetsGenerated/`.

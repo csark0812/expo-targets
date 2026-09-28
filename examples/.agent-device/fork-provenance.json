@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "upstream": {
+    "repository": "https://github.com/callstack/agent-device",
+    "baseVersion": "0.21.15",
+    "baseCommit": "16e07572ab28227563fd76ab062cb375c4b7e1db"
+  },
+  "fork": {
+    "repository": "https://github.com/csark0812/agent-device",
+    "package": "@csark0812/agent-device",
+    "releaseCommit": "ea9c992b187c2f372f89e2541e8c5b4ebfff31ac",
+    "preparedVersion": "0.21.15-et.1",
+    "publishedVersion": "0.21.15-et.1",
+    "releaseTag": "v0.21.15-et.1",
+    "releaseUrl": "https://github.com/csark0812/agent-device/releases/tag/v0.21.15-et.1",
+    "tarballUrl": "https://github.com/csark0812/agent-device/releases/download/v0.21.15-et.1/csark0812-agent-device-0.21.15-et.1.tgz",
+    "tarballSha1": "34ccc5e4f963d23ed0ab0846d3af80f2188c2319",
+    "integrity": "sha512-nEvzML1SMfzx0rKEh3iB/npG7SbZ8AhkcCRpw1B4NHL1kFUop/duN20H8Fg6l4A7MKBykksCo1605yemR/Z5EA==",
+    "publishStatus": "public-github-release"
+  },
+  "contributions": [
+    {
+      "capability": "point-inspection",
+      "commit": "471df4ac21a17fa34995abbe39fa3ad03898dea4",
+      "upstreamPullRequest": "https://github.com/callstack/agent-device/pull/2999",
+      "state": "open"
+    },
+    {
+      "capability": "launch-environment",
+      "commit": "d11abc396d068e267bb423a31c1d706e1680c467",
+      "upstreamPullRequest": "https://github.com/callstack/agent-device/pull/3000",
+      "state": "open"
+    },
+    {
+      "capability": "screen-lock",
+      "commit": "768c19306f94c3ded2a5563bfedc225ebe7f1315",
+      "upstreamPullRequest": "https://github.com/callstack/agent-device/pull/3001",
+      "state": "open"
+    },
+    {
+      "capability": "wearable-pairing",
+      "commit": "426941e5057f2f7242b86d0c11072ca06cb28de1",
+      "upstreamPullRequest": "https://github.com/callstack/agent-device/pull/3002",
+      "state": "open"
+    },
+    {
+      "capability": "watchos-runtime",
+      "commit": "39951102d0acceb626a712ac8faf6c89efa21d3f",
+      "upstreamPullRequest": "https://github.com/callstack/agent-device/pull/3003",
+      "state": "open"
+    }
+  ]
+}

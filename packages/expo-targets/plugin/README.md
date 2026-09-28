@@ -68,7 +68,7 @@ The same PR must ship the full per-type DoD ([deprecations.md](../../../docs/dep
 1. **`src/domain/characteristics.ts`** — product type, frameworks, extension point, Info.plist base, RN flags. Prefer a flag over a plan-layer branch.
 2. **`packages/expo-targets/cli/src/scaffold/`** — scaffold template for the type.
 3. **`examples/<id>`** — production-thin host with `target.config` + principal.
-4. **Devicewright** — journey under `examples/.devicewright/`, row in `required.ts` / `touchpoints.ts` / `claims.ts` as needed.
+4. **agent-device** — journey under `examples/.agent-device/`, row in `required.ts` / `touchpoints.ts` / `claims.ts` as needed.
 5. Docs: maturity in [configuration.md](../../../docs/configuration.md) only (README showcase stays curated).
 
 Orphan config-only stubs are closed — see [deprecations.md](../../../docs/deprecations.md).
