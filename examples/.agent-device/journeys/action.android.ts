@@ -272,7 +272,8 @@ export async function runAndroidActionJourney(
       } catch {
         // optional
       }
-      await device.terminateApp(pkg);
+      // Preserve the active agent-device session; apps.close makes the
+      // following HOME/share commands fail with NO_ACTIVE_SESSION.
       await device.pressButton({ button: "HOME" });
       await sleep(400);
       await device.openShareText("expo-targets action process-text sample");

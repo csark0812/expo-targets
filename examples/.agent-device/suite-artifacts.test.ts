@@ -68,9 +68,9 @@ describe("agent-device artifact contract", () => {
       device: "fixture-device",
       runnerProvenance: {
         package: "@csark0812/agent-device",
-        version: "0.21.15-et.1",
+        version: "0.21.15-et.3",
         releaseCommit: "release-commit",
-        releaseUrl: "https://github.com/csark0812/agent-device/releases/tag/v0.21.15-et.1",
+        releaseUrl: "https://github.com/csark0812/agent-device/releases/tag/v0.21.15-et.3",
         integrity: "sha512-fixture",
         upstreamBaseCommit: "upstream-commit",
         upstreamPullRequests: ["https://github.com/callstack/agent-device/pull/2999"],
@@ -86,7 +86,7 @@ describe("agent-device artifact contract", () => {
     expect(manifest.finishedAt).toBeString();
     expect(manifest.runnerProvenance).toEqual(
       expect.objectContaining({
-        version: "0.21.15-et.1",
+        version: "0.21.15-et.3",
         upstreamPullRequests: ["https://github.com/callstack/agent-device/pull/2999"],
       }),
     );
@@ -99,7 +99,7 @@ describe("agent-device artifact contract", () => {
     const manifest = JSON.parse(
       fs.readFileSync(path.join(artifactDir, "run-manifest.json"), "utf8"),
     ) as { runnerVersion?: string; runnerProvenance?: { version?: string } };
-    expect(manifest.runnerVersion).toBe("0.21.15-et.1");
+    expect(manifest.runnerVersion).toBe("0.21.15-et.3");
     expect(manifest.runnerVersion).toBe(manifest.runnerProvenance?.version);
   });
 

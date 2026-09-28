@@ -15,9 +15,11 @@ import {
   type SuiteMatrixRow,
   type SuiteRowResult,
 } from "./suite";
-import { ensureHostReleaseInstall } from "./ensure-install";
+import {
+  ensureAndroidReleaseInstalls,
+  ensureHostReleaseInstall,
+} from "./ensure-install";
 import { journeyFor, stubResult } from "./journeys";
-import { dismissSystemAlerts } from "./journeys/helpers";
 import { assertOsLimitAllowed } from "./claims";
 import {
   REQUIRED_ANDROID,
@@ -236,7 +238,6 @@ function buildSuiteRows(
               id: row.id,
               deviceId: device.deviceId,
             });
-            await dismissSystemAlerts(device, 3_000, 4);
           } catch (e) {
             return {
               id: row.id,
@@ -296,6 +297,18 @@ async function runAndroidTargetMatrix(
   let runError: string | undefined;
   try {
     if (liveRows.length > 0) {
+      if (options.ensureInstall === true) {
+        try {
+          await ensureAndroidReleaseInstalls({
+            ids: liveRows.map((row) => row.id),
+            deviceId: options.androidDevice ?? "emulator-5554",
+          });
+        } catch (error) {
+          // Continue into the matrix so successfully installed hosts still
+          // produce row-scoped evidence; missing apps normalize to operator.
+          console.error(`[ensure-install] Android batch failed: ${String(error)}`);
+        }
+      }
       // Fail-fast on foreign PID lock (MCP often holds the emulator). Library
       // default waits 2h — that looks like a hang. Override via env if needed.
       const lockWaitMs = Number(

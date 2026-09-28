@@ -21,7 +21,6 @@ import {
   sleep,
   tapCenter,
   tapId,
-  tapNamedAndroid,
   tapProbeHit,
   waitForId,
   waitForNamed,
@@ -67,13 +66,7 @@ async function acceptNotificationPermission(
 }
 
 async function openNotificationShade(device: DeviceSession): Promise<void> {
-  await device.swipe({
-    xStart: 540,
-    yStart: 8,
-    xEnd: 540,
-    yEnd: 1400,
-    duration: 0.45,
-  });
+  await device.showNotificationShade();
   await sleep(ANDROID_POST_TAP_MS);
 }
 
@@ -233,7 +226,16 @@ export async function runAndroidNotificationContentJourney(
   try {
     steps.push("android-launch-host");
     await device.launchApp(pkg, { terminateRunning: true });
-    await dismissSystemAlerts(device);
+    try {
+      await device.setPrivacy({
+        action: "grant",
+        service: "notifications",
+        bundleId: pkg,
+      });
+      steps.push("notif-privacy-grant");
+    } catch {
+      steps.push("notif-privacy-grant-miss");
+    }
     for (let i = 0; i < 6; i++) {
       if (await acceptNotificationPermission(device)) {
         steps.push("notif-permission-allow");
@@ -294,6 +296,7 @@ export async function runAndroidNotificationContentJourney(
     steps.push("post-rich-content");
     await tapId(device, "btn-android-rich-notif", 8_000);
     await sleep(ANDROID_SETTINGS_SETTLE_MS);
+    let postedTitle = "";
     try {
       const tree = await device.accessibilityTree();
       const payload = tree.find((n) => n.identifier === entry.testIds.lastPayload);
@@ -301,32 +304,38 @@ export async function runAndroidNotificationContentJourney(
       if (!/^rich-\d+/i.test(text)) {
         throw new Error(`NCE post did not update host payload; last=${text || "none"}`);
       }
+      postedTitle = text;
       steps.push("post-rich-payload-ok");
     } catch (e) {
       throw e instanceof Error
         ? e
         : new Error(`NCE post did not update host payload; ${String(e)}`);
     }
+    await device.waitForActiveNotification(
+      pkg,
+      [postedTitle, "RemoteViews content"],
+      8_000,
+    );
+    steps.push("notification-active-corroborated");
 
     await device.pressButton({ button: "HOME" });
     await sleep(500);
+    await device.waitForActiveNotification(
+      pkg,
+      [postedTitle, "RemoteViews content"],
+      2_000,
+    );
+    steps.push("notification-active-after-home");
     steps.push("home-before-shade");
 
     steps.push("shade-open");
     await openNotificationShade(device);
-    if (await tapNamedAndroid(device, ["Clear all"], 1_200)) {
-      steps.push("shade-cleared");
-      await device.pressButton({ button: "HOME" }).catch(() => undefined);
-      await sleep(300);
-      await device.launchApp(pkg, { terminateRunning: false });
-      await waitForId(device, hostReadyTestId(entry.testIds), 10_000);
-      await tapId(device, "btn-android-rich-notif", 8_000);
-      await sleep(ANDROID_SETTINGS_SETTLE_MS);
-      await device.pressButton({ button: "HOME" });
-      await sleep(400);
-      await openNotificationShade(device);
-      steps.push("post-rich-after-clear");
-    }
+    await device.waitForActiveNotification(
+      pkg,
+      [postedTitle, "RemoteViews content"],
+      2_000,
+    );
+    steps.push("notification-active-in-shade");
 
     let marker = await waitForNceMarker(device, 4_000);
     if (!marker) {

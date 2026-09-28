@@ -124,6 +124,12 @@ async function pickShareTarget(
 
 /** Android native Activity primary is "Save"; iOS catalog may say "Save to App". */
 async function tapSave(device: DeviceSession, entry: TargetCatalogEntry): Promise<void> {
+  try {
+    await tapId(device, "share-expoui-save", 2_000);
+    return;
+  } catch {
+    // The grouped Android share tile can route to the RN or Expo UI target.
+  }
   const labels = [
     ...entry.completeButton.split(",").map((s) => s.trim()).filter(Boolean),
     "Save",
@@ -149,6 +155,13 @@ async function treeFlat(device: DeviceSession): Promise<string> {
 }
 
 async function assertShareActivityUi(device: DeviceSession): Promise<void> {
+  try {
+    await waitForId(device, "share-expoui-save", 2_000);
+    await waitForId(device, "share-expoui-open-main", 2_000);
+    return;
+  } catch {
+    // Fall through to the ordinary React Native activity labels.
+  }
   const flat = await treeFlat(device);
   if (!/Open main app/i.test(flat)) {
     throw new Error(
@@ -164,6 +177,13 @@ async function waitForShareChrome(
   device: DeviceSession,
   timeoutMs = 8_000,
 ): Promise<void> {
+  try {
+    await waitForId(device, "share-expoui-save", Math.min(timeoutMs, 3_000));
+    await waitForId(device, "share-expoui-open-main", Math.min(timeoutMs, 3_000));
+    return;
+  } catch {
+    // The non-Expo UI share activity exposes visible button labels instead.
+  }
   const deadline = Date.now() + timeoutMs;
   let last = "";
   while (Date.now() < deadline) {
@@ -287,14 +307,20 @@ export async function runAndroidShareJourney(
       await openHostShareSheet(device, entry);
       await pickShareTarget(device, entry);
       await waitForShareChrome(device);
-      await tapLabeledButton(device, "Open main app", 8_000);
+      try {
+        await tapId(device, "share-expoui-open-main", 2_000);
+      } catch {
+        await tapLabeledButton(device, "Open main app", 8_000);
+      }
       await sleep(ANDROID_SETTINGS_SETTLE_MS);
       await waitForHostMain(device, entry);
       steps.push("open-main-ok");
 
       // Soft smoke: agent-device share intent. OEM choosers often omit our target — never fail green.
       steps.push("system-share-text-smoke");
-      await device.terminateApp(pkg);
+      // Keep the named agent-device session alive. apps.close ends the active
+      // Android automation session, so HOME is the non-destructive way to
+      // background the host before dispatching the share intent.
       await device.pressButton({ button: "HOME" });
       await sleep(400);
       await device.openShareText(entry.payloadMarker);

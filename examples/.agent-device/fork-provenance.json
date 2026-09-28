@@ -8,20 +8,20 @@
   "fork": {
     "repository": "https://github.com/csark0812/agent-device",
     "package": "@csark0812/agent-device",
-    "releaseCommit": "ea9c992b187c2f372f89e2541e8c5b4ebfff31ac",
-    "preparedVersion": "0.21.15-et.1",
-    "publishedVersion": "0.21.15-et.1",
-    "releaseTag": "v0.21.15-et.1",
-    "releaseUrl": "https://github.com/csark0812/agent-device/releases/tag/v0.21.15-et.1",
-    "tarballUrl": "https://github.com/csark0812/agent-device/releases/download/v0.21.15-et.1/csark0812-agent-device-0.21.15-et.1.tgz",
-    "tarballSha1": "34ccc5e4f963d23ed0ab0846d3af80f2188c2319",
-    "integrity": "sha512-nEvzML1SMfzx0rKEh3iB/npG7SbZ8AhkcCRpw1B4NHL1kFUop/duN20H8Fg6l4A7MKBykksCo1605yemR/Z5EA==",
+    "releaseCommit": "702f01385d75f63a021b79352e89716d37369c0b",
+    "preparedVersion": "0.21.15-et.3",
+    "publishedVersion": "0.21.15-et.3",
+    "releaseTag": "v0.21.15-et.3",
+    "releaseUrl": "https://github.com/csark0812/agent-device/releases/tag/v0.21.15-et.3",
+    "tarballUrl": "https://github.com/csark0812/agent-device/releases/download/v0.21.15-et.3/csark0812-agent-device-0.21.15-et.3.tgz",
+    "tarballSha1": "1fc76e007fe9e96faadc0c283ff70a9c313438a5",
+    "integrity": "sha512-pUh6rkSo5FQ7v1FWnaHufz0qnThRwdEvd6aXN2lx3w1k4lYVL9UyxxR+PPOLO8o2qmJXPH1mDmEAqXO61yHBvg==",
     "publishStatus": "public-github-release"
   },
   "contributions": [
     {
       "capability": "point-inspection",
-      "commit": "471df4ac21a17fa34995abbe39fa3ad03898dea4",
+      "commit": "a55892e14a892bad70b2268926e2cbdd2078c8e2",
       "upstreamPullRequest": "https://github.com/callstack/agent-device/pull/2999",
       "state": "open"
     },

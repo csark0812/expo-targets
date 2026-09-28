@@ -105,7 +105,7 @@ describe("Devicewright replacement guard", () => {
       };
     };
     expect(pkg.devDependencies?.["agent-device"]).toBe(provenance.fork.tarballUrl);
-    expect(provenance.fork.publishedVersion).toBe("0.21.15-et.1");
+    expect(provenance.fork.publishedVersion).toBe("0.21.15-et.3");
     expect(provenance.fork.publishStatus).toBe("public-github-release");
     const lock = fs.readFileSync(path.join(root, "bun.lock"), "utf8");
     expect(lock).toContain(provenance.fork.tarballUrl);

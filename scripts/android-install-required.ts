@@ -68,6 +68,7 @@ function findApk(androidDir: string): string {
 }
 
 const failed: string[] = [];
+const installedHosts = new Set<string>();
 for (const id of ids) {
   const row = REQUIRED_ANDROID.find((r) => r.id === id);
   if (!row) {
@@ -77,6 +78,11 @@ for (const id of ids) {
   const entry = TARGET_CATALOG[id];
   const pkg = entry ? hostLaunchId(entry, "android") : "?";
   const exampleDir = path.join(root, row.path);
+  const hostKey = `${exampleDir}:${pkg}`;
+  if (installedHosts.has(hostKey)) {
+    console.log(`\n=== ${id} → ${pkg} (shared host already installed) ===`);
+    continue;
+  }
   try {
     console.log(`\n=== ${id} → ${pkg} ===`);
     run("npx expo prebuild --platform android --no-install", exampleDir);
@@ -88,6 +94,7 @@ for (const id of ids) {
     );
     const apk = findApk(androidDir);
     run(`adb -s ${device} install -r "${apk}"`, root);
+    installedHosts.add(hostKey);
     console.log(`installed ${id} (${pkg})`);
   } catch (e) {
     console.error(e);

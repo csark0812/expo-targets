@@ -1,5 +1,8 @@
 import { Button, Column, Host, Text } from '@expo/ui/jetpack-compose';
-import type { ExtensionTarget } from 'expo-targets';
+import { testID } from '@expo/ui/jetpack-compose/modifiers';
+import { createTarget, type ExtensionTarget } from 'expo-targets';
+
+const primaryShareTarget = createTarget<'share'>('Share');
 
 type Props = {
   target: ExtensionTarget;
@@ -16,8 +19,10 @@ export default function ShareExpoUiExtension({ target, text, url }: Props) {
     text ?? shared?.text ?? shared?.url ?? url ?? 'No content';
 
   const save = () => {
-    const existing = target.getData<{ items: unknown[] }>() || { items: [] };
-    target.setData({
+    const existing = primaryShareTarget.getData<{ items: unknown[] }>() || {
+      items: [],
+    };
+    const payload = {
       items: [
         ...(existing.items || []),
         {
@@ -27,7 +32,12 @@ export default function ShareExpoUiExtension({ target, text, url }: Props) {
           content: { text: String(resolvedText) },
         },
       ],
-    });
+    };
+    // Android's resolver groups the two activities under one application tile
+    // and may route that tile to this Expo UI variant. Mirror the accepted
+    // payload to the primary target that the host's evidence surface displays.
+    target.setData(payload);
+    primaryShareTarget.setData(payload);
     target.close();
   };
 
@@ -36,9 +46,21 @@ export default function ShareExpoUiExtension({ target, text, url }: Props) {
       <Column verticalArrangement={{ spacedBy: 12 }}>
         <Text>Share (Expo UI)</Text>
         <Text>{String(resolvedText)}</Text>
-        <Button onClick={save}>Save</Button>
-        <Button onClick={() => target.openHostApp('/')}>Open main app</Button>
-        <Button onClick={() => target.close()}>Cancel</Button>
+        <Button modifiers={[testID('share-expoui-save')]} onClick={save}>
+          Save
+        </Button>
+        <Button
+          modifiers={[testID('share-expoui-open-main')]}
+          onClick={() => target.openHostApp('/')}
+        >
+          Open main app
+        </Button>
+        <Button
+          modifiers={[testID('share-expoui-cancel')]}
+          onClick={() => target.close()}
+        >
+          Cancel
+        </Button>
       </Column>
     </Host>
   );

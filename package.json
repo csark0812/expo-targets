@@ -73,7 +73,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.6",
     "@csark0812/skeleton": "^1.5.7",
-    "agent-device": "https://github.com/csark0812/agent-device/releases/download/v0.21.15-et.1/csark0812-agent-device-0.21.15-et.1.tgz",
+    "agent-device": "https://github.com/csark0812/agent-device/releases/download/v0.21.15-et.3/csark0812-agent-device-0.21.15-et.3.tgz",
     "typescript": "~5.3.3"
   },
   "version": "0.2.7",

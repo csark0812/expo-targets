@@ -65,6 +65,38 @@ export async function findLauncherLabel(
   return null;
 }
 
+async function findAppDrawerLabel(
+  device: DeviceSession,
+  names: string[],
+): Promise<AccessibilityNode | null> {
+  const needles = names.map((name) => name.toLowerCase());
+  await pressHome(device);
+  await device.swipe({
+    xStart: 540,
+    yStart: 2100,
+    xEnd: 540,
+    yEnd: 550,
+    duration: 0.35,
+  });
+  await sleep(500);
+  for (let page = 0; page < 6; page++) {
+    const hit = walk(await device.accessibilityTree()).find((node) => {
+      const text = nodeVisibleText(node).trim().toLowerCase();
+      return needles.some((needle) => text === needle);
+    });
+    if (hit?.frame && hit.frame.width >= 8 && hit.frame.height >= 8) return hit;
+    await device.swipe({
+      xStart: 540,
+      yStart: 1800,
+      xEnd: 540,
+      yEnd: 700,
+      duration: 0.35,
+    });
+    await sleep(350);
+  }
+  return null;
+}
+
 /** Grant the host package bind permission (harmless if already granted). */
 export function grantAppWidgetBind(
   serial: string,
@@ -206,14 +238,38 @@ export async function pinAndAssertSeededWidget(
     steps.push("widget-already-present");
   } else {
     steps.push("launch-host-for-pin");
-    await device.launchApp(hostBundleId, { terminateRunning: false });
+    // Reset the host ScrollView before looking for a specific pin control.
+    // Earlier rows and manual launcher returns can otherwise preserve a deep
+    // scroll offset, leaving an above-the-fold control permanently hidden.
+    await device.launchApp(hostBundleId, { terminateRunning: true });
     await sleep(500);
+
+    // React Native restores ScrollView position across Android activity
+    // relaunches. Normalize to the top before searching downward so a control
+    // cannot remain hidden above the viewport after a previous matrix row.
+    for (let up = 0; up < 5; up++) {
+      await device.swipe({
+        xStart: 540,
+        yStart: 500,
+        xEnd: 540,
+        yEnd: 1600,
+        duration: 0.3,
+      });
+      await sleep(200);
+    }
 
     steps.push("request-pin-sheet");
     let pinned = false;
     for (let pass = 0; pass < 6 && !pinned; pass++) {
       try {
-        await tapId(device, pinButtonTestId, 2_500);
+        // requestPinAppWidget intentionally leaves the host for the launcher's
+        // confirmation sheet. Disable only agent-device's same-app post-press
+        // verification; the sheet, seeded marker, and dumpsys checks below are
+        // the load-bearing behavioral oracle.
+        await device.tapIdAllowingAppTransition(pinButtonTestId, {
+          timeoutMs: 2_500,
+          toBundleId: "com.google.android.apps.nexuslauncher",
+        });
         pinned = true;
       } catch {
         try {
@@ -229,9 +285,9 @@ export async function pinAndAssertSeededWidget(
           // Scroll down the host ScrollView to reveal pin controls.
           await device.swipe({
             xStart: 540,
-            yStart: 1600,
+            yStart: 1400,
             xEnd: 540,
-            yEnd: 500,
+            yEnd: 900,
             duration: 0.35,
           });
           await sleep(400);
@@ -320,7 +376,9 @@ export async function pinAndAssertSeededWidget(
   steps.push("dumpsys-hosted-ok");
 
   steps.push("find-host-icon");
-  const icon = await findLauncherLabel(device, hostNames);
+  const icon =
+    (await findLauncherLabel(device, hostNames)) ??
+    (await findAppDrawerLabel(device, hostNames));
   if (!icon) {
     const labels = flattenLabels(await device.accessibilityTree());
     throw new Error(
@@ -328,4 +386,7 @@ export async function pinAndAssertSeededWidget(
     );
   }
   steps.push("host-icon-ok");
+  // App-drawer fallback leaves the launcher in All Apps. Restore the workspace
+  // so any row-specific tile controls are asserted on the widget surface.
+  await pressHome(device);
 }

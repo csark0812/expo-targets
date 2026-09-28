@@ -82,7 +82,10 @@ export async function runAndroidAppIntentJourney(
       steps.push("seed-shortcut-miss");
     }
 
-    await tapId(device, "btn-open-app-actions", 8_000);
+    await device.tapIdAllowingAppTransition("btn-open-app-actions", {
+      timeoutMs: 8_000,
+      toBundleId: "com.android.settings",
+    });
     steps.push("open-app-actions");
     await sleep(ANDROID_SETTINGS_SETTLE_MS);
     await dismissSystemAlerts(device);

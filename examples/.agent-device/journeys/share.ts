@@ -48,6 +48,37 @@ async function findExtensionRow(
   entry: TargetCatalogEntry,
   timeoutMs = 15_000,
 ) {
+  if (entry.needsViewMore) {
+    // iOS 26's opaque share-sheet favorites row exposes the trailing More
+    // control visually but not as a usable selector. Capture the exact
+    // system-UI point before dispatch, then require the named extension row
+    // below as the post-action assertion.
+    const morePoint = { x: 333, y: 652 };
+    const descriptors = await device.inspectPoint(morePoint);
+    if (descriptors.length === 0) {
+      throw new Error("share-sheet More point inspection returned no surface");
+    }
+    await device.capturePointEvidence(morePoint, descriptors[0]!);
+    await device.tap(morePoint);
+    await sleep(500);
+    const expandedSurface = await device.inspectPoint({ x: 200, y: 560 });
+    if (expandedSurface[0]) {
+      await device.capturePointEvidence({ x: 200, y: 560 }, expandedSurface[0]);
+    }
+    const editPoint = { x: 355, y: 110 };
+    const editSurface = await device.inspectPoint(editPoint);
+    if (editSurface.length === 0) {
+      throw new Error("share-sheet Apps page Edit point inspection returned no surface");
+    }
+    await device.capturePointEvidence(editPoint, editSurface[0]!);
+    await device.tap(editPoint);
+    await sleep(500);
+    const allAppsSurface = await device.inspectPoint({ x: 200, y: 200 });
+    if (allAppsSurface[0]) {
+      await device.capturePointEvidence({ x: 200, y: 200 }, allAppsSurface[0]);
+    }
+  }
+
   const names = [
     entry.extensionName,
     entry.hostDisplayName,

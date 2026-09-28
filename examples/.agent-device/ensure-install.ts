@@ -1,20 +1,24 @@
 /**
  * Opt-in Release ensure-install for REQUIRED_V1 hosts.
  * When a host bundle is missing on the sim, prebuild (if needed) +
- * `expo run:ios --configuration Release`.
+ * an unsigned simulator Release build + `simctl install`.
  */
 import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { TARGET_CATALOG } from "./catalog";
-import { exampleAbsPath, exampleExists } from "./root";
+import { exampleAbsPath, exampleExists, repoRoot } from "./root";
 
 const ensuredThisRun = new Set<string>();
 
 export type EnsureHostReleaseInstallOptions = {
   id: string;
+  deviceId: string;
+};
+
+export type EnsureAndroidReleaseInstallsOptions = {
+  ids: readonly string[];
   deviceId: string;
 };
 
@@ -83,39 +87,30 @@ async function runStreaming(
   });
 }
 
-/**
- * Pre-approve a URL scheme so `simctl openurl` skips “Open in …?”.
- * Mirrors Expo CLI’s `updateSimulatorLinkingPermissionsAsync` (often races).
- */
-function approveSimulatorDeepLink(
-  udid: string,
-  scheme: string,
-  appId: string,
-): void {
-  const plistPath = path.join(
-    os.homedir(),
-    "Library/Developer/CoreSimulator/Devices",
-    udid,
-    "data/Library/Preferences/com.apple.launchservices.schemeapproval.plist",
-  );
-  const key = `com.apple.CoreSimulator.CoreSimulatorBridge-->${scheme}`;
-  const py = `
-import plistlib, pathlib, sys
-p = pathlib.Path(sys.argv[1])
-data = plistlib.loads(p.read_bytes()) if p.exists() else {}
-data[sys.argv[2]] = sys.argv[3]
-p.parent.mkdir(parents=True, exist_ok=True)
-p.write_bytes(plistlib.dumps(data, fmt=plistlib.FMT_BINARY))
-`;
-  const r = spawnSync("python3", ["-c", py, plistPath, key, appId], {
-    encoding: "utf8",
-    env: process.env,
-  });
-  if (r.status !== 0) {
-    console.error(
-      `[ensure-install] scheme-approval failed for ${scheme}: ${r.stderr || r.stdout}`,
+function simulatorAppWithBundleId(
+  productsDir: string,
+  bundleId: string,
+): string | undefined {
+  if (!fs.existsSync(productsDir)) return undefined;
+  for (const name of fs.readdirSync(productsDir)) {
+    if (!name.endsWith(".app")) continue;
+    const appPath = path.join(productsDir, name);
+    const result = spawnSync(
+      "xcrun",
+      [
+        "plutil",
+        "-extract",
+        "CFBundleIdentifier",
+        "raw",
+        "-o",
+        "-",
+        path.join(appPath, "Info.plist"),
+      ],
+      { encoding: "utf8", env: process.env },
     );
+    if (result.status === 0 && result.stdout.trim() === bundleId) return appPath;
   }
+  return undefined;
 }
 
 /**
@@ -162,43 +157,59 @@ export async function ensureHostReleaseInstall(
     );
   }
 
-  // expo run:ios opens `{bundleId}://expo-development-client/...` via openurl.
-  approveSimulatorDeepLink(udid, entry.hostBundleId, entry.hostBundleId);
-
-  try {
-    await runStreaming(
-      "npx",
-      [
-        "expo",
-        "run:ios",
-        "--configuration",
-        "Release",
-        "--device",
-        udid,
-        "--no-bundler",
-      ],
-      cwd,
-      () => isHostInstalledOnSim(udid, entry.hostBundleId),
-    );
-  } catch (e) {
-    // Build+install often succeeds; simctl openurl then fails (115) when the
-    // Simulator is busy or rejects the metro deep link. Continue if installed.
-    if (!isHostInstalledOnSim(udid, entry.hostBundleId)) {
-      throw e;
-    }
-    console.error(
-      `[ensure-install] ${entry.id}: run:ios exited but ${entry.hostBundleId} is installed — continuing`,
+  const workspaces = fs
+    .readdirSync(iosDir)
+    .filter((name) => name.endsWith(".xcworkspace") && name !== "Pods.xcworkspace");
+  if (workspaces.length !== 1) {
+    throw new Error(
+      `ensure-install: expected one app workspace in ${iosDir}, found ${workspaces.join(", ") || "none"}`,
     );
   }
+  const workspace = workspaces[0];
+  const scheme = path.basename(workspace, ".xcworkspace");
+  const derivedData = path.join(iosDir, ".agent-device-derived-data");
+  await runStreaming(
+    "xcodebuild",
+    [
+      "-workspace",
+      workspace,
+      "-scheme",
+      scheme,
+      "-configuration",
+      "Release",
+      "-sdk",
+      "iphonesimulator",
+      "-destination",
+      `platform=iOS Simulator,id=${udid}`,
+      "-derivedDataPath",
+      derivedData,
+      "CODE_SIGNING_ALLOWED=NO",
+      "-quiet",
+      "build",
+    ],
+    iosDir,
+  );
+  const productsDir = path.join(
+    derivedData,
+    "Build",
+    "Products",
+    "Release-iphonesimulator",
+  );
+  const appPath = simulatorAppWithBundleId(productsDir, entry.hostBundleId);
+  if (!appPath) {
+    throw new Error(
+      `ensure-install: Release product for ${entry.hostBundleId} not found in ${productsDir}`,
+    );
+  }
+  await runStreaming("xcrun", ["simctl", "install", udid, appPath], cwd);
 
   if (!isHostInstalledOnSim(udid, entry.hostBundleId)) {
     throw new Error(
-      `ensure-install: ${entry.hostBundleId} still missing after Release run:ios (${entry.path})`,
+      `ensure-install: ${entry.hostBundleId} still missing after simulator install (${entry.path})`,
     );
   }
 
-  // expo run:ios launches via openCustomRuntimeAsync → simctl openurl (exp+/scheme).
-  // That surfaces Simulator “Open in …?”; terminate so journeys can launch by bundle id.
+  // Leave a deterministic stopped host for journeys to launch by bundle id.
   spawnSync("xcrun", ["simctl", "terminate", udid, entry.hostBundleId], {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
@@ -210,6 +221,27 @@ export async function ensureHostReleaseInstall(
     `[ensure-install] ${entry.id}: installed ${entry.hostBundleId}`,
   );
   return { skipped: false, built: true };
+}
+
+/**
+ * Build and install the selected Android Release hosts before a live matrix.
+ * Android installation is intentionally one batch: several required rows share
+ * a host, and the repository script owns prebuild, Gradle, APK selection, and
+ * adb installation for the complete closed set.
+ */
+export async function ensureAndroidReleaseInstalls(
+  options: EnsureAndroidReleaseInstallsOptions,
+): Promise<void> {
+  if (options.ids.length === 0) return;
+  await runStreaming(
+    "bun",
+    [
+      path.join(repoRoot(), "scripts/android-install-required.ts"),
+      `--device=${options.deviceId}`,
+      `--ids=${[...new Set(options.ids)].join(",")}`,
+    ],
+    repoRoot(),
+  );
 }
 
 /** Test/helper: clear process cache (does not uninstall apps). */

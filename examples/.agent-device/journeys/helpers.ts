@@ -124,7 +124,11 @@ export async function waitForNamed(
       timeoutMs: Math.min(timeoutMs, 2_000),
       blockedLabels: BLOCKED_SHEET_LABELS,
     });
-  } catch {
+  } catch (error) {
+    // inspect-point is an Apple-only capability in the reviewed fork. Android
+    // must preserve the selector failure instead of converting a normal AX miss
+    // into an unsupported-command product failure.
+    if (device.platform === "android") throw error;
     const hit = await findNamedViaPointProbe(device, names, {
       timeoutMs: Math.min(timeoutMs, 6_000),
     });

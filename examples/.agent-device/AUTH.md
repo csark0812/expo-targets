@@ -1,6 +1,6 @@
 # agent-device operator credentials
 
-`agent-device` is pinned to the public `v0.21.15-et.1` fork release asset. A
+`agent-device` is pinned to the public `v0.21.15-et.3` fork release asset. A
 plain `bun install --frozen-lockfile` requires no private registry token. Its
 commit and integrity are recorded in `fork-provenance.json`.
 

@@ -11,7 +11,7 @@ Agents: start with [AGENTS.md](./AGENTS.md), then this file for install / CI / r
 - **Bun** (workspace package manager)
 - **Node ≥ 22** (publish / OIDC tooling)
 - **macOS + Xcode** only when you run example hosts / agent-device
-- **agent-device 0.21.15-et.1** — pinned to the reviewed public fork release asset while the five upstream capability PRs are pending. See [examples/.agent-device/AUTH.md](./examples/.agent-device/AUTH.md) for operator-only APNs and FCM credentials.
+- **agent-device 0.21.15-et.3** — pinned to the reviewed public fork release asset while the five upstream capability PRs are pending. See [examples/.agent-device/AUTH.md](./examples/.agent-device/AUTH.md) for operator-only APNs and FCM credentials.
 
 The root `package.json` `"version"` field is vestigial (private workspace). The published version lives on `packages/expo-targets`.
 

@@ -14,7 +14,7 @@
       "devDependencies": {
         "@biomejs/biome": "2.5.6",
         "@csark0812/skeleton": "^1.5.7",
-        "agent-device": "https://github.com/csark0812/agent-device/releases/download/v0.21.15-et.1/csark0812-agent-device-0.21.15-et.1.tgz",
+        "agent-device": "https://github.com/csark0812/agent-device/releases/download/v0.21.15-et.3/csark0812-agent-device-0.21.15-et.3.tgz",
         "typescript": "~5.3.3",
       },
     },
@@ -1486,7 +1486,7 @@
 
     "agent-cli-detector": ["agent-cli-detector@0.1.4", "", { "bin": { "agent-cli-detector": "dist/cli.js" } }, "sha512-qPgevFvpaQoBaRJVKzr8R7h1WPvV3DtbgRIQlne4le66KBzXx5hNBwo/+NTw67LgkKBlhCzksrdautpUdlls0Q=="],
 
-    "agent-device": ["@csark0812/agent-device@https://github.com/csark0812/agent-device/releases/download/v0.21.15-et.1/csark0812-agent-device-0.21.15-et.1.tgz", { "peerDependencies": { "ai": "^6.0.0 || ^7.0.0" }, "optionalPeers": ["ai"], "bin": { "agent-device": "bin/agent-device.mjs" } }, "sha512-nEvzML1SMfzx0rKEh3iB/npG7SbZ8AhkcCRpw1B4NHL1kFUop/duN20H8Fg6l4A7MKBykksCo1605yemR/Z5EA=="],
+    "agent-device": ["@csark0812/agent-device@https://github.com/csark0812/agent-device/releases/download/v0.21.15-et.3/csark0812-agent-device-0.21.15-et.3.tgz", { "peerDependencies": { "ai": "^6.0.0 || ^7.0.0" }, "optionalPeers": ["ai"], "bin": { "agent-device": "bin/agent-device.mjs" } }, "sha512-pUh6rkSo5FQ7v1FWnaHufz0qnThRwdEvd6aXN2lx3w1k4lYVL9UyxxR+PPOLO8o2qmJXPH1mDmEAqXO61yHBvg=="],
 
     "ajv": ["ajv@8.20.0", "", { "dependencies": { "fast-deep-equal": "^3.1.3", "fast-uri": "^3.0.1", "json-schema-traverse": "^1.0.0", "require-from-string": "^2.0.2" } }, "sha512-Thbli+OlOj+iMPYFBVBfJ3OmCAnaSyNn4M1vz9T6Gka5Jt9ba/HIR56joy65tY6kx/FCF5VXNB819Y7/GUrBGA=="],
 

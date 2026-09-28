@@ -16,7 +16,6 @@ import {
   hostReadyTestId,
   sleep,
   tapCenter,
-  tapId,
   tapProbeHit,
   waitForId,
   waitForNamed,
@@ -86,7 +85,10 @@ export async function runAndroidPrintServiceJourney(
     await waitForId(device, hostReadyTestId(entry.testIds), 15_000);
     steps.push("host-ready");
 
-    await tapId(device, "btn-open-print-settings", 8_000);
+    await device.tapIdAllowingAppTransition("btn-open-print-settings", {
+      timeoutMs: 8_000,
+      toBundleId: "com.android.settings",
+    });
     steps.push("open-print-settings");
     await sleep(ANDROID_SETTINGS_SETTLE_MS);
     await dismissSystemAlerts(device);

@@ -84,13 +84,26 @@ export async function runAndroidPhotoEditingJourney(
     await tapId(device, "btn-launch-action-edit", 8_000);
     steps.push("launch-action-edit");
     await sleep(600);
-    await dismissSystemAlerts(device);
+    try {
+      await dismissSystemAlerts(device);
+    } catch {
+      // Android's framework ResolverActivity can expose too little content for
+      // the agent-device helper. That is an honest ACTION_EDIT attempt, not a
+      // runner failure; the approved os-limit path below still requires the
+      // editor/save/host marker before it can become green.
+      steps.push("resolver-snapshot-limited");
+    }
 
     steps.push("editor-surface-attempt");
-    const editorVisible = labelsHit(
-      flattenLabels(await device.accessibilityTree()),
-      EDITOR_MARKERS,
-    );
+    let editorVisible = false;
+    try {
+      editorVisible = labelsHit(
+        flattenLabels(await device.accessibilityTree()),
+        EDITOR_MARKERS,
+      );
+    } catch {
+      steps.push("editor-snapshot-limited");
+    }
     if (editorVisible) {
       steps.push("editor-chrome-visible");
       for (const save of ["Save", "Done", "OK", "Apply"]) {

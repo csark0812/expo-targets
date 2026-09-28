@@ -248,8 +248,23 @@ export async function runAndroidKeyboardJourney(
 
     await selectEtAsCurrentIme(device, imeId, steps);
 
-    await device.launchApp(pkg, { terminateRunning: false });
-    await waitForId(device, hostReadyTestId(entry.testIds), 10_000);
+    // A second agent-device app open prepares its text-injection helper and
+    // can replace the IME we just selected. The direct `ime set` path never
+    // left the host, so retain it; only recover the host if the picker fallback
+    // actually navigated away, then reassert ET as the current IME.
+    try {
+      await waitForId(device, hostReadyTestId(entry.testIds), 3_000);
+    } catch {
+      await device.launchApp(pkg, { terminateRunning: false });
+      await waitForId(device, hostReadyTestId(entry.testIds), 10_000);
+      await device.setInputMethod(imeId);
+      steps.push("ime-reset-after-host-reopen");
+    }
+    const currentBeforeFocus = await device.currentInputMethod();
+    if (!currentBeforeFocus || !isEtImeId(currentBeforeFocus)) {
+      await device.setInputMethod(imeId);
+      steps.push("ime-reset-before-focus");
+    }
     await tapId(device, "btn-clear-payload", 5_000).catch(() => undefined);
     await tapId(device, "input-type-field", 5_000);
     await sleep(ANDROID_POST_TAP_MS);

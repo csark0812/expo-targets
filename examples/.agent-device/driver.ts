@@ -239,8 +239,46 @@ export class DeviceSession {
         launchArgs: options.arguments,
         launchEnvironment: options.env,
         waitMs: this.waitMs,
-        foreground: false,
+        // Matrix rows frequently return from Settings, launchers, choosers, or
+        // the notification shade. A row launch must actively foreground its
+        // host; otherwise Android can keep SystemUI on top and every later row
+        // observes the previous surface instead of its own app.
+        foreground: true,
       });
+      if (this.platform === "android") {
+        const surface = await this.client.capture.snapshot({
+          ...this.selection(),
+          session: this.session,
+          raw: false,
+          responseLevel: "full",
+        });
+        const foregroundBundle = (surface as { appBundleId?: string })
+          .appBundleId;
+        const surfaceNodes = ((surface as { nodes?: AccessibilityNode[] }).nodes ?? []);
+        const systemUiOnly =
+          surfaceNodes.some((node) => node.bundleId === "com.android.systemui") &&
+          !surfaceNodes.some((node) => node.bundleId === app);
+        this.record("launch-surface", { app, foregroundBundle });
+        if (foregroundBundle === "com.android.systemui" || systemUiOnly) {
+          // Dismiss only a confirmed notification shade, crash dialog, or
+          // other SystemUI overlay. An unconditional Back exits healthy hosts
+          // and leaves launcher-only snapshots on the following wait.
+          await this.client.command.back({
+            ...this.selection(),
+            session: this.session,
+          });
+          await this.client.apps.open({
+            ...this.selection(),
+            session: this.session,
+            app,
+            relaunch: false,
+            launchArgs: options.arguments,
+            launchEnvironment: options.env,
+            waitMs: this.waitMs,
+            foreground: true,
+          });
+        }
+      }
     } catch (error) {
       if (isAgentDeviceError(error)) {
         const normalized = normalizeAgentDeviceError(error);
@@ -280,7 +318,12 @@ export class DeviceSession {
     }
   }
 
-  async tap(point: { x: number; y: number; duration?: number }): Promise<void> {
+  async tap(point: {
+    x: number;
+    y: number;
+    duration?: number;
+    verify?: boolean;
+  }): Promise<void> {
     await this.client.interactions.press({
       ...this.selection(),
       session: this.session,
@@ -288,6 +331,7 @@ export class DeviceSession {
       y: point.y,
       holdMs: point.duration ? Math.round(point.duration * 1_000) : undefined,
       settle: true,
+      verify: point.verify,
     });
     this.record("press", point);
   }
@@ -381,31 +425,86 @@ export class DeviceSession {
     this.record("open-url", { url });
   }
 
-  getById(id: string, options: { timeoutMs?: number } = {}) {
-    return this.locator(`id=${JSON.stringify(id)}`, options.timeoutMs);
+  async tapIdAllowingAppTransition(
+    id: string,
+    options: { toBundleId: string; timeoutMs?: number },
+  ): Promise<void> {
+    const selector = `id=${JSON.stringify(id)}`;
+    try {
+      await this.client.interactions.press({
+        ...this.selection(),
+        session: this.session,
+        selector,
+        settle: true,
+        timeoutMs: options.timeoutMs ?? 10_000,
+        verify: false,
+      });
+      this.record("press-selector", { selector, verify: false });
+    } catch (error) {
+      if (!isAgentDeviceError(error)) throw error;
+      const normalized = normalizeAgentDeviceError(error);
+      const details = normalized.details as
+        | { expectedPackage?: string; foregroundPackage?: string; activity?: string }
+        | undefined;
+      if (
+        normalized.code !== "COMMAND_FAILED" ||
+        !details ||
+        details.expectedPackage !== this.currentApp ||
+        details.foregroundPackage !== options.toBundleId
+      ) {
+        throw error;
+      }
+      // agent-device intentionally reports an app-boundary escape after the
+      // press. For flows that are defined to cross into a named system app,
+      // the exact structured transition is evidence that dispatch succeeded;
+      // the caller must still assert the destination behavior.
+      this.record("press-selector-app-transition", {
+        selector,
+        expectedPackage: details.expectedPackage,
+        foregroundPackage: details.foregroundPackage,
+        activity: details.activity,
+      });
+    }
   }
 
-  getByText(text: string, options: { timeoutMs?: number } = {}) {
-    return this.locator(`label=${JSON.stringify(text)}`, options.timeoutMs);
+  getById(
+    id: string,
+    options: { timeoutMs?: number; verify?: boolean } = {},
+  ) {
+    return this.locator(
+      `id=${JSON.stringify(id)}`,
+      options.timeoutMs,
+      options.verify,
+    );
   }
 
-  private locator(selector: string, timeoutMs = 10_000) {
+  getByText(
+    text: string,
+    options: { timeoutMs?: number; verify?: boolean } = {},
+  ) {
+    return this.locator(
+      `label=${JSON.stringify(text)}`,
+      options.timeoutMs,
+      options.verify,
+    );
+  }
+
+  private locator(
+    selector: string,
+    timeoutMs = 10_000,
+    verify?: boolean,
+  ) {
     return {
       tap: async () => {
-        await this.client.command.wait({
-          ...this.selection(),
-          session: this.session,
-          kind: "selector",
-          selector,
-          timeoutMs,
-        } as never);
         await this.client.interactions.press({
           ...this.selection(),
           session: this.session,
           selector,
           settle: true,
+          timeoutMs,
+          verify,
         });
-        this.record("press-selector", { selector });
+        this.record("press-selector", { selector, verify });
       },
     };
   }
@@ -419,6 +518,21 @@ export class DeviceSession {
       await this.launchApp(input.bundleId, { terminateRunning: false });
     }
     const permission = input.service === "photos-add" ? "photos" : input.service;
+    if (
+      this.platform === "android" &&
+      permission === "notifications" &&
+      input.bundleId
+    ) {
+      const command = input.action === "grant" ? "grant" : "revoke";
+      await runAdbShell(androidAdbExecutor(this.deviceId), [
+        "pm",
+        command,
+        input.bundleId,
+        "android.permission.POST_NOTIFICATIONS",
+      ]);
+      this.record("permission", input);
+      return;
+    }
     await this.client.settings.update({
       ...this.selection(),
       session: this.session,
@@ -510,7 +624,11 @@ export class DeviceSession {
     ]);
     return result.stdout
       .split("\n")
-      .map((line) => line.trim())
+      // `ime list -a` starts each record with `<component>:` and then emits
+      // indented diagnostic fields that may also contain slashes. Keep only
+      // record headers and remove the display-only trailing colon.
+      .filter((line) => line.length > 0 && !/^\s/.test(line))
+      .map((line) => line.trim().replace(/:$/, ""))
       .filter((line) => line.includes("/"));
   }
 
@@ -532,6 +650,56 @@ export class DeviceSession {
 
   async showInputMethodPicker(): Promise<void> {
     await runAdbShell(androidAdbExecutor(this.deviceId), ["ime", "show"]);
+  }
+
+  async showNotificationShade(): Promise<void> {
+    if (this.platform !== "android") {
+      throw new AgentDeviceCapabilityError(
+        "notification-shade",
+        "Android only",
+      );
+    }
+    await runAdbShell(androidAdbExecutor(this.deviceId), [
+      "cmd",
+      "statusbar",
+      "expand-notifications",
+    ]);
+    this.record("android-notification-shade");
+  }
+
+  async waitForActiveNotification(
+    bundleId: string,
+    markers: string[],
+    timeoutMs = 8_000,
+  ): Promise<void> {
+    if (this.platform !== "android") {
+      throw new AgentDeviceCapabilityError(
+        "active-notification-inspection",
+        "Android only",
+      );
+    }
+    const deadline = Date.now() + timeoutMs;
+    let last = "";
+    while (Date.now() < deadline) {
+      const result = await runAdbShell(androidAdbExecutor(this.deviceId), [
+        "dumpsys",
+        "notification",
+        "--noredact",
+      ]);
+      last = result.stdout;
+      const active = last.split("Notification attention state:", 1)[0] ?? "";
+      if (
+        active.includes(`pkg=${bundleId}`) &&
+        markers.every((marker) => active.includes(marker))
+      ) {
+        this.record("android-notification-active", { bundleId, markers });
+        return;
+      }
+      await sleep(200);
+    }
+    throw new Error(
+      `notification did not become active for ${bundleId}; markers=${markers.join("|")}`,
+    );
   }
 
   async setShowImeWithHardKeyboard(enabled: boolean): Promise<void> {
