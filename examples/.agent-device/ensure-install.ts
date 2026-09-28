@@ -1,7 +1,7 @@
 /**
  * Opt-in Release ensure-install for REQUIRED_V1 hosts.
  * When a host bundle is missing on the sim, prebuild (if needed) +
- * an unsigned simulator Release build + `simctl install`.
+ * an ad-hoc-signed simulator Release build + `simctl install`.
  */
 import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -113,6 +113,33 @@ function simulatorAppWithBundleId(
   return undefined;
 }
 
+export function iosSimulatorReleaseBuildArgs(
+  workspace: string,
+  scheme: string,
+  udid: string,
+  derivedData: string,
+): string[] {
+  return [
+    "-workspace",
+    workspace,
+    "-scheme",
+    scheme,
+    "-configuration",
+    "Release",
+    "-sdk",
+    "iphonesimulator",
+    "-destination",
+    `platform=iOS Simulator,id=${udid}`,
+    "-derivedDataPath",
+    derivedData,
+    // Simulator signing is ad-hoc, but required to embed App Group and other
+    // capability entitlements used by the host and its extensions.
+    "CODE_SIGNING_ALLOWED=YES",
+    "-quiet",
+    "build",
+  ];
+}
+
 /**
  * If the catalog host is not on `deviceId`, Release-build + install it.
  * No-op when already installed (or already ensured this process).
@@ -170,23 +197,7 @@ export async function ensureHostReleaseInstall(
   const derivedData = path.join(iosDir, ".agent-device-derived-data");
   await runStreaming(
     "xcodebuild",
-    [
-      "-workspace",
-      workspace,
-      "-scheme",
-      scheme,
-      "-configuration",
-      "Release",
-      "-sdk",
-      "iphonesimulator",
-      "-destination",
-      `platform=iOS Simulator,id=${udid}`,
-      "-derivedDataPath",
-      derivedData,
-      "CODE_SIGNING_ALLOWED=NO",
-      "-quiet",
-      "build",
-    ],
+    iosSimulatorReleaseBuildArgs(workspace, scheme, udid, derivedData),
     iosDir,
   );
   const productsDir = path.join(
