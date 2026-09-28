@@ -17,6 +17,9 @@ function repositoryFiles(root: string): string[] {
 }
 
 function activeText(relative: string, content: string): string {
+  if (relative === "biome.json") {
+    return content.replace('"!**/examples/.devicewright",', "");
+  }
   if (relative === ".gitignore") {
     return content
       .split("\n")
