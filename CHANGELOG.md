@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- App Clip targets that ship `Assets.xcassets/AppIcon.appiconset` set `ASSETCATALOG_COMPILER_APPICON_NAME` and `CFBundleIconName` to `AppIcon`. App Store Connect rejects a Clip icon without both.
 - TypeScript `target.config.ts` files load during prebuild on Node 22.13 (EAS) without `NODE_OPTIONS=--experimental-strip-types`.
 - iOS targets copy the host `DEVELOPMENT_TEAM` onto every signed target, including Messages. Expo device signing skips `com.apple.product-type.app-extension.messages`.
 - Metro `withTargets` reads `entry` from `target.config.ts` and `target.config.js`, not only `target.config.json`.

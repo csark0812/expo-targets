@@ -79,6 +79,7 @@ function makeWorkspace(
     hasUserSafariSwiftHandler: false,
     hasUserReactNativeViewController: false,
     hasUserMessagesViewController: false,
+    hasAppIconCatalog: false,
     ...overrides,
   };
 }
@@ -91,10 +92,12 @@ function buildSettingsFor({
   props: overrides = {},
   mainBuildSettings = {},
   expoConfig = {},
+  hasAppIconCatalog = false,
 }: {
   props?: Partial<IOSTargetProps>;
   mainBuildSettings?: Record<string, any>;
   expoConfig?: Partial<ExpoConfig>;
+  hasAppIconCatalog?: boolean;
 } = {}): Record<string, string | string[]> {
   const props = makeProps(overrides);
   return planBuildSettings({
@@ -104,6 +107,7 @@ function buildSettingsFor({
     mainBuildSettings,
     paths,
     infoPlistReferencePath: INFO_PLIST_REFERENCE,
+    hasAppIconCatalog,
   });
 }
 
@@ -233,6 +237,25 @@ describe('planBuildSettings for App Clips', () => {
     ]);
     expect(settings.ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES).toBe('YES');
     expect(settings.ENABLE_PREVIEWS).toBe('YES');
+    expect(settings.ASSETCATALOG_COMPILER_APPICON_NAME).toBeUndefined();
+  });
+
+  test('sets the AppIcon compiler name when an AppIcon catalog is present', () => {
+    const settings = buildSettingsFor({
+      props: { type: 'clip', name: 'MyClip' },
+      hasAppIconCatalog: true,
+    });
+
+    expect(settings.ASSETCATALOG_COMPILER_APPICON_NAME).toBe('AppIcon');
+  });
+
+  test('does not set the AppIcon compiler name on other types', () => {
+    const settings = buildSettingsFor({
+      props: { type: 'share', name: 'MyShare' },
+      hasAppIconCatalog: true,
+    });
+
+    expect(settings.ASSETCATALOG_COMPILER_APPICON_NAME).toBeUndefined();
   });
 
   test('leaves search paths inherited for other types', () => {
@@ -843,6 +866,28 @@ describe('planEmbed', () => {
   });
 });
 
+describe('composeXcodeTargetPlan clip AppIcon', () => {
+  test('copies the AppIcon catalog into build settings and Info.plist', () => {
+    const plan = composeXcodeTargetPlan({
+      props: makeProps({ type: 'clip', name: 'MyClip' }),
+      expoConfig: { ios: { bundleIdentifier: MAIN_BUNDLE_ID } },
+      workspace: makeWorkspace({
+        type: 'clip',
+        directory: 'targets/clip',
+        hasAppIconCatalog: true,
+      }),
+      paths,
+      mainBuildSettings: {},
+    });
+
+    expect(plan.buildSettings.ASSETCATALOG_COMPILER_APPICON_NAME).toBe(
+      'AppIcon'
+    );
+    expect(plan.infoPlist.contents).toContain('CFBundleIconName');
+    expect(plan.infoPlist.contents).toContain('<string>AppIcon</string>');
+  });
+});
+
 describe('composeXcodeTargetPlan content-blocker', () => {
   test('plans blockerList.json as a bundle resource', () => {
     const plan = composeXcodeTargetPlan({
@@ -892,6 +937,9 @@ describe('composeXcodeTargetPlan', () => {
     expect(plan.embed).toEqual({ kind: 'foundation-extension' });
     expect(plan.swiftFiles).toHaveLength(1);
     expect(plan.buildSettings.MARKETING_VERSION).toBe('1.2.3');
+    expect(
+      plan.buildSettings.ASSETCATALOG_COMPILER_APPICON_NAME
+    ).toBeUndefined();
     expect(plan.infoPlist.contents).toContain('ReactNativeViewController');
     expect(plan.safari).toBeUndefined();
     expect(plan.bundleReactNative).toEqual({ entryFile: 'index.tsx' });

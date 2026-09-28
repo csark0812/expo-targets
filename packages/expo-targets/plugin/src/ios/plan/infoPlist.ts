@@ -35,11 +35,13 @@ function buildInfoPlistContents({
   mainAppSchemes,
   targetsConfig,
   expoConfig,
+  hasAppIconCatalog,
 }: {
   props: IOSTargetProps;
   mainAppSchemes: string[];
   targetsConfig: any[] | undefined;
   expoConfig: Partial<ExpoConfig>;
+  hasAppIconCatalog?: boolean;
 }): string {
   const hasActivationRules =
     Array.isArray(props.activationRules) && props.activationRules.length > 0;
@@ -61,6 +63,7 @@ function buildInfoPlistContents({
     displayName: props.displayName,
     companionAppBundleIdentifier: expoConfig.ios?.bundleIdentifier,
     intentsConfig: props.intents,
+    hasAppIconCatalog,
   });
 }
 
@@ -71,8 +74,10 @@ export function planInfoPlist({
   props,
   expoConfig,
   paths,
+  hasAppIconCatalog = false,
 }: Pick<TargetPlanInput, 'props' | 'expoConfig'> & {
   paths: ProjectPaths;
+  hasAppIconCatalog?: boolean;
 }): InfoPlistPlan {
   const infoPlistPath = Paths.getTargetInfoPlistPath({
     platformProjectRoot: paths.platformProjectRoot,
@@ -90,6 +95,7 @@ export function planInfoPlist({
       mainAppSchemes,
       targetsConfig,
       expoConfig,
+      hasAppIconCatalog,
     }),
     mainAppSchemes,
     embeddedTargetCount: targetsConfig?.length ?? 0,

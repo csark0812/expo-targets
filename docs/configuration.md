@@ -2,7 +2,7 @@
 
 **Source of truth for** `target.config` options and extension types.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-09-15 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-09-28 -->
 
 > **Orphan-stub freeze:** do not add new `ExtensionType` values without registry, scaffold, example, and Devicewright row. See [deprecations.md](./deprecations.md). Widgets policy: [widgets.md](./widgets.md).
 
@@ -627,6 +627,12 @@ Host JS calls `ContentBlocker.reload()` and `reload({ targetName })` with the pl
   }
 }
 ```
+
+If the Clip has an icon, put `AppIcon.appiconset` in `targets/<name>/ios/Assets.xcassets`.
+The plugin then sets `ASSETCATALOG_COMPILER_APPICON_NAME` to `AppIcon`.
+The plugin also sets `CFBundleIconName` to `AppIcon` in the Clip Info.plist.
+App Store Connect requires both values.
+Keep the iPhone icon sizes in that set, including 120×120 (`60x60` at scale `2x`).
 
 ### Share Extension
 

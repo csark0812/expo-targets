@@ -27,7 +27,12 @@ export function composeXcodeTargetPlan({
     props,
     mainBundleIdentifier: expoConfig.ios?.bundleIdentifier,
   });
-  const infoPlist = planInfoPlist({ props, expoConfig, paths });
+  const infoPlist = planInfoPlist({
+    props,
+    expoConfig,
+    paths,
+    hasAppIconCatalog: workspace.hasAppIconCatalog,
+  });
   const safariWebBundle = planSafariWebBundle(props, paths, identity);
 
   return {
@@ -43,6 +48,7 @@ export function composeXcodeTargetPlan({
       mainBuildSettings,
       paths,
       infoPlistReferencePath: infoPlist.referencePath,
+      hasAppIconCatalog: workspace.hasAppIconCatalog,
     }),
     swiftFiles: planSwiftSources({
       workspace,
