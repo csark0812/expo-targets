@@ -34,6 +34,11 @@ export type TargetWorkspace = {
   /** Absolute path to the user's `Assets.xcassets` / `Stickers.xcassets`. */
   userAssetsPath: string;
   hasUserAssets: boolean;
+  /**
+   * True when the user catalog contains `AppIcon.appiconset`.
+   * Clip targets use this to compile the icon and set `CFBundleIconName`.
+   */
+  hasAppIconCatalog: boolean;
   /** Absolute path to a user-provided Safari `Resources` folder. */
   userSafariResourcesPath: string;
   hasCustomSafariResources: boolean;
@@ -133,6 +138,9 @@ export function buildTargetWorkspace({
     bundleResourceFiles: observeBundleResourceFiles(type, targetDirectory),
     userAssetsPath,
     hasUserAssets: File.isDirectory(userAssetsPath),
+    hasAppIconCatalog: File.isDirectory(
+      path.join(userAssetsPath, 'AppIcon.appiconset')
+    ),
     userSafariResourcesPath: path.join(targetDirectory, 'Resources'),
     hasCustomSafariResources:
       Safari.hasCustomSafariResources(absoluteTargetRoot),

@@ -144,6 +144,24 @@ describe('getTargetInfoPlistForType options', () => {
   });
 });
 
+describe('getTargetInfoPlistForType clip AppIcon', () => {
+  test('clip with an AppIcon catalog sets CFBundleIconName', () => {
+    const parsed = plist.parse(
+      getTargetInfoPlistForType('clip', { hasAppIconCatalog: true })
+    ) as { CFBundleIconName?: string };
+
+    expect(parsed.CFBundleIconName).toBe('AppIcon');
+  });
+
+  test('clip without an AppIcon catalog omits CFBundleIconName', () => {
+    const parsed = plist.parse(getTargetInfoPlistForType('clip')) as {
+      CFBundleIconName?: string;
+    };
+
+    expect(parsed.CFBundleIconName).toBeUndefined();
+  });
+});
+
 describe('buildShareExtensionActivationRules', () => {
   test('defaults to text and single web URL support', () => {
     expect(buildShareExtensionActivationRules()).toEqual({

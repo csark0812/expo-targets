@@ -25,6 +25,11 @@ export interface TargetInfoPlistOptions {
   displayName?: string;
   /** Host iOS app bundle id — required for watch companions (WKCompanionAppBundleIdentifier). */
   companionAppBundleIdentifier?: string;
+  /**
+   * Clip only. Set when `Assets.xcassets/AppIcon.appiconset` is present so
+   * App Store Connect sees `CFBundleIconName`.
+   */
+  hasAppIconCatalog?: boolean;
   intentsConfig?: {
     intentsSupported?: string[];
     intentsRestrictedWhileLocked?: string[];
@@ -368,6 +373,9 @@ export function getTargetInfoPlistForType(
       options.companionAppBundleIdentifier.trim();
     // Single-target watchOS apps still declare the companion link.
     basePlist.WKRunsIndependentlyOfCompanionApp = false;
+  }
+  if (type === 'clip' && options.hasAppIconCatalog) {
+    basePlist.CFBundleIconName = 'AppIcon';
   }
   const context: PlistContext = { basePlist, characteristics, type, options };
 

@@ -147,6 +147,20 @@ function planIMessageAppIconSetting(
   return {};
 }
 
+/**
+ * App Clips compile `AppIcon.appiconset` only when that set is in the user
+ * catalog. A missing set with this name fails the asset catalog build.
+ */
+function planClipAppIconSetting(
+  props: IOSTargetProps,
+  hasAppIconCatalog: boolean
+): Record<string, string> {
+  if (props.type === 'clip' && hasAppIconCatalog) {
+    return { ASSETCATALOG_COMPILER_APPICON_NAME: 'AppIcon' };
+  }
+  return {};
+}
+
 function planInheritedSettings(
   mainBuildSettings: Record<string, any>,
   type: string
@@ -222,12 +236,15 @@ export function planBuildSettings({
   mainBuildSettings,
   paths,
   infoPlistReferencePath,
+  hasAppIconCatalog = false,
 }: Pick<
   TargetPlanInput,
   'props' | 'expoConfig' | 'mainBuildSettings' | 'paths'
 > & {
   identity: TargetIdentity;
   infoPlistReferencePath: string;
+  /** From the observed workspace: `Assets.xcassets/AppIcon.appiconset`. */
+  hasAppIconCatalog?: boolean;
 }): Record<string, string | string[]> {
   const typeConfig = TYPE_CHARACTERISTICS[props.type];
   const isWatchOs = props.type === 'watch' || props.type === 'watch-widget';
@@ -263,6 +280,7 @@ export function planBuildSettings({
   }
 
   Object.assign(settings, planIMessageAppIconSetting(props));
+  Object.assign(settings, planClipAppIconSetting(props, hasAppIconCatalog));
 
   // Re-assert watchOS family after planCodeSettings (which may inherit host 1,2).
   if (isWatchOs) {
