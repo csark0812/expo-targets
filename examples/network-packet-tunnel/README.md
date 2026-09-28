@@ -2,7 +2,7 @@
 
 Thin expo-targets example host for `network-packet-tunnel`.
 
-Suite how-to (install, Devicewright, icons): [../README.md](../README.md).
+Suite how-to (install, agent-device, icons): [../README.md](../README.md).
 
 Type / maturity SSOT: [../../docs/configuration.md](../../docs/configuration.md).
 
@@ -17,10 +17,10 @@ npx expo prebuild --platform android
 npx expo run:android
 ```
 
-Devicewright (operator, after Release install on a booted sim):
+agent-device (operator, after Release install on a booted sim):
 
 ```bash
-bun run examples:devicewright:matrix --ids=network-packet-tunnel
+bun run examples:agent-device:matrix --ids=network-packet-tunnel
 ```
 
 Do not commit generated `ios/` / `android/`. Never edit `ExpoTargetsGenerated/`.

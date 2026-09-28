@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 /**
- * Honest pack catalog for Devicewright Stickers A.
+ * Honest pack catalog for agent-device Stickers A.
  * Must stay in sync with targets/stickers/target.config.json stickerPacks.
  * Asset-only MSSticker packs cannot write App Group on selection — host marker
  * reflects installed pack assets, not Maestro in-memory seed theater.

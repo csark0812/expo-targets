@@ -2,7 +2,7 @@
 
 **Source of truth for** human contributors (install, CI, Biome, release).
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-10 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-09-27 -->
 
 Agents: start with [AGENTS.md](./AGENTS.md), then this file for install / CI / release detail.
 
@@ -10,15 +10,14 @@ Agents: start with [AGENTS.md](./AGENTS.md), then this file for install / CI / r
 
 - **Bun** (workspace package manager)
 - **Node ≥ 22** (publish / OIDC tooling)
-- **macOS + Xcode** only when you run example hosts / Devicewright
-- **`NODE_AUTH_TOKEN`** — required to install private `@csark0812/devicewright` (pinned in root `package.json`). See [examples/.devicewright/AUTH.md](./examples/.devicewright/AUTH.md) and root `.env.example`.
+- **macOS + Xcode** only when you run example hosts / agent-device
+- **agent-device 0.21.15-et.3** — pinned to the reviewed public fork release asset while the five upstream capability PRs are pending. See [examples/.agent-device/AUTH.md](./examples/.agent-device/AUTH.md) for operator-only APNs and FCM credentials.
 
 The root `package.json` `"version"` field is vestigial (private workspace). The published version lives on `packages/expo-targets`.
 
 ## Install → build
 
 ```bash
-export NODE_AUTH_TOKEN=…   # or put it in .env
 bun install
 bun run build
 ```
@@ -36,7 +35,7 @@ Matches [`.github/workflows/test.yml`](./.github/workflows/test.yml):
 | Build | `bun run build` |
 | Secrets | gitleaks (CI action) |
 
-Devicewright operator matrix is **not** CI-gated — see [examples/.devicewright/PR_PROOF.md](./examples/.devicewright/PR_PROOF.md).
+agent-device operator matrix is **not** CI-gated — see [examples/.agent-device/PR_PROOF.md](./examples/.agent-device/PR_PROOF.md).
 
 ## Biome budgets
 
@@ -49,7 +48,7 @@ Enforced via Biome (see `biome.json`):
 | max params | 3 |
 | nested callbacks | 3 |
 
-Exemptions: `examples/.devicewright/**`, `scripts/**` (and any paths Biome already ignores). Prefer extracting helpers over raising budgets.
+Exemptions: `examples/.agent-device/**`, `scripts/**` (and any paths Biome already ignores). Prefer extracting helpers over raising budgets.
 
 ## Test taxonomy
 
@@ -57,7 +56,7 @@ Exemptions: `examples/.devicewright/**`, `scripts/**` (and any paths Biome alrea
 | --- | --- | --- |
 | L1/L2 unit | Colocated `*.test.ts` under packages | Yes (`test:unit`) |
 | L3 integration | `*.integration.test.ts` (pbx pipeline, Linux) | Yes (`test:integration`) |
-| Devicewright | `examples/.devicewright/` journeys | Operator-only |
+| agent-device | `examples/.agent-device/` journeys | Operator-only |
 
 ## Generated / sealed trees
 
@@ -89,8 +88,6 @@ Publishing is [`.github/workflows/publish.yml`](./.github/workflows/publish.yml)
 - Semver from PR labels: `major` → major, `minor` → minor, else patch. Manual dispatch can set version or bump type.
 - Bumps package version, tags `v*`, builds, then `npm publish`.
 - **Legacy `create-expo-target`:** removed from the monorepo. Publish a one-shot redirect tarball from a throwaway folder when you need it (`npx create-expo-target` → print “use `npx expo-targets add`” + exit 1). Do not keep that package in-repo.
-
-`NODE_AUTH_TOKEN` in CI is still required for **install** of private Devicewright during the publish job’s `bun install`.
 
 ## Related
 

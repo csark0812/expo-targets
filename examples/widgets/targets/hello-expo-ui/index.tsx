@@ -90,7 +90,12 @@ function HelloExpoUiLiveActivity(
   };
 }
 
-export const helloExpoUi = createTarget('HelloExpoUi', HelloExpoUiLayout);
+const helloExpoUiFolder = createTarget('HelloExpoUi');
+
+export const helloExpoUi = helloExpoUiFolder.widget(
+  'HelloExpoUi',
+  HelloExpoUiLayout
+);
 
 function HelloExpoUiCompactLayout(props: HelloExpoUiProps) {
   'widget';
@@ -111,7 +116,7 @@ function HelloExpoUiCompactLayout(props: HelloExpoUiProps) {
   );
 }
 
-export const helloExpoUiCompact = createTarget(
+export const helloExpoUiCompact = helloExpoUiFolder.widget(
   'HelloExpoUiCompact',
   HelloExpoUiCompactLayout
 );
@@ -122,8 +127,7 @@ export const helloExpoUiLiveActivity = createLiveActivityLayout(
   HelloExpoUiLiveActivity
 );
 
-export const helloExpoUiLiveActivityHandle =
-  createTarget('HelloExpoUi').liveActivity();
+export const helloExpoUiLiveActivityHandle = helloExpoUiFolder.liveActivity();
 
 export const updateExpoUiMessage = (message: string) => {
   helloExpoUi.setData({ message, taps: 0 }, { refresh: true });

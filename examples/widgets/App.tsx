@@ -39,7 +39,7 @@ import {
 void helloExpoUiLiveActivity;
 void helloExpoUiCompact;
 
-/** Seeded host markers for Devicewright (avoid `|` — can confuse AX splits). */
+/** Seeded host markers for agent-device (avoid `|` — can confuse AX splits). */
 export const UITEST_WIDGET_SEED = 'Hello from host · family:systemSmall';
 export const UITEST_EXPO_UI_SEED = 'Hello from host · expo-ui';
 export const UITEST_REMOTEVIEWS_SEED = 'Hello from host · remoteviews';

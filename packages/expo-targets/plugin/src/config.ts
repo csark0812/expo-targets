@@ -421,7 +421,7 @@ export interface LiveActivityConfig {
   contentState: Record<string, 'string' | 'double' | 'int' | 'bool'>;
   /**
    * When `'token'`, ActivityKit requests a push token (APNs updates / push-to-start).
-   * Simulator cannot prove remote push — Devicewright stays CLAIMS for DI/push/StandBy.
+   * Simulator cannot prove remote push — agent-device stays CLAIMS for DI/push/StandBy.
    */
   pushType?: 'token' | null;
 }

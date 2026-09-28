@@ -34,12 +34,12 @@ bun run validate:changed
 
 ## Safe commands
 
-- `bun install` (needs `NODE_AUTH_TOKEN` for `@csark0812/devicewright` — [AUTH.md](examples/.devicewright/AUTH.md))
+- `bun install` (public, exactly pinned `agent-device`; operator credentials are documented in [AUTH.md](examples/.agent-device/AUTH.md))
 - `bun run lint`, `bun run typecheck`, `bun run build`
 - `bun run test:unit`, `bun run test:integration`, `bun test` (package-scoped)
 - Skeleton: `bun run audit:self`, `bun run validate:changed`
 - Do **not** start, stop, or restart dev servers (`bun run dev`, `expo start`, and similar)
-- Devicewright matrix / `expo run:ios`: **operator-only** (humans boot Simulator). Agents must not claim CI greens for Devicewright.
+- agent-device matrix / `expo run:ios`: **operator-only** (humans boot Simulator). Agents must not claim CI greens for agent-device.
 
 ## Packages
 

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { clipTarget } from './targets/clip';
 
-/** Clip appex bundle id — Devicewright launches this for invocation proof. */
+/** Clip appex bundle id — agent-device launches this for invocation proof. */
 export const CLIP_BUNDLE_ID = 'com.expotargets.example.clip.clip';
 
 export default function App() {

@@ -1,6 +1,6 @@
 import UIKit
 
-/// Custom keyboard with a tappable key for Devicewright typing proof.
+/// Custom keyboard with a tappable key for agent-device typing proof.
 @objc(KeyboardViewController)
 class KeyboardViewController: UIInputViewController {
   override func viewDidLoad() {

@@ -1,7 +1,7 @@
 import NetworkExtension
 
 /// Minimal packet tunnel — real NEPacketTunnelProvider subclass.
-/// Full VPN requires Network Extension entitlement (os-limit in Devicewright).
+/// Full VPN requires Network Extension entitlement (os-limit in agent-device).
 @objc(PacketTunnelProvider)
 class PacketTunnelProvider: NEPacketTunnelProvider {
   override func startTunnel(

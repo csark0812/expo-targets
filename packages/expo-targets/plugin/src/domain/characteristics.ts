@@ -44,7 +44,7 @@ export interface TypeCharacteristicFlags {
   isReactNativeNative: boolean; // Runs React Native with native modules
   isReactNativeWeb: boolean; // Runs React Native Web inside a web view
   needsIsolatedSearchPaths: boolean; // Standalone product; must not inherit Pods search paths
-  /** Example host track for Devicewright / examples/. */
+  /** Example host track for agent-device / examples/. */
   rnExample: 'dual' | 'native-only' | 'rn-only';
   /** Android host component family (API-ceiling dual ledger). */
   androidComponent: AndroidComponent;

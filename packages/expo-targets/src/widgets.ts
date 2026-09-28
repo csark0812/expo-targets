@@ -62,7 +62,7 @@ export function addUserInteractionListener(
 
 /**
  * Listen for ActivityKit push-to-start tokens (APNs remote start).
- * Devicewright cannot green remote push on Simulator — see CLAIMS live-activity.
+ * agent-device cannot green remote push on Simulator — see CLAIMS live-activity.
  */
 export function addPushToStartTokenListener(
   listener: (event: PushToStartTokenEvent) => void

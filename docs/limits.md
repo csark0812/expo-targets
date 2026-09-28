@@ -2,19 +2,19 @@
 
 **Source of truth for** lib floor vs Apple/account gates for extension types.
 
-<!-- doc-meta: owner=eng | last-reviewed=2026-08-10 -->
+<!-- doc-meta: owner=eng | last-reviewed=2026-09-27 -->
 
 ## Max Sim-greenable policy
 
-Devicewright deep greens prove the **Sim-greenable** subset (**P**): behavior that is AX- and/or journey-assertable on a stated iOS Simulator plus the pinned `@csark0812/devicewright` version in root `package.json`. Not device-only chrome. Not entitlement-gated Settings flows.
+agent-device deep greens prove the **Sim-greenable** subset (**P**): behavior that is AX- and/or journey-assertable on a stated iOS Simulator plus the pinned `agent-device` version in root `package.json`. Not device-only chrome. Not entitlement-gated Settings flows.
 
 - Phase ids must `green` on **P**. Expanding Notification Content → custom UI is **never** an `os-limit` leftover.
 - Public Apple APIs that cannot be proven on Simulator are documented leftovers (no dead product).
-- Operator matrix under Release / `ensure-install` is the ship gate; CI does not gate Devicewright ([PR_PROOF.md](../examples/.devicewright/PR_PROOF.md)).
+- Operator matrix under Release / `ensure-install` is the ship gate; CI does not gate agent-device ([PR_PROOF.md](../examples/.agent-device/PR_PROOF.md)).
 
 ### S3a spike gate
 
-Before you document “not Sim-greenable,” attach a spike under `examples/.devicewright/artifacts/spikes/<id>-<feature>-<timestamp>.md` (steps tried, AX/labels sample, duration, id(s)). Owner = PR author. Journey-greenable is not an automatic leftover.
+Before you document “not Sim-greenable,” attach a spike under `examples/.agent-device/artifacts/spikes/<id>-<feature>-<timestamp>.md` (steps tried, AX/labels sample, duration, id(s)). Owner = PR author. Journey-greenable is not an automatic leftover.
 
 ### Leftover register
 
@@ -35,15 +35,15 @@ Each open leftover:
 | widgets / widgets-expo-ui | Edit Widget gallery + SpringBoard Button tap AX | CLAIMS (optional operator marker `text-expo-ui-interaction`) | — | eng |
 | live-activity | Dynamic Island / ActivityKit push / StandBy / push-to-start | limits.md (CLAIMS) | — | eng |
 | live-activity | Watch chrome when pair boots without AX | CLAIMS after S3a | TBD on operator miss | eng |
-| message-filter | Messages Unknown Senders / Text Message Filter list / inbound SMS invoke | CLAIMS | [spikes/message-filter-ql-spotlight-2026-08-04.md](../examples/.devicewright/artifacts/spikes/message-filter-ql-spotlight-2026-08-04.md) | eng |
-| spotlight | CSImportExtension indexer → App Group / Spotlight hit | CLAIMS | [spikes/message-filter-ql-spotlight-2026-08-04.md](../examples/.devicewright/artifacts/spikes/message-filter-ql-spotlight-2026-08-04.md) | eng |
-| call-directory | Phone → Call Blocking & Identification lists ET CallDir Target | CLAIMS | [spikes/unwanted-communication-call-directory-2026-08-04.md](../examples/.devicewright/artifacts/spikes/unwanted-communication-call-directory-2026-08-04.md) | eng |
-| unwanted-communication | Phone → SMS/Call Reporting lists ET Unwanted Target | CLAIMS | [spikes/unwanted-communication-call-directory-2026-08-04.md](../examples/.devicewright/artifacts/spikes/unwanted-communication-call-directory-2026-08-04.md) | eng |
-| file-provider | Files domain open → seed *file* visible in AX | CLAIMS | [spikes/file-provider-app-intent-2026-08-04.md](../examples/.devicewright/artifacts/spikes/file-provider-app-intent-2026-08-04.md) | eng |
-| app-intent | Shortcuts tap ET Greet → run + App Group `ai:*` | CLAIMS | [spikes/file-provider-app-intent-2026-08-04.md](../examples/.devicewright/artifacts/spikes/file-provider-app-intent-2026-08-04.md) | eng |
-| android-settings-* | Autofill / CallScreening / Print / VPN / IME / message-filter / unwanted-communication Settings lists | limits.md (Android hard-stop) | [leftovers/android-settings-system-services-2026-08-06.md](../examples/.devicewright/artifacts/leftovers/android-settings-system-services-2026-08-06.md) | eng |
+| message-filter | Messages Unknown Senders / Text Message Filter list / inbound SMS invoke | CLAIMS | [legacy spike](../examples/.devicewright/artifacts/spikes/message-filter-ql-spotlight-2026-08-04.md) | eng |
+| spotlight | CSImportExtension indexer → App Group / Spotlight hit | CLAIMS | [legacy spike](../examples/.devicewright/artifacts/spikes/message-filter-ql-spotlight-2026-08-04.md) | eng |
+| call-directory | Phone → Call Blocking & Identification lists ET CallDir Target | CLAIMS | [legacy spike](../examples/.devicewright/artifacts/spikes/unwanted-communication-call-directory-2026-08-04.md) | eng |
+| unwanted-communication | Phone → SMS/Call Reporting lists ET Unwanted Target | CLAIMS | [legacy spike](../examples/.devicewright/artifacts/spikes/unwanted-communication-call-directory-2026-08-04.md) | eng |
+| file-provider | Files domain open → seed *file* visible in AX | CLAIMS | [legacy spike](../examples/.devicewright/artifacts/spikes/file-provider-app-intent-2026-08-04.md) | eng |
+| app-intent | Shortcuts tap ET Greet → run + App Group `ai:*` | CLAIMS | [legacy spike](../examples/.devicewright/artifacts/spikes/file-provider-app-intent-2026-08-04.md) | eng |
+| android-settings-* | Autofill / CallScreening / Print / VPN / IME / message-filter / unwanted-communication Settings lists | limits.md (Android hard-stop) | [legacy leftover](../examples/.devicewright/artifacts/leftovers/android-settings-system-services-2026-08-06.md) | eng |
 
-Entitlement / Settings items use `home: wont-do` or the hard-stop table below. **Revisit** when DW / Sim coverage improves (plan edit + spike re-run).
+Entitlement / Settings items use `home: wont-do` or the hard-stop table below. **Revisit** when agent-device / Simulator coverage improves (plan edit + spike re-run).
 
 ### Currently-green expansion backlog
 
@@ -55,13 +55,13 @@ Deepen already-green ids before you add shallow types: share/action(+native); sa
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Asset-only (`requiresCode: false`)** | Only [`stickers`](../packages/expo-targets/plugin/src/domain/characteristics.ts) — system principal, no custom Swift required.                                                                         |
 | **Scaffold + stub**                    | Plugin generates the Xcode target; older examples used `NSObject` placeholders. Prefer minimal real Apple subclasses (this repo’s direction).                                                          |
-| **Policy freeze**                      | Do **not** add new `ExtensionType` values that only emit an empty Xcode target. Same PR must ship registry + scaffold + example + Devicewright REQUIRED row. See [deprecations.md](./deprecations.md). |
+| **Policy freeze**                      | Do **not** add new `ExtensionType` values that only emit an empty Xcode target. Same PR must ship registry + scaffold + example + agent-device REQUIRED row. See [deprecations.md](./deprecations.md). |
 
 ## Lib floor vs hard stop
 
 | Family                                                                            | Lib floor (shippable here)                                         | Hard stop                                          |
 | --------------------------------------------------------------------------------- | ------------------------------------------------------------------ | -------------------------------------------------- |
-| Share / action / messages / clip / stickers / safari / content-blocker / keyboard | Deep Devicewright greens on Simulator                              | —                                                  |
+| Share / action / messages / clip / stickers / safari / content-blocker / keyboard | Deep agent-device greens on Simulator                              | —                                                  |
 | Notification service / content                                                    | Real principals; category push; expand → custom UI marker          | Simulator often skips NSE process                  |
 | Photo editing                                                                     | Real `PHContentEditingController`; Photos Edit + pluginkit         | Sim rarely lists third-party editors               |
 | File Provider                                                                     | Real `NSFileProviderReplicatedExtension` + host domain add; Files list + open→App Group | Seed *file* AX / full sync depth                   |
@@ -72,10 +72,10 @@ Deepen already-green ids before you add shallow types: share/action(+native); sa
 | Watch / watch-widget                                                              | `watch` + `watch-widget`: watchOS SDK/family 4; widget nests under Watch `.app` PlugIns | Device-only Embed Watch Content; Smart Stack needs user-added complication |
 | Android                                                                           | API-ceiling dual through W3 + **W4-in-1.0 partials** + **Wear strong**: widgets; share/action; notifications + LA ongoing-notif; DocumentsProvider; Autofill; IME; CallScreening; Print; VpnService; App Actions / Wallet / AppSearch / ACTION_EDIT / bg-download / message-filter / unwanted-communication; Wear companion + tiles | Apple-only types stay `—`; FCM leftover until shade-green; Settings/Play leftovers: IME / Autofill / CallScreening / VPN / print (see `artifacts/leftovers/android-settings-system-services-2026-08-06.md`) |
 
-**Android ceilings (showcase honesty):** Home-screen widgets are first-class Glance / RemoteViews. `LiveActivity.*` maps to an ongoing-notification helper (no ActivityKit / Dynamic Island / StandBy). Share/action use dedicated Activities; RN `entry` host TTI + Devicewright are green (spike `android-rn-host-tti-2026-08-10.md`) — README `‡` waits on the FCM notification close. Notifications run in the host process (not a sealed NSE) with `ExpoTargetsFcmMessagingService` when Firebase Messaging is on the classpath; rich UI uses RemoteViews with Android 12 system chrome clamp. See [widgets.md](./widgets.md).
+**Android ceilings (showcase honesty):** Home-screen widgets are first-class Glance / RemoteViews. `LiveActivity.*` maps to an ongoing-notification helper (no ActivityKit / Dynamic Island / StandBy). Share/action use dedicated Activities; RN `entry` host TTI is baseline-green (spike `android-rn-host-tti-2026-08-10.md`) while agent-device parity remains capability-gated — README `‡` waits on the FCM notification close. Notifications run in the host process (not a sealed NSE) with `ExpoTargetsFcmMessagingService` when Firebase Messaging is on the classpath; rich UI uses RemoteViews with Android 12 system chrome clamp. See [widgets.md](./widgets.md).
 
-Frozen Devicewright `os-limit` allowlist: [`examples/.devicewright/claims.ts`](../examples/.devicewright/claims.ts).
+Frozen agent-device `os-limit` allowlist: [`examples/.agent-device/claims.ts`](../examples/.agent-device/claims.ts).
 
 ## Showcase
 
-[`examples/trick`](../examples/trick) packs deepened targets + File Provider domain registration + Live Activity host controls (start / update / end). README showcase marks `‡` / `§` drop only after Android FCM shade greens for notification-service **and** notification-content (RN share/action TTI + Devicewright already green — spike `android-rn-host-tti-2026-08-10.md`). Without `FCM_*`, journeys keep the local NotificationCompat fallback; do not scrub marks on transport-only or local-only greens.
+[`examples/trick`](../examples/trick) packs deepened targets + File Provider domain registration + Live Activity host controls (start / update / end). README showcase marks `‡` / `§` drop only after Android FCM shade greens for notification-service **and** notification-content (RN share/action TTI is baseline-green; agent-device parity remains capability-gated — spike `android-rn-host-tti-2026-08-10.md`). Missing `FCM_*` is an operator result for those two parity rows. The product retains its local NotificationCompat path, but local-only delivery cannot satisfy the matrix oracle or remove the showcase marks.

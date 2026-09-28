@@ -4,7 +4,7 @@
 
 <!-- doc-meta: owner=eng | last-reviewed=2026-09-28 -->
 
-> **Orphan-stub freeze:** do not add new `ExtensionType` values without registry, scaffold, example, and Devicewright row. See [deprecations.md](./deprecations.md). Widgets policy: [widgets.md](./widgets.md).
+> **Orphan-stub freeze:** do not add new `ExtensionType` values without registry, scaffold, example, and agent-device row. See [deprecations.md](./deprecations.md). Widgets policy: [widgets.md](./widgets.md).
 
 Each target uses a `target.config.json` file in its directory (`.ts` and `.js` also work). `expo-target.config.*` still loads if you have not renamed yet.
 
@@ -989,7 +989,7 @@ export default function (config: ExpoConfig) {
 
 ## Extension Types Reference
 
-Types with a production example and Devicewright row are marked ✅. Entitlement-gated flows can still claim `os-limit` after the live-touchpoint floor. See `examples/.devicewright/claims.ts`.
+Types with a production example and agent-device row are marked ✅. Entitlement-gated flows can still claim `os-limit` after the live-touchpoint floor. See `examples/.agent-device/claims.ts`.
 
 | Type                                                                                        | iOS                                      | Android             | Description                 |
 | ------------------------------------------------------------------------------------------- | ---------------------------------------- | ------------------- | --------------------------- |
@@ -1033,13 +1033,13 @@ Types with a production example and Devicewright row are marked ✅. Entitlement
 | `smart-card`                                                                                | ✅ iOS 10+                               | —                   | CryptoTokenKit              |
 | `virtual-conference`                                                                        | ✅ iOS 15+                               | —                   | Calendar virtual conference |
 
-**Legend:** ✅ Production with example + Devicewright · 🔜 Android wave planned · — Not applicable (Apple-only)
+**Legend:** ✅ Production with example + agent-device · 🔜 Android wave planned · — Not applicable (Apple-only)
 
 > **Android API-ceiling:** ~12 strong and ~8 partial groups. SSOT flags: `TYPE_CHARACTERISTICS.androidBucket` and `androidComponent`. Waves 0–3 shipped (DocumentsProvider, Autofill, IME, CallScreening, Print, VpnService). The 1.0 ceiling also includes **W4-in-1.0 partials** and **Wear strong** (`watch` and `watch-widget`). There is no separate W5 Wear wave. `message-filter` and `unwanted-communication` are in-ceiling partials (not optional). Settings and Play leftovers exist for IME, VPN, call, credentials (and print when non-automatable). ActivityKit, Dynamic Island, and StandBy remain iOS-only.
 
 > **Combined targets:** For `wallet` and `intent` types, you can use `ios.wallet.ui` or `ios.intents.ui` to generate both the main extension and its UI companion from a single config file. The CLI generates combined wallet extensions by default. See [Wallet Extension](#wallet-extension) and [Intent UI Extension](#intent-ui-extension).
 
-> **New types:** A type joins `ExtensionType` only with registry, scaffold, example, and Devicewright in the same PR. See [deprecations.md](./deprecations.md).
+> **New types:** A type joins `ExtensionType` only with registry, scaffold, example, and agent-device in the same PR. See [deprecations.md](./deprecations.md).
 
 ### iOS Limitations
 
@@ -1067,7 +1067,7 @@ You cannot use both in the same app. If you need both features, consider:
 
 ### Scaffold maturity
 
-Older docs used a 📋 “config-only” maturity label. Prefer **scaffold + example**. The plugin wires the Xcode target and `examples/` hosts ship a starting principal. New types must include an example and a Devicewright journey (see [deprecations.md](./deprecations.md)). Deepen stubs to full Apple API conformance as needed for production apps. See [limits.md](./limits.md).
+Older docs used a 📋 “config-only” maturity label. Prefer **scaffold + example**. The plugin wires the Xcode target and `examples/` hosts ship a starting principal. New types must include an example and a agent-device journey (see [deprecations.md](./deprecations.md)). Deepen stubs to full Apple API conformance as needed for production apps. See [limits.md](./limits.md).
 
 **What expo-targets provides:**
 
@@ -1076,7 +1076,7 @@ Older docs used a 📋 “config-only” maturity label. Prefer **scaffold + exa
 - Framework linking
 - Entitlements setup
 - Build system integration
-- Example host + Devicewright journey (per-type DoD)
+- Example host + agent-device journey (per-type DoD)
 
 **What you must deepen for production:**
 

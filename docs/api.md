@@ -776,7 +776,7 @@ interface NonExtensionTarget extends BaseTarget {
 | `keyboard` | ✅ iOS 8+ | ✅ W3b IME (Settings leftover) |
 | `network-packet-tunnel` | ✅ NE | ✅ W3c VpnService (consent leftover) |
 
-> Only **stickers** is asset-only (`requiresCode: false`). Do not add orphan ExtensionTypes without an example and a Devicewright row ([deprecations.md](./deprecations.md)).
+> Only **stickers** is asset-only (`requiresCode: false`). Do not add orphan ExtensionTypes without an example and a agent-device row ([deprecations.md](./deprecations.md)).
 
 ### Android Notes
 
@@ -786,7 +786,7 @@ interface NonExtensionTarget extends BaseTarget {
 - **Widget refresh** triggers through BroadcastReceiver.
 - **Extension JS APIs** (`getSharedData`, `openHostApp`, `close`) need a target Activity (`ExpoTargetsHarnessActivity` or Share/Action Activities).
 - **Share/action** register dedicated Activities (not MainActivity) with MIME filters from `android.activationRules` or `ios.activationRules`.
-- **Notifications** register a host-process Service and channels plus `ExpoTargetsFcmMessagingService` for FCM data payloads. Use `AndroidNotification.*` for the local path. There is no sealed NSE process. Operator FCM shade green needs `FCM_SERVICE_ACCOUNT_PATH` + `FCM_PROJECT_ID` and app `google-services.json` ([AUTH.md](../examples/.devicewright/AUTH.md)).
+- **Notifications** register a host-process Service and channels plus `ExpoTargetsFcmMessagingService` for FCM data payloads. Use `AndroidNotification.*` for the local path. There is no sealed NSE process. Operator FCM shade green needs `FCM_SERVICE_ACCOUNT_PATH` + `FCM_PROJECT_ID` and app `google-services.json` ([AUTH.md](../examples/.agent-device/AUTH.md)).
 - **LiveActivity on Android** posts ongoing notifications (partial vs ActivityKit).
 - **System services (W3):** DocumentsProvider, AutofillService, InputMethodService, CallScreeningService, PrintService, VpnService (fail-closed). Settings and Play leftovers are documented in [limits.md](./limits.md).
 - **getTargetsConfig** reads `assets/expo_targets_config.json` written at prebuild.

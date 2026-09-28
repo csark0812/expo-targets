@@ -78,7 +78,7 @@ class ActionViewController: UIViewController {
 
     /// idb/coordinate taps on this action sheet are unreliable on iOS 26
     /// (AX hit-test ≠ UITouch; taps fall through to the share sheet). Auto-write
-    /// + dismiss keeps the Devicewright C1 journey honest about App Group I/O.
+    /// + dismiss keeps the agent-device C1 journey honest about App Group I/O.
     private func scheduleAutoProcess() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
             self?.processTapped()

@@ -107,7 +107,7 @@ function NceHostView({
       <Text testID="text-extension-type">notification-content</Text>
       <Text testID="text-bundle-suffix">{bundleSuffix}</Text>
       <Text testID="text-notif-perm">{perm}</Text>
-      {/* Devicewright scrapes this AX label for the FCM device token. */}
+      {/* agent-device scrapes this AX label for the FCM device token. */}
       <Text testID="text-device-push-token" selectable>
         {pushToken}
       </Text>
