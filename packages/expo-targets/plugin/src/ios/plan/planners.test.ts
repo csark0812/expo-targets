@@ -238,6 +238,9 @@ describe('planBuildSettings for App Clips', () => {
     expect(settings.ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES).toBe('YES');
     expect(settings.ENABLE_PREVIEWS).toBe('YES');
     expect(settings.ASSETCATALOG_COMPILER_APPICON_NAME).toBeUndefined();
+    expect(
+      settings.ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS
+    ).toBeUndefined();
   });
 
   test('sets the AppIcon compiler name when an AppIcon catalog is present', () => {
@@ -247,6 +250,9 @@ describe('planBuildSettings for App Clips', () => {
     });
 
     expect(settings.ASSETCATALOG_COMPILER_APPICON_NAME).toBe('AppIcon');
+    expect(settings.ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS).toBe(
+      'YES'
+    );
   });
 
   test('does not set the AppIcon compiler name on other types', () => {
@@ -256,6 +262,9 @@ describe('planBuildSettings for App Clips', () => {
     });
 
     expect(settings.ASSETCATALOG_COMPILER_APPICON_NAME).toBeUndefined();
+    expect(
+      settings.ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS
+    ).toBeUndefined();
   });
 
   test('leaves search paths inherited for other types', () => {
@@ -883,6 +892,9 @@ describe('composeXcodeTargetPlan clip AppIcon', () => {
     expect(plan.buildSettings.ASSETCATALOG_COMPILER_APPICON_NAME).toBe(
       'AppIcon'
     );
+    expect(
+      plan.buildSettings.ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS
+    ).toBe('YES');
     expect(plan.infoPlist.contents).toContain('CFBundleIconName');
     expect(plan.infoPlist.contents).toContain('<string>AppIcon</string>');
   });

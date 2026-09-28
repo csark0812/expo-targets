@@ -632,7 +632,10 @@ If the Clip has an icon, put `AppIcon.appiconset` in `targets/<name>/ios/Assets.
 The plugin then sets `ASSETCATALOG_COMPILER_APPICON_NAME` to `AppIcon`.
 The plugin also sets `CFBundleIconName` to `AppIcon` in the Clip Info.plist.
 App Store Connect requires both values.
-Keep the iPhone icon sizes in that set, including 120×120 (`60x60` at scale `2x`).
+
+The plugin also sets `ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS` to `YES`.
+That setting tells the compiler to include every AppIcon size in the Clip product.
+App Store Connect requires the 120×120 icon file (`AppIcon60x60@2x.png`).
 
 ### Share Extension
 
