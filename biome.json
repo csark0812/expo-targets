@@ -13,6 +13,7 @@
       "!**/*.d.ts",
       "!!**/node_modules",
       "!**/examples/.agent-device",
+      "!**/examples/.devicewright",
       "!**/scripts"
     ]
   },
