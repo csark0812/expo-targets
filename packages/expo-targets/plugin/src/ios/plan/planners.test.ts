@@ -240,6 +240,19 @@ describe('planBuildSettings for App Clips', () => {
     expect(settings.ASSETCATALOG_COMPILER_APPICON_NAME).toBeUndefined();
   });
 
+  test('keeps the planned Info.plist authoritative so EAS build numbers survive', () => {
+    const settings = buildSettingsFor({
+      props: { type: 'clip', name: 'MyClip' },
+    });
+
+    expect(settings.GENERATE_INFOPLIST_FILE).toBe('NO');
+    expect(
+      Object.keys(settings).filter((key) =>
+        /^INFOPLIST_KEY_.*(_Generation|IndirectInputEvents)$/.test(key)
+      )
+    ).toEqual([]);
+  });
+
   test('leaves search paths inherited for other types', () => {
     const settings = buildSettingsFor();
 
@@ -354,6 +367,7 @@ describe('planBuildSettings for watch targets', () => {
     expect(settings.TARGETED_DEVICE_FAMILY).toBe('"4"');
     expect(settings.WATCHOS_DEPLOYMENT_TARGET).toBe('10.0');
     expect(settings.IPHONEOS_DEPLOYMENT_TARGET).toBeUndefined();
+    expect(settings.GENERATE_INFOPLIST_FILE).toBe('NO');
   });
 
   test('watch-widget targets use watchOS SDK and device family 4', () => {

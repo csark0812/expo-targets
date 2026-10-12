@@ -12,7 +12,7 @@ import {
 } from './buildPhases';
 import { applyBuildSettings, removeBuildSetting } from './buildSettings';
 import { ensureBundleReactNativePhase } from './bundleReactNative';
-import { ensureClipBuildNumberPhase } from './clipBuildNumber';
+import { removeClipBuildNumberPhase } from './clipBuildNumber';
 import { ensureCopyFrameworksIntoAppClipPhase } from './copyFrameworksIntoAppClip';
 import {
   configureAppClipEmbed,
@@ -33,6 +33,13 @@ import {
   setProductType,
 } from './targetLifecycle';
 import type { XcodeTarget } from './types';
+
+/** Generated-Info.plist keys older versions wrote on SwiftUI App Clips. */
+const RETIRED_CLIP_BUILD_SETTINGS = [
+  'INFOPLIST_KEY_UIApplicationSceneManifest_Generation',
+  'INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents',
+  'INFOPLIST_KEY_UILaunchScreen_Generation',
+];
 
 interface ApplyContext {
   mainTarget: { uuid: string; target: any };
@@ -406,23 +413,12 @@ function applyMainAndWatchDependencies({
 function applyClipAndBundlePhases(
   project: XcodeProject,
   plan: XcodeTargetPlan,
-  {
-    target,
-    mainTarget,
-    logger,
-  }: {
-    target: XcodeTarget;
-    mainTarget: ApplyContext['mainTarget'];
-    logger: Logger;
-  }
+  { target, logger }: { target: XcodeTarget; logger: Logger }
 ): void {
   if (plan.identity.type === 'clip') {
-    const hostName =
-      mainTarget.target?.name || mainTarget.target?.productName || 'App';
-    ensureClipBuildNumberPhase({
+    removeClipBuildNumberPhase({
       project,
       clipTargetUuid: target.uuid,
-      hostProductName: String(hostName).replace(/"/g, ''),
       logger,
     });
   }
@@ -467,6 +463,11 @@ export function applyXcodeTargetPlan(
     logger,
   });
   removeBuildSetting({ project, target, settingKey: 'SKIP_INSTALL' });
+  if (plan.identity.type === 'clip') {
+    for (const settingKey of RETIRED_CLIP_BUILD_SETTINGS) {
+      removeBuildSetting({ project, target, settingKey });
+    }
+  }
 
   ensureBuildPhases(project, plan, target);
 
@@ -484,7 +485,7 @@ export function applyXcodeTargetPlan(
     mainTargetUuid: mainTarget.uuid,
   });
   applyEmbed(project, plan, { target, mainTargetUuid: mainTarget.uuid });
-  applyClipAndBundlePhases(project, plan, { target, mainTarget, logger });
+  applyClipAndBundlePhases(project, plan, { target, logger });
 
   logger.log(`Configured target ${plan.identity.targetProductName}`);
   return target;

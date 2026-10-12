@@ -1,19 +1,48 @@
 import { describe, expect, test } from 'bun:test';
+import type { XcodeProject } from '@expo/config-plugins';
 
-import { buildClipBuildNumberScript } from './clipBuildNumber';
+import { removeClipBuildNumberPhase } from './clipBuildNumber';
 
-describe('buildClipBuildNumberScript', () => {
-  test('copies host CURRENT_PROJECT_VERSION into Clip Info.plist', () => {
-    const script = buildClipBuildNumberScript('Popl');
-    expect(script).toContain('-target "Popl"');
-    expect(script).toContain('CFBundleVersion');
-    expect(script).toContain('PlistBuddy');
-    expect(script).toContain('CURRENT_PROJECT_VERSION');
+function projectWithPhases(names: string[]): {
+  project: XcodeProject;
+  objects: any;
+} {
+  const PBXShellScriptBuildPhase: Record<string, any> = {};
+  const buildPhases = names.map((name, index) => {
+    const uuid = `PHASE${index}`;
+    PBXShellScriptBuildPhase[uuid] = { isa: 'PBXShellScriptBuildPhase', name };
+    PBXShellScriptBuildPhase[`${uuid}_comment`] = name;
+    return { value: uuid, comment: name };
+  });
+  const objects = {
+    PBXNativeTarget: { CLIP: { buildPhases } },
+    PBXShellScriptBuildPhase,
+  };
+  return { project: { hash: { project: { objects } } } as any, objects };
+}
+
+describe('removeClipBuildNumberPhase', () => {
+  test('drops the retired Sync App Clip CFBundleVersion phase', () => {
+    const { project, objects } = projectWithPhases([
+      '"[CP] Check Pods Manifest.lock"',
+      '"[expo-targets] Sync App Clip CFBundleVersion"',
+    ]);
+
+    removeClipBuildNumberPhase({ project, clipTargetUuid: 'CLIP' });
+
+    expect(
+      objects.PBXNativeTarget.CLIP.buildPhases.map((p: any) => p.value)
+    ).toEqual(['PHASE0']);
+    expect(objects.PBXShellScriptBuildPhase.PHASE1).toBeUndefined();
+    expect(objects.PBXShellScriptBuildPhase.PHASE1_comment).toBeUndefined();
+    expect(objects.PBXShellScriptBuildPhase.PHASE0).toBeDefined();
   });
 
-  test('does not fail the native build when host version is missing', () => {
-    const script = buildClipBuildNumberScript('App');
-    expect(script).toContain('skip Clip CFBundleVersion');
-    expect(script).toContain('exit 0');
+  test('is a no-op when the phase is absent', () => {
+    const { project, objects } = projectWithPhases(['"Bundle React Native"']);
+
+    removeClipBuildNumberPhase({ project, clipTargetUuid: 'CLIP' });
+
+    expect(objects.PBXNativeTarget.CLIP.buildPhases).toHaveLength(1);
   });
 });

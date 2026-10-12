@@ -90,6 +90,29 @@ function createBasePlist(): Record<string, any> {
   };
 }
 
+/**
+ * SwiftUI clips and watch apps build with GENERATE_INFOPLIST_FILE=NO so the
+ * CFBundleVersion EAS writes into the plist survives. Carry the keys Xcode
+ * generation used to add. RN clips never used generation (AppDelegate lifecycle).
+ */
+function applyNonGeneratedAppKeys({
+  basePlist,
+  type,
+  options,
+}: PlistContext): void {
+  if (type === 'clip' && !options.entry) {
+    basePlist.LSRequiresIPhoneOS = true;
+    basePlist.UIApplicationSceneManifest = {
+      UIApplicationSupportsMultipleScenes: true,
+      UISceneConfigurations: {},
+    };
+    basePlist.UILaunchScreen = {};
+  }
+  if (type === 'watch') {
+    basePlist.WKApplication = true;
+  }
+}
+
 function applyExtensionPointIdentifier({
   basePlist,
   characteristics,
@@ -360,6 +383,7 @@ export function getTargetInfoPlistForType(
   }
 
   const basePlist = deepMerge(createBasePlist(), characteristics.basePlist);
+  const context: PlistContext = { basePlist, characteristics, type, options };
   // Literal displayName wins over $(PRODUCT_NAME). INFOPLIST_KEY_* does not
   // override an existing Info.plist key, so write it here. Set both DisplayName
   // and Name — Messages drawer and other chrome read either key.
@@ -368,6 +392,7 @@ export function getTargetInfoPlistForType(
     basePlist.CFBundleDisplayName = name;
     basePlist.CFBundleName = name;
   }
+  applyNonGeneratedAppKeys(context);
   if (type === 'watch' && options.companionAppBundleIdentifier?.trim()) {
     basePlist.WKCompanionAppBundleIdentifier =
       options.companionAppBundleIdentifier.trim();
@@ -377,7 +402,6 @@ export function getTargetInfoPlistForType(
   if (type === 'clip' && options.hasAppIconCatalog) {
     basePlist.CFBundleIconName = 'AppIcon';
   }
-  const context: PlistContext = { basePlist, characteristics, type, options };
 
   applyExtensionPointIdentifier(context);
   applyActivationRules(context);

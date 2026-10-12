@@ -96,6 +96,38 @@ describe('getTargetInfoPlistForType displayName', () => {
   });
 });
 
+describe('getTargetInfoPlistForType without Xcode plist generation', () => {
+  test('SwiftUI clip carries the keys GENERATE_INFOPLIST_FILE used to add', () => {
+    const parsed = plist.parse(getTargetInfoPlistForType('clip')) as Record<
+      string,
+      unknown
+    >;
+    expect(parsed.CFBundleVersion).toBe('$(CURRENT_PROJECT_VERSION)');
+    expect(parsed.LSRequiresIPhoneOS).toBe(true);
+    expect(parsed.UIApplicationSceneManifest).toEqual({
+      UIApplicationSupportsMultipleScenes: true,
+      UISceneConfigurations: {},
+    });
+    expect(parsed.UILaunchScreen).toEqual({});
+  });
+
+  test('React Native clip keeps its AppDelegate lifecycle (no scene manifest)', () => {
+    const parsed = plist.parse(
+      getTargetInfoPlistForType('clip', { entry: './targets/clip/index.tsx' })
+    ) as Record<string, unknown>;
+    expect(parsed.UIApplicationSceneManifest).toBeUndefined();
+    expect(parsed.LSRequiresIPhoneOS).toBeUndefined();
+  });
+
+  test('watch app declares WKApplication', () => {
+    const parsed = plist.parse(getTargetInfoPlistForType('watch')) as Record<
+      string,
+      unknown
+    >;
+    expect(parsed.WKApplication).toBe(true);
+  });
+});
+
 describe('getTargetInfoPlistForType options', () => {
   test('watch companion sets WKCompanionAppBundleIdentifier', () => {
     const parsed = plist.parse(

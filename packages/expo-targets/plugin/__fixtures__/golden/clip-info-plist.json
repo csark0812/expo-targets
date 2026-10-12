@@ -14,5 +14,11 @@
     "NSAppClipRequestLocationConfirmation": false
   },
   "UILaunchStoryboardName": "SplashScreen",
-  "UIUserInterfaceStyle": "Automatic"
+  "UIUserInterfaceStyle": "Automatic",
+  "LSRequiresIPhoneOS": true,
+  "UIApplicationSceneManifest": {
+    "UIApplicationSupportsMultipleScenes": true,
+    "UISceneConfigurations": {}
+  },
+  "UILaunchScreen": {}
 }

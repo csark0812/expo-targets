@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- SwiftUI App Clip, watch, and watch-widget targets set `GENERATE_INFOPLIST_FILE = NO`. A generated Info.plist overrides `CFBundleVersion` and `CFBundleShortVersionString` from build settings, so Xcode discarded the build number that EAS remote versioning writes into each target Info.plist. EAS workflow builds then failed with "The CFBundleVersion of an App Clip ('1') must match that of its containing parent app". The planned Info.plist now carries the keys that generation added (`LSRequiresIPhoneOS`, `UIApplicationSceneManifest`, `UILaunchScreen` for SwiftUI clips; `WKApplication` for watch apps). Prebuild removes the old "[expo-targets] Sync App Clip CFBundleVersion" build phase and the clip `INFOPLIST_KEY_*_Generation` settings.
 - App Clip targets with `AppIcon.appiconset` set `ASSETCATALOG_COMPILER_STANDALONE_ICON_BEHAVIOR` to `default`. The App Clip product type sets this to `none`, which omits `AppIcon60x60@2x.png` and `CFBundleIconFiles`.
 - App Clip targets with `AppIcon.appiconset` set `ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS` to `YES`. App Store Connect rejects a Clip that has the icon only inside `Assets.car` and omits `AppIcon60x60@2x.png`.
 - App Clip targets that ship `Assets.xcassets/AppIcon.appiconset` set `ASSETCATALOG_COMPILER_APPICON_NAME` and `CFBundleIconName` to `AppIcon`. App Store Connect rejects a Clip icon without both.
@@ -23,7 +24,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `npx expo-targets doctor` fails when `.expo/types/expo-targets.d.ts` is missing or stale; `npx expo-targets generate` stays the no-prebuild fix.
 - Host App Groups union target `appGroup` / target entitlement groups into a non-empty host list.
-- App Clip compile phase copies host `CFBundleVersion` (EAS remote versioning).
 - Widget folder `setData` writes every kind. Live Activity `start({ replaceExisting })` defaults to true for that attributes name only.
 - RN `entry` targets infer unused heavy host packages (Sentry, reanimated, screens, netinfo) into `excludedPackages`.
 - Opt-in Android `android.qr` / `android.implementation` plus `ExpoTargetsQr.encode`.

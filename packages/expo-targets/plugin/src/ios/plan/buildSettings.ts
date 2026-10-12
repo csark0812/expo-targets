@@ -125,11 +125,11 @@ function planIsolatedSearchPathSettings(): Record<string, string | string[]> {
       '"@executable_path/Frameworks"',
       '"@loader_path/Frameworks"',
     ],
-    // SwiftUI-specific settings (required for proper SwiftUI framework linking)
-    GENERATE_INFOPLIST_FILE: 'YES',
-    INFOPLIST_KEY_UIApplicationSceneManifest_Generation: 'YES',
-    INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: 'YES',
-    INFOPLIST_KEY_UILaunchScreen_Generation: 'YES',
+    // A generated Info.plist overrides CFBundleVersion / CFBundleShortVersionString
+    // from build settings, discarding the literal values EAS remote versioning
+    // writes into each target plist. The keys generation used to add live in
+    // the planned Info.plist instead (see buildInfoPlist.ts).
+    GENERATE_INFOPLIST_FILE: 'NO',
     ENABLE_PREVIEWS: 'YES',
   };
 }
@@ -213,7 +213,8 @@ function planWatchOsSettings(
       '"@executable_path/Frameworks"',
       '"@loader_path/Frameworks"',
     ],
-    GENERATE_INFOPLIST_FILE: 'YES',
+    // See planIsolatedSearchPathSettings: generation drops EAS version writes.
+    GENERATE_INFOPLIST_FILE: 'NO',
   };
 }
 
